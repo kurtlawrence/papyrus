@@ -1,6 +1,6 @@
 [package]
 name = "papyrus"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["kurt <kurtlawrence92@gmail.com>"]
 edition = "2018"
 description = "A rust script runner"
@@ -8,3 +8,4 @@ license = "MIT"
 
 [dependencies]
 argparse = "0.2"
+failure = "0.1"

@@ -16,8 +16,10 @@
 //!
 //! Right click on a `.rs` or `.rscript` file and choose `Run with Papyrus` to compile and run code!
 extern crate argparse;
+extern crate failure;
 
 use argparse::{ArgumentParser, Store};
+use failure::{Context, ResultExt};
 use std::io::{self, prelude::*};
 use std::{fs, path};
 
@@ -53,7 +55,7 @@ fn main() {
 				println!("{}", arg);
 			}
 
-			match failable() {
+			match failable(&src_path) {
 				Err(e) => println!("{}", e),
 				_ => (),
 			}
@@ -126,25 +128,25 @@ fn add_right_click_menu_item() -> Result<String, String> {
 	Ok("commands successfuly executed".to_string())
 }
 
-fn failable() -> Result<(), Box<std::error::Error>> {
-	let arg_vec: Vec<String> = std::env::args().collect();
-
-	let src_file = path::Path::new(&arg_vec[1]);
+fn failable(src_file: &str) -> Result<(), Context<String>> {
+	let src_file = path::Path::new(src_file);
 	let compile_area = "c:/papyrus-compile-area/";
-	fs::create_dir_all(compile_area)?;
+	fs::create_dir_all(compile_area).context(format!("{:?}", src_file))?;
 	let to = path::Path::new(compile_area).join("src/").join(
 		src_file
 			.file_name()
 			.unwrap_or(path::Path::new("no_filename.rs").as_os_str()),
 	);
-	fs::create_dir_all(to.parent().unwrap())?;
+	fs::create_dir_all(to.parent().unwrap()).context(format!("{:?}", to.parent().unwrap()))?;
 
-	fs::copy(src_file, to)?;
+	fs::copy(src_file, &to).context(format!("from {:?} to {:?}", src_file, to))?;
 
-	std::process::Command::new("cargo")
+	let mut process = std::process::Command::new("cargo")
 		.current_dir(compile_area)
 		.arg("run")
-		.spawn()?;
+		.spawn()
+		.context("cargo command failed to start".to_string())?;
+	process.wait().context("process failed".to_string())?;
 
 	Ok(())
 }
