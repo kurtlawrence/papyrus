@@ -24,6 +24,8 @@ fn main() {
 		parser.parse_args_or_exit();
 	}
 
+	let stdin = io::stdin();
+
 	match command.as_str() {
 		"rc-add" => match add_right_click_menu_item() {
 			Ok(s) => println!("added right click menu entry\n{}", s),
@@ -44,7 +46,7 @@ fn main() {
 			}
 
 			println!("Press return to exit",);
-			match io::stdin().lock().read_line(&mut String::new()) {
+			match stdin.lock().read_line(&mut String::new()) {
 				_ => (),
 			}
 		}
