@@ -1,5 +1,3 @@
-//! # Papyrus
-//!
 //! ## A rust script running tool.
 //!
 //! See the [docs.](https://docs.rs/papyrus/0.1.2/papyrus/)

@@ -7,6 +7,10 @@ description = "A rust script runner"
 license = "MIT"
 website = "https://github.com/kurtlawrence/papyrus"
 
+[badges]
+travis-ci = { repository = "kurtlawrence/papyrus" }
+
+
 [dependencies]
 argparse = "0.2"
 failure = "0.1"
