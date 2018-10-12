@@ -7,3 +7,4 @@ description = "A rust script runner"
 license = "MIT"
 
 [dependencies]
+argparse = "0.2"
