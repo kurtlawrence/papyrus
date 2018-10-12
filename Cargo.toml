@@ -1,0 +1,7 @@
+[package]
+name = "papyrus"
+version = "0.1.0"
+authors = ["kurt <kurtlawrence92@gmail.com>"]
+edition = "2018"
+
+[dependencies]
