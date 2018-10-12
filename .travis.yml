@@ -2,18 +2,18 @@ sudo: required
 language: rust
 cache: cargo
 os:
-- windows
-- linux
-- osx
+  - windows
+  - linux
+  - osx
 rust:
-- stable
-- beta
-- nightly
+  - stable
+  - beta
+  - nightly
 matrix:
   allow_failures:
-  - rust: nightly
+    - rust: nightly
 jobs:
   include:
-  - stage: deploy
+    - stage: deploy
     script:
-- bash pass_build_push.sh
+    - bash pass_build_push.sh
