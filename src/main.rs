@@ -1,20 +1,3 @@
-//! # Papyrus
-//! ## A rust script running tool
-//!
-//! ## WIP
-//! Install `papyrus`.
-//! `cargo install papyrus`
-//!
-//! Add right click context menu. (May need admin rights)
-//! `papyrus rc-add`
-//!
-//! Remove right click context menu. (May need admin rights)
-//! `papyrus rc-remove`
-//!
-//! Run papyrus from command line.
-//! `papyrus path_to_src_file.rs` or `papyrus path_to_script_file.rscript`
-//!
-//! Right click on a `.rs` or `.rscript` file and choose `Run with Papyrus` to compile and run code!
 extern crate argparse;
 extern crate failure;
 
@@ -101,7 +84,7 @@ impl CommandResult for std::io::Result<std::process::Output> {
 fn add_right_click_menu_item() -> Result<String, String> {
 	use std::process::Command;
 
-	let path_to_exe = "papyrus";
+	let path_to_exe = std::env::current_exe().map_err(|_| "failed to load exe path".to_string())?;
 
 	// add the .rs entry
 	Command::new("reg")
@@ -121,8 +104,11 @@ fn add_right_click_menu_item() -> Result<String, String> {
 	Command::new("reg")
 		.arg("add")
 		.arg("HKCU\\Software\\Classes\\rustsrcfile\\shell\\Run with Papyrus\\command")
-		.args(&["/d", format!("\"{}\" \"%1\"", path_to_exe).as_str(), "/f"])
-		.output()
+		.args(&[
+			"/d",
+			format!("{:?} \"run\" \"%1\"", path_to_exe.as_os_str()).as_str(),
+			"/f",
+		]).output()
 		.convert()?;
 
 	Ok("commands successfuly executed".to_string())

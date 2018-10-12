@@ -1,0 +1,19 @@
+sudo: required
+language: rust
+cache: cargo
+os:
+- windows
+- linux
+- osx
+rust:
+- stable
+- beta
+- nightly
+matrix:
+  allow_failures:
+  - rust: nightly
+jobs:
+  include:
+  - stage: deploy
+    script:
+- bash pass_build_push.sh
