@@ -14,6 +14,6 @@ matrix:
     - rust: nightly
 jobs:
   include:
-    - stage: deploy
+  - stage: deploy
     script:
     - bash pass_build_push.sh
