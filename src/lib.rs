@@ -287,6 +287,7 @@ mod tests {
 
 	#[test]
 	fn test_run() {
+		use std::env;
 		let dir = "tests/compile-dir/test-run";
 		let s = Script::build_compile_dir(
 			TEST_CONTENTS.as_bytes(),
@@ -294,8 +295,7 @@ mod tests {
 			&dir,
 			SourceFileType::Rs,
 		).unwrap();
-		let loc = if cfg!(windows) { "C:/" } else { "/" };
-		s.run(&loc).unwrap();
+		s.run(&env::current_dir().unwrap()).unwrap();
 
 		fs::remove_dir_all(dir).unwrap();
 	}
