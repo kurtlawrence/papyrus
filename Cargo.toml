@@ -1,6 +1,6 @@
 [package]
 name = "papyrus"
-version = "0.1.3"
+version = "0.2.0"
 authors = ["kurt <kurtlawrence92@gmail.com>"]
 description = "A rust script runner"
 license = "MIT"
