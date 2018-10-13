@@ -34,10 +34,10 @@ pub fn remove_right_click_menu() -> Result<String, String> {
 
 mod windows {
 	use super::*;
+	use std::env;
 
 	pub fn add_windows_right_click_menu() -> Result<String, String> {
-		let path_to_exe =
-			std::env::current_exe().map_err(|_| "failed to load exe path".to_string())?;
+		let path_to_exe = env::current_exe().map_err(|_| "failed to load exe path".to_string())?;
 
 		// add the .rs entry
 		convert(
