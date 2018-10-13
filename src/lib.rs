@@ -37,7 +37,7 @@ extern crate failure;
 mod contextmenu;
 
 use failure::{Context, ResultExt};
-use std::io::Write;
+use std::io::{self, BufRead, Write};
 use std::path::{self, PathBuf};
 use std::{fs, process};
 
@@ -50,13 +50,16 @@ pub enum SourceFileType {
 
 pub struct Output {
 	pub status: process::ExitStatus,
-	// pub stdout: Vec<u8>,
-	// pub stderr: Vec<u8>,
 }
 
 pub struct Script {
 	compile_dir: PathBuf,
 	package_name: String,
+}
+
+struct CrateType {
+	src_name: String,
+	cargo_name: String,
 }
 
 impl Script {
@@ -73,7 +76,7 @@ impl Script {
 		let mut main_file = create_file_and_dir(&dir.join("src/main.rs"))?;
 		let mut cargo = create_file_and_dir(&dir.join("Cargo.toml"))?;
 
-		let cargo_contents = format!(
+		let mut cargo_contents = format!(
 			"[package]
 name = \"{}\"
 version = \"0.1.0\"
@@ -82,6 +85,10 @@ version = \"0.1.0\"
 ",
 			package_name
 		);
+
+		for c in get_crates(src) {
+			cargo_contents.push_str(&format!("{} = \"*\"", c.cargo_name));
+		}
 
 		main_file
 			.write_all(src)
@@ -98,8 +105,6 @@ version = \"0.1.0\"
 	/// Runs `cargo build`, then runs the `exe`  from the given directory. Stdin and Stdout are inherited (allowing live updating of progress).
 	/// Waits for process to finish and returns the `Output` of the process.
 	pub fn run<P: AsRef<path::Path>>(self, working_dir: &P) -> Result<Output, Context<String>> {
-		// let mut stdout = Vec::new();
-		// let mut stderr = Vec::new();
 		let working_dir = working_dir.as_ref();
 		let status = process::Command::new("cargo")
 			.current_dir(&self.compile_dir)
@@ -112,8 +117,6 @@ version = \"0.1.0\"
 			return Err(Context::new("Build failed".to_string()));
 		}
 
-		println!("{:?}", working_dir);
-		println!("{:?}", self.compile_dir);
 		let exe = format!(
 			"{}/target/debug/{}.exe",
 			self.compile_dir.clone().to_string_lossy(),
@@ -149,12 +152,9 @@ pub fn run_from_src_file<P: AsRef<path::Path>>(src_file: P) -> Result<Output, Co
 				.expect("should have one element")
 				.to_string()
 		});
-	let mut dir = dirs::home_dir().ok_or(Context::new("no home directory".to_string()))?;
-	println!("{:?}", dir);
+	let dir = dirs::home_dir().ok_or(Context::new("no home directory".to_string()))?;
 	let mut dir = path::PathBuf::from(format!("{}/.papyrus", dir.to_string_lossy()));
-	println!("{:?}", dir);
 	src_file.components().for_each(|c| {
-		println!("{:?}", c);
 		if let path::Component::Normal(c) = c {
 			let s = String::from(c.to_string_lossy());
 			if s.contains(".") {
@@ -163,9 +163,7 @@ pub fn run_from_src_file<P: AsRef<path::Path>>(src_file: P) -> Result<Output, Co
 				dir.push(s)
 			}
 		}
-		println!("{:?}", dir);
 	});
-	println!("{:?}", dir);
 	let src = fs::read(src_file).context(format!("failed to read {:?}", src_file))?;
 
 	let s = Script::build_compile_dir(&src, &filename, &dir, SourceFileType::Rs)?;
@@ -183,6 +181,25 @@ fn create_file_and_dir<P: AsRef<path::Path>>(file: &P) -> Result<fs::File, Conte
 	}
 
 	fs::File::create(file).context(format!("failed creating file {:?}", file))
+}
+
+fn get_crates(src: &[u8]) -> Vec<CrateType> {
+	let reader = io::BufReader::new(src);
+	let mut crates = Vec::new();
+	for line in reader.lines() {
+		let line = line.expect("should be something");
+		if line.contains("extern crate ") {
+			match line.split(" ").nth(2) {
+				Some(s) => crates.push(CrateType {
+					src_name: s.replace(";", ""),
+					cargo_name: s.replace(";", "").replace("_", "-"),
+				}),
+				None => (),
+			}
+		}
+	}
+
+	crates
 }
 
 #[cfg(test)]
@@ -229,7 +246,7 @@ mod tests {
 			&dir,
 			SourceFileType::Rs,
 		).unwrap();
-		s.run("").unwrap();
+		s.run(&"C:/").unwrap();
 
 		fs::remove_dir_all(dir).unwrap();
 	}
