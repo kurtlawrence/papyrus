@@ -14,3 +14,4 @@ travis-ci = { repository = "kurtlawrence/papyrus" }
 [dependencies]
 argparse = "0.2"
 failure = "0.1"
+dirs = "1.0"
