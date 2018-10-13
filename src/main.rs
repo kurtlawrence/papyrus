@@ -1,12 +1,9 @@
 extern crate argparse;
-extern crate failure;
 extern crate papyrus;
 
 use argparse::{ArgumentParser, Store};
-use failure::{Context, ResultExt};
 use papyrus::*;
 use std::io::{self, prelude::*};
-use std::{fs, path};
 
 fn main() {
 	let mut command = String::new();

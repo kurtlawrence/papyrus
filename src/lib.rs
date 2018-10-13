@@ -58,7 +58,7 @@ pub struct Script {
 }
 
 struct CrateType {
-	src_name: String,
+	src_line: String,
 	cargo_name: String,
 }
 
@@ -86,12 +86,39 @@ version = \"0.1.0\"
 			package_name
 		);
 
-		for c in get_crates(src) {
+		let crates = get_crates(src);
+		for c in crates.iter() {
 			cargo_contents.push_str(&format!("{} = \"*\"", c.cargo_name));
 		}
 
+		let content = match src_filetype {
+			SourceFileType::Rs => src.iter().map(|x| *x).collect(),
+			SourceFileType::Rscript => {
+				let reader = io::BufReader::new(src);
+				let mut ret = Vec::with_capacity(src.len());
+
+				for c in crates {
+					ret.append(&mut c.src_line.into_bytes());
+					"\n".as_bytes().iter().for_each(|b| ret.push(*b));
+				}
+
+				"fn main() {\n".as_bytes().iter().for_each(|b| ret.push(*b));
+				for line in reader.lines() {
+					let line = line.expect("should be something");
+					if !line.contains("extern crate ") {
+						"\t".as_bytes().iter().for_each(|b| ret.push(*b));
+						ret.append(&mut line.into_bytes());
+						"\n".as_bytes().iter().for_each(|b| ret.push(*b));
+					}
+				}
+				"}".as_bytes().iter().for_each(|b| ret.push(*b));
+
+				ret
+			}
+		};
+
 		main_file
-			.write_all(src)
+			.write_all(&content)
 			.context("failed writing contents of main.rs".to_string())?;
 		cargo
 			.write_all(cargo_contents.as_bytes())
@@ -143,15 +170,32 @@ version = \"0.1.0\"
 /// Equivalent to calling `build_compile_dir` and then `run`.
 pub fn run_from_src_file<P: AsRef<path::Path>>(src_file: P) -> Result<Output, Context<String>> {
 	let src_file = src_file.as_ref();
-	let filename = src_file
-		.file_name()
-		.map_or("papyrus-script".to_string(), |i| {
-			let s = String::from(i.to_string_lossy());
-			s.split('.')
-				.nth(0)
-				.expect("should have one element")
-				.to_string()
-		});
+	let (filename, filetype) = {
+		let f = src_file
+			.file_name()
+			.map_or("papyrus-script".to_string(), |i| {
+				let s = String::from(i.to_string_lossy());
+				s.split('.')
+					.nth(0)
+					.expect("should have one element")
+					.to_string()
+			});
+
+		match src_file.extension() {
+			Some(e) => if e == "rs" {
+				Ok((f, SourceFileType::Rs))
+			} else if e == "rscript" {
+				Ok((f, SourceFileType::Rscript))
+			} else {
+				Err(Context::new(
+					"expecting file type *.rs or *.rscript".to_string(),
+				))
+			},
+			None => Err(Context::new(
+				"expecting file type *.rs or *.rscript".to_string(),
+			)),
+		}
+	}?;
 	let dir = dirs::home_dir().ok_or(Context::new("no home directory".to_string()))?;
 	let mut dir = path::PathBuf::from(format!("{}/.papyrus", dir.to_string_lossy()));
 	src_file.components().for_each(|c| {
@@ -166,7 +210,7 @@ pub fn run_from_src_file<P: AsRef<path::Path>>(src_file: P) -> Result<Output, Co
 	});
 	let src = fs::read(src_file).context(format!("failed to read {:?}", src_file))?;
 
-	let s = Script::build_compile_dir(&src, &filename, &dir, SourceFileType::Rs)?;
+	let s = Script::build_compile_dir(&src, &filename, &dir, filetype)?;
 	s.run(&src_file.parent().unwrap())
 }
 
@@ -189,10 +233,14 @@ fn get_crates(src: &[u8]) -> Vec<CrateType> {
 	for line in reader.lines() {
 		let line = line.expect("should be something");
 		if line.contains("extern crate ") {
-			match line.split(" ").nth(2) {
+			match line
+				.split(" ")
+				.nth(2)
+				.map(|s| s.replace(";", "").replace("_", "-"))
+			{
 				Some(s) => crates.push(CrateType {
-					src_name: s.replace(";", ""),
-					cargo_name: s.replace(";", "").replace("_", "-"),
+					src_line: line,
+					cargo_name: s,
 				}),
 				None => (),
 			}
