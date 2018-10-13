@@ -294,7 +294,8 @@ mod tests {
 			&dir,
 			SourceFileType::Rs,
 		).unwrap();
-		s.run(&"C:/").unwrap();
+		let loc = if cfg!(windows) { "C:/" } else { "/" };
+		s.run(&loc).unwrap();
 
 		fs::remove_dir_all(dir).unwrap();
 	}
