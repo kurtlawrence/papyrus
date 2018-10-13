@@ -144,11 +144,19 @@ version = \"0.1.0\"
 			return Err(Context::new("Build failed".to_string()));
 		}
 
-		let exe = format!(
-			"{}/target/debug/{}.exe",
-			self.compile_dir.clone().to_string_lossy(),
-			self.package_name
-		);
+		let exe = if cfg!(windows) {
+			format!(
+				"{}/target/debug/{}.exe",
+				self.compile_dir.clone().to_string_lossy(),
+				self.package_name
+			)
+		} else {
+			format!(
+				"{}/target/debug/{}",
+				self.compile_dir.clone().to_string_lossy(),
+				self.package_name
+			)
+		};
 		let status = process::Command::new(&exe)
 			.current_dir(working_dir)
 			.status()
@@ -295,7 +303,9 @@ mod tests {
 			&dir,
 			SourceFileType::Rs,
 		).unwrap();
-		s.run(&env::current_dir().unwrap()).unwrap();
+		let loc = env::current_dir().unwrap();
+		println!("{:?}", loc);
+		s.run(&loc).unwrap();
 
 		fs::remove_dir_all(dir).unwrap();
 	}
