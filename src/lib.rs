@@ -1,9 +1,7 @@
-//! ## A rust script running tool.
+//! # A rust script running tool.
 //!
-//! See the [docs.](https://docs.rs/papyrus/0.1.2/papyrus/)
+//! See the [docs.](https://docs.rs/papyrus/)
 //! Look at progress and contribute on [github.](https://github.com/kurtlawrence/papyrus)
-//!
-//! ## WIP
 //!
 //! Install `papyrus`.
 //!
@@ -30,7 +28,49 @@
 //! papyrus run path_to_script_file.rscript
 //! ```
 //!
-//! Right click on a `.rs` or `.rscript` file and choose `Run with Papyrus` to compile and run code!
+//! # Implementation Notes
+//!
+//! - Right click on a `.rs` or `.rscript` file and choose `Run with Papyrus` to compile and run code!
+//! - Papyrus will take the contents of the source code and construct a directory to be used with `cargo`. For now the directory is created under a `.papyrus` directory in the users home directory.
+//! - The compiled binary will be executed with the current directory the one that houses the file. So `env::current_dir()` will return the directory of the `.rs` or `.rscript` file.
+//!
+//! # Example - .rs
+//!
+//! File `hello.rs`.
+//!
+//! ```text
+//! extern crate some_crate;
+//!
+//! fn main() {
+//!   println!("Hello, world!");
+//! }
+//! ```
+//!
+//! Use papyrus to execute code.
+//!
+//! ```bash
+//! papyrus run hello.rs
+//! ```
+//!
+//! The `src/main.rs` will be populated with the same contents as `hello.rs`. A `Cargo.toml` file will be created, where `some_crate` will be added as a dependency `some-crate = "*"`.
+//!
+//! # Example - .rscript
+//!
+//! File `hello.rscript`.
+//!
+//! ```text
+//! extern crate some_crate;
+//!
+//! println!("Hello, world!");
+//! ```
+//!
+//! Use papyrus to execute code.
+//!
+//! ```bash
+//! papyrus run hello.rscript
+//! ```
+//!
+//! The `src/main.rs` will be populated with a main function encapsulating the code, and crate references placed above it. A similar `Cargo.toml` will be created as before.
 extern crate dirs;
 extern crate failure;
 
@@ -43,22 +83,34 @@ use std::{fs, process};
 
 pub use self::contextmenu::{add_right_click_menu, remove_right_click_menu};
 
+/// The type of source file, .rs or .rscript.
 pub enum SourceFileType {
 	Rs,
 	Rscript,
 }
 
+/// Current output of a process run.
+/// Future work to include collected io streams.
 pub struct Output {
+	/// The exit status of running a command.
 	pub status: process::ExitStatus,
 }
 
+/// A persistent structure of the script to run.
 pub struct Script {
+	/// The directory where `cargo build` will be run in.
 	compile_dir: PathBuf,
+	/// The name of the package, usually the file name.
 	package_name: String,
 }
 
+/// Some definition around crate names.
 struct CrateType {
+	/// The source line which adds the crates.
+	/// This is usually `extern crate crate_name;` or could be `extern crate crate_name as alias;`
 	src_line: String,
+	/// The name to use in cargo.
+	/// Usually `crate_name` will turn into `crate-name`.
 	cargo_name: String,
 }
 
@@ -129,7 +181,7 @@ version = \"0.1.0\"
 		})
 	}
 
-	/// Runs `cargo build`, then runs the `exe`  from the given directory. Stdin and Stdout are inherited (allowing live updating of progress).
+	/// Runs `cargo build`, then runs the executable  from the given directory. Stdin and Stdout are inherited (allowing live updating of progress).
 	/// Waits for process to finish and returns the `Output` of the process.
 	pub fn run<P: AsRef<path::Path>>(self, working_dir: &P) -> Result<Output, Context<String>> {
 		let working_dir = working_dir.as_ref();
@@ -175,9 +227,12 @@ version = \"0.1.0\"
 }
 
 /// Compile and run the specified source file.
-/// Equivalent to calling `build_compile_dir` and then `run`.
+/// Equivalent to calling `Script` `build_compile_dir` and then `run`.
 pub fn run_from_src_file<P: AsRef<path::Path>>(src_file: P) -> Result<Output, Context<String>> {
-	let src_file = src_file.as_ref();
+	let src_file = src_file.as_ref().canonicalize().context(format!(
+		"failed to canonicalize src_file {}",
+		src_file.as_ref().clone().to_string_lossy()
+	))?;
 	let (filename, filetype) = {
 		let f = src_file
 			.file_name()
@@ -216,7 +271,7 @@ pub fn run_from_src_file<P: AsRef<path::Path>>(src_file: P) -> Result<Output, Co
 			}
 		}
 	});
-	let src = fs::read(src_file).context(format!("failed to read {:?}", src_file))?;
+	let src = fs::read(&src_file).context(format!("failed to read {:?}", src_file))?;
 
 	let s = Script::build_compile_dir(&src, &filename, &dir, filetype)?;
 	s.run(&src_file.parent().unwrap())
@@ -235,6 +290,8 @@ fn create_file_and_dir<P: AsRef<path::Path>>(file: &P) -> Result<fs::File, Conte
 	fs::File::create(file).context(format!("failed creating file {:?}", file))
 }
 
+/// Looks through the contents and creates a collection of `CrateType`.
+/// This assumes that underscores `_` will turn into dashes `-`.
 fn get_crates(src: &[u8]) -> Vec<CrateType> {
 	let reader = io::BufReader::new(src);
 	let mut crates = Vec::new();

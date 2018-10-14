@@ -1,6 +1,7 @@
 use std::io;
 use std::process::{self, Command};
 
+/// Conveniance function to convert an io result into a `Result<String, String>`.
 fn convert(output: io::Result<process::Output>) -> Result<String, String> {
 	match output {
 		Ok(o) => {
@@ -24,10 +25,25 @@ fn convert(output: io::Result<process::Output>) -> Result<String, String> {
 	}
 }
 
+/// Adds a right click context menu entry for `papyrus`.
+/// Associates `.rs` and `.rscript` files with `papyrus`.
+///
+/// # Windows
+/// This involves changes to the registry and will require elevated permissions.
+///
+/// # Linux and Mac
+/// Currently not implemented and will result in undefined behaviour.
 pub fn add_right_click_menu() -> Result<String, String> {
 	self::windows::add_windows_right_click_menu()
 }
 
+/// Removes the right click context menu entry for `papyrus`.
+///
+/// # Windows
+/// This involves changes to the registry and will require elevated permissions.
+///
+/// # Linux and Mac
+/// Currently not implemented and will result in undefined behaviour.
 pub fn remove_right_click_menu() -> Result<String, String> {
 	self::windows::remove_windows_right_click_menu()
 }
