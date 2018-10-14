@@ -1,11 +1,11 @@
 [package]
 name = "papyrus"
-version = "0.1.2"
+version = "0.2.1"
 authors = ["kurt <kurtlawrence92@gmail.com>"]
-edition = "2018"
 description = "A rust script runner"
 license = "MIT"
-website = "https://github.com/kurtlawrence/papyrus"
+homepage = "https://github.com/kurtlawrence/papyrus"
+repository = "https://github.com/kurtlawrence/papyrus"
 
 [badges]
 travis-ci = { repository = "kurtlawrence/papyrus" }
@@ -14,3 +14,4 @@ travis-ci = { repository = "kurtlawrence/papyrus" }
 [dependencies]
 argparse = "0.2"
 failure = "0.1"
+dirs = "1.0"
