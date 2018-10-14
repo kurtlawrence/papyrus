@@ -4,6 +4,8 @@ upload_files() {
   	echo "Travis branch: " $TRAVIS_BRANCH "..."
   	if [ $TRAVIS_BRANCH == "auto" ]; then
 		echo "Will merge to master..."	
+		git config --global user.email "kurtlawrence92@gmail.com"
+		git config --global user.name "Kurt Lawrence"
 		git clone https://${GH_TOKEN}@github.com/kurtlawrence/papyrus.git 
 		cd papyrus/
 		git remote -v
