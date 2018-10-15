@@ -15,3 +15,8 @@ travis-ci = { repository = "kurtlawrence/papyrus" }
 argparse = "0.2"
 failure = "0.1"
 dirs = "1.0"
+linefeed = "0.5"
+log = "0.4"
+syn = {version = "0.15", features=["full"]}
+simplelog = "0.5"
+proc-macro2 = "0.4"

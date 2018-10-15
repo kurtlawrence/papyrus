@@ -1,11 +1,17 @@
 extern crate argparse;
 extern crate papyrus;
+extern crate simplelog;
 
 use argparse::{ArgumentParser, Store};
 use papyrus::*;
 use std::io::{self, prelude::*};
 
 fn main() {
+	simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
+		.unwrap();
+	let repl = Repl::new();
+	repl.run("papyrus", "papyrus");
+
 	let mut command = String::new();
 	let mut src_path = String::new();
 	{

@@ -71,10 +71,18 @@
 //! ```
 //!
 //! The `src/main.rs` will be populated with a main function encapsulating the code, and crate references placed above it. A similar `Cargo.toml` will be created as before.
+#[macro_use]
+extern crate log;
+
 extern crate dirs;
 extern crate failure;
+extern crate linefeed;
+extern crate proc_macro2;
+extern crate syn;
 
 mod contextmenu;
+mod input;
+mod repl;
 
 use failure::{Context, ResultExt};
 use std::io::{self, BufRead, Write};
@@ -82,18 +90,12 @@ use std::path::{self, PathBuf};
 use std::{fs, process};
 
 pub use self::contextmenu::{add_right_click_menu, remove_right_click_menu};
+pub use self::repl::Repl;
 
 /// The type of source file, .rs or .rscript.
 pub enum SourceFileType {
 	Rs,
 	Rscript,
-}
-
-/// Current output of a process run.
-/// Future work to include collected io streams.
-pub struct Output {
-	/// The exit status of running a command.
-	pub status: process::ExitStatus,
 }
 
 /// A persistent structure of the script to run.
@@ -183,17 +185,21 @@ version = \"0.1.0\"
 
 	/// Runs `cargo build`, then runs the executable  from the given directory. Stdin and Stdout are inherited (allowing live updating of progress).
 	/// Waits for process to finish and returns the `Output` of the process.
-	pub fn run<P: AsRef<path::Path>>(self, working_dir: &P) -> Result<Output, Context<String>> {
+	pub fn run<P: AsRef<path::Path>>(
+		self,
+		working_dir: &P,
+	) -> Result<process::Output, Context<String>> {
 		let working_dir = working_dir.as_ref();
 		let status = process::Command::new("cargo")
 			.current_dir(&self.compile_dir)
 			.arg("build")
-			// .stdout(&mut stdout)
-			// .stderr(&mut stderr)
-			.status()
+			.output()
 			.context("cargo command failed to start, is rust installed?".to_string())?;
-		if !status.success() {
-			return Err(Context::new("Build failed".to_string()));
+		if !status.status.success() {
+			return Err(Context::new(format!(
+				"Build failed\n{}",
+				String::from_utf8_lossy(&status.stderr)
+			)));
 		}
 
 		let exe = if cfg!(windows) {
@@ -209,26 +215,23 @@ version = \"0.1.0\"
 				self.package_name
 			)
 		};
-		let status = process::Command::new(&exe)
+
+		process::Command::new(&exe)
 			.current_dir(working_dir)
-			.status()
+			.output()
 			.context(format!(
 				"failed to run {} in dir {}",
 				exe,
 				working_dir.to_string_lossy()
-			))?;
-
-		Ok(Output {
-			status: status,
-			// stdout: stdout,
-			// stderr: stderr,
-		})
+			))
 	}
 }
 
 /// Compile and run the specified source file.
 /// Equivalent to calling `Script` `build_compile_dir` and then `run`.
-pub fn run_from_src_file<P: AsRef<path::Path>>(src_file: P) -> Result<Output, Context<String>> {
+pub fn run_from_src_file<P: AsRef<path::Path>>(
+	src_file: P,
+) -> Result<process::Output, Context<String>> {
 	let src_file = src_file.as_ref().canonicalize().context(format!(
 		"failed to canonicalize src_file {}",
 		src_file.as_ref().clone().to_string_lossy()

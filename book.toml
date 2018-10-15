@@ -1,0 +1,5 @@
+[book]
+authors = ["kurt"]
+multilingual = false
+src = "book-src"
+title = "papyrus"
