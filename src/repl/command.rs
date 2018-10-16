@@ -1,7 +1,9 @@
 use super::*;
 
+type CommandAction = fn(&mut Repl, &str);
+
 /// A command definition.
-pub struct Command<'r> {
+pub struct Command {
 	/// The command name.
 	pub name: &'static str,
 	/// Arguments expected type.
@@ -9,10 +11,11 @@ pub struct Command<'r> {
 	/// Help string.
 	pub help: &'static str,
 	/// Action to take.
-	pub action: Box<Fn(&Repl, &str) + 'r>,
+	pub action: CommandAction,
 }
 
 /// Command arguments variants.
+#[derive(Clone)]
 pub enum CmdArgs {
 	/// No arguments.
 	None,
@@ -24,28 +27,41 @@ pub enum CmdArgs {
 	Expr,
 }
 
-impl<'r> Command<'r> {
-	pub fn new<A: 'r + Fn(&Repl, &str)>(
+impl Command {
+	pub fn new(
 		name: &'static str,
 		arg_type: CmdArgs,
 		help: &'static str,
-		action: A,
+		action: CommandAction,
 	) -> Self {
 		Command {
 			name: name,
 			arg_type: arg_type,
 			help: help,
-			action: Box::new(action) as Box<Fn(&Repl, &str) + 'r>,
+			action: action,
 		}
+	}
+}
+
+impl Clone for Command{
+	fn clone(&self) -> Self {
+		Command {
+	 name: self.name,
+	 arg_type: self.arg_type.clone(),
+	 help: self.help,
+	 action: self.action,
+	}
 	}
 }
 
 pub trait Commands {
 	/// Builds the help string of the commands.
 	fn build_help_response(&self, command: Option<&str>) -> String;
+	/// Conveniance function to lookup the Commands and return if found.
+	fn find_command(&self, command: &str) -> Result<Command, String>;
 }
 
-impl<'r> Commands for Vec<Command<'r>> {
+impl Commands for Vec<Command> {
 	fn build_help_response(&self, command: Option<&str>) -> String {
 		let mut ret = String::new();
 
@@ -64,14 +80,21 @@ impl<'r> Commands for Vec<Command<'r>> {
 		};
 
 		if let Some(cmd) = command {
-			match self.iter().find(|c| c.name == cmd) {
-				None => ret.push_str(&format!("unrecognized command: {}", cmd)),
-				Some(cmd) => write_cmd_line(cmd, &mut ret),
+			match self.find_command(cmd) {
+				Err(e) => ret.push_str(&e),
+				Ok(cmd) => write_cmd_line(&cmd, &mut ret),
 			}
 		} else {
 			ret.push_str("Available commands:\n");
 			self.iter().for_each(|cmd| write_cmd_line(cmd, &mut ret));
 		}
 		ret
+	}
+
+	fn find_command(&self, command: &str) -> Result<Command, String> {
+		match self.iter().find(|c| c.name == command) {
+				None => Err(format!("unrecognized command: {}", command)),
+				Some(cmd) => Ok(cmd.clone()),
+			}
 	}
 }

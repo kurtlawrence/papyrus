@@ -12,6 +12,14 @@ fn test_unclosed_delimiter() {
 }
 
 #[test]
+fn test_items() {
+	assert_eq!(
+		parse_program("fn b() {}"),
+		InputResult::Program(Input::Item("fn b() {}".to_string()))
+	); // Item::Fn
+}
+
+#[test]
 fn test_exprs() {
 	assert_eq!(
 		parse_program("2+2"),

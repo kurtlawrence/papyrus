@@ -86,8 +86,8 @@ mod input;
 mod repl;
 
 use failure::{Context, ResultExt};
-	use file::{SourceFileType, Source};
-use std::io::{self, BufRead, Write};
+use file::{Source, SourceFileType};
+use std::io::Write;
 use std::path::{self, PathBuf};
 use std::{fs, process};
 
@@ -115,33 +115,44 @@ impl Script {
 		let mut cargo = create_file_and_dir(&dir.join("Cargo.toml"))?;
 
 		let cargo_contents = format!(
-"[package]
+			"[package]
 name = \"{pkg_name}\"
 version = \"0.1.0\"
 
 [dependencies]
 {crates}
 ",
-pkg_name = source.file_name,
-crates = source.crates.iter().map(|c| format!("{} = \"*\"", c.cargo_name)).collect::<Vec<_>>().join("\n")
-			
+			pkg_name = source.file_name,
+			crates = source
+				.crates
+				.iter()
+				.map(|c| format!("{} = \"*\"", c.cargo_name))
+				.collect::<Vec<_>>()
+				.join("\n")
 		);
 
-	let content = format!(r#"
+		let content = format!(
+			r#"
 {crates}
 
 {src}
 "#,
-crates = source.crates.iter().map(|c| c.src_line.clone()).collect::<Vec<_>>().join("\n"),
-src = match source.file_type {
-SourceFileType::Rs => source.src.clone(),
-			SourceFileType::Rscript => format!(
-"fn main() {{
+			crates = source
+				.crates
+				.iter()
+				.map(|c| c.src_line.clone())
+				.collect::<Vec<_>>()
+				.join("\n"),
+			src = match source.file_type {
+				SourceFileType::Rs => source.src.clone(),
+				SourceFileType::Rscript => format!(
+					"fn main() {{
 	{}
-}}", source.src
-			)
-}
-);
+}}",
+					source.src
+				),
+			}
+		);
 
 		main_file
 			.write_all(content.as_bytes())
@@ -208,7 +219,7 @@ pub fn run_from_src_file<P: AsRef<path::Path>>(
 		"failed to canonicalize src_file {}",
 		src_file.as_ref().clone().to_string_lossy()
 	))?;
-let src = Source::load(&src_file)?;
+	let src = Source::load(&src_file)?;
 	let dir = dirs::home_dir().ok_or(Context::new("no home directory".to_string()))?;
 	let mut dir = path::PathBuf::from(format!("{}/.papyrus", dir.to_string_lossy()));
 	src_file.components().for_each(|c| {
@@ -266,12 +277,9 @@ mod tests {
 			src: TEST_CONTENTS.to_string(),
 			file_type: SourceFileType::Rs,
 			file_name: "test-name".to_string(),
-			crates: Vec::new()
+			crates: Vec::new(),
 		};
-		Script::build_compile_dir(
-			&source,
-			&"tests/compile-dir/test-dir",
-		).unwrap();
+		Script::build_compile_dir(&source, &"tests/compile-dir/test-dir").unwrap();
 		assert!(path::Path::new("tests/compile-dir/test-dir/src/main.rs").exists());
 		assert!(path::Path::new("tests/compile-dir/test-dir/Cargo.toml").exists());
 
@@ -286,12 +294,9 @@ mod tests {
 			src: TEST_CONTENTS.to_string(),
 			file_type: SourceFileType::Rs,
 			file_name: "test-name".to_string(),
-			crates: Vec::new()
+			crates: Vec::new(),
 		};
-		let s = Script::build_compile_dir(
-			&source,
-			&dir
-		).unwrap();
+		let s = Script::build_compile_dir(&source, &dir).unwrap();
 		let loc = env::current_dir().unwrap();
 		println!("{:?}", loc);
 		s.run(&loc).unwrap();
