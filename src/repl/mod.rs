@@ -1,20 +1,57 @@
 use super::input::{Input, InputReader, InputResult};
 use super::*;
+use super::file::Source;
 
-pub struct Repl {
+mod command;
+
+pub use self::command::{CmdArgs, Command, Commands};
+
+/// A REPL instance.
+pub struct Repl<'r> {
+	/// The REPL handled commands.
+	/// Can be extended.
+	/// ```ignore
+	/// let repl = Repl::new();
+	/// repl.commands.push(Command::new("load", CmdArgs::Filename, "load and evaluate file contents as inputs", |r, arg_text| {
+	/// 	r.run_file(arg_text);
+	/// }));
+	pub commands: Vec<Command<'r>>,
 	/// Items compiled into every program. These are functions, types, etc.
-	items: Vec<String>,
+	pub items: Vec<String>,
 	/// Statements applied in order.
-	statements: Vec<String>,
+	pub statements: Vec<String>,
 }
 
-impl Repl {
+impl<'r> Repl<'r> {
 	/// A new REPL instance.
 	pub fn new() -> Self {
-		Repl {
+		let mut r = Repl {
+			commands: Vec::new(),
 			items: Vec::new(),
 			statements: Vec::new(),
-		}
+		};
+		r.commands.push(Command::new(
+			"help",
+			CmdArgs::Text,
+			"Show help for commands",
+			|repl, arg| {
+				println!(
+					"{}",
+					repl.commands.build_help_response(if arg.is_empty() {
+						None
+					} else {
+						Some(arg)
+					})
+				)
+			},
+		));
+		r.commands.push(Command::new(
+			"load",
+			CmdArgs::Filename,
+			"load *.rs or *.rscript as inputs",
+			|repl, arg| {},
+		));
+		r
 	}
 
 	/// Run the REPL interactively.
@@ -101,7 +138,14 @@ fn _papyrus_inner() {{
 			items = items
 		);
 
-		let s = Script::build_compile_dir(code.as_bytes(), &"papyrus", &"test", SourceFileType::Rs)
+		let src = Source {
+src: code,
+file_name: String::from("mem-code"),
+file_type: SourceFileType::Rs,
+crates: Vec::new(),
+		};
+
+		let s = Script::build_compile_dir(&src, &"test",)
 			.unwrap();
 		match s.run(&::std::env::current_dir().unwrap()) {
 			Ok(output) => {
@@ -118,4 +162,8 @@ fn _papyrus_inner() {{
 			Err(e) => println!("{}", e),
 		}
 	}
+
+	// fn load_file<P: AsRef<path::Path>>(filename: &P) -> Input {
+
+	// }
 }

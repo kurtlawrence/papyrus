@@ -81,22 +81,18 @@ extern crate proc_macro2;
 extern crate syn;
 
 mod contextmenu;
+mod file;
 mod input;
 mod repl;
 
 use failure::{Context, ResultExt};
+	use file::{SourceFileType, Source};
 use std::io::{self, BufRead, Write};
 use std::path::{self, PathBuf};
 use std::{fs, process};
 
 pub use self::contextmenu::{add_right_click_menu, remove_right_click_menu};
 pub use self::repl::Repl;
-
-/// The type of source file, .rs or .rscript.
-pub enum SourceFileType {
-	Rs,
-	Rscript,
-}
 
 /// A persistent structure of the script to run.
 pub struct Script {
@@ -106,79 +102,55 @@ pub struct Script {
 	package_name: String,
 }
 
-/// Some definition around crate names.
-struct CrateType {
-	/// The source line which adds the crates.
-	/// This is usually `extern crate crate_name;` or could be `extern crate crate_name as alias;`
-	src_line: String,
-	/// The name to use in cargo.
-	/// Usually `crate_name` will turn into `crate-name`.
-	cargo_name: String,
-}
-
 impl Script {
 	/// Constructs the compile directory with the given main source file contents.
 	/// Expects `SourceFileType::Rs` to define a `main()` function.
 	/// `SourceFileType::Rscript` will encase code in a `main()` function.
 	pub fn build_compile_dir<P: AsRef<path::Path>>(
-		src: &[u8],
-		package_name: &str,
+		source: &Source,
 		compile_dir: &P,
-		src_filetype: SourceFileType,
 	) -> Result<Self, Context<String>> {
 		let dir = compile_dir.as_ref();
 		let mut main_file = create_file_and_dir(&dir.join("src/main.rs"))?;
 		let mut cargo = create_file_and_dir(&dir.join("Cargo.toml"))?;
 
-		let mut cargo_contents = format!(
-			"[package]
-name = \"{}\"
+		let cargo_contents = format!(
+"[package]
+name = \"{pkg_name}\"
 version = \"0.1.0\"
 
 [dependencies]
+{crates}
 ",
-			package_name
+pkg_name = source.file_name,
+crates = source.crates.iter().map(|c| format!("{} = \"*\"", c.cargo_name)).collect::<Vec<_>>().join("\n")
+			
 		);
 
-		let crates = get_crates(src);
-		for c in crates.iter() {
-			cargo_contents.push_str(&format!("{} = \"*\"", c.cargo_name));
-		}
+	let content = format!(r#"
+{crates}
 
-		let content = match src_filetype {
-			SourceFileType::Rs => src.iter().map(|x| *x).collect(),
-			SourceFileType::Rscript => {
-				let reader = io::BufReader::new(src);
-				let mut ret = Vec::with_capacity(src.len());
-
-				for c in crates {
-					ret.append(&mut c.src_line.into_bytes());
-					"\n".as_bytes().iter().for_each(|b| ret.push(*b));
-				}
-
-				"fn main() {\n".as_bytes().iter().for_each(|b| ret.push(*b));
-				for line in reader.lines() {
-					let line = line.expect("should be something");
-					if !line.contains("extern crate ") {
-						"\t".as_bytes().iter().for_each(|b| ret.push(*b));
-						ret.append(&mut line.into_bytes());
-						"\n".as_bytes().iter().for_each(|b| ret.push(*b));
-					}
-				}
-				"}".as_bytes().iter().for_each(|b| ret.push(*b));
-
-				ret
-			}
-		};
+{src}
+"#,
+crates = source.crates.iter().map(|c| c.src_line.clone()).collect::<Vec<_>>().join("\n"),
+src = match source.file_type {
+SourceFileType::Rs => source.src.clone(),
+			SourceFileType::Rscript => format!(
+"fn main() {{
+	{}
+}}", source.src
+			)
+}
+);
 
 		main_file
-			.write_all(&content)
+			.write_all(content.as_bytes())
 			.context("failed writing contents of main.rs".to_string())?;
 		cargo
 			.write_all(cargo_contents.as_bytes())
 			.context("failed writing contents of Cargo.toml".to_string())?;
 		Ok(Script {
-			package_name: package_name.to_string(),
+			package_name: source.file_name.to_string(),
 			compile_dir: dir.to_path_buf(),
 		})
 	}
@@ -236,32 +208,7 @@ pub fn run_from_src_file<P: AsRef<path::Path>>(
 		"failed to canonicalize src_file {}",
 		src_file.as_ref().clone().to_string_lossy()
 	))?;
-	let (filename, filetype) = {
-		let f = src_file
-			.file_name()
-			.map_or("papyrus-script".to_string(), |i| {
-				let s = String::from(i.to_string_lossy());
-				s.split('.')
-					.nth(0)
-					.expect("should have one element")
-					.to_string()
-			});
-
-		match src_file.extension() {
-			Some(e) => if e == "rs" {
-				Ok((f, SourceFileType::Rs))
-			} else if e == "rscript" {
-				Ok((f, SourceFileType::Rscript))
-			} else {
-				Err(Context::new(
-					"expecting file type *.rs or *.rscript".to_string(),
-				))
-			},
-			None => Err(Context::new(
-				"expecting file type *.rs or *.rscript".to_string(),
-			)),
-		}
-	}?;
+let src = Source::load(&src_file)?;
 	let dir = dirs::home_dir().ok_or(Context::new("no home directory".to_string()))?;
 	let mut dir = path::PathBuf::from(format!("{}/.papyrus", dir.to_string_lossy()));
 	src_file.components().for_each(|c| {
@@ -274,9 +221,8 @@ pub fn run_from_src_file<P: AsRef<path::Path>>(
 			}
 		}
 	});
-	let src = fs::read(&src_file).context(format!("failed to read {:?}", src_file))?;
 
-	let s = Script::build_compile_dir(&src, &filename, &dir, filetype)?;
+	let s = Script::build_compile_dir(&src, &dir)?;
 	s.run(&src_file.parent().unwrap())
 }
 
@@ -291,31 +237,6 @@ fn create_file_and_dir<P: AsRef<path::Path>>(file: &P) -> Result<fs::File, Conte
 	}
 
 	fs::File::create(file).context(format!("failed creating file {:?}", file))
-}
-
-/// Looks through the contents and creates a collection of `CrateType`.
-/// This assumes that underscores `_` will turn into dashes `-`.
-fn get_crates(src: &[u8]) -> Vec<CrateType> {
-	let reader = io::BufReader::new(src);
-	let mut crates = Vec::new();
-	for line in reader.lines() {
-		let line = line.expect("should be something");
-		if line.contains("extern crate ") {
-			match line
-				.split(" ")
-				.nth(2)
-				.map(|s| s.replace(";", "").replace("_", "-"))
-			{
-				Some(s) => crates.push(CrateType {
-					src_line: line,
-					cargo_name: s,
-				}),
-				None => (),
-			}
-		}
-	}
-
-	crates
 }
 
 #[cfg(test)]
@@ -341,11 +262,15 @@ mod tests {
 
 	#[test]
 	fn test_build_compile_dir() {
+		let source = Source {
+			src: TEST_CONTENTS.to_string(),
+			file_type: SourceFileType::Rs,
+			file_name: "test-name".to_string(),
+			crates: Vec::new()
+		};
 		Script::build_compile_dir(
-			TEST_CONTENTS.as_bytes(),
-			"test-name",
+			&source,
 			&"tests/compile-dir/test-dir",
-			SourceFileType::Rs,
 		).unwrap();
 		assert!(path::Path::new("tests/compile-dir/test-dir/src/main.rs").exists());
 		assert!(path::Path::new("tests/compile-dir/test-dir/Cargo.toml").exists());
@@ -357,11 +282,15 @@ mod tests {
 	fn test_run() {
 		use std::env;
 		let dir = "tests/compile-dir/test-run";
+		let source = Source {
+			src: TEST_CONTENTS.to_string(),
+			file_type: SourceFileType::Rs,
+			file_name: "test-name".to_string(),
+			crates: Vec::new()
+		};
 		let s = Script::build_compile_dir(
-			TEST_CONTENTS.as_bytes(),
-			"test-name",
-			&dir,
-			SourceFileType::Rs,
+			&source,
+			&dir
 		).unwrap();
 		let loc = env::current_dir().unwrap();
 		println!("{:?}", loc);

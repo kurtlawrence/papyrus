@@ -21,12 +21,11 @@ pub enum InputResult {
 	Program(Input),
 	/// An empty line
 	Empty,
-	/// Needs more input; i.e. there is an unclosed delimiter
+	/// Needs more input; i.e. there is an unclosed delimiter.
 	More,
-	/// End of file reached
+	/// End of file reached.
 	Eof,
-	/// Error while parsing input; a Rust parsing error will have printed out
-	/// error messages and therefore contain no error message.
+	/// Error while parsing input.
 	InputError(String),
 	/// If part of the syntax tree has not yet been handled, an error will be shown.
 	/// It is encouraged to submit an issue on [github](https://github.com/kurtlawrence/papyrus/issues).
@@ -148,8 +147,6 @@ pub fn parse_command(line: &str) -> InputResult {
 }
 
 /// Parses a line of input as a program.
-///
-/// If there are parse errors, they will be printed to `stderr`.
 pub fn parse_program(code: &str) -> InputResult {
 	debug!("parse program: {}", code);
 
