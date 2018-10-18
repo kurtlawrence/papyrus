@@ -1,0 +1,3 @@
+[submodule "proc-macro2"]
+	path = proc-macro2
+	url = https://github.com/alexcrichton/proc-macro2.git

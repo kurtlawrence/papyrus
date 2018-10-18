@@ -10,7 +10,6 @@ repository = "https://github.com/kurtlawrence/papyrus"
 [badges]
 travis-ci = { repository = "kurtlawrence/papyrus" }
 
-
 [dependencies]
 argparse = "0.2"
 failure = "0.1"
@@ -19,4 +18,5 @@ linefeed = "0.5"
 log = "0.4"
 syn = {version = "0.15", features=["full"]}
 simplelog = "0.5"
+colored = "1.6"
 proc-macro2 = "0.4"

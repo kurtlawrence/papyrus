@@ -10,7 +10,7 @@ fn main() {
 	simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
 		.unwrap();
 	let repl = Repl::new();
-	repl.run("papyrus", "papyrus");
+	repl.run();
 
 	let mut command = String::new();
 	let mut src_path = String::new();

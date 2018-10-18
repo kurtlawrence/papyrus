@@ -1,6 +1,8 @@
 use super::file::Source;
 use super::input::{self, Input, InputReader, InputResult};
 use super::*;
+use colored::*;
+use std::path::Path;
 
 mod command;
 
@@ -22,6 +24,30 @@ pub struct Repl {
 	pub statements: Vec<Vec<String>>,
 	/// Flag whether to keep looping,
 	exit_loop: bool,
+	/// App and prompt text.
+	pub name: &'static str,
+	/// The colour of the prompt region. ie `papyrus`.
+	pub prompt_colour: Color,
+	/// The colour of the out component. ie `[out0]`.
+	pub out_colour: Color,
+}
+
+#[derive(Clone)]
+struct Additional {
+	item: Option<String>,
+	stmts: Option<AdditionalStatements>,
+}
+
+#[derive(Clone)]
+struct AdditionalStatements {
+	stmts: Vec<String>,
+	print_stmt: String,
+}
+
+struct EvalOut {
+	captured_out: String,
+	/// The `println!` out of the evaluated expression. ie Value of out#.
+	eval: String,
 }
 
 impl Repl {
@@ -32,6 +58,9 @@ impl Repl {
 			items: Vec::new(),
 			statements: Vec::new(),
 			exit_loop: false,
+			name: "papyrus",
+			prompt_colour: Color::Cyan,
+			out_colour: Color::BrightGreen,
 		};
 		// help
 		r.commands.push(Command::new(
@@ -61,21 +90,27 @@ impl Repl {
 			"load",
 			CmdArgs::Filename,
 			"load *.rs or *.rscript as inputs",
-			|repl, arg| {
-				let res = match Source::load(&arg) {
-					Ok(src) => input::parse_program(&src.src),
-					Err(e) => InputResult::InputError(e),
-				};
-				match res {
-					InputResult::Program(input) => {
-						debug!("read program: {:?}", input);
-						repl.handle_input(input, false);
-					}
-					InputResult::InputError(e) => println!("{}", e),
-					_ => println!("haven't handled file input"),
+			|repl, arg| match load_and_parse(&arg) {
+				InputResult::Program(input) => {
+					debug!("loaded file: {:?}", input);
+					repl.handle_input(input, repl.name);
 				}
+				InputResult::InputError(e) => println!("{}", e),
+				InputResult::UnimplementedError(e) => println!("{}", e),
+				_ => println!("haven't handled file input"),
 			},
 		));
+		r
+	}
+
+	/// A new REPL instance with the given prompt.
+	///
+	/// # Panics
+	/// - `prompt` is empty.
+	pub fn with_prompt(prompt: &'static str) -> Self {
+		assert!(!prompt.is_empty());
+		let mut r = Repl::new();
+		r.name = prompt;
 		r
 	}
 
@@ -83,18 +118,15 @@ impl Repl {
 	///
 	/// # Panics
 	/// - Failure to initialise `InputReader`.
-	/// - `app_name` or `prompt` is empty.
-	pub fn run(mut self, app_name: &'static str, prompt: &str) {
-		assert!(!prompt.is_empty());
-		assert!(!app_name.is_empty());
-		let mut input = InputReader::new(app_name).expect("failed to start input reader");
+	pub fn run(mut self) {
+		let mut input = InputReader::new(self.name).expect("failed to start input reader");
 		let mut more = false;
 		self.exit_loop = false;
 		while !self.exit_loop {
 			let prompt = if more {
-				format!("{}.>", prompt)
+				format!("{}.> ", self.name.color(self.prompt_colour))
 			} else {
-				format!("{}=>", prompt)
+				format!("{}=> ", self.name.color(self.prompt_colour))
 			};
 			let res = input.read_input(&prompt);
 
@@ -110,7 +142,7 @@ impl Repl {
 				InputResult::Program(input) => {
 					debug!("read program: {:?}", input);
 					more = false;
-					self.handle_input(input, false);
+					self.handle_input(input, self.name);
 				}
 				InputResult::Empty => (),
 				InputResult::More => {
@@ -126,9 +158,36 @@ impl Repl {
 	}
 
 	/// Runs a single program input.
-	/// If `display` is `true`, an expression will be printed using the
-	/// `Display` trait; otherwise, it is printed as `Debug`.
-	fn handle_input(&mut self, input: Input, display: bool) {
+	fn handle_input(&mut self, input: Input, prompt: &str) {
+		let additionals = build_additionals(input, self.statements.len());
+		let src = self.build_source(additionals.clone());
+		match self.eval(&"test", src) {
+			Ok(s) => {
+				//Successful compile means we can add the new items to every program
+				if let Some(item) = additionals.item {
+					self.items.push(item);
+				}
+				if let Some(stmts) = additionals.stmts {
+					self.statements.push(stmts.stmts);
+				}
+				if self.statements.len() != 0 {
+					let out_stmt = format!("[out{}]", self.statements.len() - 1);
+					if !s.captured_out.is_empty() {
+						println!("{}", s.captured_out);
+					}
+					print!(
+						"{} {}: {}",
+						prompt.color(self.prompt_colour),
+						out_stmt.color(self.out_colour),
+						s.eval
+					);
+				}
+			}
+			Err(s) => print!("{}", s),
+		}
+	}
+
+	fn build_source(&mut self, additional: Additional) -> Source {
 		let mut items = self.items.join("\n");
 		let mut statements = self
 			.statements
@@ -136,53 +195,25 @@ impl Repl {
 			.map(|s| s.join("\n"))
 			.collect::<Vec<_>>()
 			.join("\n");
-		let data_num = self.statements.len();
-		match input {
-			Input::Item(ref code) => {
-				items.push_str("\n");
-				items.push_str(code);
-			}
-			Input::Statements(ref code, trailing_semi) => {
-				statements.push_str("\n");
-				for stmt in code[0..code.len() - 1].iter() {
-					statements.push_str(stmt);
-					statements.push('\n');
-				}
-				let last_stmt = if code.len() == 0 {
-					""
-				} else {
-					&code[code.len() - 1]
-				};
 
-				let last_stmt = if !trailing_semi {
-					if display {
-						format!(
-							r#"let out{out_num} = {stmt};\nprintln!("{{}}", out{out_num});"#,
-							out_num = data_num,
-							stmt = last_stmt
-						)
-					} else {
-						format!(
-							r#"let out{out_num} = {stmt};\nprintln!("{{:?}}", out{out_num});"#,
-							out_num = data_num,
-							stmt = last_stmt
-						)
-					}
-				} else {
-					last_stmt.to_string()
-				};
-				statements.push_str(&last_stmt);
-			}
+		if let Some(item) = additional.item {
+			items.push_str("\n");
+			items.push_str(&item);
+		}
+		if let Some(stmts) = additional.stmts {
+			statements.push('\n');
+			statements.push_str(&stmts.stmts.join("\n"));
+			statements.push('\n');
+			statements.push_str(&stmts.print_stmt);
 		}
 
 		let code = format!(
-			r#"
-pub fn main() {{
+			r#"pub fn main() {{
     let _ = std::panic::catch_unwind(_papyrus_inner);
 }}
 
 fn _papyrus_inner() {{
-{stmts}
+	{stmts}
 }}
 
 {items}
@@ -191,27 +222,153 @@ fn _papyrus_inner() {{
 			items = items
 		);
 
-		let src = Source {
+		Source {
 			src: code,
 			file_name: String::from("mem-code"),
 			file_type: SourceFileType::Rs,
 			crates: Vec::new(),
-		};
+		}
+	}
 
-		let s = Script::build_compile_dir(&src, &"test").unwrap();
+	fn eval<P: AsRef<Path>>(&mut self, compile_dir: &P, source: Source) -> Result<EvalOut, String> {
+		let s = Script::build_compile_dir(&source, compile_dir).unwrap();
 		match s.run(&::std::env::current_dir().unwrap()) {
 			Ok(output) => {
 				if output.status.success() {
-					println!("{}", String::from_utf8_lossy(&output.stdout));
-					if let Input::Item(c) = input {
-						//Successful compile means we can add the new items to every program
-						self.items.push(c);
-					}
+					let stdout = String::from_utf8_lossy(&output.stdout);
+					// parse to get the out value
+					let mut split = stdout.split(PAPYRUS_SPLIT_PATTERN);
+					Ok(EvalOut {
+						captured_out: split
+							.next()
+							.expect("failed splitting string")
+							.trim()
+							.to_string(),
+						eval: split.next().unwrap_or("").to_string(),
+					})
 				} else {
-					println!("{}", String::from_utf8_lossy(&output.stderr));
+					Err(String::from_utf8_lossy(&output.stderr).to_string())
 				}
 			}
-			Err(e) => println!("{}", e),
+			Err(e) => Err(format!("{}", e)),
+		}
+	}
+}
+
+fn build_additionals(input: Input, statement_num: usize) -> Additional {
+	let mut additional_item = None;
+	let mut additional_statements = None;
+	let mut print_stmt = String::new();
+	// TODO FIX
+	// match input {
+	// 	Input::Item(code) => additional_item = Some(code),
+	// 	Input::Statements(mut stmts, trailing_semi) => {
+	// 		if let Some(last) = stmts.pop() {
+	// 			let last = if !trailing_semi {
+	// 				print_stmt = format!(
+	// 					"println!(\"{}{{:?}}\", out{});",
+	// 					PAPYRUS_SPLIT_PATTERN, statement_num
+	// 				);
+	// 				format!("let out{} = {};", statement_num, last)
+	// 			} else {
+	// 				last.to_string()
+	// 			};
+	// 			stmts.push(last);
+	// 		}
+	// 		additional_statements = Some(AdditionalStatements { stmts, print_stmt });
+	// 	}
+	// }f
+	Additional {
+		item: additional_item,
+		stmts: additional_statements,
+	}
+}
+
+fn load_and_parse<P: AsRef<Path>>(file_path: &P) -> InputResult {
+	match Source::load(file_path) {
+		Ok(src) => {
+			let r = input::parse_program(&src.src);
+			if r == InputResult::More {
+				// there is a trailing a semi colon, parse with an empty fn
+				debug!("parsing again as there was no returning expression");
+				input::parse_program(&format!("{}\n()", src.src))
+			} else {
+				r
+			}
+		}
+		Err(e) => InputResult::InputError(e),
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn load_rs_source() {
+		let mut repl = Repl::new();
+		for src_file in RS_FILES.iter() {
+			let file = format!("test-src/{}", src_file);
+			println!("{}", file);
+			let res = load_and_parse(&file);
+			match res {
+				InputResult::Program(input) => {
+					let additionals = build_additionals(input, repl.statements.len());
+					let src = repl.build_source(additionals);
+					let eval = repl.eval(&"test", src);
+					let b = eval.is_ok();
+					if let Err(e) = eval {
+						println!("{}", e);
+					}
+					assert!(b);
+				}
+				InputResult::InputError(e) => {
+					println!("{}", e);
+					panic!("should have parsed as program, got input error")
+				}
+				InputResult::More => panic!("should have parsed as program, got more"),
+				InputResult::Command(_, _) => panic!("should have parsed as program, got command"),
+				InputResult::Empty => panic!("should have parsed as program, got empty"),
+				InputResult::Eof => panic!("should have parsed as program, got Eof"),
+				InputResult::UnimplementedError(e) => {
+					println!("{}", e);
+					panic!("should have parsed as program, got unimplemented error")
+				}
+			}
+		}
+	}
+
+	#[test]
+	fn load_rscript_script() {
+		let mut repl = Repl::new();
+		for src_file in RSCRIPT_FILES.iter() {
+			let file = format!("test-src/{}", src_file);
+			println!("{}", file);
+			let res = load_and_parse(&file);
+			match res {
+				InputResult::Program(input) => {
+					let additionals = build_additionals(input, repl.statements.len());
+					let src = repl.build_source(additionals);
+					let eval = repl.eval(&"test", src);
+					let b = eval.is_ok();
+					if let Err(e) = eval {
+						println!("{}", e);
+					}
+					assert!(b);
+				}
+				InputResult::InputError(e) => {
+					println!("{}", e);
+					panic!("should have parsed as program, got input error")
+				}
+				InputResult::More => panic!("should have parsed as program, got more"),
+				InputResult::Command(_, _) => panic!("should have parsed as program, got command"),
+				InputResult::Empty => panic!("should have parsed as program, got empty"),
+				InputResult::Eof => panic!("should have parsed as program, got Eof"),
+				InputResult::UnimplementedError(e) => {
+					println!("{}", e);
+					panic!("should have parsed as program, got unimplemented error")
+				}
+			}
 		}
 	}
 }

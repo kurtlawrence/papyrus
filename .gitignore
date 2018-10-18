@@ -1,5 +1,5 @@
 /target
 **/*.rs.bk
-/playground
 /book
 /test
+/test-src

@@ -21,12 +21,37 @@ fn test_items() {
 
 #[test]
 fn test_exprs() {
+	// Expr::Binary
 	assert_eq!(
 		parse_program("2+2"),
-		InputResult::Program(Input::Statement("2+2".to_string(), true))
-	); // Expr::Binary
+		InputResult::Program(Input::Statements(vec!["2+2".to_string()], false))
+	);
+	assert_eq!(parse_program("2+2;"), InputResult::More);
+	// Expr::Macro
 	assert_eq!(
-		parse_program("let a = 1;"),
-		InputResult::Program(Input::Statement("let a = 1;".to_string(), false))
-	); // let statement
+		parse_program("println!(\"hello\")"),
+		InputResult::Program(Input::Statements(
+			vec!["println!(\"hello\")".to_string()],
+			false
+		))
+	);
+	assert_eq!(parse_program("(println!(\"hello\"));"), InputResult::More);
+	// Expr::Tuple
+	assert_eq!(
+		parse_program("()"),
+		InputResult::Program(Input::Statements(vec!["()".to_string()], false))
+	);
+	assert_eq!(parse_program("();"), InputResult::More);
+	// Expr::Call
+	assert_eq!(
+		parse_program("f()"),
+		InputResult::Program(Input::Statements(vec!["f()".to_string()], false))
+	);
+	assert_eq!(parse_program("f();"), InputResult::More);
+	// Expr::Let
+	assert_eq!(
+		parse_program("let a = 1"),
+		InputResult::Program(Input::Statements(vec!["let a = 1".to_string()], false))
+	);
+	assert_eq!(parse_program("let a = 1;"), InputResult::More);
 }
