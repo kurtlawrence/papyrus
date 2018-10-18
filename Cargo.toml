@@ -16,7 +16,7 @@ failure = "0.1"
 dirs = "1.0"
 linefeed = "0.5"
 log = "0.4"
-syn = {version = "0.15", features=["full"]}
+syn = { version = "0.15", features=["full"] }
 simplelog = "0.5"
 colored = "1.6"
-proc-macro2 = "0.4"
+proc-macro2 = { version = "0.4", features = ["nightly"] }

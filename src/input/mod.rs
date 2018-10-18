@@ -1,11 +1,13 @@
 use linefeed::terminal::DefaultTerminal;
 use linefeed::{Interface, ReadResult};
-use syn::{self, Expr, Item};
+use syn::Expr;
 
 mod parse;
 #[cfg(test)]
 mod tests;
 
+pub use self::parse::is_command;
+pub use self::parse::parse_command;
 pub use self::parse::parse_program;
 
 /// Reads input from `stdin`.
@@ -29,27 +31,24 @@ pub enum InputResult {
 	Eof,
 	/// Error while parsing input.
 	InputError(String),
-	/// If part of the syntax tree has not yet been handled, an error will be shown.
-	/// It is encouraged to submit an issue on [github](https://github.com/kurtlawrence/papyrus/issues).
-	UnimplementedError(String),
 }
 
 /// Represents an input program.
 #[derive(Debug, PartialEq)]
 pub struct Input {
 	/// Module-level items (`fn`, `enum`, `type`, `struct`, etc.)
-	items: Vec<String>,
+	pub items: Vec<String>,
 	/// Inner statements and declarations.
-	stmts: Vec<Statement>,
+	pub stmts: Vec<Statement>,
 }
 
 /// Represents an inner statement.
 #[derive(Debug, PartialEq)]
 pub struct Statement {
 	/// The code, not including the trailing semi if there is one.
-	expr: String,
+	pub expr: String,
 	/// Flags whether there is a trailing semi.
-	semi: bool,
+	pub semi: bool,
 }
 
 impl InputReader {
@@ -104,27 +103,5 @@ impl InputReader {
 		};
 
 		res
-	}
-}
-
-pub fn is_command(line: &str) -> bool {
-	line.starts_with(".") && !line.starts_with("..")
-}
-
-/// Parses a line of input as a command.
-/// Returns either a `Command` value or an `InputError` value.
-pub fn parse_command(line: &str) -> InputResult {
-	if !is_command(line) {
-		return InputResult::InputError("command must begin with `.` or `:`".to_string());
-	}
-
-	let line = &line[1..];
-	let mut words = line.trim_right().splitn(2, ' ');
-
-	match words.next() {
-		Some(name) if !name.is_empty() => {
-			InputResult::Command(name.to_string(), words.next().unwrap_or(&"").to_string())
-		}
-		_ => InputResult::InputError("expected command name".to_string()),
 	}
 }

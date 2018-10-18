@@ -7,8 +7,10 @@ use papyrus::*;
 use std::io::{self, prelude::*};
 
 fn main() {
-	simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
-		.unwrap();
+	if cfg!(debug) {
+		simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
+			.unwrap();
+	}
 	let repl = Repl::new();
 	repl.run();
 

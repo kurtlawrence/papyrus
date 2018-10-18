@@ -21,7 +21,7 @@ fn pwr(base: u32, exponent: u32) -> u32 {
 
 In the papyrus repl:
 
-```terminal
+```sh
 papyrus=> .load pwr.rs
 papyrus=> pwr(2,3)
 papyrus [out0]: 8
@@ -37,7 +37,7 @@ let dir = std::env::current_dir().unwrap();
 let mut count = 0;
 for entry in dir.read_dir().unwrap() {
   if entry.is_ok() {
-    count += 1;
+    count += 1; 
   }
 }
 count
@@ -47,7 +47,8 @@ In the papyrus repl:
 
 ```terminal
 papyrus=> .load count_files.rscript
-papyrus=> pwr(2,3)
-papyrus [out0]: 8
+papyrus [out0]: 20
 papyrus=>
 ```
+
+> The number of files will vary.

@@ -15,7 +15,10 @@ fn test_unclosed_delimiter() {
 fn test_items() {
 	assert_eq!(
 		parse_program("fn b() {}"),
-		InputResult::Program(Input::Item("fn b() {}".to_string()))
+		InputResult::Program(Input {
+			items: vec!["fn b() {}".to_string()],
+			stmts: vec![]
+		})
 	); // Item::Fn
 }
 
@@ -24,34 +27,128 @@ fn test_exprs() {
 	// Expr::Binary
 	assert_eq!(
 		parse_program("2+2"),
-		InputResult::Program(Input::Statements(vec!["2+2".to_string()], false))
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "2+2".to_string(),
+				semi: false
+			}]
+		})
 	);
-	assert_eq!(parse_program("2+2;"), InputResult::More);
+	assert_eq!(
+		parse_program("2+2;"),
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "2+2".to_string(),
+				semi: true
+			}]
+		})
+	);
 	// Expr::Macro
 	assert_eq!(
 		parse_program("println!(\"hello\")"),
-		InputResult::Program(Input::Statements(
-			vec!["println!(\"hello\")".to_string()],
-			false
-		))
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "println!(\"hello\")".to_string(),
+				semi: false
+			}]
+		})
 	);
-	assert_eq!(parse_program("(println!(\"hello\"));"), InputResult::More);
+	assert_eq!(
+		parse_program("println!(\"hello\");"),
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "println!(\"hello\")".to_string(),
+				semi: true
+			}]
+		})
+	);
 	// Expr::Tuple
 	assert_eq!(
 		parse_program("()"),
-		InputResult::Program(Input::Statements(vec!["()".to_string()], false))
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "()".to_string(),
+				semi: false
+			}]
+		})
 	);
-	assert_eq!(parse_program("();"), InputResult::More);
+	assert_eq!(
+		parse_program("();"),
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "()".to_string(),
+				semi: true
+			}]
+		})
+	);
 	// Expr::Call
 	assert_eq!(
 		parse_program("f()"),
-		InputResult::Program(Input::Statements(vec!["f()".to_string()], false))
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "f()".to_string(),
+				semi: false
+			}]
+		})
 	);
-	assert_eq!(parse_program("f();"), InputResult::More);
-	// Expr::Let
 	assert_eq!(
-		parse_program("let a = 1"),
-		InputResult::Program(Input::Statements(vec!["let a = 1".to_string()], false))
+		parse_program("f();"),
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "f()".to_string(),
+				semi: true
+			}]
+		})
 	);
-	assert_eq!(parse_program("let a = 1;"), InputResult::More);
+	// LET
+	assert_eq!(
+		parse_program("let a = 1;"),
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "let a = 1".to_string(),
+				semi: true
+			}]
+		})
+	);
+	// Expr::ForLoop
+	assert_eq!(
+		parse_program("for i in 0..3 {}"),
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "for i in 0..3 {}".to_string(),
+				semi: false
+			}]
+		})
+	);
+	// Expr::Path
+	assert_eq!(
+		parse_program("b"),
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "b".to_string(),
+				semi: false
+			}]
+		})
+	);
+	assert_eq!(
+		parse_program("b;"),
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "b".to_string(),
+				semi: true
+			}]
+		})
+	);
 }

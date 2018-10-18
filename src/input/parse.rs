@@ -1,45 +1,94 @@
 use super::*;
-use proc_macro2::{Span, TokenStream};
-use std::str::FromStr;
-use syn::{self, buffer::TokenBuffer, export::ToTokens, spanned::Spanned, Block, Item, Stmt};
+use proc_macro2::Span;
+use syn::{self, export::ToTokens, spanned::Spanned, Block, Item, Stmt};
+
+pub fn is_command(line: &str) -> bool {
+	line.starts_with(".") && !line.starts_with("..")
+}
+
+/// Parses a line of input as a command.
+/// Returns either a `Command` value or an `InputError` value.
+pub fn parse_command(line: &str) -> InputResult {
+	if !is_command(line) {
+		return InputResult::InputError("command must begin with `.` or `:`".to_string());
+	}
+
+	let line = &line[1..];
+	let mut words = line.trim_right().splitn(2, ' ');
+
+	match words.next() {
+		Some(name) if !name.is_empty() => {
+			InputResult::Command(name.to_string(), words.next().unwrap_or(&"").to_string())
+		}
+		_ => InputResult::InputError("expected command name".to_string()),
+	}
+}
 
 /// Parses a line of input as a program.
 pub fn parse_program(code: &str) -> InputResult {
 	debug!("parse program: {}", code);
+	let code = format!("{{ {} }}", code);
 
-	match TokenStream::from_str(code) {
-		Ok(stream) => {
-			let buffer = TokenBuffer::new2(stream);
-			let cursor = buffer.begin();
-		}
-		Err(e) => {}
-	}
-
-	//return InputResult::InputError("some error".to_string());
-
-	match syn::parse_str::<Block>(&format!("{{ {} }}", code)) {
+	match syn::parse_str::<Block>(&code) {
 		Ok(block) => {
+			let block_span = block.span();
+			let block_span = MySpan::derive_from_span(block_span);
+			debug!("Block Span: {:?}", block_span);
 			let mut stmts = Vec::new();
+			let mut items = Vec::new();
 			for stmt in block.stmts {
 				match stmt {
-					Stmt::Local(_) => {
-						error!("haven't handled Block variant Local");
+					Stmt::Local(local) => {
+						let span = MySpan::derive_from_span(local.span());
+						debug!("Stmt Span: {:?}", span);
+
+						let s = code[(span.lo - block_span.lo) as usize
+							..(span.hi - block_span.lo - 1) as usize]
+							.to_string(); // let span includes the trailing semi
+						debug!("Code slice: {}", s);
+						stmts.push(Statement {
+							expr: s,
+							semi: true,
+						});
 					}
-					Stmt::Item(_) => {
-						error!("haven't handled Block variant Item");
-					}
-					Stmt::Expr(_) => {
-						error!("haven't handled Block variant Expr");
-					}
+					Stmt::Item(item) => match parse_item(item) {
+						Ok(span) => {
+							let span = MySpan::derive_from_span(span);
+							debug!("Stmt Span: {:?}", span);
+
+							let s = code[(span.lo - block_span.lo) as usize
+								..(span.hi - block_span.lo) as usize]
+								.to_string();
+							debug!("Code slice: {}", s);
+							items.push(s);
+						}
+						Err(s) => return InputResult::InputError(s),
+					},
+					Stmt::Expr(expr) => match parse_expr(expr) {
+						Ok(span) => {
+							let span = MySpan::derive_from_span(span);
+							debug!("Stmt Span: {:?}", span);
+
+							let s = code[(span.lo - block_span.lo) as usize
+								..(span.hi - block_span.lo) as usize]
+								.to_string();
+							debug!("Code slice: {}", s);
+							stmts.push(Statement {
+								expr: s,
+								semi: false,
+							});
+						}
+						Err(s) => return InputResult::InputError(s),
+					},
 					Stmt::Semi(expr, _) => match parse_expr(expr) {
 						Ok(span) => {
-							println!("{:?}", span);
-							let start = span.start();
-							let end = span.end();
-							println!("start line {} column {}", start.line, start.column);
-							println!("end line {} column {}", end.line, end.column);
-							let s = code[..].to_string();
-							let s = String::from("adsf");
+							let span = MySpan::derive_from_span(span);
+							debug!("Stmt Span: {:?}", span);
+
+							let s = code[(span.lo - block_span.lo) as usize
+								..(span.hi - block_span.lo) as usize]
+								.to_string();
+							debug!("Code slice: {}", s);
 							stmts.push(Statement {
 								expr: s,
 								semi: true,
@@ -49,17 +98,22 @@ pub fn parse_program(code: &str) -> InputResult {
 					},
 				}
 			}
-			InputResult::InputError("some error".to_string())
+			InputResult::Program(Input {
+				items: items,
+				stmts: stmts,
+			})
 		}
-		Err(e) => if e.to_string() == "LexError" {
-			InputResult::More
-		} else {
-			InputResult::InputError(e.to_string())
-		},
+		Err(e) => {
+			if e.to_string() == "LexError" {
+				InputResult::More
+			} else {
+				InputResult::InputError(e.to_string())
+			}
+		}
 	}
 }
 
-fn parse_item(item: Item) -> Result<String, String> {
+fn parse_item(item: Item) -> Result<Span, String> {
 	match item {
 		Item::ExternCrate(_) => {
 			error!("haven't handled item variant ExternCrate");
@@ -129,7 +183,12 @@ fn parse_item(item: Item) -> Result<String, String> {
 			error!("haven't handled item variant Verbatim");
 			Err("haven't handled item variant Verbatim. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
-		_ => Ok("FUCK".to_string()),
+		_ => {
+			let span = item.span();
+			let s = format!("{}", item.into_token_stream());
+			debug!("Item parsed: {}", s);
+			Ok(span)
+		}
 	}
 }
 
@@ -175,10 +234,6 @@ fn parse_expr(expr: Expr) -> Result<Span, String> {
 			error!("haven't handled expr variant While");
 			Err("haven't handled expr variant While. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
-		Expr::ForLoop(_) => {
-			error!("haven't handled expr variant ForLoop");
-			Err("haven't handled expr variant ForLoop. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
-		}
 		Expr::Loop(_) => {
 			error!("haven't handled expr variant For");
 			Err("haven't handled expr variant For. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
@@ -217,10 +272,6 @@ fn parse_expr(expr: Expr) -> Result<Span, String> {
 		Expr::Range(_) => {
 			error!("haven't handled expr variant Range");
 			Err("haven't handled expr variant Range. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
-		}
-		Expr::Path(_) => {
-			error!("haven't handled expr variant Path");
-			Err("haven't handled expr variant Path. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Expr::Reference(_) => {
 			error!("haven't handled expr variant Reference");
@@ -276,9 +327,33 @@ fn parse_expr(expr: Expr) -> Result<Span, String> {
 		}
 		_ => {
 			let span = expr.span();
-let s = format!("{}", expr.into_token_stream());
-debug!("Expression parsed: {}", s);
-Ok(span)
+			let s = format!("{}", expr.into_token_stream());
+			debug!("Expression parsed: {}", s);
+			Ok(span)
+		}
+	}
+}
+
+#[derive(Debug)]
+struct MySpan {
+	lo: u32,
+	hi: u32,
+}
+
+impl MySpan {
+	fn derive_from_span(span: Span) -> Self {
+		let s = format!("{:?}", span);
+		debug!("{} len: {}", s, s.len());
+		assert!(
+			&s != "Span",
+			"papyrus needs to be built against nightly Rust with RUSTFLAGS='--cfg procmacro2_semver_exempt'"
+		);
+		// bytes(#..#)
+		let slice = &s[6..s.len() - 1];
+		let mut ns = slice.split("..");
+		MySpan {
+			lo: ns.next().unwrap().parse::<u32>().unwrap(),
+			hi: ns.next().unwrap().parse::<u32>().unwrap(),
 		}
 	}
 }

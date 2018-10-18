@@ -19,7 +19,7 @@ pub struct Repl {
 	/// }));
 	pub commands: Vec<Command>,
 	/// Items compiled into every program. These are functions, types, etc.
-	pub items: Vec<String>,
+	pub items: Vec<Vec<String>>,
 	/// Blocks of statements applied in order.
 	pub statements: Vec<Vec<String>>,
 	/// Flag whether to keep looping,
@@ -34,7 +34,7 @@ pub struct Repl {
 
 #[derive(Clone)]
 struct Additional {
-	item: Option<String>,
+	items: Option<Vec<String>>,
 	stmts: Option<AdditionalStatements>,
 }
 
@@ -96,7 +96,6 @@ impl Repl {
 					repl.handle_input(input, repl.name);
 				}
 				InputResult::InputError(e) => println!("{}", e),
-				InputResult::UnimplementedError(e) => println!("{}", e),
 				_ => println!("haven't handled file input"),
 			},
 		));
@@ -149,7 +148,7 @@ impl Repl {
 					more = true;
 				}
 				InputResult::Eof => break,
-				InputResult::InputError(err) | InputResult::UnimplementedError(err) => {
+				InputResult::InputError(err) => {
 					println!("{}", err);
 					more = false;
 				}
@@ -164,8 +163,8 @@ impl Repl {
 		match self.eval(&"test", src) {
 			Ok(s) => {
 				//Successful compile means we can add the new items to every program
-				if let Some(item) = additionals.item {
-					self.items.push(item);
+				if let Some(items) = additionals.items {
+					self.items.push(items);
 				}
 				if let Some(stmts) = additionals.stmts {
 					self.statements.push(stmts.stmts);
@@ -188,17 +187,24 @@ impl Repl {
 	}
 
 	fn build_source(&mut self, additional: Additional) -> Source {
-		let mut items = self.items.join("\n");
+		let mut items = self
+			.items
+			.iter()
+			.flatten()
+			.map(|x| x.to_owned())
+			.collect::<Vec<_>>()
+			.join("\n");
 		let mut statements = self
 			.statements
 			.iter()
-			.map(|s| s.join("\n"))
+			.flatten()
+			.map(|x| x.to_owned())
 			.collect::<Vec<_>>()
 			.join("\n");
 
-		if let Some(item) = additional.item {
+		if let Some(i) = additional.items {
 			items.push_str("\n");
-			items.push_str(&item);
+			items.push_str(&i.join("\n"));
 		}
 		if let Some(stmts) = additional.stmts {
 			statements.push('\n');
@@ -256,30 +262,42 @@ fn _papyrus_inner() {{
 }
 
 fn build_additionals(input: Input, statement_num: usize) -> Additional {
-	let mut additional_item = None;
+	let mut additional_items = None;
 	let mut additional_statements = None;
 	let mut print_stmt = String::new();
-	// TODO FIX
-	// match input {
-	// 	Input::Item(code) => additional_item = Some(code),
-	// 	Input::Statements(mut stmts, trailing_semi) => {
-	// 		if let Some(last) = stmts.pop() {
-	// 			let last = if !trailing_semi {
-	// 				print_stmt = format!(
-	// 					"println!(\"{}{{:?}}\", out{});",
-	// 					PAPYRUS_SPLIT_PATTERN, statement_num
-	// 				);
-	// 				format!("let out{} = {};", statement_num, last)
-	// 			} else {
-	// 				last.to_string()
-	// 			};
-	// 			stmts.push(last);
-	// 		}
-	// 		additional_statements = Some(AdditionalStatements { stmts, print_stmt });
-	// 	}
-	// }f
+	let Input { items, mut stmts } = input;
+
+	if items.len() > 0 {
+		additional_items = Some(items);
+	}
+	if stmts.len() > 0 {
+		if let Some(mut last) = stmts.pop() {
+			let expr = if !last.semi {
+				print_stmt = format!(
+					"println!(\"{}{{:?}}\", out{});",
+					PAPYRUS_SPLIT_PATTERN, statement_num
+				);
+				format!("let out{} = {};", statement_num, last.expr)
+			} else {
+				last.expr.to_string()
+			};
+			last.expr = expr;
+			stmts.push(last);
+		}
+		let stmts = stmts
+			.into_iter()
+			.map(|mut x| {
+				if x.semi {
+					x.expr.push(';');
+				}
+				x.expr
+			})
+			.collect();
+		additional_statements = Some(AdditionalStatements { stmts, print_stmt });
+	}
+
 	Additional {
-		item: additional_item,
+		items: additional_items,
 		stmts: additional_statements,
 	}
 }
