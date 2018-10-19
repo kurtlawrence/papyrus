@@ -98,21 +98,17 @@ extern crate simplelog;
 
 use argparse::{ArgumentParser, Store};
 use papyrus::*;
-use std::io::{self, prelude::*};
 
 fn main() {
 	if cfg!(debug) {
 		simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
 			.unwrap();
 	}
-	let repl = Repl::new();
-	repl.run();
-
 	let mut command = String::new();
 	let mut src_path = String::new();
 	{
 		let mut parser = ArgumentParser::new();
-		parser.set_description("PAPYRUS\nA rust script runner");
+		parser.set_description("PAPYRUS\nA rust repl and script runner");
 		parser.refer(&mut command).add_argument(
 			"command",
 			Store,
@@ -125,8 +121,6 @@ fn main() {
 		parser.parse_args_or_exit();
 	}
 
-	let stdin = io::stdin();
-
 	match command.as_str() {
 		"rc-add" => match add_right_click_menu() {
 			Ok(s) => println!("added right click menu entry\n{}", s),
@@ -136,16 +130,14 @@ fn main() {
 			Ok(s) => println!("removed right click menu entry\n{}", s),
 			Err(s) => println!("ERROR!\n{}", s),
 		},
-		"run" => {
-			match run_from_src_file(src_path) {
-				Err(e) => println!("{}", e),
-				_ => (),
-			}
-
-			println!("Press return to exit",);
-			match stdin.lock().read_line(&mut String::new()) {
-				_ => (),
-			}
+		"run" | "" => {
+			let repl = if !src_path.is_empty() {
+				Repl::with_file(&src_path)
+			} else {
+				Repl::new()
+			};
+			repl.run();
+			println!("Thanks for using papyrus!");
 		}
 		_ => println!("expecting a valid command\ntry running papyrus -h for more information",),
 	}

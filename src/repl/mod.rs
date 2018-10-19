@@ -102,6 +102,20 @@ impl Repl {
 		r
 	}
 
+	/// Runs the file and returns a new REPL instance.
+	pub fn with_file(filename: &str) -> Self {
+		let mut repl = Repl::new();
+		match load_and_parse(&filename) {
+			InputResult::Program(input) => {
+				debug!("loaded file: {:?}", input);
+				repl.handle_input(input, repl.name);
+			}
+			InputResult::InputError(e) => println!("{}", e),
+			_ => println!("haven't handled file input"),
+		}
+		repl
+	}
+
 	/// A new REPL instance with the given prompt.
 	///
 	/// # Panics

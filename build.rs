@@ -1,7 +1,7 @@
 //! This build script will copy the `README.md` contents into both main.rs and lib.rs.
 
-use std::fs;
-use std::io::{BufRead, BufReader};
+// use std::fs;
+// use std::io::{BufRead, BufReader};
 
 fn main() {
 	// This isn't working at the moment, README.md contains invalid UTF-8 characters??

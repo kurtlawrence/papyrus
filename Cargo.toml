@@ -2,10 +2,11 @@
 name = "papyrus"
 version = "0.2.2"
 authors = ["kurt <kurtlawrence92@gmail.com>"]
-description = "A rust script runner"
+description = "A rust repl and script runner"
 license = "MIT"
 homepage = "https://github.com/kurtlawrence/papyrus"
 repository = "https://github.com/kurtlawrence/papyrus"
+keywords = [ "repl", "script" ]
 
 [badges]
 travis-ci = { repository = "kurtlawrence/papyrus" }
