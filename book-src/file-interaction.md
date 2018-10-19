@@ -37,7 +37,7 @@ let dir = std::env::current_dir().unwrap();
 let mut count = 0;
 for entry in dir.read_dir().unwrap() {
   if entry.is_ok() {
-    count += 1; 
+    count += 1;
   }
 }
 count
