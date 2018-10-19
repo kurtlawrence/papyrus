@@ -94,7 +94,17 @@ impl InputReader {
 		let res = if is_command(&self.buffer) {
 			parse_command(&self.buffer)
 		} else {
-			parse_program(&self.buffer)
+			// check if the final statement ends with a semi
+			match parse_program(&self.buffer) {
+				InputResult::Program(input) => {
+					if input.stmts.len() > 0 && input.stmts.last().unwrap().semi {
+						InputResult::More
+					} else {
+						InputResult::Program(input)
+					}
+				}
+				x => x,
+			}
 		};
 
 		match res {

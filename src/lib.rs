@@ -99,11 +99,12 @@ const PAPYRUS_SPLIT_PATTERN: &'static str = "<!papyrus-split>";
 #[cfg(test)]
 const RS_FILES: [&'static str; 2] = ["src.rs", "pwr.rs"];
 #[cfg(test)]
-const RSCRIPT_FILES: [&'static str; 4] = [
+const RSCRIPT_FILES: [&'static str; 5] = [
 	"expr.rscript",
 	"one.rscript",
 	"expr-list.rscript",
 	"count_files.rscript",
+	"items.rscript",
 ];
 
 /// A persistent structure of the script to run.

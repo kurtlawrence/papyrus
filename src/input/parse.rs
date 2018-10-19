@@ -147,10 +147,6 @@ fn parse_item(item: Item) -> Result<Span, String> {
 			error!("haven't handled item variant Existential");
 			Err("haven't handled item variant Existential. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
-		Item::Struct(_) => {
-			error!("haven't handled item variant Struct");
-			Err("haven't handled item variant Struct. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
-		}
 		Item::Enum(_) => {
 			error!("haven't handled item variant Enum");
 			Err("haven't handled item variant Enum. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())

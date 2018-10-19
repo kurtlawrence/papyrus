@@ -20,6 +20,13 @@ fn test_items() {
 			stmts: vec![]
 		})
 	); // Item::Fn
+	assert_eq!(
+		parse_program("#[derive(Debug)]\nstruct A {\n\tu: u32\n}"),
+		InputResult::Program(Input {
+			items: vec!["#[derive(Debug)]\nstruct A {\n\tu: u32\n}".to_string()],
+			stmts: vec![]
+		})
+	); // Item::Struct
 }
 
 #[test]

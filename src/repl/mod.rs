@@ -160,7 +160,7 @@ impl Repl {
 	fn handle_input(&mut self, input: Input, prompt: &str) {
 		let additionals = build_additionals(input, self.statements.len());
 		let src = self.build_source(additionals.clone());
-		match self.eval(&"test", src) {
+		match self.eval(&compile_dir(), src) {
 			Ok(s) => {
 				//Successful compile means we can add the new items to every program
 				if let Some(items) = additionals.items {
@@ -318,6 +318,12 @@ fn load_and_parse<P: AsRef<Path>>(file_path: &P) -> InputResult {
 	}
 }
 
+fn compile_dir() -> PathBuf {
+	let dir = dirs::home_dir().unwrap_or(PathBuf::new());
+	let dir = path::PathBuf::from(format!("{}/.papyrus", dir.to_string_lossy()));
+	dir
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -348,10 +354,6 @@ mod tests {
 				InputResult::Command(_, _) => panic!("should have parsed as program, got command"),
 				InputResult::Empty => panic!("should have parsed as program, got empty"),
 				InputResult::Eof => panic!("should have parsed as program, got Eof"),
-				InputResult::UnimplementedError(e) => {
-					println!("{}", e);
-					panic!("should have parsed as program, got unimplemented error")
-				}
 			}
 		}
 	}
@@ -382,10 +384,6 @@ mod tests {
 				InputResult::Command(_, _) => panic!("should have parsed as program, got command"),
 				InputResult::Empty => panic!("should have parsed as program, got empty"),
 				InputResult::Eof => panic!("should have parsed as program, got Eof"),
-				InputResult::UnimplementedError(e) => {
-					println!("{}", e);
-					panic!("should have parsed as program, got unimplemented error")
-				}
 			}
 		}
 	}
