@@ -166,10 +166,12 @@ impl Repl {
 				if let Some(items) = additionals.items {
 					self.items.push(items);
 				}
+				let mut yes = false;
 				if let Some(stmts) = additionals.stmts {
 					self.statements.push(stmts.stmts);
+					yes = true;
 				}
-				if self.statements.len() != 0 {
+				if yes {
 					let out_stmt = format!("[out{}]", self.statements.len() - 1);
 					if !s.captured_out.is_empty() {
 						println!("{}", s.captured_out);
