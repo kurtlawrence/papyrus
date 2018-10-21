@@ -2,4 +2,3 @@
 **/*.rs.bk
 /book
 /test
-/test-src

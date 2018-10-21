@@ -1,0 +1,5 @@
+2+2;
+println!("Hello, world",);
+let b = 1;
+for i in 0..3 {}
+b

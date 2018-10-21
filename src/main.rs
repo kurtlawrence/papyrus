@@ -93,6 +93,7 @@
 //!
 //! The `src/main.rs` will be populated with a main function encapsulating the code, and crate references placed above it. A similar `Cargo.toml` will be created as before.
 extern crate argparse;
+extern crate colored;
 extern crate papyrus;
 extern crate simplelog;
 
@@ -104,6 +105,11 @@ fn main() {
 		simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
 			.unwrap();
 	}
+	if cfg!(target_os = "windows") {
+		// disable colored text output on Windows as the Windows terminals do not support it yet
+		colored::control::set_override(false);
+	}
+
 	let mut command = String::new();
 	let mut src_path = String::new();
 	{

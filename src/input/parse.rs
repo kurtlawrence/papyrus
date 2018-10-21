@@ -202,10 +202,6 @@ fn parse_expr(expr: Expr) -> Result<Span, String> {
 			error!("haven't handled expr variant Array");
 			Err("haven't handled expr variant Array. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
-		Expr::MethodCall(_) => {
-			error!("haven't handled expr variant MethodCall");
-			Err("haven't handled expr variant MethodCall. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
-		}
 		Expr::Unary(_) => {
 			error!("haven't handled expr variant Unary");
 			Err("haven't handled expr variant Unary. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())

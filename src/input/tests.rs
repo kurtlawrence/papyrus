@@ -158,4 +158,25 @@ fn test_exprs() {
 			}]
 		})
 	);
+	// Expr::MethodCall
+	assert_eq!(
+		parse_program("std::env::current_dir()"),
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "std::env::current_dir()".to_string(),
+				semi: false
+			}]
+		})
+	);
+	assert_eq!(
+		parse_program("std::env::current_dir();"),
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "std::env::current_dir()".to_string(),
+				semi: true
+			}]
+		})
+	);
 }
