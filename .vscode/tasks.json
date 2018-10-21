@@ -16,5 +16,16 @@
 				"$rustc"
 			]
 		},
+		{
+			"type": "shell",
+			"label": "update docs from README.md",
+			"command": "cargo",
+			"args": [
+				"my-readme",
+			],
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
 	]
 }

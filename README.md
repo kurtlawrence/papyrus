@@ -63,7 +63,7 @@ File `hello.rs`.
 extern crate some_crate;
 
 fn main() {
-println!("Hello, world!");
+  println!("Hello, world!");
 }
 ```
 
