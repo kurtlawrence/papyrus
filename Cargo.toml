@@ -6,6 +6,8 @@ description = "A rust repl and script runner"
 license = "MIT"
 homepage = "https://github.com/kurtlawrence/papyrus"
 repository = "https://github.com/kurtlawrence/papyrus"
+documentation = "https://docs.rs/papyrus/"
+readme = "README.md"
 keywords = [ "repl", "script" ]
 
 [badges]
