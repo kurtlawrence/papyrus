@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>papyrus</title>
+        <title>File Interaction - papyrus</title>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li><a href="installation.html"><strong aria-hidden="true">1.</strong> Installation</a></li><li><a href="repl.html"><strong aria-hidden="true">2.</strong> REPL Usage</a></li><li><a href="commands.html"><strong aria-hidden="true">3.</strong> Commands</a></li><li><a href="cli-rc.html"><strong aria-hidden="true">4.</strong> Command Line and Context Menu</a></li><li><a href="file-interaction.html"><strong aria-hidden="true">5.</strong> File Interaction</a></li><li><a href="vision.html"><strong aria-hidden="true">6.</strong> Vision</a></li></ol>
+            <ol class="chapter"><li><a href="installation.html"><strong aria-hidden="true">1.</strong> Installation</a></li><li><a href="repl.html"><strong aria-hidden="true">2.</strong> REPL Usage</a></li><li><a href="commands.html"><strong aria-hidden="true">3.</strong> Commands</a></li><li><a href="cli-rc.html"><strong aria-hidden="true">4.</strong> Command Line and Context Menu</a></li><li><a href="file-interaction.html" class="active"><strong aria-hidden="true">5.</strong> File Interaction</a></li><li><a href="vision.html"><strong aria-hidden="true">6.</strong> Vision</a></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -136,117 +136,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <a class="header" href="#installation" id="installation"><h1>Installation</h1></a>
-<blockquote>
-<p>Back to <a href="./SUMMARY.html">SUMMARY</a></p>
-</blockquote>
-<p><code>papyrus</code> depends on <code>proc-macro2</code> and <code>syn</code> which contains features that are only available on a nightly compiler. Further to this, the features are underneath a config flag, so compiling requires the <code>RUSTFLAGS</code> environment variable to include <code>--cfg procmacro2_semver_exempt</code>.</p>
-<p>Linux, Mac</p>
-<pre><code class="language-bash">RUSTFLAGS=&quot;--cfg procmacro2_semver_exempt&quot; cargo install papyrus
-</code></pre>
-<p>Windows</p>
-<pre><code class="language-bash">$env:RUSTFLAGS=&quot;--cfg procmacro2_semver_exempt&quot;
-cargo install papyrus;
-</code></pre>
-<a class="header" href="#repl" id="repl"><h1>REPL</h1></a>
-<blockquote>
-<p>Back to <a href="./SUMMARY.html">SUMMARY</a></p>
-</blockquote>
-<p>The repl takes the commands given and evaluates them, setting a local variable such that the data can be continually referenced.</p>
-<pre><code class="language-sh">papyrus=&gt; let a = 1;
-papyrus.&gt; a
-papyrus [out0]: 1
-papyrus=&gt;
-</code></pre>
-<p>Here we define a variable <code>let a = 1;</code>. Papyrus knows that the end result is not an expression (given the trailing semi colon) so waits for more input (<code>.&gt;</code>). We then give it <code>a</code> which is an expression and gets evaluated. If compilation is successful the expression is set to the variable <code>out0</code> (where the number will increment with expressions) and then be printed with the <code>Debug</code> trait. If an expression evaluates to something that is not <code>Debug</code> then you will receive a compilation error. Finally the repl awaits more input <code>=&gt;</code>.</p>
-<blockquote>
-<p>The expression is using <code>let out# = &lt;expr&gt;;</code> behind the scenes.</p>
-</blockquote>
-<p>You can also define structures and functions.</p>
-<pre><code class="language-sh">papyrus=&gt; fn a(i: u32) -&gt; u32 {
-papyrus.&gt; i + 1
-papyrus.&gt; }
-papyrus=&gt; a(1)
-papyrus [out0]: 2
-papyrus=&gt;
-</code></pre>
-<pre><code class="language-txt">papyrus=&gt; #[derive(Debug)] struct A {
-papyrus.&gt; a: u32,
-papyrus.&gt; b: u32
-papyrus.&gt; }
-papyrus=&gt; let a = A {a: 1, b: 2};
-papyrus.&gt; a
-papyrus [out0]: A { a: 1, b: 2 }
-papyrus=&gt;
-</code></pre>
-<p>Please help if the Repl cannot parse your statements, or help with documentation! <a href="https://github.com/kurtlawrence/papyrus">https://github.com/kurtlawrence/papyrus</a>.</p>
-<a class="header" href="#commands" id="commands"><h1>Commands</h1></a>
-<blockquote>
-<p>Back to <a href="./SUMMARY.html">SUMMARY</a></p>
-</blockquote>
-<p>Current list of commands.</p>
-<a class="header" href="#help" id="help"><h2>help</h2></a>
-<p>Show help for commands.</p>
-<p><code>.help [text]</code></p>
-<blockquote>
-<p>Args is another command, and will explicitly show the help for that command.</p>
-</blockquote>
-<a class="header" href="#exit" id="exit"><h2>exit</h2></a>
-<p>Exit repl.</p>
-<p><code>.exit [text]</code></p>
-<blockquote>
-<p>Exits the repl loop. Arguments are ignored.</p>
-</blockquote>
-<a class="header" href="#load" id="load"><h2>load</h2></a>
-<p>Loads a <code>*.rs</code> or <code>*.rscript</code> file as inputs.</p>
-<p><code>.load &lt;filename&gt;</code></p>
-<blockquote>
-<p>See <a href="./file-interaction.html">File Interaction</a>.</p>
-</blockquote>
-<p>Suggest or add a command on <a href="https://github.com/kurtlawrence/papyrus">github</a>.</p>
-<a class="header" href="#run-from-command-line-or-right-click-context-menu" id="run-from-command-line-or-right-click-context-menu"><h1>Run from Command Line or Right Click Context Menu</h1></a>
-<p>Run interactive <code>REPL</code>.</p>
-<pre><code class="language-sh">papyrus run
-</code></pre>
-<p>Add right click context menu. (May need admin rights)</p>
-<pre><code class="language-bash">papyrus rc-add
-</code></pre>
-<p>Remove right click context menu. (May need admin rights)</p>
-<pre><code class="language-bash">papyrus rc-remove
-</code></pre>
-<p>Run papyrus from command line.</p>
-<pre><code class="language-bash">papyrus run path_to_src_file.rs
-papyrus run path_to_script_file.rscript
-</code></pre>
-<a class="header" href="#implementation-notes" id="implementation-notes"><h2>Implementation Notes</h2></a>
-<ul>
-<li>Right click on a <code>.rs</code> or <code>.rscript</code> file and choose <code>Run with Papyrus</code> to compile and run code!</li>
-<li>Papyrus will take the contents of the source code and construct a directory to be used with <code>cargo</code>. For now the directory is created under a <code>.papyrus</code> directory in the users home directory.</li>
-<li>The compiled binary will be executed with the current directory the one that houses the file. So <code>env::current_dir()</code> will return the directory of the <code>.rs</code> or <code>.rscript</code> file.</li>
-</ul>
-<a class="header" href="#example---rs" id="example---rs"><h2>Example - .rs</h2></a>
-<p>File <code>hello.rs</code>.</p>
-<pre><code class="language-sh">extern crate some_crate;
-
-fn main() {
-  println!(&quot;Hello, world!&quot;);
-}
-</code></pre>
-<p>Use papyrus to execute code.</p>
-<pre><code class="language-bash">papyrus run hello.rs
-</code></pre>
-<p>The <code>src/main.rs</code> will be populated with the same contents as <code>hello.rs</code>. A <code>Cargo.toml</code> file will be created, where <code>some_crate</code> will be added as a dependency <code>some-crate = &quot;*&quot;</code>.</p>
-<a class="header" href="#example---rscript" id="example---rscript"><h2>Example - .rscript</h2></a>
-<p>File <code>hello.rscript</code>.</p>
-<pre><code class="language-sh">extern crate some_crate;
-
-println!(&quot;Hello, world!&quot;);
-</code></pre>
-<p>Use papyrus to execute code.</p>
-<pre><code class="language-bash">papyrus run hello.rscript
-</code></pre>
-<p>The <code>src/main.rs</code> will be populated with a main function encapsulating the code, and crate references placed above it. A similar <code>Cargo.toml</code> will be created as before.</p>
-<a class="header" href="#file-interaction" id="file-interaction"><h1>File Interaction</h1></a>
+                        <a class="header" href="#file-interaction" id="file-interaction"><h1>File Interaction</h1></a>
 <p><code>papyrus</code> comes with the command <code>load</code> which lets you load a file as source code. <code>papyrus</code> accepts both <code>*.rs</code> and <code>*.rscript</code> files, and handles the code slightly differently when it loads it into the <code>Repl</code>.</p>
 <ul>
 <li><code>*.rs</code> files are treated as source files where code is defined with functions and structs, etc.</li>
@@ -291,15 +181,21 @@ papyrus=&gt;
 <blockquote>
 <p>The number of files will vary.</p>
 </blockquote>
-<a class="header" href="#papyrus-vision" id="papyrus-vision"><h1>Papyrus Vision</h1></a>
-<p>A REPL that contains functionality like <a href="https://jupyter.org/">Jupyter</a>.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
+                            <a rel="prev" href="cli-rc.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
 
+                        
+                            <a rel="next" href="vision.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
                         
 
                         <div style="clear: both"></div>
@@ -309,7 +205,15 @@ papyrus=&gt;
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
+                    <a href="cli-rc.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
 
+                
+                    <a href="vision.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
                 
             </nav>
 
@@ -334,14 +238,6 @@ papyrus=&gt;
         <!-- Custom JS scripts -->
         
 
-        
-        
-        <script type="text/javascript">
-        window.addEventListener('load', function() {
-            window.setTimeout(window.print, 100);
-        });
-        </script>
-        
         
 
     </body>
