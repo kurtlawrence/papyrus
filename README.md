@@ -4,7 +4,7 @@
 
 ## A rust REPL and script running tool
 
-See the [docs.](https://docs.rs/papyrus/)
+See the [rs docs](https://docs.rs/papyrus/) and the [usage guide](https://kurtlawrence.github.io/papyrus/)
 Look at progress and contribute on [github.](https://github.com/kurtlawrence/papyrus)
 
 ## Installation
