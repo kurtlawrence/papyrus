@@ -1,5 +1,5 @@
 [book]
 authors = ["kurt"]
 multilingual = false
-src = "book-src"
+src = "docs"
 title = "papyrus"

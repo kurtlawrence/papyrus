@@ -1,6 +1,9 @@
 sudo: required
 language: rust
 cache: cargo
+script:
+  - cargo build --verbose
+  - cargo test --verbose -- --test-threads=1
 env:
   - RUSTFLAGS='--cfg procmacro2_semver_exempt'
 os:
