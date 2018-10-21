@@ -115,17 +115,19 @@ use std::{fs, process};
 
 pub use self::contextmenu::{add_right_click_menu, remove_right_click_menu};
 pub use self::repl::Repl;
+pub use self::repl::{CmdArgs, Command, Commands};
 
 const PAPYRUS_SPLIT_PATTERN: &'static str = "<!papyrus-split>";
 #[cfg(test)]
 const RS_FILES: [&'static str; 2] = ["src.rs", "pwr.rs"];
 #[cfg(test)]
-const RSCRIPT_FILES: [&'static str; 5] = [
+const RSCRIPT_FILES: [&'static str; 6] = [
 	"expr.rscript",
 	"one.rscript",
 	"expr-list.rscript",
 	"count_files.rscript",
 	"items.rscript",
+	"dir.rscript",
 ];
 
 /// A persistent structure of the script to run.
