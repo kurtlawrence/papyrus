@@ -1,5 +1,8 @@
 [book]
 authors = ["kurt"]
 multilingual = false
-src = "docs"
+src = "docs-src"
 title = "papyrus"
+
+[build]
+build-dir = "docs"

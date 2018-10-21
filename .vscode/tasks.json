@@ -27,18 +27,5 @@
 				"$rustc"
 			]
 		},
-		{
-			"type": "shell",
-			"label": "build docs website",
-			"command": "mdbook",
-			"args": [
-				"build",
-				"-d",
-				"docs"
-			],
-			"problemMatcher": [
-				"$rustc"
-			]
-		},
 	]
 }
