@@ -1,6 +1,8 @@
 sudo: required
 language: rust
 cache: cargo
+env:
+  - RUSTFLAGS='--cfg procmacro2_semver_exempt'
 os:
   - windows
   - linux
