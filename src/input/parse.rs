@@ -36,6 +36,7 @@ pub fn parse_program(code: &str) -> InputResult {
 			debug!("Block Span: {:?}", block_span);
 			let mut stmts = Vec::new();
 			let mut items = Vec::new();
+			let mut crates = Vec::new();
 			for stmt in block.stmts {
 				match stmt {
 					Stmt::Local(local) => {
@@ -52,7 +53,20 @@ pub fn parse_program(code: &str) -> InputResult {
 						});
 					}
 					Stmt::Item(item) => match parse_item(item) {
-						Ok(span) => {
+						ParseItemResult::ExternCrate(span) => {
+							let span = MySpan::derive_from_span(span);
+							debug!("Stmt Span: {:?}", span);
+
+							let s = code[(span.lo - block_span.lo) as usize
+								..(span.hi - block_span.lo) as usize]
+								.to_string();
+							debug!("Code slice: {}", s);
+							match CrateType::parse_str(&s) {
+								Ok(c) => crates.push(c),
+								Err(e) => error!("crate parsing failed: {}", e),
+							}
+						}
+						ParseItemResult::Span(span) => {
 							let span = MySpan::derive_from_span(span);
 							debug!("Stmt Span: {:?}", span);
 
@@ -62,7 +76,7 @@ pub fn parse_program(code: &str) -> InputResult {
 							debug!("Code slice: {}", s);
 							items.push(s);
 						}
-						Err(s) => return InputResult::InputError(s),
+						ParseItemResult::Error(s) => return InputResult::InputError(s),
 					},
 					Stmt::Expr(expr) => match parse_expr(expr) {
 						Ok(span) => {
@@ -101,6 +115,7 @@ pub fn parse_program(code: &str) -> InputResult {
 			InputResult::Program(Input {
 				items: items,
 				stmts: stmts,
+				crates: crates,
 			})
 		}
 		Err(e) => {
@@ -113,77 +128,85 @@ pub fn parse_program(code: &str) -> InputResult {
 	}
 }
 
-fn parse_item(item: Item) -> Result<Span, String> {
+enum ParseItemResult {
+	Span(Span),
+	ExternCrate(Span),
+	Error(String),
+}
+
+fn parse_item(item: Item) -> ParseItemResult {
 	match item {
-		Item::ExternCrate(_) => {
-			error!("haven't handled item variant ExternCrate");
-			Err("haven't handled item variant ExternCrate. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
-		}
 		Item::Use(_) => {
 			error!("haven't handled item variant Use");
-			Err("haven't handled item variant Use. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Use. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Static(_) => {
 			error!("haven't handled item variant Static");
-			Err("haven't handled item variant Static. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Static. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Const(_) => {
 			error!("haven't handled item variant Const");
-			Err("haven't handled item variant Const. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Const. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Mod(_) => {
 			error!("haven't handled item variant Mod");
-			Err("haven't handled item variant Mod. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Mod. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::ForeignMod(_) => {
 			error!("haven't handled item variant ForeignMod");
-			Err("haven't handled item variant ForeignMod. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant ForeignMod. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Type(_) => {
 			error!("haven't handled item variant Type");
-			Err("haven't handled item variant Type. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Type. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Existential(_) => {
 			error!("haven't handled item variant Existential");
-			Err("haven't handled item variant Existential. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Existential. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Enum(_) => {
 			error!("haven't handled item variant Enum");
-			Err("haven't handled item variant Enum. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Enum. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Union(_) => {
 			error!("haven't handled item variant Union");
-			Err("haven't handled item variant Union. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Union. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Trait(_) => {
 			error!("haven't handled item variant Trait");
-			Err("haven't handled item variant Trait. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Trait. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::TraitAlias(_) => {
 			error!("haven't handled item variant TraitAlias");
-			Err("haven't handled item variant TraitAlias. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant TraitAlias. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Impl(_) => {
 			error!("haven't handled item variant Impl");
-			Err("haven't handled item variant Impl. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Impl. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Macro(_) => {
 			error!("haven't handled item variant Macro");
-			Err("haven't handled item variant Macro. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Macro. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Macro2(_) => {
 			error!("haven't handled item variant Macro2");
-			Err("haven't handled item variant Macro2. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Macro2. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Verbatim(_) => {
 			error!("haven't handled item variant Verbatim");
-			Err("haven't handled item variant Verbatim. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Verbatim. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+		}
+		Item::ExternCrate(_) => {
+			let span = item.span();
+			let s = format!("{}", item.into_token_stream());
+			debug!("Item parsed, its a crate: {}", s);
+			ParseItemResult::ExternCrate(span)
 		}
 		_ => {
 			let span = item.span();
 			let s = format!("{}", item.into_token_stream());
 			debug!("Item parsed: {}", s);
-			Ok(span)
+			ParseItemResult::Span(span)
 		}
 	}
 }

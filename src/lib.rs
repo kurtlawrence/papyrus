@@ -102,6 +102,8 @@ extern crate failure;
 extern crate linefeed;
 extern crate proc_macro2;
 extern crate syn;
+extern crate term_cursor;
+extern crate term_size;
 
 mod compile;
 mod contextmenu;
@@ -113,7 +115,7 @@ use failure::ResultExt;
 use std::{fs, path};
 
 pub use self::contextmenu::{add_right_click_menu, remove_right_click_menu};
-pub use self::file::{SourceFile, SourceFileType};
+pub use self::file::{CrateType, SourceFile, SourceFileType};
 pub use self::repl::Repl;
 pub use self::repl::{CmdArgs, Command, Commands};
 
@@ -121,13 +123,14 @@ const PAPYRUS_SPLIT_PATTERN: &'static str = "<!papyrus-split>";
 #[cfg(test)]
 const RS_FILES: [&'static str; 2] = ["src.rs", "pwr.rs"];
 #[cfg(test)]
-const RSCRIPT_FILES: [&'static str; 6] = [
+const RSCRIPT_FILES: [&'static str; 7] = [
 	"expr.rscript",
 	"one.rscript",
 	"expr-list.rscript",
 	"count_files.rscript",
 	"items.rscript",
 	"dir.rscript",
+	"use_rand.rscript",
 ];
 
 /// Creates the specified file along with the directory to it if it doesn't exist.

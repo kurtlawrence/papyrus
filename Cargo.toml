@@ -23,3 +23,5 @@ syn = { version = "0.15", features=["full"] }
 simplelog = "0.5"
 colored = "1.6"
 proc-macro2 = { version = "0.4", features = ["nightly"] }
+term_cursor = "0.2"
+term_size = "0.3"

@@ -1,3 +1,4 @@
+use super::*;
 use linefeed::terminal::DefaultTerminal;
 use linefeed::{Interface, ReadResult};
 use syn::Expr;
@@ -40,6 +41,8 @@ pub struct Input {
 	pub items: Vec<String>,
 	/// Inner statements and declarations.
 	pub stmts: Vec<Statement>,
+	/// The referenced crates.
+	pub crates: Vec<CrateType>,
 }
 
 /// Represents an inner statement.
@@ -113,5 +116,9 @@ impl InputReader {
 		};
 
 		res
+	}
+
+	pub fn erase_line(&self) {
+		self.interface.set_cursor(0).expect("failed to set cursor")
 	}
 }

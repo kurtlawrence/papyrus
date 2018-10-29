@@ -1,9 +1,12 @@
-use super::compile;
+use super::compile::*;
 use super::file::SourceFile;
 use super::input::{self, Input, InputReader, InputResult};
 use super::*;
 use colored::*;
+use std::io::{self, BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
+use term_cursor;
+use term_size;
 
 mod command;
 
@@ -23,7 +26,9 @@ pub struct Repl {
 	pub items: Vec<Vec<String>>,
 	/// Blocks of statements applied in order.
 	pub statements: Vec<Vec<String>>,
-	/// Flag whether to keep looping,
+	/// Crates to referenced.
+	pub crates: Vec<CrateType>,
+	/// Flag whether to keep looping.
 	exit_loop: bool,
 	/// App and prompt text.
 	pub name: &'static str,
@@ -37,18 +42,13 @@ pub struct Repl {
 struct Additional {
 	items: Option<Vec<String>>,
 	stmts: Option<AdditionalStatements>,
+	crates: Vec<CrateType>,
 }
 
 #[derive(Clone)]
 struct AdditionalStatements {
 	stmts: Vec<String>,
 	print_stmt: String,
-}
-
-struct EvalOut {
-	captured_out: String,
-	/// The `println!` out of the evaluated expression. ie Value of out#.
-	eval: String,
 }
 
 impl Repl {
@@ -58,6 +58,7 @@ impl Repl {
 			commands: Vec::new(),
 			items: Vec::new(),
 			statements: Vec::new(),
+			crates: Vec::new(),
 			exit_loop: false,
 			name: "papyrus",
 			prompt_colour: Color::Cyan,
@@ -133,7 +134,7 @@ impl Repl {
 	/// # Panics
 	/// - Failure to initialise `InputReader`.
 	pub fn run(mut self) {
-		let mut input = InputReader::new(self.name).expect("failed to start input reader");
+		let mut input_rdr = InputReader::new(self.name).expect("failed to start input reader");
 		let mut more = false;
 		self.exit_loop = false;
 		while !self.exit_loop {
@@ -142,7 +143,7 @@ impl Repl {
 			} else {
 				format!("{}=> ", self.name.color(self.prompt_colour))
 			};
-			let res = input.read_input(&prompt);
+			let res = input_rdr.read_input(&prompt);
 
 			match res {
 				InputResult::Command(name, args) => {
@@ -177,10 +178,19 @@ impl Repl {
 		let src = self.build_source(additionals.clone());
 		match self.eval(&compile_dir(), src) {
 			Ok(s) => {
-				//Successful compile means we can add the new items to every program
+				//Successful compile/runtime means we can add the new items to every program
+				// crates
+				additionals
+					.crates
+					.into_iter()
+					.for_each(|c| self.crates.push(c));
+
+				// items
 				if let Some(items) = additionals.items {
 					self.items.push(items);
 				}
+
+				// statements
 				let mut yes = false;
 				if let Some(stmts) = additionals.stmts {
 					self.statements.push(stmts.stmts);
@@ -188,18 +198,18 @@ impl Repl {
 				}
 				if yes {
 					let out_stmt = format!("[out{}]", self.statements.len() - 1);
-					if !s.captured_out.is_empty() {
-						println!("{}", s.captured_out);
-					}
-					print!(
+					println!(
 						"{} {}: {}",
 						prompt.color(self.prompt_colour),
 						out_stmt.color(self.out_colour),
-						s.eval
+						s
 					);
 				}
 			}
-			Err(s) => print!("{}", s),
+			Err(s) => {
+				print!("{}", s);
+				io::stdout().flush().expect("flushing stdout failed");
+			}
 		}
 	}
 
@@ -218,7 +228,12 @@ impl Repl {
 			.map(|x| x.to_owned())
 			.collect::<Vec<_>>()
 			.join("\n");
-
+		let crates = self
+			.crates
+			.iter()
+			.chain(additional.crates.iter())
+			.map(|x| x.clone())
+			.collect();
 		if let Some(i) = additional.items {
 			items.push_str("\n");
 			items.push_str(&i.join("\n"));
@@ -230,53 +245,73 @@ impl Repl {
 			statements.push_str(&stmts.print_stmt);
 		}
 
-		let code = format!(
-			r#"pub fn main() {{
-    let _ = std::panic::catch_unwind(_papyrus_inner);
-}}
-
-fn _papyrus_inner() {{
-	{stmts}
-}}
-
-{items}
-"#,
-			stmts = statements,
-			items = items
-		);
-
 		SourceFile {
-			src: code,
+			src: code(&statements, &items),
 			file_name: String::from("mem-code"),
 			file_type: SourceFileType::Rs,
-			crates: Vec::new(),
+			crates: crates,
 		}
 	}
 
+	/// Returns the stderr if unsuccessful compilation or runtime, or the evaluation print value.
 	fn eval<P: AsRef<Path>>(
 		&mut self,
 		compile_dir: &P,
 		source: SourceFile,
-	) -> Result<EvalOut, String> {
-		match compile::compile_and_run(&source, compile_dir, &::std::env::current_dir().unwrap()) {
-			Ok(output) => {
-				if output.status.success() {
-					let stdout = String::from_utf8_lossy(&output.stdout);
-					// parse to get the out value
-					let mut split = stdout.split(PAPYRUS_SPLIT_PATTERN);
-					Ok(EvalOut {
-						captured_out: split
-							.next()
-							.expect("failed splitting string")
-							.trim()
-							.to_string(),
-						eval: split.next().unwrap_or("").to_string(),
-					})
+	) -> Result<String, String> {
+		let mut c = Exe::compile(&source, compile_dir).unwrap();
+
+		let compilation_stderr = {
+			// output stderr stream line by line, erasing each line as you go.
+			let rdr = BufReader::new(c.stderr());
+			let mut s = String::new();
+			for line in rdr.lines() {
+				let line = line.unwrap();
+				overwrite_current_console_line(&line);
+				s.push_str(&line);
+				s.push('\n');
+			}
+			overwrite_current_console_line("");
+			s
+		};
+
+		match c.wait() {
+			Ok(exe) => {
+				let mut c = exe.run(&::std::env::current_dir().unwrap());
+				// print out the stdout as each line comes
+				// split out on the split pattern, and do not print that section!
+				let print = {
+					let mut rdr = BufReader::new(c.stdout());
+					let mut s = String::new();
+					for line in rdr.lines() {
+						let line = line.unwrap();
+						let mut split = line.split(PAPYRUS_SPLIT_PATTERN);
+						if let Some(first) = split.next() {
+							if !first.is_empty() {
+								println!("{}", first);
+							}
+						}
+						if let Some(second) = split.next() {
+							s.push_str(second);
+						}
+					}
+					s
+				};
+
+				let stderr = {
+					let mut s = String::new();
+					let mut rdr = BufReader::new(c.stderr());
+					rdr.read_to_string(&mut s).unwrap();
+					s
+				};
+
+				if c.wait().success() {
+					Ok(print)
 				} else {
-					Err(String::from_utf8_lossy(&output.stderr).to_string())
+					Err(stderr)
 				}
 			}
-			Err(e) => Err(format!("{}", e)),
+			Err(_) => Err(compilation_stderr),
 		}
 	}
 }
@@ -285,7 +320,11 @@ fn build_additionals(input: Input, statement_num: usize) -> Additional {
 	let mut additional_items = None;
 	let mut additional_statements = None;
 	let mut print_stmt = String::new();
-	let Input { items, mut stmts } = input;
+	let Input {
+		items,
+		mut stmts,
+		crates,
+	} = input;
 
 	if items.len() > 0 {
 		additional_items = Some(items);
@@ -319,17 +358,28 @@ fn build_additionals(input: Input, statement_num: usize) -> Additional {
 	Additional {
 		items: additional_items,
 		stmts: additional_statements,
+		crates: crates,
 	}
 }
 
 fn load_and_parse<P: AsRef<Path>>(file_path: &P) -> InputResult {
 	match SourceFile::load(file_path) {
 		Ok(src) => {
-			let r = input::parse_program(&src.src);
+			// add crates back in....
+			let src = format!(
+				"{}\n{}",
+				src.crates.into_iter().fold(String::new(), |mut acc, x| {
+					acc.push_str(&x.src_line);
+					acc.push('\n');
+					acc
+				}),
+				src.src
+			);
+			let r = input::parse_program(&src);
 			if r == InputResult::More {
 				// there is a trailing a semi colon, parse with an empty fn
 				debug!("parsing again as there was no returning expression");
-				input::parse_program(&format!("{}\n()", src.src))
+				input::parse_program(&format!("{}\n()", src))
 			} else {
 				r
 			}
@@ -342,6 +392,42 @@ fn compile_dir() -> PathBuf {
 	let dir = dirs::home_dir().unwrap_or(PathBuf::new());
 	let dir = PathBuf::from(format!("{}/.papyrus", dir.to_string_lossy()));
 	dir
+}
+
+fn overwrite_current_console_line(line: &str) {
+	let (col, row) = term_cursor::get_pos().expect("getting cursor position failed");
+	term_cursor::set_pos(0, row).expect("setting cursor position failed");
+	for _ in 0..col {
+		print!(" ");
+	}
+	term_cursor::set_pos(0, row).expect("setting cursor position failed");
+	print!("{}", line);
+	std::io::stdout().flush().expect("flushing stdout failed");
+}
+
+fn overwrite_prev_console_line(line: &str) {
+	let (w, _) = term_size::dimensions().unwrap_or((100, 80));
+
+	let (col, row) = term_cursor::get_pos().expect("getting cursor position failed");
+	term_cursor::set_pos(0, row - 1).expect("setting cursor position failed");
+	for _ in 0..w {
+		print!(" ");
+	}
+	term_cursor::set_pos(0, row - 1).expect("setting cursor position failed");
+	println!("{}", line);
+}
+
+fn code(statements: &str, items: &str) -> String {
+	format!(
+		r#"fn main() {{
+    {stmts}
+}}
+
+{items}
+"#,
+		stmts = statements,
+		items = items
+	)
 }
 
 #[cfg(test)]
