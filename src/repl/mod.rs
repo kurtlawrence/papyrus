@@ -1,8 +1,9 @@
-use super::file::Source;
+use super::compile;
+use super::file::SourceFile;
 use super::input::{self, Input, InputReader, InputResult};
 use super::*;
 use colored::*;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 mod command;
 
@@ -202,7 +203,7 @@ impl Repl {
 		}
 	}
 
-	fn build_source(&mut self, additional: Additional) -> Source {
+	fn build_source(&mut self, additional: Additional) -> SourceFile {
 		let mut items = self
 			.items
 			.iter()
@@ -244,7 +245,7 @@ fn _papyrus_inner() {{
 			items = items
 		);
 
-		Source {
+		SourceFile {
 			src: code,
 			file_name: String::from("mem-code"),
 			file_type: SourceFileType::Rs,
@@ -252,9 +253,12 @@ fn _papyrus_inner() {{
 		}
 	}
 
-	fn eval<P: AsRef<Path>>(&mut self, compile_dir: &P, source: Source) -> Result<EvalOut, String> {
-		let s = Script::build_compile_dir(&source, compile_dir).unwrap();
-		match s.run(&::std::env::current_dir().unwrap()) {
+	fn eval<P: AsRef<Path>>(
+		&mut self,
+		compile_dir: &P,
+		source: SourceFile,
+	) -> Result<EvalOut, String> {
+		match compile::compile_and_run(&source, compile_dir, &::std::env::current_dir().unwrap()) {
 			Ok(output) => {
 				if output.status.success() {
 					let stdout = String::from_utf8_lossy(&output.stdout);
@@ -319,7 +323,7 @@ fn build_additionals(input: Input, statement_num: usize) -> Additional {
 }
 
 fn load_and_parse<P: AsRef<Path>>(file_path: &P) -> InputResult {
-	match Source::load(file_path) {
+	match SourceFile::load(file_path) {
 		Ok(src) => {
 			let r = input::parse_program(&src.src);
 			if r == InputResult::More {
@@ -336,7 +340,7 @@ fn load_and_parse<P: AsRef<Path>>(file_path: &P) -> InputResult {
 
 fn compile_dir() -> PathBuf {
 	let dir = dirs::home_dir().unwrap_or(PathBuf::new());
-	let dir = path::PathBuf::from(format!("{}/.papyrus", dir.to_string_lossy()));
+	let dir = PathBuf::from(format!("{}/.papyrus", dir.to_string_lossy()));
 	dir
 }
 
