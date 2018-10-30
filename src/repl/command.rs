@@ -43,14 +43,14 @@ impl Command {
 	}
 }
 
-impl Clone for Command{
+impl Clone for Command {
 	fn clone(&self) -> Self {
 		Command {
-	 name: self.name,
-	 arg_type: self.arg_type.clone(),
-	 help: self.help,
-	 action: self.action,
-	}
+			name: self.name,
+			arg_type: self.arg_type.clone(),
+			help: self.help,
+			action: self.action,
+		}
 	}
 }
 
@@ -93,8 +93,8 @@ impl Commands for Vec<Command> {
 
 	fn find_command(&self, command: &str) -> Result<Command, String> {
 		match self.iter().find(|c| c.name == command) {
-				None => Err(format!("unrecognized command: {}", command)),
-				Some(cmd) => Ok(cmd.clone()),
-			}
+			None => Err(format!("unrecognized command: {}", command)),
+			Some(cmd) => Ok(cmd.clone()),
+		}
 	}
 }

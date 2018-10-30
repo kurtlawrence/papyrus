@@ -9,7 +9,8 @@ use term_cursor;
 
 mod command;
 
-pub use self::command::{CmdArgs, Command, Commands};
+use self::command::Commands;
+pub use self::command::{CmdArgs, Command};
 
 /// A REPL instance.
 pub struct Repl {
