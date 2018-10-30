@@ -381,14 +381,18 @@ fn compile_dir() -> PathBuf {
 }
 
 fn overwrite_current_console_line(line: &str) {
-	let (col, row) = term_cursor::get_pos().expect("getting cursor position failed");
-	term_cursor::set_pos(0, row).expect("setting cursor position failed");
-	for _ in 0..col {
-		print!(" ");
+	if cfg!(test) {
+		println!("{}", line);
+	} else {
+		let (col, row) = term_cursor::get_pos().expect("getting cursor position failed");
+		term_cursor::set_pos(0, row).expect("setting cursor position failed");
+		for _ in 0..col {
+			print!(" ");
+		}
+		term_cursor::set_pos(0, row).expect("setting cursor position failed");
+		print!("{}", line);
+		std::io::stdout().flush().expect("flushing stdout failed");
 	}
-	term_cursor::set_pos(0, row).expect("setting cursor position failed");
-	print!("{}", line);
-	std::io::stdout().flush().expect("flushing stdout failed");
 }
 
 fn code(statements: &str, items: &str) -> String {
