@@ -7,7 +7,6 @@ mod parse;
 #[cfg(test)]
 mod tests;
 
-pub use self::parse::is_command;
 pub use self::parse::parse_command;
 pub use self::parse::parse_program;
 
@@ -117,8 +116,8 @@ impl InputReader {
 
 		res
 	}
+}
 
-	pub fn erase_line(&self) {
-		self.interface.set_cursor(0).expect("failed to set cursor")
-	}
+fn is_command(line: &str) -> bool {
+	line.starts_with(".") && !line.starts_with("..")
 }

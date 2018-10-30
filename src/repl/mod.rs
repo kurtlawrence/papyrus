@@ -6,7 +6,6 @@ use colored::*;
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use term_cursor;
-use term_size;
 
 mod command;
 
@@ -118,17 +117,6 @@ impl Repl {
 		repl
 	}
 
-	/// A new REPL instance with the given prompt.
-	///
-	/// # Panics
-	/// - `prompt` is empty.
-	pub fn with_prompt(prompt: &'static str) -> Self {
-		assert!(!prompt.is_empty());
-		let mut r = Repl::new();
-		r.name = prompt;
-		r
-	}
-
 	/// Run the REPL interactively.
 	///
 	/// # Panics
@@ -176,7 +164,7 @@ impl Repl {
 	fn handle_input(&mut self, input: Input, prompt: &str) {
 		let additionals = build_additionals(input, self.statements.len());
 		let src = self.build_source(additionals.clone());
-		match self.eval(&compile_dir(), src) {
+		match eval(&compile_dir(), src) {
 			Ok(s) => {
 				//Successful compile/runtime means we can add the new items to every program
 				// crates
@@ -252,67 +240,65 @@ impl Repl {
 			crates: crates,
 		}
 	}
+}
 
-	/// Returns the stderr if unsuccessful compilation or runtime, or the evaluation print value.
-	fn eval<P: AsRef<Path>>(
-		&mut self,
-		compile_dir: &P,
-		source: SourceFile,
-	) -> Result<String, String> {
-		let mut c = Exe::compile(&source, compile_dir).unwrap();
+/// Evaluates the source file by compiling and running the given source file.
+/// Returns the stderr if unsuccessful compilation or runtime, or the evaluation print value.
+/// Stderr is piped to the current stdout for compilation, with each line overwriting itself.
+fn eval<P: AsRef<Path>>(compile_dir: &P, source: SourceFile) -> Result<String, String> {
+	let mut c = Exe::compile(&source, compile_dir).unwrap();
 
-		let compilation_stderr = {
-			// output stderr stream line by line, erasing each line as you go.
-			let rdr = BufReader::new(c.stderr());
-			let mut s = String::new();
-			for line in rdr.lines() {
-				let line = line.unwrap();
-				overwrite_current_console_line(&line);
-				s.push_str(&line);
-				s.push('\n');
-			}
-			overwrite_current_console_line("");
-			s
-		};
+	let compilation_stderr = {
+		// output stderr stream line by line, erasing each line as you go.
+		let rdr = BufReader::new(c.stderr());
+		let mut s = String::new();
+		for line in rdr.lines() {
+			let line = line.unwrap();
+			overwrite_current_console_line(&line);
+			s.push_str(&line);
+			s.push('\n');
+		}
+		overwrite_current_console_line("");
+		s
+	};
 
-		match c.wait() {
-			Ok(exe) => {
-				let mut c = exe.run(&::std::env::current_dir().unwrap());
-				// print out the stdout as each line comes
-				// split out on the split pattern, and do not print that section!
-				let print = {
-					let mut rdr = BufReader::new(c.stdout());
-					let mut s = String::new();
-					for line in rdr.lines() {
-						let line = line.unwrap();
-						let mut split = line.split(PAPYRUS_SPLIT_PATTERN);
-						if let Some(first) = split.next() {
-							if !first.is_empty() {
-								println!("{}", first);
-							}
-						}
-						if let Some(second) = split.next() {
-							s.push_str(second);
+	match c.wait() {
+		Ok(exe) => {
+			let mut c = exe.run(&::std::env::current_dir().unwrap());
+			// print out the stdout as each line comes
+			// split out on the split pattern, and do not print that section!
+			let print = {
+				let mut rdr = BufReader::new(c.stdout());
+				let mut s = String::new();
+				for line in rdr.lines() {
+					let line = line.unwrap();
+					let mut split = line.split(PAPYRUS_SPLIT_PATTERN);
+					if let Some(first) = split.next() {
+						if !first.is_empty() {
+							println!("{}", first);
 						}
 					}
-					s
-				};
-
-				let stderr = {
-					let mut s = String::new();
-					let mut rdr = BufReader::new(c.stderr());
-					rdr.read_to_string(&mut s).unwrap();
-					s
-				};
-
-				if c.wait().success() {
-					Ok(print)
-				} else {
-					Err(stderr)
+					if let Some(second) = split.next() {
+						s.push_str(second);
+					}
 				}
+				s
+			};
+
+			let stderr = {
+				let mut s = String::new();
+				let mut rdr = BufReader::new(c.stderr());
+				rdr.read_to_string(&mut s).unwrap();
+				s
+			};
+
+			if c.wait().success() {
+				Ok(print)
+			} else {
+				Err(stderr)
 			}
-			Err(_) => Err(compilation_stderr),
 		}
+		Err(_) => Err(compilation_stderr),
 	}
 }
 
@@ -405,18 +391,6 @@ fn overwrite_current_console_line(line: &str) {
 	std::io::stdout().flush().expect("flushing stdout failed");
 }
 
-fn overwrite_prev_console_line(line: &str) {
-	let (w, _) = term_size::dimensions().unwrap_or((100, 80));
-
-	let (col, row) = term_cursor::get_pos().expect("getting cursor position failed");
-	term_cursor::set_pos(0, row - 1).expect("setting cursor position failed");
-	for _ in 0..w {
-		print!(" ");
-	}
-	term_cursor::set_pos(0, row - 1).expect("setting cursor position failed");
-	println!("{}", line);
-}
-
 fn code(statements: &str, items: &str) -> String {
 	format!(
 		r#"fn main() {{
@@ -445,7 +419,7 @@ mod tests {
 				InputResult::Program(input) => {
 					let additionals = build_additionals(input, repl.statements.len());
 					let src = repl.build_source(additionals);
-					let eval = repl.eval(&"test", src);
+					let eval = eval(&"test", src);
 					let b = eval.is_ok();
 					if let Err(e) = eval {
 						println!("{}", e);
@@ -475,7 +449,7 @@ mod tests {
 				InputResult::Program(input) => {
 					let additionals = build_additionals(input, repl.statements.len());
 					let src = repl.build_source(additionals);
-					let eval = repl.eval(&"test", src);
+					let eval = eval(&"test", src);
 					let b = eval.is_ok();
 					if let Err(e) = eval {
 						println!("{}", e);

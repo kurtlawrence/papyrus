@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li><a href="installation.html"><strong aria-hidden="true">1.</strong> Installation</a></li><li><a href="repl.html"><strong aria-hidden="true">2.</strong> REPL Usage</a></li><li><a href="commands.html"><strong aria-hidden="true">3.</strong> Commands</a></li><li><a href="cli-rc.html"><strong aria-hidden="true">4.</strong> Command Line and Context Menu</a></li><li><a href="file-interaction.html"><strong aria-hidden="true">5.</strong> File Interaction</a></li><li><a href="vision.html"><strong aria-hidden="true">6.</strong> Vision</a></li></ol>
+            <ol class="chapter"><li class="affix"><a href="changelog.html">changelog.</a></li><li><a href="installation.html"><strong aria-hidden="true">1.</strong> Installation</a></li><li><a href="repl.html"><strong aria-hidden="true">2.</strong> REPL Usage</a></li><li><a href="commands.html"><strong aria-hidden="true">3.</strong> Commands</a></li><li><a href="cli-rc.html"><strong aria-hidden="true">4.</strong> Command Line and Context Menu</a></li><li><a href="file-interaction.html"><strong aria-hidden="true">5.</strong> File Interaction</a></li><li><a href="vision.html"><strong aria-hidden="true">6.</strong> Vision</a></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -136,7 +136,16 @@
 
                 <div id="content" class="content">
                     <main>
-                        <a class="header" href="#installation" id="installation"><h1>Installation</h1></a>
+                        <a class="header" href="#changelog" id="changelog"><h1>Changelog</h1></a>
+<a class="header" href="#a040" id="a040"><h2>0.4.0</h2></a>
+<hr />
+<ul>
+<li>First pass refactoring towards library stablisation.</li>
+<li>Added <code>ExternCrate</code> support. You can now use <code>extern crate crate_name as alias;</code>. This will work in most cases, please raise a PR if it doesn't.</li>
+<li>Compilation status is redirected to the console.</li>
+<li>Panics now get shown, and statements won't be added if code panics.</li>
+</ul>
+<a class="header" href="#installation" id="installation"><h1>Installation</h1></a>
 <blockquote>
 <p>Back to <a href="./SUMMARY.html">SUMMARY</a></p>
 </blockquote>
