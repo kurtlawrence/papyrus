@@ -17,16 +17,26 @@ fn test_items() {
 		parse_program("fn b() {}"),
 		InputResult::Program(Input {
 			items: vec!["fn b() {}".to_string()],
-			stmts: vec![]
+			stmts: vec![],
+			crates: vec![]
 		})
 	); // Item::Fn
 	assert_eq!(
 		parse_program("#[derive(Debug)]\nstruct A {\n\tu: u32\n}"),
 		InputResult::Program(Input {
 			items: vec!["#[derive(Debug)]\nstruct A {\n\tu: u32\n}".to_string()],
-			stmts: vec![]
+			stmts: vec![],
+			crates: vec![]
 		})
 	); // Item::Struct
+	assert_eq!(
+		parse_program("extern crate rand as r;"),
+		InputResult::Program(Input {
+			items: vec![],
+			stmts: vec![],
+			crates: vec![CrateType::parse_str(&"extern crate rand as r;").unwrap()]
+		})
+	); // Item::ExternCrate
 }
 
 #[test]
@@ -39,7 +49,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "2+2".to_string(),
 				semi: false
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 	assert_eq!(
@@ -49,7 +60,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "2+2".to_string(),
 				semi: true
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 	// Expr::Macro
@@ -60,7 +72,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "println!(\"hello\")".to_string(),
 				semi: false
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 	assert_eq!(
@@ -70,7 +83,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "println!(\"hello\")".to_string(),
 				semi: true
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 	// Expr::Tuple
@@ -81,7 +95,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "()".to_string(),
 				semi: false
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 	assert_eq!(
@@ -91,7 +106,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "()".to_string(),
 				semi: true
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 	// Expr::Call
@@ -102,7 +118,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "f()".to_string(),
 				semi: false
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 	assert_eq!(
@@ -112,7 +129,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "f()".to_string(),
 				semi: true
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 	// LET
@@ -123,7 +141,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "let a = 1".to_string(),
 				semi: true
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 	// Expr::ForLoop
@@ -134,7 +153,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "for i in 0..3 {}".to_string(),
 				semi: false
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 	// Expr::Path
@@ -145,7 +165,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "b".to_string(),
 				semi: false
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 	assert_eq!(
@@ -155,7 +176,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "b".to_string(),
 				semi: true
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 	// Expr::MethodCall
@@ -166,7 +188,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "std::env::current_dir()".to_string(),
 				semi: false
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 	assert_eq!(
@@ -176,7 +199,8 @@ fn test_exprs() {
 			stmts: vec![Statement {
 				expr: "std::env::current_dir()".to_string(),
 				semi: true
-			}]
+			}],
+			crates: vec![]
 		})
 	);
 }

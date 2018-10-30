@@ -1,6 +1,6 @@
 # Summary
 
-Documentation for use of `papyrus`.
+Documentation for use of `papyrus`. See the [changelog.](./changelog.md)
 
 - [Installation](./installation.md)
 - [REPL Usage](./repl.md)

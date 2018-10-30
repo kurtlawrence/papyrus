@@ -11,6 +11,12 @@
 //! 
 //! `papyrus` depends on `proc-macro2` and `syn` which contains features that are only available on a nightly compiler. Further to this, the features are underneath a config flag, so compiling requires the `RUSTFLAGS` environment variable to include `--cfg procmacro2_semver_exempt`.
 //! 
+//! Switch to a nightly compiler.
+//! 
+//! ```sh
+//! rustup default nightly
+//! ```
+//! 
 //! Linux, Mac
 //! 
 //! ```bash
@@ -21,7 +27,7 @@
 //! 
 //! ```bash
 //! $env:RUSTFLAGS="--cfg procmacro2_semver_exempt"
-//! cargo install papyrus;
+//! cargo install papyrus
 //! ```
 //! 
 //! ## REPL
@@ -101,11 +107,11 @@ use argparse::{ArgumentParser, Store};
 use papyrus::*;
 
 fn main() {
-	if cfg!(debug) {
+	if cfg!(build = "debug") {
 		simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
 			.unwrap();
 	}
-	if cfg!(target_os = "windows") {
+	if cfg!(target_os = "windows") && cfg!(build = "release") {
 		// disable colored text output on Windows as the Windows terminals do not support it yet
 		colored::control::set_override(false);
 	}

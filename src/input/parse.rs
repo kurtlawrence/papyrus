@@ -2,10 +2,6 @@ use super::*;
 use proc_macro2::Span;
 use syn::{self, export::ToTokens, spanned::Spanned, Block, Item, Stmt};
 
-pub fn is_command(line: &str) -> bool {
-	line.starts_with(".") && !line.starts_with("..")
-}
-
 /// Parses a line of input as a command.
 /// Returns either a `Command` value or an `InputError` value.
 pub fn parse_command(line: &str) -> InputResult {
@@ -27,7 +23,7 @@ pub fn parse_command(line: &str) -> InputResult {
 /// Parses a line of input as a program.
 pub fn parse_program(code: &str) -> InputResult {
 	debug!("parse program: {}", code);
-	let code = format!("{{ {} }}", code);
+	let code = format!("{{ {} }}", code); // wrap in a block so the parser can parse through it without need to guess the type!
 
 	match syn::parse_str::<Block>(&code) {
 		Ok(block) => {
@@ -36,64 +32,45 @@ pub fn parse_program(code: &str) -> InputResult {
 			debug!("Block Span: {:?}", block_span);
 			let mut stmts = Vec::new();
 			let mut items = Vec::new();
+			let mut crates = Vec::new();
 			for stmt in block.stmts {
 				match stmt {
 					Stmt::Local(local) => {
-						let span = MySpan::derive_from_span(local.span());
-						debug!("Stmt Span: {:?}", span);
-
-						let s = code[(span.lo - block_span.lo) as usize
-							..(span.hi - block_span.lo - 1) as usize]
-							.to_string(); // let span includes the trailing semi
-						debug!("Code slice: {}", s);
+						let mut s = extract_span_str(&code, local.span(), block_span.lo);
+						s.pop(); // local is handled slightly differently, the trailing semi is dropped.
 						stmts.push(Statement {
 							expr: s,
 							semi: true,
-						});
+						})
 					}
 					Stmt::Item(item) => match parse_item(item) {
-						Ok(span) => {
-							let span = MySpan::derive_from_span(span);
-							debug!("Stmt Span: {:?}", span);
-
-							let s = code[(span.lo - block_span.lo) as usize
-								..(span.hi - block_span.lo) as usize]
-								.to_string();
-							debug!("Code slice: {}", s);
-							items.push(s);
+						ParseItemResult::ExternCrate(span) => {
+							match CrateType::parse_str(&extract_span_str(
+								&code,
+								span,
+								block_span.lo,
+							)) {
+								Ok(c) => crates.push(c),
+								Err(e) => error!("crate parsing failed: {}", e),
+							}
 						}
-						Err(s) => return InputResult::InputError(s),
+						ParseItemResult::Span(span) => {
+							items.push(extract_span_str(&code, span, block_span.lo))
+						}
+						ParseItemResult::Error(s) => return InputResult::InputError(s),
 					},
 					Stmt::Expr(expr) => match parse_expr(expr) {
-						Ok(span) => {
-							let span = MySpan::derive_from_span(span);
-							debug!("Stmt Span: {:?}", span);
-
-							let s = code[(span.lo - block_span.lo) as usize
-								..(span.hi - block_span.lo) as usize]
-								.to_string();
-							debug!("Code slice: {}", s);
-							stmts.push(Statement {
-								expr: s,
-								semi: false,
-							});
-						}
+						Ok(span) => stmts.push(Statement {
+							expr: extract_span_str(&code, span, block_span.lo),
+							semi: false,
+						}),
 						Err(s) => return InputResult::InputError(s),
 					},
 					Stmt::Semi(expr, _) => match parse_expr(expr) {
-						Ok(span) => {
-							let span = MySpan::derive_from_span(span);
-							debug!("Stmt Span: {:?}", span);
-
-							let s = code[(span.lo - block_span.lo) as usize
-								..(span.hi - block_span.lo) as usize]
-								.to_string();
-							debug!("Code slice: {}", s);
-							stmts.push(Statement {
-								expr: s,
-								semi: true,
-							});
-						}
+						Ok(span) => stmts.push(Statement {
+							expr: extract_span_str(&code, span, block_span.lo),
+							semi: true,
+						}),
 						Err(s) => return InputResult::InputError(s),
 					},
 				}
@@ -101,6 +78,7 @@ pub fn parse_program(code: &str) -> InputResult {
 			InputResult::Program(Input {
 				items: items,
 				stmts: stmts,
+				crates: crates,
 			})
 		}
 		Err(e) => {
@@ -113,77 +91,93 @@ pub fn parse_program(code: &str) -> InputResult {
 	}
 }
 
-fn parse_item(item: Item) -> Result<Span, String> {
+fn extract_span_str(code: &str, span: Span, start_pos: u32) -> String {
+	let span = MySpan::derive_from_span(span);
+	debug!("Stmt Span: {:?}", span);
+	let s = code[(span.lo - start_pos) as usize..(span.hi - start_pos) as usize].to_string();
+	debug!("Code slice: {}", s);
+	s
+}
+
+enum ParseItemResult {
+	Span(Span),
+	ExternCrate(Span),
+	Error(String),
+}
+
+fn parse_item(item: Item) -> ParseItemResult {
 	match item {
-		Item::ExternCrate(_) => {
-			error!("haven't handled item variant ExternCrate");
-			Err("haven't handled item variant ExternCrate. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
-		}
 		Item::Use(_) => {
 			error!("haven't handled item variant Use");
-			Err("haven't handled item variant Use. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Use. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Static(_) => {
 			error!("haven't handled item variant Static");
-			Err("haven't handled item variant Static. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Static. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Const(_) => {
 			error!("haven't handled item variant Const");
-			Err("haven't handled item variant Const. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Const. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Mod(_) => {
 			error!("haven't handled item variant Mod");
-			Err("haven't handled item variant Mod. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Mod. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::ForeignMod(_) => {
 			error!("haven't handled item variant ForeignMod");
-			Err("haven't handled item variant ForeignMod. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant ForeignMod. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Type(_) => {
 			error!("haven't handled item variant Type");
-			Err("haven't handled item variant Type. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Type. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Existential(_) => {
 			error!("haven't handled item variant Existential");
-			Err("haven't handled item variant Existential. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Existential. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Enum(_) => {
 			error!("haven't handled item variant Enum");
-			Err("haven't handled item variant Enum. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Enum. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Union(_) => {
 			error!("haven't handled item variant Union");
-			Err("haven't handled item variant Union. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Union. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Trait(_) => {
 			error!("haven't handled item variant Trait");
-			Err("haven't handled item variant Trait. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Trait. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::TraitAlias(_) => {
 			error!("haven't handled item variant TraitAlias");
-			Err("haven't handled item variant TraitAlias. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant TraitAlias. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Impl(_) => {
 			error!("haven't handled item variant Impl");
-			Err("haven't handled item variant Impl. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Impl. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Macro(_) => {
 			error!("haven't handled item variant Macro");
-			Err("haven't handled item variant Macro. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Macro. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Macro2(_) => {
 			error!("haven't handled item variant Macro2");
-			Err("haven't handled item variant Macro2. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Macro2. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::Verbatim(_) => {
 			error!("haven't handled item variant Verbatim");
-			Err("haven't handled item variant Verbatim. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+			ParseItemResult::Error("haven't handled item variant Verbatim. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
+		}
+		Item::ExternCrate(_) => {
+			let span = item.span();
+			let s = format!("{}", item.into_token_stream());
+			debug!("Item parsed, its a crate: {}", s);
+			ParseItemResult::ExternCrate(span)
 		}
 		_ => {
 			let span = item.span();
 			let s = format!("{}", item.into_token_stream());
 			debug!("Item parsed: {}", s);
-			Ok(span)
+			ParseItemResult::Span(span)
 		}
 	}
 }

@@ -1,3 +1,4 @@
+use super::*;
 use linefeed::terminal::DefaultTerminal;
 use linefeed::{Interface, ReadResult};
 use syn::Expr;
@@ -6,7 +7,6 @@ mod parse;
 #[cfg(test)]
 mod tests;
 
-pub use self::parse::is_command;
 pub use self::parse::parse_command;
 pub use self::parse::parse_program;
 
@@ -40,6 +40,8 @@ pub struct Input {
 	pub items: Vec<String>,
 	/// Inner statements and declarations.
 	pub stmts: Vec<Statement>,
+	/// The referenced crates.
+	pub crates: Vec<CrateType>,
 }
 
 /// Represents an inner statement.
@@ -114,4 +116,8 @@ impl InputReader {
 
 		res
 	}
+}
+
+fn is_command(line: &str) -> bool {
+	line.starts_with(".") && !line.starts_with("..")
 }
