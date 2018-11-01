@@ -1,6 +1,6 @@
 [package]
 name = "papyrus"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["kurt <kurtlawrence92@gmail.com>"]
 description = "A rust repl and script runner"
 license = "MIT"
@@ -30,5 +30,5 @@ term_size = "0.3"
 criterion = "0.2"
 
 [[bench]]
-name = "compilation"
+name = "benches"
 harness = false

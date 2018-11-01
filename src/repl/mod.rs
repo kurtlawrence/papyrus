@@ -183,7 +183,7 @@ impl Repl {
 		match compile_dir().canonicalize() {
 			Ok(d) => {
 				let target_dir = format!("{}/target", d.to_string_lossy());
-				fs::remove_dir(target_dir).is_ok();
+				fs::remove_dir_all(target_dir).is_ok();
 			}
 			_ => (),
 		}
@@ -462,7 +462,7 @@ mod tests {
 				InputResult::Program(input) => {
 					let additionals = build_additionals(input, repl.statements.len());
 					let src = repl.build_source(additionals);
-					let eval = eval(&"test", src, false);
+					let eval = eval(&format!("test/{}", src_file.split(".").nth(0).unwrap()), src, false);
 					let b = eval.is_ok();
 					if let Err(e) = eval {
 						println!("{}", e);
@@ -492,7 +492,7 @@ mod tests {
 				InputResult::Program(input) => {
 					let additionals = build_additionals(input, repl.statements.len());
 					let src = repl.build_source(additionals);
-					let eval = eval(&"test", src, false);
+					let eval = eval(&format!("test/{}", src_file.split(".").nth(0).unwrap()), src, false);
 					let b = eval.is_ok();
 					if let Err(e) = eval {
 						println!("{}", e);
