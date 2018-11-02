@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.2
+
+---
+
+- Added in benchmarks.
+
 ## 0.4.1
 
 ---

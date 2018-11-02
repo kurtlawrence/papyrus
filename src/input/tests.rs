@@ -1,4 +1,5 @@
 use super::*;
+use test::Bencher;
 
 #[test]
 fn test_unclosed_delimiter() {
@@ -203,4 +204,10 @@ fn test_exprs() {
 			crates: vec![]
 		})
 	);
+}
+
+#[bench]
+fn bench_parse_program(b: &mut Bencher) {
+	let code = r#"fn a() { println!("Hello, world!"); } let a = 1; a + a"#;
+	b.iter(|| parse_program(&code))
 }

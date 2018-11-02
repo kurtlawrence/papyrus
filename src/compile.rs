@@ -210,7 +210,7 @@ fn main_contents(source: &SourceFile) -> String {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	const TEST_CONTENTS: &str = "fn main() { println!(\"Hello, world!\"); }";
+	use std::io::Read;
 
 	#[test]
 	fn test_build_compile_dir() {
@@ -289,4 +289,72 @@ mod tests {
 
 		fs::remove_dir_all(dir).unwrap();
 	}
+
+	#[test]
+	fn test_10_stmts_compile() {
+		let src_file = SourceFile {
+			src: String::from(STMTS_10),
+			file_type: SourceFileType::Rscript,
+			file_name: "bench-compile".to_string(),
+			crates: Vec::new(),
+		};
+		let mut p = Exe::compile(&src_file, "test/stmts-10").unwrap();
+		let err = {
+			let mut s = String::new();
+			p.stderr().read_to_string(&mut s).unwrap();
+			s
+		};
+		println!("{}", err);
+		p.wait().unwrap();
+	}
+
+	#[test]
+	fn test_20_stmts_compile() {
+		let src_file = SourceFile {
+			src: String::from(STMTS_20),
+			file_type: SourceFileType::Rscript,
+			file_name: "bench-compile".to_string(),
+			crates: Vec::new(),
+		};
+		let mut p = Exe::compile(&src_file, "test/stmts-20").unwrap();
+		let err = {
+			let mut s = String::new();
+			p.stderr().read_to_string(&mut s).unwrap();
+			s
+		};
+		println!("{}", err);
+		p.wait().unwrap();
+	}
+
+	const TEST_CONTENTS: &str = "fn main() { println!(\"Hello, world!\"); }";
+	const STMTS_10: &str = r#"let a = 1;
+let b = 2;
+let c = a * b;
+let c = a * c + 10;
+let a = a * b * c;
+let mut s = String::from("Hello");
+let a = a + b + c;
+let c = a - b;
+s.push_str(", world!");
+s;"#;
+	const STMTS_20: &str = r#"let a = 1;
+let b = 2;
+let c = a * b;
+let c = a * c + 10;
+let a = a * b * c;
+let mut s = String::from("Hello ");
+let a = a + b + c;
+let c = a - b;
+let d = a + b + c;
+let e = a + b + c  + d;
+let f = d - e;
+let a = a - d - e;
+let b = d - f;
+s.push_str(&a.to_string());
+s.push_str(&b.to_string());
+s.push_str(&c.to_string());
+s.push_str(&d.to_string());
+s.push_str(&e.to_string());
+s.push_str(&f.to_string());
+s;"#;
 }

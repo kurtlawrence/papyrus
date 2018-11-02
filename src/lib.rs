@@ -1,6 +1,6 @@
 //! # papyrus
 //! 
-//! [![Build Status](https://travis-ci.com/kurtlawrence/papyrus.svg?branch=master)](https://travis-ci.com/kurtlawrence/papyrus) [![Latest Version](https://img.shields.io/crates/v/papyrus.svg)](https://crates.io/crates/papyrus) [![Rust Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/papyrus)
+//! [![Build Status](https://travis-ci.com/kurtlawrence/papyrus.svg?branch=master)](https://travis-ci.com/kurtlawrence/papyrus) [![Latest Version](https://img.shields.io/crates/v/papyrus.svg)](https://crates.io/crates/papyrus) [![Rust Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/papyrus) [![codecov](https://codecov.io/gh/kurtlawrence/papyrus/branch/master/graph/badge.svg)](https://codecov.io/gh/kurtlawrence/papyrus)
 //! 
 //! ## A rust REPL and script running tool
 //! 
@@ -98,9 +98,13 @@
 //! ```
 //! 
 //! The `src/main.rs` will be populated with a main function encapsulating the code, and crate references placed above it. A similar `Cargo.toml` will be created as before.
+#![feature(test)]
 
 #[macro_use]
 extern crate log;
+
+#[cfg(test)]
+extern crate test;
 
 extern crate colored;
 extern crate dirs;
@@ -120,14 +124,15 @@ mod repl;
 use failure::ResultExt;
 use std::{fs, path};
 
+pub use self::compile::Exe;
 pub use self::contextmenu::{add_right_click_menu, remove_right_click_menu};
 pub use self::file::{CrateType, SourceFile, SourceFileType};
 pub use self::repl::Repl;
-pub use self::repl::{CmdArgs, Command, Commands};
+pub use self::repl::{CmdArgs, Command};
 
 const PAPYRUS_SPLIT_PATTERN: &'static str = "<!papyrus-split>";
 #[cfg(test)]
-const RS_FILES: [&'static str; 2] = ["src.rs", "pwr.rs"];
+const RS_FILES: [&'static str; 2] = ["with-crate.rs", "pwr.rs"];
 #[cfg(test)]
 const RSCRIPT_FILES: [&'static str; 7] = [
 	"expr.rscript",

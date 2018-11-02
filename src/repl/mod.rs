@@ -9,10 +9,13 @@ use term_cursor;
 
 mod command;
 
-pub use self::command::{CmdArgs, Command, Commands};
+use self::command::Commands;
+pub use self::command::{CmdArgs, Command};
 
 /// A REPL instance.
 pub struct Repl {
+	/// Flag whether to keep looping.
+	exit_loop: bool,
 	/// The REPL handled commands.
 	/// Can be extended.
 	/// ```ignore
@@ -27,8 +30,8 @@ pub struct Repl {
 	pub statements: Vec<Vec<String>>,
 	/// Crates to referenced.
 	pub crates: Vec<CrateType>,
-	/// Flag whether to keep looping.
-	exit_loop: bool,
+	/// Flag whether to print to stdout.
+	pub print: bool,
 	/// App and prompt text.
 	pub name: &'static str,
 	/// The colour of the prompt region. ie `papyrus`.
@@ -62,6 +65,7 @@ impl Repl {
 			name: "papyrus",
 			prompt_colour: Color::Cyan,
 			out_colour: Color::BrightGreen,
+			print: true,
 		};
 		// help
 		r.commands.push(Command::new(
@@ -94,7 +98,7 @@ impl Repl {
 			|repl, arg| match load_and_parse(&arg) {
 				InputResult::Program(input) => {
 					debug!("loaded file: {:?}", input);
-					repl.handle_input(input, repl.name);
+					repl.handle_input(input).is_ok(); // ignore result, will already be printed
 				}
 				InputResult::InputError(e) => println!("{}", e),
 				_ => println!("haven't handled file input"),
@@ -109,7 +113,7 @@ impl Repl {
 		match load_and_parse(&filename) {
 			InputResult::Program(input) => {
 				debug!("loaded file: {:?}", input);
-				repl.handle_input(input, repl.name);
+				repl.handle_input(input).is_ok(); // ignore result, will already be printed
 			}
 			InputResult::InputError(e) => println!("{}", e),
 			_ => println!("haven't handled file input"),
@@ -145,7 +149,7 @@ impl Repl {
 				InputResult::Program(input) => {
 					debug!("read program: {:?}", input);
 					more = false;
-					self.handle_input(input, self.name);
+					self.handle_input(input).is_ok(); // ignore result, will already be printed
 				}
 				InputResult::Empty => (),
 				InputResult::More => {
@@ -160,11 +164,36 @@ impl Repl {
 		}
 	}
 
+	/// Evaluate a string as a program, returning an error message if failed, or the printed value if successful.
+	/// Upon successful evaluation, the code will be added to the `Repl`.
+	/// Outputs will be printed to `stdout` much like when the repl is run interactively.
+	pub fn evaluate(&mut self, code: &str) -> Result<String, String> {
+		match input::parse_program(code) {
+			InputResult::Program(input) => self.handle_input(input),
+			InputResult::Command(_, _) => Err("program parsed as a command".to_string()),
+			InputResult::Empty => Err("empty code".to_string()),
+			InputResult::More => Err("program expecting more input".to_string()),
+			InputResult::Eof => Err("end-of-file received".to_string()),
+			InputResult::InputError(s) => Err(format!("input error occurred: {}", s)),
+		}
+	}
+
+	// TODO make this clean the repl as well.
+	pub fn clean(&self) {
+		match compile_dir().canonicalize() {
+			Ok(d) => {
+				let target_dir = format!("{}/target", d.to_string_lossy());
+				fs::remove_dir_all(target_dir).is_ok();
+			}
+			_ => (),
+		}
+	}
+
 	/// Runs a single program input.
-	fn handle_input(&mut self, input: Input, prompt: &str) {
+	fn handle_input(&mut self, input: Input) -> Result<String, String> {
 		let additionals = build_additionals(input, self.statements.len());
 		let src = self.build_source(additionals.clone());
-		match eval(&compile_dir(), src) {
+		match eval(&compile_dir(), src, self.print) {
 			Ok(s) => {
 				//Successful compile/runtime means we can add the new items to every program
 				// crates
@@ -184,19 +213,21 @@ impl Repl {
 					self.statements.push(stmts.stmts);
 					yes = true;
 				}
-				if yes {
+				if yes && self.print {
 					let out_stmt = format!("[out{}]", self.statements.len() - 1);
 					println!(
 						"{} {}: {}",
-						prompt.color(self.prompt_colour),
+						self.name.color(self.prompt_colour),
 						out_stmt.color(self.out_colour),
 						s
 					);
 				}
+				Ok(s)
 			}
 			Err(s) => {
 				print!("{}", s);
 				io::stdout().flush().expect("flushing stdout failed");
+				Err(s)
 			}
 		}
 	}
@@ -245,7 +276,11 @@ impl Repl {
 /// Evaluates the source file by compiling and running the given source file.
 /// Returns the stderr if unsuccessful compilation or runtime, or the evaluation print value.
 /// Stderr is piped to the current stdout for compilation, with each line overwriting itself.
-fn eval<P: AsRef<Path>>(compile_dir: &P, source: SourceFile) -> Result<String, String> {
+fn eval<P: AsRef<Path>>(
+	compile_dir: &P,
+	source: SourceFile,
+	print: bool,
+) -> Result<String, String> {
 	let mut c = Exe::compile(&source, compile_dir).unwrap();
 
 	let compilation_stderr = {
@@ -254,11 +289,15 @@ fn eval<P: AsRef<Path>>(compile_dir: &P, source: SourceFile) -> Result<String, S
 		let mut s = String::new();
 		for line in rdr.lines() {
 			let line = line.unwrap();
-			overwrite_current_console_line(&line);
+			if print {
+				overwrite_current_console_line(&line);
+			}
 			s.push_str(&line);
 			s.push('\n');
 		}
-		overwrite_current_console_line("");
+		if print {
+			overwrite_current_console_line("");
+		}
 		s
 	};
 
@@ -274,7 +313,7 @@ fn eval<P: AsRef<Path>>(compile_dir: &P, source: SourceFile) -> Result<String, S
 					let line = line.unwrap();
 					let mut split = line.split(PAPYRUS_SPLIT_PATTERN);
 					if let Some(first) = split.next() {
-						if !first.is_empty() {
+						if !first.is_empty() && print {
 							println!("{}", first);
 						}
 					}
@@ -423,7 +462,7 @@ mod tests {
 				InputResult::Program(input) => {
 					let additionals = build_additionals(input, repl.statements.len());
 					let src = repl.build_source(additionals);
-					let eval = eval(&"test", src);
+					let eval = eval(&format!("test/{}", src_file.split(".").nth(0).unwrap()), src, false);
 					let b = eval.is_ok();
 					if let Err(e) = eval {
 						println!("{}", e);
@@ -453,7 +492,7 @@ mod tests {
 				InputResult::Program(input) => {
 					let additionals = build_additionals(input, repl.statements.len());
 					let src = repl.build_source(additionals);
-					let eval = eval(&"test", src);
+					let eval = eval(&format!("test/{}", src_file.split(".").nth(0).unwrap()), src, false);
 					let b = eval.is_ok();
 					if let Err(e) = eval {
 						println!("{}", e);
