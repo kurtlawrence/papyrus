@@ -32,6 +32,4 @@ upload_files() {
 	fi  
 }
 
-cargo build
-cargo test -- --test-threads=1
 upload_files
