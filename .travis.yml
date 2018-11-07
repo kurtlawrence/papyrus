@@ -20,6 +20,8 @@ matrix:
         apt:
           packages:
             - libssl-dev
+  allow_failures:
+    - os: "windows"
 
 jobs:
   include:
