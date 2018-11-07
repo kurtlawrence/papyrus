@@ -12,16 +12,21 @@ os:
   - osx
 rust:
   - nightly
+
+matrix:
+  include:
+    - os: "linux"
+      addons:
+        apt:
+          packages:
+            - libssl-dev
+
 jobs:
   include:
   - stage: deploy
     script:
     - bash pass_build_push.sh
 
-addons:
-  apt:
-    packages:
-      - libssl-dev
 
 before_cache: |
   if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
