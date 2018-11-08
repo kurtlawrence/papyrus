@@ -70,4 +70,10 @@ fn test_web_req() {
 			assert!(text.starts_with(r#"{"crate":{"id":"papyrus","name":"papyrus","#));
 		}
 	}
+	// test the general query
+	let req = query();
+	match req {
+		Ok(s) => println!("{:?}", s),
+		Err(_) => println!("errored",),
+	}
 }
