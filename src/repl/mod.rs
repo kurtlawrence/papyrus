@@ -126,6 +126,30 @@ impl Repl {
 	/// # Panics
 	/// - Failure to initialise `InputReader`.
 	pub fn run(mut self) {
+		{
+			print!("{}", "Checking for later version...".bright_yellow());
+			io::stdout().flush().is_ok();
+			let print_line = match query() {
+				Ok(status) => match status {
+					Status::UpToDate(ver) => format!(
+						"{}{}",
+						"Running the latest papyrus version ".bright_green(),
+						ver.bright_green()
+					),
+					Status::OutOfDate(ver) => format!(
+						"{}{}{}{}",
+						"The current papyrus version ".bright_red(),
+						env!("CARGO_PKG_VERSION").bright_red(),
+						" is old, please update to ".bright_red(),
+						ver.bright_red()
+					),
+				},
+				Err(_) => "Failed to query crates.io".to_string(),
+			};
+			overwrite_current_console_line(&print_line);
+			println!("",);
+		} // version information.
+
 		let mut input_rdr = InputReader::new(self.name).expect("failed to start input reader");
 		let mut more = false;
 		self.exit_loop = false;
@@ -462,7 +486,11 @@ mod tests {
 				InputResult::Program(input) => {
 					let additionals = build_additionals(input, repl.statements.len());
 					let src = repl.build_source(additionals);
-					let eval = eval(&format!("test/{}", src_file.split(".").nth(0).unwrap()), src, false);
+					let eval = eval(
+						&format!("test/{}", src_file.split(".").nth(0).unwrap()),
+						src,
+						false,
+					);
 					let b = eval.is_ok();
 					if let Err(e) = eval {
 						println!("{}", e);
@@ -492,7 +520,11 @@ mod tests {
 				InputResult::Program(input) => {
 					let additionals = build_additionals(input, repl.statements.len());
 					let src = repl.build_source(additionals);
-					let eval = eval(&format!("test/{}", src_file.split(".").nth(0).unwrap()), src, false);
+					let eval = eval(
+						&format!("test/{}", src_file.split(".").nth(0).unwrap()),
+						src,
+						false,
+					);
 					let b = eval.is_ok();
 					if let Err(e) = eval {
 						println!("{}", e);

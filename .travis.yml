@@ -2,47 +2,41 @@ sudo: required
 language: rust
 cache: cargo
 script:
-  - cargo build --verbose
-  - cargo test --verbose -- --test-threads=1
+  - cargo build
+  - cargo test -- --test-threads=1
 env:
   - RUSTFLAGS='--cfg procmacro2_semver_exempt'
 os:
-  - windows
   - linux
+  - windows
   - osx
 rust:
   - nightly
+
+matrix:
+  include:
+    - os: "linux"
+      addons:
+        apt:
+          packages:
+            - libssl-dev
+  allow_failures:
+    - os: "windows"
+
 jobs:
   include:
   - stage: deploy
     script:
     - bash pass_build_push.sh
 
-addons:
-  apt:
-    packages:
-      - libcurl4-openssl-dev
-      - libelf-dev
-      - libdw-dev
-      - cmake
-      - gcc
-      - binutils-dev
-      - libiberty-dev
 
-after_success: 
-- |
-  if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == "nightly" ]]; then
-    wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
-    tar xzf master.tar.gz &&
-    cd kcov-master &&
-    mkdir build &&
-    cd build &&
-    cmake .. &&
-    make &&
-    make install DESTDIR=../../kcov-build &&
-    cd ../.. &&
-    rm -rf kcov-master &&
-    for file in target/debug/deps/papyrus-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; ./kcov-build/usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done &&
-    bash <(curl -s https://codecov.io/bash) &&
-    echo "Uploaded code coverage"
+before_cache: |
+  if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
+    RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
+  fi
+
+after_success: |
+  if [[  "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
+    cargo tarpaulin --skip-clean -v --out Xml
+    bash <(curl -s https://codecov.io/bash)
   fi

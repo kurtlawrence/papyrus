@@ -1,7 +1,7 @@
 #!/bin/sh
 
 upload_files() {
-  	echo "Travis branch: " $TRAVIS_BRANCH "..."
+	echo "Travis branch: " $TRAVIS_BRANCH "..."
   	if [ $TRAVIS_BRANCH == "auto" ]; then
 		echo "Will merge to master..."	
 		git config --global user.email "kurtlawrence92@gmail.com"
