@@ -111,7 +111,7 @@ fn main() {
 		simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
 			.unwrap();
 	}
-	if cfg!(target_os = "windows") && cfg!(build = "release") {
+	if cfg!(target_os = "windows") && !cfg!(build = "debug") {
 		// disable colored text output on Windows as the Windows terminals do not support it yet
 		colored::control::set_override(false);
 	}
