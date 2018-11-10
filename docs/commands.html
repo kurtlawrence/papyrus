@@ -149,9 +149,17 @@
 </blockquote>
 <a class="header" href="#exit" id="exit"><h2>exit</h2></a>
 <p>Exit repl.</p>
-<p><code>.exit [text]</code></p>
+<p><code>.exit</code></p>
 <blockquote>
 <p>Exits the repl loop. Arguments are ignored.</p>
+</blockquote>
+<a class="header" href="#cancel----c" id="cancel----c"><h2>cancel -- c</h2></a>
+<p>Cancel the current input. This is useful for times when more input is expected but you would like to cancel it. (There is an edge case where a leading bracket [<code>)</code>] cannot be closed off, so being able to cancel is useful.</p>
+<pre><code class="language-sh">.cancel
+.c
+</code></pre>
+<blockquote>
+<p>Arguments are ignored.</p>
 </blockquote>
 <a class="header" href="#load" id="load"><h2>load</h2></a>
 <p>Loads a <code>*.rs</code> or <code>*.rscript</code> file as inputs.</p>

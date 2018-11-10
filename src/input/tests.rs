@@ -206,6 +206,16 @@ fn test_exprs() {
 	);
 }
 
+#[test]
+fn determine_result() {
+	let mut reader = InputReader::new("some name").unwrap();
+
+	assert_eq!(
+		reader.determine_result(".help"),
+		InputResult::Command("help".to_string(), "".to_string())
+	);
+}
+
 #[bench]
 fn bench_parse_program(b: &mut Bencher) {
 	let code = r#"fn a() { println!("Hello, world!"); } let a = 1; a + a"#;

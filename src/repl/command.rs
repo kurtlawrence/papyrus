@@ -1,6 +1,14 @@
 use super::*;
 
-type CommandAction = fn(&mut Repl, &str);
+/// A structure to hold the arguments supplied to a command action.
+pub struct CommandActionArgs<'a> {
+	/// The current `Repl` instance.
+	pub repl: &'a mut Repl,
+	/// The argument string of the command.
+	pub arg: &'a str,
+}
+
+type CommandAction = fn(CommandActionArgs);
 
 /// A command definition.
 pub struct Command {
@@ -15,7 +23,7 @@ pub struct Command {
 }
 
 /// Command arguments variants.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum CmdArgs {
 	/// No arguments.
 	None,
@@ -95,6 +103,63 @@ impl Commands for Vec<Command> {
 		match self.iter().find(|c| c.name == command) {
 			None => Err(format!("unrecognized command: {}", command)),
 			Some(cmd) => Ok(cmd.clone()),
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn test_clone() {
+		let c = Command::new("test", CmdArgs::None, "Test help", |_| ());
+		let clone = c.clone();
+		assert_eq!(c.name, clone.name);
+		assert_eq!(c.arg_type, clone.arg_type);
+		assert_eq!(c.help, clone.help);
+	}
+
+	#[test]
+	fn help_response_types() {
+		let cmds = vec![Command::new("test", CmdArgs::None, "Test help", |_| ())];
+		assert_eq!(
+			cmds.build_help_response(Some("test")),
+			String::from("test Test help\n")
+		);
+		let cmds = vec![Command::new("test", CmdArgs::Text, "Test help", |_| ())];
+		assert_eq!(
+			cmds.build_help_response(Some("test")),
+			String::from("test [text] Test help\n")
+		);
+		let cmds = vec![Command::new("test", CmdArgs::Filename, "Test help", |_| ())];
+		assert_eq!(
+			cmds.build_help_response(Some("test")),
+			String::from("test <filename> Test help\n")
+		);
+		let cmds = vec![Command::new("test", CmdArgs::Expr, "Test help", |_| ())];
+		assert_eq!(
+			cmds.build_help_response(Some("test")),
+			String::from("test <expr> Test help\n")
+		);
+		assert_eq!(
+			cmds.build_help_response(None),
+			String::from("Available commands:\ntest <expr> Test help\n")
+		);
+	}
+
+	#[test]
+	fn find_cmd() {
+		let cmds = vec![Command::new("test", CmdArgs::None, "Test help", |_| ())];
+		let cmd = cmds.find_command("test").unwrap();
+
+		assert_eq!(cmd.name, "test");
+		assert_eq!(cmd.arg_type, CmdArgs::None);
+		assert_eq!(cmd.help, "Test help");
+
+		match cmds.find_command("no-cmd") {
+			Ok(_) => panic!("this should have failed"),
+			Err(s) => assert_eq!(s, String::from("unrecognized command: no-cmd")),
 		}
 	}
 }

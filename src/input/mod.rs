@@ -71,10 +71,10 @@ impl InputReader {
 	/// In this case, the input received so far is buffered internally.
 	pub fn read_input(&mut self, prompt: &str) -> InputResult {
 		// read the line
-		let mut reader = self.interface.lock_reader();
 		let line = {
+			let mut reader = self.interface.lock_reader();
 			reader.set_prompt(prompt).unwrap();
-			let r = match reader.read_line().ok().unwrap_or(ReadResult::Eof) {
+			let r = match self.interface.read_line().unwrap_or(ReadResult::Eof) {
 				ReadResult::Eof => return InputResult::Eof,
 				ReadResult::Input(s) => s,
 				ReadResult::Signal(_) => {
@@ -85,16 +85,25 @@ impl InputReader {
 			r
 		};
 
-		self.buffer.push_str(&line);
+		let r = self.determine_result(&line);
+		match &r {
+			InputResult::Empty => (),
+			_ => self.interface.add_history(line),
+		}
 
+		r
+	}
+
+	fn determine_result(&mut self, line: &str) -> InputResult {
+		debug!("input value: {}", line);
+
+		self.buffer.push_str(&line);
 		if self.buffer.is_empty() {
 			return InputResult::Empty;
 		}
 
-		reader.add_history(line.to_owned());
-
-		let res = if is_command(&self.buffer) {
-			parse_command(&self.buffer)
+		let res = if is_command(&line) {
+			parse_command(&line)
 		} else {
 			// check if the final statement ends with a semi
 			match parse_program(&self.buffer) {
