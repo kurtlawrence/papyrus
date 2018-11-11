@@ -16,9 +16,20 @@ Show help for commands.
 
 Exit repl.
 
-`.exit [text]`
+`.exit`
 
 > Exits the repl loop. Arguments are ignored.
+
+## cancel -- c
+
+Cancel the current input. This is useful for times when more input is expected but you would like to cancel it. (There is an edge case where a leading bracket [`)`] cannot be closed off, so being able to cancel is useful.
+
+```sh
+.cancel
+.c
+```
+
+> Arguments are ignored.
 
 ## load
 

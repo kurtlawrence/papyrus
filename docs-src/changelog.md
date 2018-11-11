@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.2
+
+- Added the `.cancel` and `.c` commands which allow users to cancel out of the current input. This lets you exit more input loops if a leading closing bracket was defined.
+
 ## 0.5.1
 
 - Turned off colouring for Windows, not yet working as intended.
