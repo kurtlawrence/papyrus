@@ -12,7 +12,7 @@ pub enum SourceFileType {
 }
 
 /// A structure to hold the loaded file.
-/// This only naively parses the file and describes the crates, file type and contents.
+/// This only naively parses the file and describes the crates, file type, and contents.
 pub struct SourceFile {
 	/// The source code. Crates have been stripped out.
 	pub src: String,

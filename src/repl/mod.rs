@@ -21,9 +21,9 @@ pub struct Repl {
 	/// The REPL handled commands.
 	/// Can be extended.
 	/// ```ignore
-	/// let repl = Repl::new();
-	/// repl.commands.push(Command::new("load", CmdArgs::Filename, "load and evaluate file contents as inputs", |r, arg_text| {
-	/// 	r.run_file(arg_text);
+	/// let mut repl = Repl::new();
+	/// repl.commands.push(Command::new("load", CmdArgs::Filename, "load and evaluate file contents as inputs", |args| {
+	/// 	args.repl.run_file(args.arg);
 	/// }));
 	pub commands: Vec<Command>,
 	/// Items compiled into every program. These are functions, types, etc.

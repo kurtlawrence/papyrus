@@ -72,21 +72,22 @@ impl<Term: Terminal> InputReader<Term> {
 	/// Returns `More` if further input is required for a complete result.
 	/// In this case, the input received so far is buffered internally.
 	pub fn read_input(&mut self, prompt: &str) -> InputResult {
-		// read the line
-		let line = {
-			let mut reader = self.interface.lock_reader();
-			reader.set_prompt(prompt).unwrap();
-			let r = match self.interface.read_line().unwrap_or(ReadResult::Eof) {
-				ReadResult::Eof => return InputResult::Eof,
-				ReadResult::Input(s) => s,
-				ReadResult::Signal(_) => {
-					self.buffer.clear();
-					return InputResult::Empty;
-				}
-			};
-			r
-		};
+		self.interface
+			.set_prompt(prompt)
+			.expect("failed to set prompt");
+		let r = self.interface.read_line().unwrap_or(ReadResult::Eof);
+		self.handle_input(r)
+	}
 
+	fn handle_input(&mut self, result: ReadResult) -> InputResult {
+		let line = match result {
+			ReadResult::Eof => return InputResult::Eof,
+			ReadResult::Input(s) => s,
+			ReadResult::Signal(_) => {
+				self.buffer.clear();
+				return InputResult::Empty;
+			}
+		};
 		let r = self.determine_result(&line);
 		match &r {
 			InputResult::Empty => (),

@@ -1,5 +1,6 @@
 use super::*;
 use linefeed::memory::MemoryTerminal;
+use linefeed::Signal;
 use test::Bencher;
 
 #[test]
@@ -208,6 +209,23 @@ fn test_exprs() {
 }
 
 #[test]
+fn handle_input() {
+	let mut reader = InputReader {
+		buffer: String::new(),
+		interface: Interface::with_term("some name", MemoryTerminal::new()).unwrap(),
+	};
+	assert_eq!(
+		reader.handle_input(ReadResult::Input(String::from(".help"))),
+		InputResult::Command("help".to_string(), "".to_string())
+	);
+	assert_eq!(
+		reader.handle_input(ReadResult::Signal(Signal::Break)),
+		InputResult::Empty
+	);
+	assert_eq!(reader.handle_input(ReadResult::Eof), InputResult::Eof);
+}
+
+#[test]
 fn determine_result() {
 	let mut reader = InputReader {
 		buffer: String::new(),
@@ -238,7 +256,32 @@ fn determine_result() {
 			crates: Vec::new()
 		})
 	);
+	assert_eq!(reader.determine_result("let a = 1;"), InputResult::More);
 	assert_eq!(reader.determine_result("{"), InputResult::More);
+}
+
+#[test]
+fn fail_parse_cmd() {
+	assert_eq!(
+		parse_command("some-command"),
+		InputResult::InputError("command must begin with `.` or `:`".to_string())
+	);
+	assert_eq!(
+		parse_command("."),
+		InputResult::InputError("expected command name".to_string())
+	);
+}
+
+#[test]
+fn fail_parse_program() {
+	assert_eq!(
+		parse_program("extern crate "),
+		InputResult::InputError("unexpected end of input, expected identifier".to_string())
+	);
+	assert_eq!(
+		parse_program("let a = 1"),
+		InputResult::InputError("expected `;`".to_string())
+	);
 }
 
 #[bench]
