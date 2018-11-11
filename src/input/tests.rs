@@ -1,4 +1,5 @@
 use super::*;
+use linefeed::memory::MemoryTerminal;
 use test::Bencher;
 
 #[test]
@@ -208,12 +209,36 @@ fn test_exprs() {
 
 #[test]
 fn determine_result() {
-	let mut reader = InputReader::new("some name").unwrap();
+	let mut reader = InputReader {
+		buffer: String::new(),
+		interface: Interface::with_term("some name", MemoryTerminal::new()).unwrap(),
+	};
 
 	assert_eq!(
 		reader.determine_result(".help"),
 		InputResult::Command("help".to_string(), "".to_string())
 	);
+	assert_eq!(
+		reader.determine_result(".another"),
+		InputResult::Command("another".to_string(), "".to_string())
+	);
+	assert_eq!(
+		reader.determine_result(".help cmd"),
+		InputResult::Command("help".to_string(), "cmd".to_string())
+	);
+	assert_eq!(reader.determine_result(""), InputResult::Empty);
+	assert_eq!(
+		reader.determine_result("2+2"),
+		InputResult::Program(Input {
+			items: Vec::new(),
+			stmts: vec![Statement {
+				expr: "2+2".to_string(),
+				semi: false,
+			}],
+			crates: Vec::new()
+		})
+	);
+	assert_eq!(reader.determine_result("{"), InputResult::More);
 }
 
 #[bench]

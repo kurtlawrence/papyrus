@@ -1,5 +1,5 @@
 use super::*;
-use linefeed::terminal::DefaultTerminal;
+use linefeed::terminal::{DefaultTerminal, Terminal};
 use linefeed::{Interface, ReadResult};
 use syn::Expr;
 
@@ -11,9 +11,9 @@ pub use self::parse::parse_command;
 pub use self::parse::parse_program;
 
 /// Reads input from `stdin`.
-pub struct InputReader {
+pub struct InputReader<Term: Terminal> {
 	buffer: String,
-	interface: Interface<DefaultTerminal>,
+	interface: Interface<Term>,
 }
 
 /// Possible results from reading input from `InputReader`
@@ -53,7 +53,7 @@ pub struct Statement {
 	pub semi: bool,
 }
 
-impl InputReader {
+impl InputReader<DefaultTerminal> {
 	/// Constructs a new `InputReader` reading from `stdin`.
 	pub fn new(app_name: &'static str) -> Result<Self, String> {
 		let r = match Interface::new(app_name) {
@@ -65,7 +65,9 @@ impl InputReader {
 			interface: r,
 		})
 	}
+}
 
+impl<Term: Terminal> InputReader<Term> {
 	/// Reads a single command, item, or statement from `stdin`.
 	/// Returns `More` if further input is required for a complete result.
 	/// In this case, the input received so far is buffered internally.
