@@ -8,7 +8,7 @@ pub struct CommandActionArgs<'a> {
 	pub arg: &'a str,
 }
 
-type CommandAction = fn(CommandActionArgs);
+type CommandAction = fn(args: CommandActionArgs);
 
 /// A command definition.
 pub struct Command {
@@ -36,6 +36,7 @@ pub enum CmdArgs {
 }
 
 impl Command {
+	/// Create a new `Command`.
 	pub fn new(
 		name: &'static str,
 		arg_type: CmdArgs,

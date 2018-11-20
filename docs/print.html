@@ -72,7 +72,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <ol class="chapter"><li class="affix"><a href="changelog.html">changelog.</a></li><li><a href="installation.html"><strong aria-hidden="true">1.</strong> Installation</a></li><li><a href="repl.html"><strong aria-hidden="true">2.</strong> REPL Usage</a></li><li><a href="commands.html"><strong aria-hidden="true">3.</strong> Commands</a></li><li><a href="cli-rc.html"><strong aria-hidden="true">4.</strong> Command Line and Context Menu</a></li><li><a href="file-interaction.html"><strong aria-hidden="true">5.</strong> File Interaction</a></li><li><a href="vision.html"><strong aria-hidden="true">6.</strong> Vision</a></li></ol>
+            <ol class="chapter"><li class="affix"><a href="changelog.html">changelog.</a></li><li><a href="repl.html"><strong aria-hidden="true">1.</strong> REPL Usage</a></li><li><a href="commands.html"><strong aria-hidden="true">2.</strong> Commands</a></li><li><a href="cli-rc.html"><strong aria-hidden="true">3.</strong> Command Line and Context Menu</a></li><li><a href="file-interaction.html"><strong aria-hidden="true">4.</strong> File Interaction</a></li><li><a href="vision.html"><strong aria-hidden="true">5.</strong> Vision</a></li></ol>
         </nav>
 
         <div id="page-wrapper" class="page-wrapper">
@@ -137,6 +137,11 @@
                 <div id="content" class="content">
                     <main>
                         <a class="header" href="#changelog" id="changelog"><h1>Changelog</h1></a>
+<a class="header" href="#a060" id="a060"><h2>0.6.0</h2></a>
+<p><code>papyrus</code> now works with stable rust! 🎉</p>
+<pre><code class="language-sh">rustup default stable
+cargo install papyrus
+</code></pre>
 <a class="header" href="#a052" id="a052"><h2>0.5.2</h2></a>
 <ul>
 <li>Added the <code>.cancel</code> and <code>.c</code> commands which allow users to cancel out of the current input. This lets you exit more input loops if a leading closing bracket was defined.</li>
@@ -165,18 +170,6 @@
 <li>Compilation status is redirected to the console.</li>
 <li>Panics now get shown, and statements won't be added if code panics.</li>
 </ul>
-<a class="header" href="#installation" id="installation"><h1>Installation</h1></a>
-<blockquote>
-<p>Back to <a href="./SUMMARY.html">SUMMARY</a></p>
-</blockquote>
-<p><code>papyrus</code> depends on <code>proc-macro2</code> and <code>syn</code> which contains features that are only available on a nightly compiler. Further to this, the features are underneath a config flag, so compiling requires the <code>RUSTFLAGS</code> environment variable to include <code>--cfg procmacro2_semver_exempt</code>.</p>
-<p>Linux, Mac</p>
-<pre><code class="language-bash">RUSTFLAGS=&quot;--cfg procmacro2_semver_exempt&quot; cargo install papyrus
-</code></pre>
-<p>Windows</p>
-<pre><code class="language-bash">$env:RUSTFLAGS=&quot;--cfg procmacro2_semver_exempt&quot;
-cargo install papyrus;
-</code></pre>
 <a class="header" href="#repl" id="repl"><h1>REPL</h1></a>
 <blockquote>
 <p>Back to <a href="./SUMMARY.html">SUMMARY</a></p>
@@ -242,6 +235,9 @@ papyrus=&gt;
 </blockquote>
 <p>Suggest or add a command on <a href="https://github.com/kurtlawrence/papyrus">github</a>.</p>
 <a class="header" href="#run-from-command-line-or-right-click-context-menu" id="run-from-command-line-or-right-click-context-menu"><h1>Run from Command Line or Right Click Context Menu</h1></a>
+<blockquote>
+<p>Back to <a href="./SUMMARY.html">SUMMARY</a></p>
+</blockquote>
 <p>Run interactive <code>REPL</code>.</p>
 <pre><code class="language-sh">papyrus run
 </code></pre>
@@ -284,6 +280,9 @@ println!(&quot;Hello, world!&quot;);
 </code></pre>
 <p>The <code>src/main.rs</code> will be populated with a main function encapsulating the code, and crate references placed above it. A similar <code>Cargo.toml</code> will be created as before.</p>
 <a class="header" href="#file-interaction" id="file-interaction"><h1>File Interaction</h1></a>
+<blockquote>
+<p>Back to <a href="./SUMMARY.html">SUMMARY</a></p>
+</blockquote>
 <p><code>papyrus</code> comes with the command <code>load</code> which lets you load a file as source code. <code>papyrus</code> accepts both <code>*.rs</code> and <code>*.rscript</code> files, and handles the code slightly differently when it loads it into the <code>Repl</code>.</p>
 <ul>
 <li><code>*.rs</code> files are treated as source files where code is defined with functions and structs, etc.</li>

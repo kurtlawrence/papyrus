@@ -1,6 +1,7 @@
 # papyrus
 
 [![Build Status](https://travis-ci.com/kurtlawrence/papyrus.svg?branch=master)](https://travis-ci.com/kurtlawrence/papyrus) [![Latest Version](https://img.shields.io/crates/v/papyrus.svg)](https://crates.io/crates/papyrus) [![Rust Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/papyrus) [![codecov](https://codecov.io/gh/kurtlawrence/papyrus/branch/master/graph/badge.svg)](https://codecov.io/gh/kurtlawrence/papyrus)
+[![Rustc Version 1.30+](https://img.shields.io/badge/rustc-1.30+-blue.svg)](https://blog.rust-lang.org/2018/10/25/Rust-1.30.0.html)
 
 ## A rust REPL and script running tool
 
@@ -9,24 +10,7 @@ Look at progress and contribute on [github.](https://github.com/kurtlawrence/pap
 
 ## Installation
 
-`papyrus` depends on `proc-macro2` and `syn` which contains features that are only available on a nightly compiler. Further to this, the features are underneath a config flag, so compiling requires the `RUSTFLAGS` environment variable to include `--cfg procmacro2_semver_exempt`.
-
-Switch to a nightly compiler.
-
-```sh
-rustup default nightly
-```
-
-Linux, Mac
-
 ```bash
-RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install papyrus
-```
-
-Windows
-
-```bash
-$env:RUSTFLAGS="--cfg procmacro2_semver_exempt"
 cargo install papyrus
 ```
 

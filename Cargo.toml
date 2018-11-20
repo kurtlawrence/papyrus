@@ -1,6 +1,6 @@
 [package]
 name = "papyrus"
-version = "0.5.2"
+version = "0.6.0"
 authors = ["kurt <kurtlawrence92@gmail.com>"]
 description = "A rust repl and script runner"
 license = "MIT"
@@ -19,12 +19,10 @@ failure = "0.1"
 dirs = "1.0"
 linefeed = "0.5"
 log = "0.4"
-syn = { version = "0.15", features=["full"] }
+syn = {	version = "0.15", default-features = false,	features =  [ "full" ] }
 simplelog = "0.5"
 colored = "1.6"
-proc-macro2 = { version = "0.4", features = ["nightly"] }
 term_cursor = "0.2"
-term_size = "0.3"
 reqwest = "0.9"
 
 [dev-dependencies]

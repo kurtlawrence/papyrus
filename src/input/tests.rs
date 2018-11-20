@@ -1,6 +1,6 @@
 use super::*;
 use linefeed::memory::MemoryTerminal;
-use test::Bencher;
+use linefeed::Signal;
 
 #[test]
 fn test_unclosed_delimiter() {
@@ -18,7 +18,7 @@ fn test_items() {
 	assert_eq!(
 		parse_program("fn b() {}"),
 		InputResult::Program(Input {
-			items: vec!["fn b() {}".to_string()],
+			items: vec!["fn b ( ) { }".to_string()],
 			stmts: vec![],
 			crates: vec![]
 		})
@@ -26,7 +26,7 @@ fn test_items() {
 	assert_eq!(
 		parse_program("#[derive(Debug)]\nstruct A {\n\tu: u32\n}"),
 		InputResult::Program(Input {
-			items: vec!["#[derive(Debug)]\nstruct A {\n\tu: u32\n}".to_string()],
+			items: vec!["# [ derive ( Debug ) ] struct A { u : u32 }".to_string()],
 			stmts: vec![],
 			crates: vec![]
 		})
@@ -36,7 +36,7 @@ fn test_items() {
 		InputResult::Program(Input {
 			items: vec![],
 			stmts: vec![],
-			crates: vec![CrateType::parse_str(&"extern crate rand as r;").unwrap()]
+			crates: vec![CrateType::parse_str(&"extern crate rand as r ;").unwrap()]
 		})
 	); // Item::ExternCrate
 }
@@ -49,7 +49,7 @@ fn test_exprs() {
 		InputResult::Program(Input {
 			items: vec![],
 			stmts: vec![Statement {
-				expr: "2+2".to_string(),
+				expr: "2 + 2".to_string(),
 				semi: false
 			}],
 			crates: vec![]
@@ -60,7 +60,7 @@ fn test_exprs() {
 		InputResult::Program(Input {
 			items: vec![],
 			stmts: vec![Statement {
-				expr: "2+2".to_string(),
+				expr: "2 + 2".to_string(),
 				semi: true
 			}],
 			crates: vec![]
@@ -72,7 +72,7 @@ fn test_exprs() {
 		InputResult::Program(Input {
 			items: vec![],
 			stmts: vec![Statement {
-				expr: "println!(\"hello\")".to_string(),
+				expr: "println ! ( \"hello\" )".to_string(),
 				semi: false
 			}],
 			crates: vec![]
@@ -83,7 +83,7 @@ fn test_exprs() {
 		InputResult::Program(Input {
 			items: vec![],
 			stmts: vec![Statement {
-				expr: "println!(\"hello\")".to_string(),
+				expr: "println ! ( \"hello\" )".to_string(),
 				semi: true
 			}],
 			crates: vec![]
@@ -95,7 +95,7 @@ fn test_exprs() {
 		InputResult::Program(Input {
 			items: vec![],
 			stmts: vec![Statement {
-				expr: "()".to_string(),
+				expr: "( )".to_string(),
 				semi: false
 			}],
 			crates: vec![]
@@ -106,7 +106,7 @@ fn test_exprs() {
 		InputResult::Program(Input {
 			items: vec![],
 			stmts: vec![Statement {
-				expr: "()".to_string(),
+				expr: "( )".to_string(),
 				semi: true
 			}],
 			crates: vec![]
@@ -118,7 +118,7 @@ fn test_exprs() {
 		InputResult::Program(Input {
 			items: vec![],
 			stmts: vec![Statement {
-				expr: "f()".to_string(),
+				expr: "f ( )".to_string(),
 				semi: false
 			}],
 			crates: vec![]
@@ -129,7 +129,7 @@ fn test_exprs() {
 		InputResult::Program(Input {
 			items: vec![],
 			stmts: vec![Statement {
-				expr: "f()".to_string(),
+				expr: "f ( )".to_string(),
 				semi: true
 			}],
 			crates: vec![]
@@ -141,7 +141,7 @@ fn test_exprs() {
 		InputResult::Program(Input {
 			items: vec![],
 			stmts: vec![Statement {
-				expr: "let a = 1".to_string(),
+				expr: "let a = 1 ".to_string(),
 				semi: true
 			}],
 			crates: vec![]
@@ -153,7 +153,7 @@ fn test_exprs() {
 		InputResult::Program(Input {
 			items: vec![],
 			stmts: vec![Statement {
-				expr: "for i in 0..3 {}".to_string(),
+				expr: "for i in 0 .. 3 { }".to_string(),
 				semi: false
 			}],
 			crates: vec![]
@@ -188,7 +188,7 @@ fn test_exprs() {
 		InputResult::Program(Input {
 			items: vec![],
 			stmts: vec![Statement {
-				expr: "std::env::current_dir()".to_string(),
+				expr: "std :: env :: current_dir ( )".to_string(),
 				semi: false
 			}],
 			crates: vec![]
@@ -199,12 +199,29 @@ fn test_exprs() {
 		InputResult::Program(Input {
 			items: vec![],
 			stmts: vec![Statement {
-				expr: "std::env::current_dir()".to_string(),
+				expr: "std :: env :: current_dir ( )".to_string(),
 				semi: true
 			}],
 			crates: vec![]
 		})
 	);
+}
+
+#[test]
+fn handle_input() {
+	let mut reader = InputReader {
+		buffer: String::new(),
+		interface: Interface::with_term("some name", MemoryTerminal::new()).unwrap(),
+	};
+	assert_eq!(
+		reader.handle_input(ReadResult::Input(String::from(".help"))),
+		InputResult::Command("help".to_string(), "".to_string())
+	);
+	assert_eq!(
+		reader.handle_input(ReadResult::Signal(Signal::Break)),
+		InputResult::Empty
+	);
+	assert_eq!(reader.handle_input(ReadResult::Eof), InputResult::Eof);
 }
 
 #[test]
@@ -232,17 +249,36 @@ fn determine_result() {
 		InputResult::Program(Input {
 			items: Vec::new(),
 			stmts: vec![Statement {
-				expr: "2+2".to_string(),
+				expr: "2 + 2".to_string(),
 				semi: false,
 			}],
 			crates: Vec::new()
 		})
 	);
+	assert_eq!(reader.determine_result("let a = 1;"), InputResult::More);
 	assert_eq!(reader.determine_result("{"), InputResult::More);
 }
 
-#[bench]
-fn bench_parse_program(b: &mut Bencher) {
-	let code = r#"fn a() { println!("Hello, world!"); } let a = 1; a + a"#;
-	b.iter(|| parse_program(&code))
+#[test]
+fn fail_parse_cmd() {
+	assert_eq!(
+		parse_command("some-command"),
+		InputResult::InputError("command must begin with `.` or `:`".to_string())
+	);
+	assert_eq!(
+		parse_command("."),
+		InputResult::InputError("expected command name".to_string())
+	);
+}
+
+#[test]
+fn fail_parse_program() {
+	assert_eq!(
+		parse_program("extern crate "),
+		InputResult::InputError("unexpected end of input, expected identifier".to_string())
+	);
+	assert_eq!(
+		parse_program("let a = 1"),
+		InputResult::InputError("expected `;`".to_string())
+	);
 }
