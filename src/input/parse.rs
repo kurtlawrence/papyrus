@@ -1,6 +1,6 @@
 use super::*;
-use proc_macro2::Span;
-use syn::{self, export::ToTokens, spanned::Spanned, Block, Item, Stmt};
+use syn::export::ToTokens;
+use syn::{self, Block, Item, Stmt};
 
 /// Parses a line of input as a command.
 /// Returns either a `Command` value or an `InputError` value.
@@ -27,16 +27,13 @@ pub fn parse_program(code: &str) -> InputResult {
 
 	match syn::parse_str::<Block>(&code) {
 		Ok(block) => {
-			let block_span = block.span();
-			let block_span = MySpan::derive_from_span(block_span);
-			debug!("Block Span: {:?}", block_span);
 			let mut stmts = Vec::new();
 			let mut items = Vec::new();
 			let mut crates = Vec::new();
 			for stmt in block.stmts {
 				match stmt {
 					Stmt::Local(local) => {
-						let mut s = extract_span_str(&code, local.span(), block_span.lo);
+						let mut s = format!("{}", local.into_token_stream());
 						s.pop(); // local is handled slightly differently, the trailing semi is dropped.
 						stmts.push(Statement {
 							expr: s,
@@ -44,31 +41,24 @@ pub fn parse_program(code: &str) -> InputResult {
 						})
 					}
 					Stmt::Item(item) => match parse_item(item) {
-						ParseItemResult::ExternCrate(span) => {
-							match CrateType::parse_str(&extract_span_str(
-								&code,
-								span,
-								block_span.lo,
-							)) {
-								Ok(c) => crates.push(c),
-								Err(e) => error!("crate parsing failed: {}", e),
-							}
-						}
-						ParseItemResult::Span(span) => {
-							items.push(extract_span_str(&code, span, block_span.lo))
-						}
+						ParseItemResult::ExternCrate(string) => match CrateType::parse_str(&string)
+						{
+							Ok(c) => crates.push(c),
+							Err(e) => error!("crate parsing failed: {}", e),
+						},
+						ParseItemResult::Span(string) => items.push(string),
 						ParseItemResult::Error(s) => return InputResult::InputError(s),
 					},
 					Stmt::Expr(expr) => match parse_expr(expr) {
-						Ok(span) => stmts.push(Statement {
-							expr: extract_span_str(&code, span, block_span.lo),
+						Ok(string) => stmts.push(Statement {
+							expr: string,
 							semi: false,
 						}),
 						Err(s) => return InputResult::InputError(s),
 					},
 					Stmt::Semi(expr, _) => match parse_expr(expr) {
-						Ok(span) => stmts.push(Statement {
-							expr: extract_span_str(&code, span, block_span.lo),
+						Ok(string) => stmts.push(Statement {
+							expr: string,
 							semi: true,
 						}),
 						Err(s) => return InputResult::InputError(s),
@@ -91,17 +81,9 @@ pub fn parse_program(code: &str) -> InputResult {
 	}
 }
 
-fn extract_span_str(code: &str, span: Span, start_pos: u32) -> String {
-	let span = MySpan::derive_from_span(span);
-	debug!("Stmt Span: {:?}", span);
-	let s = code[(span.lo - start_pos) as usize..(span.hi - start_pos) as usize].to_string();
-	debug!("Code slice: {}", s);
-	s
-}
-
 enum ParseItemResult {
-	Span(Span),
-	ExternCrate(Span),
+	Span(String),
+	ExternCrate(String),
 	Error(String),
 }
 
@@ -168,21 +150,19 @@ fn parse_item(item: Item) -> ParseItemResult {
 			ParseItemResult::Error("haven't handled item variant Verbatim. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Item::ExternCrate(_) => {
-			let span = item.span();
 			let s = format!("{}", item.into_token_stream());
 			debug!("Item parsed, its a crate: {}", s);
-			ParseItemResult::ExternCrate(span)
+			ParseItemResult::ExternCrate(s)
 		}
 		_ => {
-			let span = item.span();
 			let s = format!("{}", item.into_token_stream());
 			debug!("Item parsed: {}", s);
-			ParseItemResult::Span(span)
+			ParseItemResult::Span(s)
 		}
 	}
 }
 
-fn parse_expr(expr: Expr) -> Result<Span, String> {
+fn parse_expr(expr: Expr) -> Result<String, String> {
 	match expr {
 		Expr::Box(_) => {
 			error!("haven't handled expr variant Box");
@@ -312,34 +292,9 @@ fn parse_expr(expr: Expr) -> Result<Span, String> {
 			Err("haven't handled expr variant Verbatim. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		_ => {
-			let span = expr.span();
 			let s = format!("{}", expr.into_token_stream());
-			debug!("Expression parsed: {}", s);
-			Ok(span)
-		}
-	}
-}
-
-#[derive(Debug)]
-struct MySpan {
-	lo: u32,
-	hi: u32,
-}
-
-impl MySpan {
-	fn derive_from_span(span: Span) -> Self {
-		let s = format!("{:?}", span);
-		debug!("{} len: {}", s, s.len());
-		assert!(
-			&s != "Span",
-			"papyrus needs to be built against nightly Rust with RUSTFLAGS='--cfg procmacro2_semver_exempt'"
-		);
-		// bytes(#..#)
-		let slice = &s[6..s.len() - 1];
-		let mut ns = slice.split("..");
-		MySpan {
-			lo: ns.next().unwrap().parse::<u32>().unwrap(),
-			hi: ns.next().unwrap().parse::<u32>().unwrap(),
+			debug!("Expression parsed: {:?}", s);
+			Ok(s)
 		}
 	}
 }

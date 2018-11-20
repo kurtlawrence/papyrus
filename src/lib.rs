@@ -98,23 +98,17 @@
 //! ```
 //!
 //! The `src/main.rs` will be populated with a main function encapsulating the code, and crate references placed above it. A similar `Cargo.toml` will be created as before.
-#![feature(test)]
 
 #[macro_use]
 extern crate log;
-
-#[cfg(test)]
-extern crate test;
 
 extern crate colored;
 extern crate dirs;
 extern crate failure;
 extern crate linefeed;
-extern crate proc_macro2;
 extern crate reqwest;
 extern crate syn;
 extern crate term_cursor;
-extern crate term_size;
 
 mod compile;
 mod contextmenu;
