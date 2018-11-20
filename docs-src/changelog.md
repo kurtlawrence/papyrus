@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0
+
+`papyrus` now works with stable rust! 🎉
+
+```sh
+rustup default stable
+cargo install papyrus
+```
+
 ## 0.5.2
 
 - Added the `.cancel` and `.c` commands which allow users to cancel out of the current input. This lets you exit more input loops if a leading closing bracket was defined.
