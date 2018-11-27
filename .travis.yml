@@ -9,14 +9,13 @@ branches:
   only:
     - master
     - auto
-env:
-  - RUSTFLAGS='--cfg procmacro2_semver_exempt'
 os:
   - linux
   - windows
   - osx
 rust:
-  - nightly
+  - stable
+  - beta
 
 matrix:
   include:
