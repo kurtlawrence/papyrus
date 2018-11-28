@@ -75,7 +75,7 @@ impl Commands for Vec<Command> {
 		let mut ret = String::new();
 
 		let write_cmd_line = |cmd: &Command, str_builder: &mut String| {
-			str_builder.push_str(&cmd.name.yellow());
+			str_builder.push_str(&cmd.name);
 
 			match cmd.arg_type {
 				CmdArgs::None => (),
