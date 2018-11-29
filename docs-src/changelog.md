@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.1
+
+- Papyrus now formats the source code written to file.
+- Help messages have been colourized for clarity.
+
 ## 0.6.0
 
 `papyrus` now works with stable rust! 🎉
