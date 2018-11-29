@@ -61,6 +61,7 @@ impl Exe {
 		compile_dir: P,
 	) -> Result<CompilingProcess, InitialisingError> {
 		build_compile_dir(src, &compile_dir)?;
+		fmt(&compile_dir);
 
 		let mut exe = format!(
 			"{}/target/debug/{}",
@@ -163,6 +164,21 @@ fn build_compile_dir<P: AsRef<Path>>(
 	Ok(())
 }
 
+/// Run `cargo fmt` in the given directory.
+pub fn fmt<P: AsRef<Path>>(compile_dir: P) -> bool {
+	match Command::new("cargo")
+		.current_dir(compile_dir)
+		.args(&["+nightly", "fmt"])
+		.output()
+	{
+		Ok(output) => output.status.success(),
+		Err(e) => {
+			debug!("{}", e);
+			false
+		}
+	}
+}
+
 fn cargotoml_contents(source: &SourceFile) -> String {
 	format!(
 		r#"[package]
@@ -238,13 +254,15 @@ mod tests {
 			file_name: "test-name".to_string(),
 			crates: Vec::new(),
 		};
-		assert!(Exe::compile(&source, &dir)
-			.unwrap()
-			.wait()
-			.unwrap()
-			.run(&env::current_dir().unwrap())
-			.wait()
-			.success());
+		assert!(
+			Exe::compile(&source, &dir)
+				.unwrap()
+				.wait()
+				.unwrap()
+				.run(&env::current_dir().unwrap())
+				.wait()
+				.success()
+		);
 
 		fs::remove_dir_all(dir).unwrap();
 	}
