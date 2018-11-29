@@ -76,14 +76,27 @@ impl Repl {
 			"Show help for commands",
 			|args| {
 				let (repl, arg) = { (args.repl, args.arg) };
-				println!(
-					"{}",
-					repl.commands.build_help_response(if arg.is_empty() {
-						None
+				// colour output
+				let output = repl.commands.build_help_response(if arg.is_empty() {
+					None
+				} else {
+					Some(arg)
+				});
+				output.split("\n").into_iter().for_each(|line| {
+					if line.starts_with("Available commands") {
+						println!("{}", line);
 					} else {
-						Some(arg)
-					})
-				)
+						let mut line_split = line.split(" ");
+						println!(
+							"{} {}",
+							line_split
+								.next()
+								.expect("expecting multiple elements")
+								.bright_yellow(),
+							line_split.into_iter().collect::<Vec<_>>().join(" ")
+						);
+					}
+				});
 			},
 		));
 		// exit
@@ -417,8 +430,7 @@ fn build_additionals(input: Input, statement_num: usize) -> Additional {
 					x.expr.push(';');
 				}
 				x.expr
-			})
-			.collect();
+			}).collect();
 		additional_statements = Some(AdditionalStatements { stmts, print_stmt });
 	}
 
