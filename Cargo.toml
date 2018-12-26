@@ -9,9 +9,13 @@ repository = "https://github.com/kurtlawrence/papyrus"
 documentation = "https://docs.rs/papyrus/"
 readme = "README.md"
 keywords = [ "repl", "script" ]
+edition = "2018"
 
 [badges]
 travis-ci = { repository = "kurtlawrence/papyrus" }
+
+[features]
+azul-widget = [ "azul" ]
 
 [dependencies]
 argparse = "0.2"
@@ -24,6 +28,8 @@ simplelog = "0.5"
 colored = "1.6"
 term_cursor = "0.2"
 reqwest = "0.9"
+azul = { path = "/azul/azul", optional = true }
+
 
 [dev-dependencies]
 criterion = "0.2"
@@ -31,3 +37,8 @@ criterion = "0.2"
 [[bench]]
 name = "benches"
 harness = false
+
+[[bin]]
+name = "papyrus-pad"
+path = "src/papyrus_pad/main.rs"
+required-features = [ "azul-widget" ]

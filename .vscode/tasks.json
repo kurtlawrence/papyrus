@@ -27,5 +27,19 @@
 				"$rustc"
 			]
 		},
+		{
+			"type": "shell",
+			"label": "run papyrus-pad",
+			"command": "cargo",
+			"args": [
+				"run",
+				"--bin",
+				"papyrus-pad",
+				"--features=\"azul-widget\""
+			],
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
 	]
 }
