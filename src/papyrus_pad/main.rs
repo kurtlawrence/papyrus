@@ -1,6 +1,9 @@
 extern crate azul;
 extern crate linefeed;
+extern crate papyrus;
 
+
+use papyrus::*;
 use azul::prelude::*;
 use azul::widgets::{
     button::Button, label::Label, text_input::TextInput, text_input::TextInputState,
@@ -11,6 +14,7 @@ struct MyApp {
     outputs: String,
     input: TextInputState,
     terminal: MemoryTerminal,
+	repl: Repl,
 }
 
 impl Layout for MyApp {
@@ -68,6 +72,7 @@ fn main() {
                 outputs: String::new(),
                 input: TextInputState::new(String::new()),
                 terminal: MemoryTerminal::new(),
+				repl: Repl::new(),
             },
             AppConfig {
                 enable_logging: Some(LevelFilter::Error),

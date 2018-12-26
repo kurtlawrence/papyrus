@@ -41,5 +41,18 @@
 				"$rustc"
 			]
 		},
+		{
+			"type": "shell",
+			"label": "run papyrus",
+			"command": "cargo",
+			"args": [
+				"run",
+				"--bin",
+				"papyrus",
+			],
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
 	]
 }

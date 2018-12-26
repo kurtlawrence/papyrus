@@ -3,6 +3,12 @@ use linefeed::memory::MemoryTerminal;
 use linefeed::Signal;
 
 #[test]
+fn test_with_term() {
+	let rdr = InputReader::with_term("test", MemoryTerminal::new()).unwrap();
+	assert_eq!(rdr.buffer, String::new());
+}
+
+#[test]
 fn test_unclosed_delimiter() {
     assert_eq!(parse_program("fn foo() {"), InputResult::More);
     assert_eq!(parse_program("("), InputResult::More);
