@@ -34,9 +34,10 @@ azul = { path = "/azul/azul", optional = true }
 [dev-dependencies]
 criterion = "0.2"
 
-[[bench]]
-name = "benches"
-harness = false
+# Currently disabled.
+# [[bench]]
+# name = "benches"
+# harness = false
 
 [[bin]]
 name = "papyrus-pad"

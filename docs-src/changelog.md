@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.0
+
+Major change in api as the library is shifted towards a new repl direction.
+
+- `Repl`s are now state machines
+- Cannot construct a `Repl` using a file
+- Cannot `evaluate` off a `Repl` (this has been altered to work with state machine)
+- `Command` now requires to return a repl in print state (`Result<Repl<Print>, ()>`)
+
 ## 0.6.1
 
 - Papyrus now formats the source code written to file.
