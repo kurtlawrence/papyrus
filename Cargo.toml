@@ -28,7 +28,7 @@ simplelog = "0.5"
 colored = "1.6"
 term_cursor = "0.2"
 reqwest = "0.9"
-azul = { path = "/azul/azul", optional = true }
+azul = { path = "../azul/azul", optional = true }
 
 
 [dev-dependencies]
