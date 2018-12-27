@@ -1,7 +1,11 @@
+use super::command::Commands;
 use super::*;
 use linefeed::terminal::Terminal;
+use std::io::BufRead;
+use std::io::Read as IoRead;
 
 impl<S> Repl<S> {
+	/// Load a file into the repl, no matter the current state. Returns a repl awaiting evaluation.
 	pub fn load<P: AsRef<Path>>(self, file_path: P) -> Repl<Evaluate> {
 		let result = load_and_parse(file_path);
 		Repl {
@@ -23,15 +27,14 @@ impl<S> Repl<S> {
 	}
 }
 
-impl Repl<Read> {
-	/// A new REPL instance.
-	pub fn new() -> Repl<Read> {
+impl Default for Repl<Read> {
+	/// Default repl instance.
+	fn default() -> Self {
 		let mut r = Data {
 			commands: Vec::new(),
 			items: Vec::new(),
 			statements: Vec::new(),
 			crates: Vec::new(),
-			exit_loop: false,
 			name: "papyrus",
 			prompt_colour: Color::Cyan,
 			out_colour: Color::BrightGreen,
@@ -50,8 +53,26 @@ impl Repl<Read> {
 				} else {
 					Some(arg)
 				});
+				// colour the output here rather than in print section
+				output.split("\n").into_iter().for_each(|line| {
+					if !line.is_empty() {
+						if line.starts_with("Available commands") {
+							println!("{}", line);
+						} else {
+							let mut line_split = line.split(" ");
+							println!(
+								"{} {}",
+								line_split
+									.next()
+									.expect("expecting multiple elements")
+									.bright_yellow(),
+								line_split.into_iter().collect::<Vec<_>>().join(" ")
+							);
+						}
+					}
+				});
 
-				Ok(repl.print(&output))
+				Ok(repl.print("", false))
 			},
 		));
 		// exit
@@ -59,21 +80,21 @@ impl Repl<Read> {
 			"exit",
 			CmdArgs::None,
 			"Exit repl",
-			|args| Err(()), // flag to break
+			|_| Err(()), // flag to break
 		));
 		// cancel
 		r.commands.push(Command::new(
 			"cancel",
 			CmdArgs::None,
 			"Cancels more input",
-			|args| Ok(args.repl.print("")),
+			|args| Ok(args.repl.print("cancelled input", false)),
 		));
 		// cancel (with c)
 		r.commands.push(Command::new(
 			"c",
 			CmdArgs::None,
 			"Cancels more input",
-			|args| Ok(args.repl.print("")),
+			|args| Ok(args.repl.print("cancelled input", false)),
 		));
 		// load
 		r.commands.push(Command::new(
@@ -93,7 +114,9 @@ impl Repl<Read> {
 			data: r,
 		}
 	}
+}
 
+impl Repl<Read> {
 	/// Reads input from the input reader until an evaluation phase can begin.
 	pub fn read<Term: Terminal>(self, input_rdr: &mut InputReader<Term>) -> Repl<Evaluate> {
 		let mut more = false;
@@ -129,7 +152,7 @@ impl Repl<Read> {
 	///
 	/// # Panics
 	/// - Failure to initialise `InputReader`.
-	pub fn run(mut self) {
+	pub fn run(self) {
 		{
 			print!("{}", "Checking for later version...".bright_yellow());
 			io::stdout().flush().is_ok();
@@ -169,6 +192,8 @@ impl Repl<Read> {
 }
 
 impl Repl<Evaluate> {
+	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
+	/// This result gets passed back as a print ready repl.
 	pub fn eval(self) -> Result<Repl<Print>, ()> {
 		let Repl {
 			state,
@@ -176,11 +201,11 @@ impl Repl<Evaluate> {
 			mut data,
 		} = self;
 
-		let to_print = match state.result {
+		let (to_print, success) = match state.result {
 			InputResult::Command(name, args) => {
 				debug!("read command: {} {:?}", name, args);
 				match data.commands.find_command(&name) {
-					Err(e) => e.to_string(),
+					Err(e) => (e.to_string(), false),
 					Ok(cmd) => {
 						return (cmd.action)(CommandActionArgs {
 							repl: Repl {
@@ -195,14 +220,17 @@ impl Repl<Evaluate> {
 			}
 			InputResult::Program(input) => {
 				debug!("read program: {:?}", input);
-				handle_input(&mut data, input).unwrap_or_else(|e| e)
+				match handle_input(&mut data, input) {
+					Ok(s) => (s, true),
+					Err(s) => (s, false),
+				}
 			}
 			InputResult::Eof => return Err(()),
-			InputResult::InputError(err) => err,
-			_ => String::new(),
+			InputResult::InputError(err) => (err, false),
+			_ => (String::new(), false),
 		};
 		Ok(Repl {
-			state: Print { to_print },
+			state: Print { to_print, success },
 			inner: inner,
 			data: data,
 		})
@@ -210,10 +238,12 @@ impl Repl<Evaluate> {
 }
 
 impl Repl<ManualPrint> {
-	pub fn print(self, text: &str) -> Repl<Print> {
-		let to_print = text.to_string();
+	///
+	pub fn print(self, result_output: &str, as_out: bool) -> Repl<Print> {
+		let to_print = result_output.to_string();
+		let success = as_out;
 		Repl {
-			state: Print { to_print },
+			state: Print { to_print, success },
 			inner: self.inner,
 			data: self.data,
 		}
@@ -221,12 +251,25 @@ impl Repl<ManualPrint> {
 }
 
 impl Repl<Print> {
+	/// Prints the result if successful as `[out#]` or the failure message if any.
 	pub fn print(self) -> Repl<Read> {
-		println!("{}", self.state.to_print);
+		let Repl { state, inner, data } = self;
+		if state.success {
+			let out_stmt = format!("[out{}]", data.statements.len() - 1);
+			println!(
+				"{} {}: {}",
+				data.name.color(data.prompt_colour),
+				out_stmt.color(data.out_colour),
+				state.to_print
+			);
+		} else {
+			println!("{}", state.to_print);
+		}
+
 		Repl {
 			state: Read,
-			inner: self.inner,
-			data: self.data,
+			inner: inner,
+			data: data,
 		}
 	}
 }
@@ -250,27 +293,12 @@ fn handle_input(data: &mut Data, input: Input) -> Result<String, String> {
 			}
 
 			// statements
-			let mut yes = false;
 			if let Some(stmts) = additionals.stmts {
 				data.statements.push(stmts.stmts);
-				yes = true;
-			}
-			if yes {
-				let out_stmt = format!("[out{}]", data.statements.len() - 1);
-				println!(
-					"{} {}: {}",
-					data.name.color(data.prompt_colour),
-					out_stmt.color(data.out_colour),
-					s
-				);
 			}
 			Ok(s)
 		}
-		Err(s) => {
-			print!("{}", s);
-			io::stdout().flush().expect("flushing stdout failed");
-			Err(s)
-		}
+		Err(s) => Err(s),
 	}
 }
 
@@ -363,7 +391,7 @@ fn build_source(data: &mut Data, additional: Additional) -> SourceFile {
 /// Evaluates the source file by compiling and running the given source file.
 /// Returns the stderr if unsuccessful compilation or runtime, or the evaluation print value.
 /// Stderr is piped to the current stdout for compilation, with each line overwriting itself.
-fn eval<P: AsRef<Path>>(compile_dir: &P, source: SourceFile) -> Result<String, String> {
+fn eval<P: AsRef<Path>>(compile_dir: P, source: SourceFile) -> Result<String, String> {
 	let mut c = Exe::compile(&source, compile_dir).unwrap();
 
 	let compilation_stderr = {
@@ -386,7 +414,7 @@ fn eval<P: AsRef<Path>>(compile_dir: &P, source: SourceFile) -> Result<String, S
 			// print out the stdout as each line comes
 			// split out on the split pattern, and do not print that section!
 			let print = {
-				let mut rdr = BufReader::new(c.stdout());
+				let rdr = BufReader::new(c.stdout());
 				let mut s = String::new();
 				for line in rdr.lines() {
 					let line = line.unwrap();
@@ -426,7 +454,7 @@ mod tests {
 
 	#[test]
 	fn load_rs_source() {
-		let mut data = Repl::new().data;
+		let mut data = Repl::default().data;
 		for src_file in RS_FILES.iter() {
 			let file = format!("test-src/{}", src_file);
 			println!("{}", file);
@@ -459,7 +487,7 @@ mod tests {
 
 	#[test]
 	fn load_rscript_script() {
-		let mut data = Repl::new().data;
+		let mut data = Repl::default().data;
 		for src_file in RSCRIPT_FILES.iter() {
 			let file = format!("test-src/{}", src_file);
 			println!("{}", file);

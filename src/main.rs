@@ -95,7 +95,7 @@ fn main() {
 	// simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
 	// 	.unwrap();
 
-	if cfg!(target_os = "windows") {
+	if cfg!(target_os = "windows") && !cfg!(debug_assertions) {
 		// disable colored text output on Windows as the Windows terminals do not support it yet
 		colored::control::set_override(false);
 	}
@@ -127,7 +127,7 @@ fn main() {
 			Err(s) => println!("ERROR!\n{}", s),
 		},
 		"run" | "" => {
-			let repl = Repl::new();
+			let repl = Repl::default();
 			let repl = if !src_path.is_empty() {
 				match repl.load(&src_path).eval() {
 					Ok(r) => r.print(),
@@ -148,7 +148,6 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
 	use std::env;
 	use std::path::PathBuf;
 	use std::process;

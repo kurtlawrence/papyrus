@@ -3,21 +3,17 @@ use super::file::SourceFile;
 use super::input::{self, Input, InputReader, InputResult};
 use super::*;
 use colored::*;
-use std::io::Read as IoRead;
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{self, BufReader, Write};
 use std::path::{Path, PathBuf};
 use term_cursor;
 
 mod command;
 mod state;
 
-use self::command::Commands;
 pub use self::command::{CmdArgs, Command, CommandActionArgs};
 
 /// A REPL instance.
 pub struct Data {
-	/// Flag whether to keep looping.
-	exit_loop: bool,
 	/// The REPL handled commands.
 	/// Can be extended.
 	/// ```ignore
@@ -51,6 +47,7 @@ pub struct Evaluate {
 pub struct ManualPrint;
 pub struct Print {
 	to_print: String,
+	success: bool,
 }
 
 pub struct Repl<S> {
