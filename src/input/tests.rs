@@ -4,8 +4,8 @@ use linefeed::Signal;
 
 #[test]
 fn test_with_term() {
-	let rdr = InputReader::with_term("test", MemoryTerminal::new()).unwrap();
-	assert_eq!(rdr.buffer, String::new());
+    let rdr = InputReader::with_term("test", MemoryTerminal::new()).unwrap();
+    assert_eq!(rdr.buffer, String::new());
 }
 
 #[test]

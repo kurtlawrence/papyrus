@@ -35,7 +35,19 @@
 				"run",
 				"--bin",
 				"papyrus-pad",
-				"--features=\"azul-widget\""
+				"--features=\"azul-widgets\""
+			],
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "check all features",
+			"command": "cargo",
+			"args": [
+				"check",
+				"--features=\"azul-widgets\""
 			],
 			"problemMatcher": [
 				"$rustc"

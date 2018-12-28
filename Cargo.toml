@@ -15,7 +15,7 @@ edition = "2018"
 travis-ci = { repository = "kurtlawrence/papyrus" }
 
 [features]
-azul-widget = [ "azul" ]
+azul-widgets = [ "azul" ]
 
 [dependencies]
 argparse = "0.2"
@@ -41,5 +41,5 @@ criterion = "0.2"
 
 [[bin]]
 name = "papyrus-pad"
-path = "src/papyrus_pad/main.rs"
-required-features = [ "azul-widget" ]
+path = "src/papyrus-pad.rs"
+required-features = [ "azul-widgets" ]

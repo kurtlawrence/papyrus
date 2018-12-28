@@ -85,7 +85,6 @@
 
 #[macro_use]
 extern crate log;
-
 extern crate colored;
 extern crate dirs;
 extern crate failure;
@@ -100,6 +99,8 @@ mod file;
 mod input;
 mod repl;
 mod version;
+#[cfg(feature = "azul-widgets")]
+mod widgets;
 
 use failure::ResultExt;
 use std::{fs, path};
@@ -107,8 +108,8 @@ use std::{fs, path};
 pub use self::compile::Exe;
 pub use self::contextmenu::{add_right_click_menu, remove_right_click_menu};
 pub use self::file::{CrateType, SourceFile, SourceFileType};
-pub use self::repl::Repl;
-pub use self::repl::{CmdArgs, Command};
+pub use self::input::InputReader;
+pub use self::repl::{CmdArgs, Command, Repl, ReplData};
 pub use self::version::{query, Status};
 
 const PAPYRUS_SPLIT_PATTERN: &'static str = "<!papyrus-split>";
