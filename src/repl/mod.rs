@@ -28,8 +28,6 @@ pub struct ReplData {
     pub statements: Vec<Vec<String>>,
     /// Crates to referenced.
     pub crates: Vec<CrateType>,
-    /// Flag whether to print to stdout.
-    pub print: bool,
     /// App and prompt text.
     pub name: &'static str,
     /// The colour of the prompt region. ie `papyrus`.
@@ -63,7 +61,6 @@ impl Default for ReplData {
             name: "papyrus",
             prompt_colour: Color::Cyan,
             out_colour: Color::BrightGreen,
-            print: true,
         };
         // help
         r.commands.push(Command::new(

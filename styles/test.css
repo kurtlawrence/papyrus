@@ -1,4 +1,7 @@
 .terminal {
+	margin-left: 1em;
 	text-align: left;
 	align-content: flex-end;
+	font-family: Arial, Helvetica, sans-serif;
+	line-height: 135%;
 }

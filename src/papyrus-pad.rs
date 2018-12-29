@@ -6,10 +6,8 @@ use azul::prelude::*;
 use azul::widgets::{
     button::Button, label::Label, text_input::TextInput, text_input::TextInputState,
 };
-use linefeed::interface::Interface;
 use linefeed::memory::MemoryTerminal;
-use linefeed::reader::ReadResult;
-use linefeed::terminal::{Terminal, TerminalReader, TerminalWriter};
+use linefeed::terminal::Terminal;
 use papyrus::*;
 
 struct MyApp {
@@ -75,12 +73,12 @@ fn on_vk_keydown(state: &mut AppState<MyApp>, event: WindowEvent<MyApp>) -> Upda
                 println!("hit",);
                 s.terminal.push_input("\n"); // this allows the read_line() to exit
 
-                match Repl::new(&mut s.repl_data).read(&mut s.reader).eval() {
-                    Ok(print) => {
-                        print.print();
-                    }
-                    Err(_) => (), // do nothing if asked to exit...
-                }
+                // match Repl::new(&mut s.repl_data).read(&mut s.reader).eval() {
+                //     Ok(print) => {
+                //         print.print(&mut MyWriter(&s.terminal));
+                //     }
+                //     Err(_) => (), // do nothing if asked to exit...
+                // }
 
                 println!("{}", create_terminal_string(&s.terminal));
                 s.input = TextInputState::new(String::new());
@@ -91,20 +89,49 @@ fn on_vk_keydown(state: &mut AppState<MyApp>, event: WindowEvent<MyApp>) -> Upda
     }
 }
 
+struct MyWriter<'a>(&'a MemoryTerminal);
+
+use std::io;
+impl<'a> io::Write for MyWriter<'a> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.0.write(&String::from_utf8_lossy(buf));
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
 fn main() {
     println!("hello world",);
 
     let term = MemoryTerminal::new();
-    let term_clone = term.clone();
-    let reader =
-        InputReader::with_term("papyrus-pad-terminal", term).expect("failed to initialise reader");
+    let reader = InputReader::with_term("papyrus-pad-terminal", term.clone())
+        .expect("failed loading reader");
     let repl_data = ReplData::default();
+    let closure_term = term.clone();
+
+    std::thread::spawn(move || {
+        let mut repl_data = ReplData::default();
+        let terminal = closure_term.clone();
+        let mut reader = InputReader::with_term("papyrus-pad-terminal", closure_term)
+            .expect("failed loading reader");
+        loop {
+            match Repl::new(&mut repl_data).read(&mut reader).eval() {
+                Ok(print) => {
+                    print.print(&mut MyWriter(&terminal));
+                }
+                Err(_) => (), // do nothing if asked to exit...
+            }
+        }
+    });
 
     let app = {
         App::new(
             MyApp {
                 input: TextInputState::new(String::new()),
-                terminal: term_clone,
+                terminal: term,
                 reader: reader,
                 repl_data: repl_data,
             },
@@ -118,7 +145,10 @@ fn main() {
     let window = if cfg!(debug_assertions) {
         Window::new_hot_reload(
             WindowCreateOptions::default(),
-            css::hot_reload("styles/test.css", true),
+            css::hot_reload_override_native(
+                "styles/test.css",
+                std::time::Duration::from_millis(500),
+            ),
         )
         .unwrap()
     // Window::new(WindowCreateOptions::default(), css::native()).unwrap()
