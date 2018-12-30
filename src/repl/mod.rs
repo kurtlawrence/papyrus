@@ -4,7 +4,7 @@ use super::file::SourceFile;
 use super::input::{self, Input, InputReader, InputResult};
 use super::*;
 use colored::*;
-use std::io::{self, BufReader, Write};
+use std::io::{BufReader, Write};
 use std::path::{Path, PathBuf};
 use term_cursor;
 
