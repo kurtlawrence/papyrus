@@ -1,30 +1,32 @@
 extern crate azul;
+extern crate cansi;
 extern crate linefeed;
 extern crate papyrus;
 
 use azul::prelude::*;
-use azul::widgets::{label::Label, text_input::TextInput, text_input::TextInputState};
-use linefeed::complete::PathCompleter;
+use azul::widgets::label::Label;
+use cansi::*;
 use linefeed::memory::MemoryTerminal;
 use papyrus::*;
 
 struct MyApp {
-    input: TextInputState,
     terminal: MemoryTerminal,
 }
 
 impl Layout for MyApp {
-    fn layout(&self, info: WindowInfo<Self>) -> Dom<Self> {
+    fn layout(&self, _: WindowInfo<Self>) -> Dom<Self> {
         let term_str = create_terminal_string(&self.terminal);
-        let terminal = Label::new(term_str).dom().with_class("terminal");
-        let input = TextInput::new()
-            .bind(info.window, &self.input, self)
-            .dom(&self.input)
+        let categorised = cansi::categorise_text(&term_str);
+        let dom = Dom::new(NodeType::Div)
+            .with_class("terminal")
             .with_callback(On::TextInput, Callback(on_text_input))
             .with_callback(On::VirtualKeyDown, Callback(on_vk_keydown));
-        Dom::new(NodeType::Div)
-            .with_child(terminal)
-            .with_child(input)
+
+        dom.with_child(
+            Label::new(construct_text_no_codes(&categorised))
+                .dom()
+                .with_class("terminal"),
+        )
     }
 }
 
@@ -56,39 +58,18 @@ fn on_vk_keydown(state: &mut AppState<MyApp>, event: WindowEvent<MyApp>) -> Upda
     let keyboard_state = state.windows[event.window].get_keyboard_state();
     match keyboard_state.latest_virtual_keycode {
         Some(VirtualKeyCode::Back) => {
-            state.data.modify(|s| {
-                s.terminal.push_input("\x08"); // backspace character
-            });
+            state.data.modify(|s| s.terminal.push_input("\x08")); // backspace character
             UpdateScreen::Redraw
         }
         Some(VirtualKeyCode::Tab) => {
-            state.data.modify(|s| {
-                s.terminal.push_input("\t");
-            });
+            state.data.modify(|s| s.terminal.push_input("\t"));
             UpdateScreen::Redraw
         }
         Some(VirtualKeyCode::Return) => {
-            state.data.modify(|s| {
-                s.terminal.push_input("\n"); // this allows the read_line() to exit
-                s.input = TextInputState::new(String::new()); // reset the input box
-            });
+            state.data.modify(|s| s.terminal.push_input("\n")); // this allows the read_line() to exit
             UpdateScreen::Redraw
         }
         _ => UpdateScreen::DontRedraw,
-    }
-}
-
-struct MyWriter<'a>(&'a MemoryTerminal);
-
-use std::io;
-impl<'a> io::Write for MyWriter<'a> {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0.write(&String::from_utf8_lossy(buf));
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
     }
 }
 
@@ -101,27 +82,18 @@ fn main() {
     std::thread::spawn(move || {
         let mut repl_data = ReplData::default();
         let terminal = closure_term.clone();
-        let mut reader = InputReader::with_term("papyrus-pad-terminal", closure_term)
-            .expect("failed loading reader");
-        reader
-            .interface
-            .set_completer(std::sync::Arc::new(PathCompleter));
+        let mut repl = Repl::with_term(terminal.clone(), &mut repl_data);
         loop {
-            match Repl::new(&mut repl_data).read(&mut reader).eval() {
-                Ok(print) => {
-                    print.print(&mut MyWriter(&terminal));
-                }
-                Err(_) => (), // do nothing if asked to exit...
-            }
+            repl = match repl.read().eval() {
+                Ok(print) => print.print(),
+                Err(_) => break,	// this will stop the repl if we get here
+            };
         }
     });
 
     let app = {
         App::new(
-            MyApp {
-                input: TextInputState::new(String::new()),
-                terminal: term,
-            },
+            MyApp { terminal: term },
             AppConfig {
                 enable_logging: Some(LevelFilter::Error),
                 log_file_path: Some("debug.log".to_string()),
@@ -144,3 +116,25 @@ fn main() {
     };
     app.run(window).unwrap();
 }
+
+// put down here as it will be largeish
+fn colour_slice<T: Layout>(cat_slice: &CategorisedSlice) -> Dom<T> {
+    let s = String::from_utf8_lossy(cat_slice.text_as_bytes);
+
+    let label = Label::new(s).dom().with_class("terminal-text");
+    let label = match cat_slice.fg_colour {
+        Color::Cyan => {
+            label.with_style_override("fg_colour", CssProperty::TextColor(StyleTextColor(CYAN)))
+        }
+        _ => label,
+    };
+
+    label
+}
+
+const CYAN: ColorU = ColorU {
+    r: 0,
+    b: 170,
+    g: 170,
+    a: 0,
+};

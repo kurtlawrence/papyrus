@@ -5,3 +5,7 @@
 	font-family: Arial, Helvetica, sans-serif;
 	line-height: 135%;
 }
+
+.terminal-text {
+	text-align: left;
+}
