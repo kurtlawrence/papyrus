@@ -104,16 +104,3 @@ mod widgets;
 
 pub use self::contextmenu::{add_right_click_menu, remove_right_click_menu};
 pub use self::repl::{CmdArgs, Command, Repl, ReplData};
-
-#[cfg(test)]
-const RS_FILES: [&'static str; 2] = ["with-crate.rs", "pwr.rs"];
-#[cfg(test)]
-const RSCRIPT_FILES: [&'static str; 7] = [
-	"expr.rscript",
-	"one.rscript",
-	"expr-list.rscript",
-	"count_files.rscript",
-	"items.rscript",
-	"dir.rscript",
-	"use_rand.rscript",
-];

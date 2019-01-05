@@ -1,5 +1,3 @@
-
-
 extern crate azul;
 extern crate cansi;
 extern crate linefeed;
@@ -126,7 +124,7 @@ fn main() {
             ),
         )
         .unwrap()
-        // Window::new(WindowCreateOptions::default(), css::native()).unwrap()
+    // Window::new(WindowCreateOptions::default(), css::native()).unwrap()
     } else {
         Window::new(WindowCreateOptions::default(), css::native()).unwrap()
     };
