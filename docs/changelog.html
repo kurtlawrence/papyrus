@@ -137,6 +137,16 @@
                 <div id="content" class="content">
                     <main>
                         <a class="header" href="#changelog" id="changelog"><h1>Changelog</h1></a>
+<a class="header" href="#a070" id="a070"><h2>0.7.0</h2></a>
+<p>Major change in api as the library is shifted towards a new repl direction.</p>
+<ul>
+<li><code>Repl</code>s are now state machines</li>
+<li>Cannot construct a <code>Repl</code> using a file</li>
+<li>Cannot <code>evaluate</code> off a <code>Repl</code> (this has been altered to work with state machine)</li>
+<li><code>Command</code> now requires to return a repl in print state (<code>Result&lt;Repl&lt;Print&gt;, ()&gt;</code>)</li>
+<li><code>Repl</code>s use <code>ReplData</code> which is passed between states and instantiated outside the repl machine</li>
+<li>Documentation is not up to date, and will not be until some features stablise</li>
+</ul>
 <a class="header" href="#a061" id="a061"><h2>0.6.1</h2></a>
 <ul>
 <li>Papyrus now formats the source code written to file.</li>

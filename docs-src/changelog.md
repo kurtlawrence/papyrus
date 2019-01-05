@@ -9,6 +9,7 @@ Major change in api as the library is shifted towards a new repl direction.
 - Cannot `evaluate` off a `Repl` (this has been altered to work with state machine)
 - `Command` now requires to return a repl in print state (`Result<Repl<Print>, ()>`)
 - `Repl`s use `ReplData` which is passed between states and instantiated outside the repl machine
+- Documentation is not up to date, and will not be until some features stablise
 
 ## 0.6.1
 
