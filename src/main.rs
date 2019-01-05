@@ -91,114 +91,114 @@ use argparse::{ArgumentParser, Store};
 use papyrus::*;
 
 fn main() {
-	// turn on for logging
-	// simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
-	// 	.unwrap();
+    // turn on for logging
+    // simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
+    // 	.unwrap();
 
-	if cfg!(target_os = "windows") && !cfg!(debug_assertions) {
-		// disable colored text output on Windows as the Windows terminals do not support it yet
-		colored::control::set_override(false);
-	}
+    if cfg!(target_os = "windows") && !cfg!(debug_assertions) {
+        // disable colored text output on Windows as the Windows terminals do not support it yet
+        colored::control::set_override(false);
+    }
 
-	let mut command = String::new();
-	let mut src_path = String::new();
-	{
-		let mut parser = ArgumentParser::new();
-		parser.set_description("PAPYRUS\nA rust repl and script runner");
-		parser.refer(&mut command).add_argument(
-			"command",
-			Store,
-			"Command argument: run, rc-add, rc-remove",
-		);
-		parser
-			.refer(&mut src_path)
-			.add_argument("src_file", Store, ".rs or .rscript source file");
+    let mut command = String::new();
+    let mut src_path = String::new();
+    {
+        let mut parser = ArgumentParser::new();
+        parser.set_description("PAPYRUS\nA rust repl and script runner");
+        parser.refer(&mut command).add_argument(
+            "command",
+            Store,
+            "Command argument: run, rc-add, rc-remove",
+        );
+        parser
+            .refer(&mut src_path)
+            .add_argument("src_file", Store, ".rs or .rscript source file");
 
-		parser.parse_args_or_exit();
-	}
+        parser.parse_args_or_exit();
+    }
 
-	match command.as_str() {
-		"rc-add" => match add_right_click_menu() {
-			Ok(s) => println!("added right click menu entry\n{}", s),
-			Err(s) => println!("ERROR!\n{}", s),
-		},
-		"rc-remove" => match remove_right_click_menu() {
-			Ok(s) => println!("removed right click menu entry\n{}", s),
-			Err(s) => println!("ERROR!\n{}", s),
-		},
-		"run" | "" => {
-			let data = &mut ReplData::default();
-			let repl = Repl::default_terminal(data);
-			let repl = if !src_path.is_empty() {
-				match repl.load(&src_path).eval() {
-					Ok(r) => r.print(),
-					Err(_) => {
-						println!("no load",);
-						return;
-					}
-				}
-			} else {
-				repl
-			};
-			repl.run();
-			println!("Thanks for using papyrus!");
-		}
-		_ => println!("expecting a valid command\ntry running papyrus -h for more information",),
-	}
+    match command.as_str() {
+        "rc-add" => match add_right_click_menu() {
+            Ok(s) => println!("added right click menu entry\n{}", s),
+            Err(s) => println!("ERROR!\n{}", s),
+        },
+        "rc-remove" => match remove_right_click_menu() {
+            Ok(s) => println!("removed right click menu entry\n{}", s),
+            Err(s) => println!("ERROR!\n{}", s),
+        },
+        "run" | "" => {
+            let data = &mut ReplData::default();
+            let repl = Repl::default_terminal(data);
+            let repl = if !src_path.is_empty() {
+                match repl.load(&src_path).eval() {
+                    Ok(r) => r.print(),
+                    Err(_) => {
+                        println!("no load",);
+                        return;
+                    }
+                }
+            } else {
+                repl
+            };
+            repl.run();
+            println!("Thanks for using papyrus!");
+        }
+        _ => println!("expecting a valid command\ntry running papyrus -h for more information",),
+    }
 }
 
 #[cfg(test)]
 mod tests {
-	use std::env;
-	use std::path::PathBuf;
-	use std::process;
+    use std::env;
+    use std::path::PathBuf;
+    use std::process;
 
-	fn exe() -> PathBuf {
-		let mut loc = env::current_exe().unwrap().canonicalize().unwrap();
-		loc.pop();
-		loc.pop();
-		if cfg!(windows) {
-			loc.join("papyrus.exe")
-		} else {
-			loc.join("papyrus")
-		}
-	}
+    fn exe() -> PathBuf {
+        let mut loc = env::current_exe().unwrap().canonicalize().unwrap();
+        loc.pop();
+        loc.pop();
+        if cfg!(windows) {
+            loc.join("papyrus.exe")
+        } else {
+            loc.join("papyrus")
+        }
+    }
 
-	#[test]
-	fn run_rc_add() {
-		let exe = exe();
-		println!("{}", exe.to_string_lossy());
-		process::Command::new(exe).arg("rc-add").spawn().unwrap();
-	}
+    #[test]
+    fn run_rc_add() {
+        let exe = exe();
+        println!("{}", exe.to_string_lossy());
+        process::Command::new(exe).arg("rc-add").spawn().unwrap();
+    }
 
-	#[test]
-	fn run_rc_remove() {
-		let exe = exe();
-		println!("{}", exe.to_string_lossy());
-		process::Command::new(exe).arg("rc-remove").spawn().unwrap();
-	}
+    #[test]
+    fn run_rc_remove() {
+        let exe = exe();
+        println!("{}", exe.to_string_lossy());
+        process::Command::new(exe).arg("rc-remove").spawn().unwrap();
+    }
 
-	#[test]
-	fn run_repl() {
-		let exe = exe();
-		println!("{}", exe.to_string_lossy());
-		let mut p1 = process::Command::new(&exe).spawn().unwrap();
-		let mut p2 = process::Command::new(&exe).arg("run").spawn().unwrap();
+    #[test]
+    fn run_repl() {
+        let exe = exe();
+        println!("{}", exe.to_string_lossy());
+        let mut p1 = process::Command::new(&exe).spawn().unwrap();
+        let mut p2 = process::Command::new(&exe).arg("run").spawn().unwrap();
 
-		std::thread::sleep(std::time::Duration::from_millis(500));
+        std::thread::sleep(std::time::Duration::from_millis(500));
 
-		p1.kill().unwrap();
-		p2.kill().unwrap();
-	}
+        p1.kill().unwrap();
+        p2.kill().unwrap();
+    }
 
-	#[test]
-	fn fail_cmd() {
-		let exe = exe();
-		println!("{}", exe.to_string_lossy());
-		let out = process::Command::new(exe).arg("adf").output().unwrap();
-		assert_eq!(
-			String::from_utf8_lossy(&out.stdout),
-			"expecting a valid command\ntry running papyrus -h for more information\n".to_string()
-		);
-	}
+    #[test]
+    fn fail_cmd() {
+        let exe = exe();
+        println!("{}", exe.to_string_lossy());
+        let out = process::Command::new(exe).arg("adf").output().unwrap();
+        assert_eq!(
+            String::from_utf8_lossy(&out.stdout),
+            "expecting a valid command\ntry running papyrus -h for more information\n".to_string()
+        );
+    }
 }

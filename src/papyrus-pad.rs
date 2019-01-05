@@ -1,3 +1,5 @@
+
+
 extern crate azul;
 extern crate cansi;
 extern crate linefeed;
@@ -7,26 +9,27 @@ use azul::prelude::*;
 use azul::widgets::label::Label;
 use cansi::*;
 use linefeed::memory::MemoryTerminal;
+
 use papyrus::*;
 
 struct MyApp {
     terminal: MemoryTerminal,
+    last_terminal_string: String,
 }
 
 impl Layout for MyApp {
     fn layout(&self, _: WindowInfo<Self>) -> Dom<Self> {
         let term_str = create_terminal_string(&self.terminal);
+        // println!("{}", String::from_utf8_lossy(term_str.as_bytes()));
         let categorised = cansi::categorise_text(&term_str);
+        let text = construct_text_no_codes(&categorised);
+        // println!("{}", text);
         let dom = Dom::new(NodeType::Div)
             .with_class("terminal")
             .with_callback(On::TextInput, Callback(on_text_input))
             .with_callback(On::VirtualKeyDown, Callback(on_vk_keydown));
 
-        dom.with_child(
-            Label::new(construct_text_no_codes(&categorised))
-                .dom()
-                .with_class("terminal"),
-        )
+        dom.with_child(Label::new(text).dom().with_class("terminal"))
     }
 }
 
@@ -73,6 +76,16 @@ fn on_vk_keydown(state: &mut AppState<MyApp>, event: WindowEvent<MyApp>) -> Upda
     }
 }
 
+fn check_terminal_change(app: &mut MyApp, _: &mut AppResources) -> (UpdateScreen, TerminateDaemon) {
+    let new_str = create_terminal_string(&app.terminal);
+    if new_str != app.last_terminal_string {
+        app.last_terminal_string = new_str;
+        (UpdateScreen::Redraw, TerminateDaemon::Continue)
+    } else {
+        (UpdateScreen::DontRedraw, TerminateDaemon::Continue)
+    }
+}
+
 fn main() {
     println!("hello world",);
 
@@ -86,14 +99,17 @@ fn main() {
         loop {
             repl = match repl.read().eval() {
                 Ok(print) => print.print(),
-                Err(_) => break,	// this will stop the repl if we get here
+                Err(_) => break, // this will stop the repl if we get here
             };
         }
     });
 
-    let app = {
+    let mut app = {
         App::new(
-            MyApp { terminal: term },
+            MyApp {
+                terminal: term,
+                last_terminal_string: String::new(),
+            },
             AppConfig {
                 enable_logging: Some(LevelFilter::Error),
                 log_file_path: Some("debug.log".to_string()),
@@ -110,10 +126,14 @@ fn main() {
             ),
         )
         .unwrap()
-    // Window::new(WindowCreateOptions::default(), css::native()).unwrap()
+        // Window::new(WindowCreateOptions::default(), css::native()).unwrap()
     } else {
         Window::new(WindowCreateOptions::default(), css::native()).unwrap()
     };
+    let daemon = Daemon::unique(DaemonCallback(check_terminal_change))
+        .run_every(std::time::Duration::from_millis(2));
+    app.add_daemon(daemon);
+
     app.run(window).unwrap();
 }
 

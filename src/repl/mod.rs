@@ -1,17 +1,21 @@
-use self::command::Commands;
+mod command;
+mod eval;
+mod print;
+mod read;
+mod writer;
+
 use super::compile::*;
 use super::file::SourceFile;
 use super::input::{self, Input, InputReader, InputResult};
 use super::*;
+
 use colored::*;
 use linefeed::terminal::{Terminal, TerminalWriter};
 use std::io::{BufReader, Write};
 use std::path::{Path, PathBuf};
 use term_cursor;
 
-mod command;
-mod state;
-mod writer;
+use self::command::Commands;
 
 pub use self::command::{CmdArgs, Command};
 
@@ -45,6 +49,8 @@ struct ReplTerminal<Term: Terminal> {
 	input_rdr: InputReader<Term>,
 }
 
+struct Writer<'a, T: Terminal>(&'a T);
+
 pub struct Read;
 pub struct Evaluate {
 	result: InputResult,
@@ -55,8 +61,6 @@ pub struct Print {
 	/// Specifies whether to print the `[out#]`
 	as_out: bool,
 }
-
-struct Writer<'a, Term: Terminal>(Box<dyn TerminalWriter<Term> + 'a>);
 
 pub struct Repl<'data, S, Term: Terminal> {
 	state: S,
@@ -145,6 +149,29 @@ impl<Term: Terminal> Default for ReplData<Term> {
 		));
 
 		r
+	}
+}
+
+impl<'data, S, Term: Terminal> Repl<'data, S, Term> {
+	/// Load a file into the repl, no matter the current state. Returns a repl awaiting evaluation.
+	pub fn load<P: AsRef<Path>>(self, file_path: P) -> Repl<'data, Evaluate, Term> {
+		let result = load_and_parse(file_path);
+		Repl {
+			state: Evaluate { result },
+			terminal: self.terminal,
+			data: self.data,
+		}
+	}
+
+	// TODO make this clean the repl as well.
+	pub fn clean(&self) {
+		match compile_dir().canonicalize() {
+			Ok(d) => {
+				let target_dir = format!("{}/target", d.to_string_lossy());
+				fs::remove_dir_all(target_dir).is_ok();
+			}
+			_ => (),
+		}
 	}
 }
 

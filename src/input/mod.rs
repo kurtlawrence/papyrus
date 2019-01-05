@@ -73,14 +73,11 @@ impl<Term: Terminal> InputReader<Term> {
 		self.interface
 			.set_prompt(prompt)
 			.expect("failed to set prompt");
-		let mut r = self
-			.interface
-			.read_line_step(Some(std::time::Duration::from_millis(1)));
+		let duration = std::time::Duration::from_millis(1);
+		let mut r = self.interface.read_line_step(Some(duration));
 		while let Ok(None) = r {
-			std::thread::sleep(std::time::Duration::from_millis(1));
-			r = self
-				.interface
-				.read_line_step(Some(std::time::Duration::from_millis(1)));
+			std::thread::sleep(duration);
+			r = self.interface.read_line_step(Some(duration));
 		}
 		let r = r
 			.unwrap_or(Some(ReadResult::Eof))

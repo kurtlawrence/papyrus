@@ -43,6 +43,19 @@
 		},
 		{
 			"type": "shell",
+			"label": "run papyrus",
+			"command": "cargo",
+			"args": [
+				"run",
+				"--bin",
+				"papyrus",
+			],
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"type": "shell",
 			"label": "check all features",
 			"command": "cargo",
 			"args": [
@@ -55,12 +68,12 @@
 		},
 		{
 			"type": "shell",
-			"label": "run papyrus",
+			"label": "bench all features",
 			"command": "cargo",
 			"args": [
-				"run",
-				"--bin",
-				"papyrus",
+				"+nightly",
+				"bench",
+				"--features=\"azul-widgets\""
 			],
 			"problemMatcher": [
 				"$rustc"
