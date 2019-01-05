@@ -4,16 +4,15 @@ mod print;
 mod read;
 mod writer;
 
-use super::compile::*;
-use super::file::SourceFile;
-use super::input::{self, Input, InputReader, InputResult};
-use super::*;
+use compile::*;
+use file::{CrateType, SourceFile};
+use input::{self, Input, InputReader, InputResult};
 
 use colored::*;
-use linefeed::terminal::{Terminal, TerminalWriter};
+use linefeed::terminal::Terminal;
+use std::fs;
 use std::io::{BufReader, Write};
 use std::path::{Path, PathBuf};
-use term_cursor;
 
 use self::command::Commands;
 
@@ -218,17 +217,4 @@ fn compile_dir() -> PathBuf {
 	let dir = dirs::home_dir().unwrap_or(PathBuf::new());
 	let dir = PathBuf::from(format!("{}/.papyrus", dir.to_string_lossy()));
 	dir
-}
-
-fn code(statements: &str, items: &str) -> String {
-	format!(
-		r#"fn main() {{
-    {stmts}
-}}
-
-{items}
-"#,
-		stmts = statements,
-		items = items
-	)
 }

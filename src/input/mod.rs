@@ -1,4 +1,4 @@
-use super::*;
+use file::CrateType;
 use linefeed::terminal::Terminal;
 use linefeed::{Interface, ReadResult};
 use syn::Expr;

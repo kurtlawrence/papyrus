@@ -1,9 +1,6 @@
-use super::command::Commands;
 use super::*;
 
-use linefeed::terminal::{DefaultTerminal, Terminal};
-use std::io::Read as IoRead;
-use std::io::{self, BufRead};
+use linefeed::terminal::Terminal;
 
 impl<'data, Term: Terminal> Repl<'data, ManualPrint, Term> {
 	/// asdfdsa

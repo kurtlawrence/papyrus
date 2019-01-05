@@ -1,11 +1,14 @@
 use super::command::Commands;
 use super::*;
+use file::SourceFileType;
 
-use linefeed::terminal::{DefaultTerminal, Terminal};
+use linefeed::terminal::Terminal;
+use std::io::BufRead;
 use std::io::Read as IoRead;
-use std::io::{self, BufRead};
 
 type HandleInputResult = (String, bool);
+
+const PAPYRUS_SPLIT_PATTERN: &'static str = "<!papyrus-split>";
 
 impl<'data, Term: Terminal> Repl<'data, Evaluate, Term> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
@@ -242,7 +245,18 @@ where
 	}
 }
 
+fn code(statements: &str, items: &str) -> String {
+	format!(
+		r#"fn main() {{
+    {stmts}
+}}
 
+{items}
+"#,
+		stmts = statements,
+		items = items
+	)
+}
 
 #[cfg(test)]
 mod tests {

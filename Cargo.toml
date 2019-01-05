@@ -9,7 +9,7 @@ repository = "https://github.com/kurtlawrence/papyrus"
 documentation = "https://docs.rs/papyrus/"
 readme = "README.md"
 keywords = [ "repl", "script" ]
-edition = "2018"
+edition = "2015"
 
 [badges]
 travis-ci = { repository = "kurtlawrence/papyrus" }
@@ -38,6 +38,10 @@ cansi = { version = "1.0", optional = true }
 # [[bench]]
 # name = "benches"
 # harness = false
+
+[[bin]]
+name = "papyrus"
+path = "src/main.rs"
 
 [[bin]]
 name = "papyrus-pad"

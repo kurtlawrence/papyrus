@@ -102,63 +102,18 @@ mod version;
 #[cfg(feature = "azul-widgets")]
 mod widgets;
 
-use failure::ResultExt;
-use std::{fs, path};
-
-pub use self::compile::Exe;
 pub use self::contextmenu::{add_right_click_menu, remove_right_click_menu};
-pub use self::file::{CrateType, SourceFile, SourceFileType};
-pub use self::input::InputReader;
 pub use self::repl::{CmdArgs, Command, Repl, ReplData};
-pub use self::version::{query, Status};
 
-const PAPYRUS_SPLIT_PATTERN: &'static str = "<!papyrus-split>";
 #[cfg(test)]
 const RS_FILES: [&'static str; 2] = ["with-crate.rs", "pwr.rs"];
 #[cfg(test)]
 const RSCRIPT_FILES: [&'static str; 7] = [
-    "expr.rscript",
-    "one.rscript",
-    "expr-list.rscript",
-    "count_files.rscript",
-    "items.rscript",
-    "dir.rscript",
-    "use_rand.rscript",
+	"expr.rscript",
+	"one.rscript",
+	"expr-list.rscript",
+	"count_files.rscript",
+	"items.rscript",
+	"dir.rscript",
+	"use_rand.rscript",
 ];
-
-/// Creates the specified file along with the directory to it if it doesn't exist.
-fn create_file_and_dir<P: AsRef<path::Path>>(
-    file: &P,
-) -> Result<fs::File, failure::Context<String>> {
-    let file = file.as_ref();
-    match file.parent() {
-        Some(parent) => {
-            fs::create_dir_all(parent).context(format!("failed creating directory {:?}", parent))?
-        }
-        None => (),
-    }
-
-    fs::File::create(file).context(format!("failed creating file {:?}", file))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn create_file_and_dir_test() {
-        let p = path::Path::new("foo.txt");
-        assert!(!p.exists());
-        create_file_and_dir(&"foo.txt").unwrap();
-        assert!(p.exists());
-        fs::remove_file(p).unwrap();
-        assert!(!p.exists());
-
-        let p = path::Path::new("tests/foo");
-        assert!(!p.exists());
-        create_file_and_dir(&p).unwrap();
-        assert!(p.exists());
-        fs::remove_file(p).unwrap();
-        assert!(!p.exists());
-    }
-}
