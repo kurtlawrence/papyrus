@@ -10,6 +10,8 @@ use linefeed::memory::MemoryTerminal;
 
 use papyrus::*;
 
+pub const TEST_OUTPUT: u8 = 123;
+
 struct MyApp {
     terminal: MemoryTerminal,
     last_terminal_string: String,
