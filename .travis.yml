@@ -1,13 +1,7 @@
 sudo: required
 language: rust
 cache: cargo
-script:
-  - cd ..
-  - git clone https://github.com/kurtlawrence/azul.git
-  - cd papyrus/
-  - cargo clean
-  - cargo build
-  - cargo test -- --test-threads=1
+
 os:
   - linux
   - windows
@@ -29,6 +23,14 @@ before_cache: |
   if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
     RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
   fi
+
+script:
+  - cd ..
+  - git clone https://github.com/kurtlawrence/azul.git
+  - cd papyrus/
+  - cargo clean
+  - cargo build
+  - cargo test -- --test-threads=1
 
 after_success: |
   if [[  "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
