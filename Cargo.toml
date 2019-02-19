@@ -1,6 +1,6 @@
 [package]
 name = "papyrus"
-version = "0.6.1"
+version = "0.7.0"
 authors = ["kurt <kurtlawrence92@gmail.com>"]
 description = "A rust repl and script runner"
 license = "MIT"
@@ -9,9 +9,13 @@ repository = "https://github.com/kurtlawrence/papyrus"
 documentation = "https://docs.rs/papyrus/"
 readme = "README.md"
 keywords = [ "repl", "script" ]
+edition = "2015"
 
 [badges]
 travis-ci = { repository = "kurtlawrence/papyrus" }
+
+[features]
+azul-widgets = [ "azul", "cansi" ]
 
 [dependencies]
 argparse = "0.2"
@@ -24,10 +28,22 @@ simplelog = "0.5"
 colored = "1.6"
 term_cursor = "0.2"
 reqwest = "0.9"
+azul = { path = "../azul/azul", optional = true }
+cansi = { version = "1.0", optional = true }
 
 [dev-dependencies]
-criterion = "0.2"
+# criterion = "0.2"
 
-[[bench]]
-name = "benches"
-harness = false
+# Currently disabled.
+# [[bench]]
+# name = "benches"
+# harness = false
+
+[[bin]]
+name = "papyrus"
+path = "src/main.rs"
+
+[[bin]]
+name = "papyrus-pad"
+path = "src/papyrus-pad.rs"
+required-features = [ "azul-widgets" ]

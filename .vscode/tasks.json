@@ -27,5 +27,57 @@
 				"$rustc"
 			]
 		},
+		{
+			"type": "shell",
+			"label": "run papyrus-pad",
+			"command": "cargo",
+			"args": [
+				"run",
+				"--bin",
+				"papyrus-pad",
+				"--features=\"azul-widgets\""
+			],
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "run papyrus",
+			"command": "cargo",
+			"args": [
+				"run",
+				"--bin",
+				"papyrus",
+			],
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "check all features",
+			"command": "cargo",
+			"args": [
+				"check",
+				"--features=\"azul-widgets\""
+			],
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
+		{
+			"type": "shell",
+			"label": "bench all features",
+			"command": "cargo",
+			"args": [
+				"+nightly",
+				"bench",
+				"--features=\"azul-widgets\""
+			],
+			"problemMatcher": [
+				"$rustc"
+			]
+		},
 	]
 }

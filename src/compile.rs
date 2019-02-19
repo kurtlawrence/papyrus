@@ -1,9 +1,9 @@
-use super::*;
 use failure::ResultExt;
+use file::{SourceFile, SourceFileType};
 use std::io::Write;
 use std::path::Path;
 use std::process::{Child, ChildStderr, ChildStdout, Command, ExitStatus, Stdio};
-use std::{error, fmt};
+use std::{error, fmt, fs};
 
 /// The resulting compiled executable.
 pub struct Exe {
@@ -223,10 +223,41 @@ fn main_contents(source: &SourceFile) -> String {
 	)
 }
 
+/// Creates the specified file along with the directory to it if it doesn't exist.
+fn create_file_and_dir<P: AsRef<Path>>(file: &P) -> Result<fs::File, failure::Context<String>> {
+	let file = file.as_ref();
+	match file.parent() {
+		Some(parent) => {
+			fs::create_dir_all(parent).context(format!("failed creating directory {:?}", parent))?
+		}
+		None => (),
+	}
+
+	fs::File::create(file).context(format!("failed creating file {:?}", file))
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
 	use std::io::Read;
+	use std::path;
+
+	#[test]
+	fn create_file_and_dir_test() {
+		let p = path::Path::new("foo.txt");
+		assert!(!p.exists());
+		create_file_and_dir(&"foo.txt").unwrap();
+		assert!(p.exists());
+		fs::remove_file(p).unwrap();
+		assert!(!p.exists());
+
+		let p = path::Path::new("tests/foo");
+		assert!(!p.exists());
+		create_file_and_dir(&p).unwrap();
+		assert!(p.exists());
+		fs::remove_file(p).unwrap();
+		assert!(!p.exists());
+	}
 
 	#[test]
 	fn test_build_compile_dir() {
@@ -254,15 +285,13 @@ mod tests {
 			file_name: "test-name".to_string(),
 			crates: Vec::new(),
 		};
-		assert!(
-			Exe::compile(&source, &dir)
-				.unwrap()
-				.wait()
-				.unwrap()
-				.run(&env::current_dir().unwrap())
-				.wait()
-				.success()
-		);
+		assert!(Exe::compile(&source, &dir)
+			.unwrap()
+			.wait()
+			.unwrap()
+			.run(&env::current_dir().unwrap())
+			.wait()
+			.success());
 
 		fs::remove_dir_all(dir).unwrap();
 	}
