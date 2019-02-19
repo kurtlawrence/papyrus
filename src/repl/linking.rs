@@ -14,6 +14,11 @@ pub struct LinkingConfiguration {
 }
 
 impl<Term: Terminal> ReplData<Term> {
+	/// Specify that the repl will link an external crate reference.
+	/// Overwrites previously specified crate name.
+	/// Uses `ReplData.compilation_dir` to copy `rlib` file into.
+	///
+	/// [See documentation](https://kurtlawrence.github.io/papyrus/repl/linking.html)
 	pub fn with_external_crate(
 		mut self,
 		crate_name: &'static str,
