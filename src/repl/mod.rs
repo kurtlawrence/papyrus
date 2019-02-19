@@ -242,7 +242,6 @@ fn default_compile_dir() -> PathBuf {
 fn test_default_compile_dir() {
 	let dir = default_compile_dir();
 	println!("{}", dir.display());
-	assert!(dir.is_dir());
 	assert!(dir.ends_with(".papyrus/"));
 	if cfg!(windows) {
 		assert!(dir.starts_with("C:\\Users\\"));
