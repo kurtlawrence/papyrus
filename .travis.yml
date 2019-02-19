@@ -4,18 +4,18 @@ cache: cargo
 
 matrix:
   include:
-    - os: "linux"
-      rust:
-        - stable
-        - beta
-        - nightly
+    - os: linux
+      rust: stable
+    - os: linux
+      rust: beta
+    - os: linux
+      rust: nightly
       addons:
         apt:
           packages:
             - libssl-dev
-    - os: "windows"
-      rust:
-        - stable
+    - os: windows
+      rust: stable
 
 before_cache: |
   if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
