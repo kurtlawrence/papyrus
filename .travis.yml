@@ -2,22 +2,20 @@ sudo: required
 language: rust
 cache: cargo
 
-os:
-  - linux
-  - windows
-rust:
-  - stable
-  - beta
-
 matrix:
   include:
     - os: "linux"
+      rust:
+        - stable
+        - beta
+        - nightly
       addons:
         apt:
           packages:
             - libssl-dev
-  allow_failures:
     - os: "windows"
+      rust:
+        - stable
 
 before_cache: |
   if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
