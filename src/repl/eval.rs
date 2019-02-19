@@ -67,7 +67,7 @@ where
 {
 	let additionals = build_additionals(input, data.statements.len());
 	let src = build_source(data, additionals.clone());
-	match eval(&compile_dir(), src, terminal) {
+	match eval(&data.compilation_dir, src, terminal) {
 		Ok(s) => {
 			//Successful compile/runtime means we can add the new items to every program
 			// crates

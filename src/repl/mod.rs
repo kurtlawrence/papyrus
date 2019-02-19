@@ -39,6 +39,9 @@ pub struct ReplData<Term: Terminal> {
 	pub prompt_colour: Color,
 	/// The colour of the out component. ie `[out0]`.
 	pub out_colour: Color,
+	/// The directory for which compilation is done within.
+	/// Defaults to `$HOME/.papyrus/`.
+	pub compilation_dir: PathBuf,
 }
 
 struct ReplTerminal<Term: Terminal> {
@@ -77,6 +80,7 @@ impl<Term: Terminal> Default for ReplData<Term> {
 			name: "papyrus",
 			prompt_colour: Color::Cyan,
 			out_colour: Color::BrightGreen,
+			compilation_dir: default_compile_dir(),
 		};
 		// help
 		r.commands.push(Command::new(
@@ -164,7 +168,7 @@ impl<'data, S, Term: Terminal> Repl<'data, S, Term> {
 
 	// TODO make this clean the repl as well.
 	pub fn clean(&self) {
-		match compile_dir().canonicalize() {
+		match self.data.compilation_dir.canonicalize() {
 			Ok(d) => {
 				let target_dir = format!("{}/target", d.to_string_lossy());
 				fs::remove_dir_all(target_dir).is_ok();
@@ -213,8 +217,16 @@ fn load_and_parse<P: AsRef<Path>>(file_path: P) -> InputResult {
 	}
 }
 
-fn compile_dir() -> PathBuf {
-	let dir = dirs::home_dir().unwrap_or(PathBuf::new());
-	let dir = PathBuf::from(format!("{}/.papyrus", dir.to_string_lossy()));
-	dir
+/// `$HOME/.papyrus`
+fn default_compile_dir() -> PathBuf {
+	dirs::home_dir().unwrap_or(PathBuf::new()).join(".papyrus/")
+}
+
+#[test]
+fn test_default_compile_dir() {
+	let dir = default_compile_dir();
+	println!("{}", dir.display());
+	assert!(dir.is_dir());
+	assert!(dir.ends_with(".papyrus/"));
+	assert!(dir.starts_with("C:\\Users\\"));
 }
