@@ -244,5 +244,9 @@ fn test_default_compile_dir() {
 	println!("{}", dir.display());
 	assert!(dir.is_dir());
 	assert!(dir.ends_with(".papyrus/"));
-	assert!(dir.starts_with("C:\\Users\\"));
+	if cfg!(windows) {
+		assert!(dir.starts_with("C:\\Users\\"));
+	} else {
+		assert!(dir.starts_with("/home/"));
+	}
 }
