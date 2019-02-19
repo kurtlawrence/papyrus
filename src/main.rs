@@ -97,8 +97,8 @@ fn main() {
 		// disable colored text output on Windows as the Windows terminals do not support it yet
 		colored::control::set_override(false);
 	}
-	let data = ReplData::default();
-	let repl = Repl::default_terminal(&mut data);
+	let data = &mut ReplData::default();
+	let repl = Repl::default_terminal(data);
 	repl.run();
 	println!("Thanks for using papyrus!");
 }
