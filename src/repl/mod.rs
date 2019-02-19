@@ -12,7 +12,7 @@ use input::{self, Input, InputReader, InputResult};
 use colored::*;
 use linefeed::terminal::Terminal;
 use std::fs;
-use std::io::{BufReader, Write};
+use std::io::{self, BufReader, Write};
 use std::path::{Path, PathBuf};
 
 use self::command::Commands;
@@ -160,18 +160,14 @@ impl<Term: Terminal> Default for ReplData<Term> {
 }
 
 impl<Term: Terminal> ReplData<Term> {
-	pub fn with_compilation_dir<P: AsRef<Path>>(mut self, dir: P) -> Self {
+	pub fn with_compilation_dir<P: AsRef<Path>>(mut self, dir: P) -> io::Result<Self> {
 		let dir = dir.as_ref();
+		if !dir.exists() {
+			fs::create_dir_all(dir)?;
+		}
 		assert!(dir.is_dir());
 		self.compilation_dir = dir.to_path_buf();
-		self
-	}
-
-	pub fn with_external_crate(mut self, crate_name: &'static str) -> Self {
-		self.linking = Some(linking::LinkingConfiguration {
-			crate_name: crate_name,
-		});
-		self
+		Ok(self)
 	}
 }
 
