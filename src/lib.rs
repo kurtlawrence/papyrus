@@ -94,7 +94,6 @@ extern crate syn;
 extern crate term_cursor;
 
 mod compile;
-mod contextmenu;
 mod file;
 mod input;
 mod repl;
@@ -102,5 +101,4 @@ mod version;
 #[cfg(feature = "azul-widgets")]
 mod widgets;
 
-pub use self::contextmenu::{add_right_click_menu, remove_right_click_menu};
 pub use self::repl::{CmdArgs, Command, Repl, ReplData};
