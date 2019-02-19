@@ -67,7 +67,12 @@ where
 {
 	let additionals = build_additionals(input, data.statements.len());
 	let src = build_source(data, additionals.clone());
-	match eval(&data.compilation_dir, src, terminal) {
+	match eval(
+		&data.compilation_dir,
+		src,
+		terminal,
+		data.linking.as_ref().map(|s| s.crate_name),
+	) {
 		Ok(s) => {
 			//Successful compile/runtime means we can add the new items to every program
 			// crates
@@ -172,7 +177,7 @@ fn build_source<Term: Terminal>(data: &mut ReplData<Term>, additional: Additiona
 	}
 
 	SourceFile {
-		src: code(&statements, &items),
+		src: code(&statements, &items, data.linking.as_ref().map(|s| s.crate_name)),
 		file_name: String::from("mem-code"),
 		file_type: SourceFileType::Rs,
 		crates: crates,
@@ -182,12 +187,17 @@ fn build_source<Term: Terminal>(data: &mut ReplData<Term>, additional: Additiona
 /// Evaluates the source file by compiling and running the given source file.
 /// Returns the stderr if unsuccessful compilation or runtime, or the evaluation print value.
 /// Stderr is piped to the current stdout for compilation, with each line overwriting itself.
-fn eval<P, T>(compile_dir: P, source: SourceFile, terminal: &T) -> Result<String, String>
+fn eval<P, T>(
+	compile_dir: P,
+	source: SourceFile,
+	terminal: &T,
+	external_crate_name: Option<&str>,
+) -> Result<String, String>
 where
 	P: AsRef<Path>,
 	T: Terminal,
 {
-	let mut c = Exe::compile(&source, compile_dir).unwrap();
+	let mut c = Exe::compile(&source, compile_dir, external_crate_name).unwrap();
 
 	let compilation_stderr = {
 		// output stderr stream line by line, erasing each line as you go.
@@ -245,9 +255,10 @@ where
 	}
 }
 
-fn code(statements: &str, items: &str) -> String {
-	format!(
-		r#"extern crate somelib;
+fn code(statements: &str, items: &str, external_crate: Option<&str>) -> String {
+	if let Some(external_crate) = external_crate {
+		format!(
+			r#"extern crate {crate_name};
 		
 fn main() {{
     {stmts}
@@ -255,9 +266,23 @@ fn main() {{
 
 {items}
 "#,
-		stmts = statements,
-		items = items
-	)
+			crate_name = external_crate,
+			stmts = statements,
+			items = items
+		)
+	} else {
+		format!(
+			r#"
+fn main() {{
+    {stmts}
+}}
+
+{items}
+"#,
+			stmts = statements,
+			items = items
+		)
+	}
 }
 
 #[cfg(test)]

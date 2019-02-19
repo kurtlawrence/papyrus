@@ -59,6 +59,7 @@ impl Exe {
 	pub fn compile<P: AsRef<Path>>(
 		src: &SourceFile,
 		compile_dir: P,
+		external_crate_name: Option<&str>,
 	) -> Result<CompilingProcess, InitialisingError> {
 		build_compile_dir(src, &compile_dir)?;
 		fmt(&compile_dir);
@@ -71,10 +72,18 @@ impl Exe {
 		if cfg!(windows) {
 			exe.push_str(".exe");
 		}
+
+		let mut _s_tmp = String::new();
+		let mut args = vec!["rustc", "--", "-Awarnings"];
+		if let Some(external_crate_name) = external_crate_name {
+			args.push("--extern");
+			_s_tmp = format!("{0}=lib{}.rlib", external_crate_name);
+			args.push(&_s_tmp);
+		}
+
 		match Command::new("cargo")
 			.current_dir(compile_dir)
-			.arg("rustc")
-			.args(&["--", "-Awarnings"])
+			.args(&args)
 			.stdout(Stdio::piped())
 			.stderr(Stdio::piped())
 			.spawn()
