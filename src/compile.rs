@@ -74,7 +74,7 @@ impl Exe {
 		}
 
 		let mut _s_tmp = String::new();
-		let mut args = vec!["rustc", "--", "-Awarnings"];
+		let mut args = vec!["rustc", "--bin", "mem-code", "--", "-Awarnings"];
 		if let Some(external_crate_name) = external_crate_name {
 			args.push("--extern");
 			_s_tmp = format!("{0}=lib{}.rlib", external_crate_name);
@@ -98,6 +98,17 @@ impl Exe {
 
 	/// Run the `Exe`.
 	pub fn run<P: AsRef<Path>>(&self, working_dir: P) -> Process {
+		// lets test the external function calling
+		use libloading::{Library, Symbol};
+		type AddFunc = unsafe fn(isize, isize) -> isize;
+		let lib =
+			Library::new(Path::new(&self.path).parent().unwrap().join("memcode.dll")).unwrap();
+		let value = unsafe {
+			let func: Symbol<AddFunc> = lib.get(b"add").unwrap();
+			func(1, 2)
+		};
+		dbg!(value);
+
 		Process {
 			child: Command::new(&self.path)
 				.current_dir(working_dir)
@@ -193,6 +204,11 @@ fn cargotoml_contents(source: &SourceFile) -> String {
 		r#"[package]
 name = "{pkg_name}"
 version = "0.1.0"
+
+[lib]
+name = "memcode"
+crate-type = [ "cdylib" ]
+path = "src/lib.rs"
 
 [dependencies]
 {crates}
