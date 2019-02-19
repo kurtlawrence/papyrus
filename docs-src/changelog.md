@@ -10,6 +10,7 @@ Major change in api as the library is shifted towards a new repl direction.
 - `Command` now requires to return a repl in print state (`Result<Repl<Print>, ()>`)
 - `Repl`s use `ReplData` which is passed between states and instantiated outside the repl machine
 - Documentation is not up to date, and will not be until some features stablise
+- `Repl`s can now link external crates. [See documentation](./repl/linking.md)
 
 ## 0.6.1
 

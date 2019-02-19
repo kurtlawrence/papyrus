@@ -294,7 +294,7 @@ mod tests {
 			file_name: "test-name".to_string(),
 			crates: Vec::new(),
 		};
-		assert!(Exe::compile(&source, &dir)
+		assert!(Exe::compile(&source, &dir, None)
 			.unwrap()
 			.wait()
 			.unwrap()
@@ -316,7 +316,7 @@ mod tests {
 			crates: Vec::new(),
 		};
 
-		match Exe::compile(&source, &dir).unwrap().wait() {
+		match Exe::compile(&source, &dir, None).unwrap().wait() {
 			Err(_) => (),
 			_ => panic!("expecting compilation error"),
 		}
@@ -335,7 +335,7 @@ mod tests {
 			file_name: "test-name".to_string(),
 			crates: Vec::new(),
 		};
-		let r = Exe::compile(&source, &dir)
+		let r = Exe::compile(&source, &dir, None)
 			.unwrap()
 			.wait()
 			.unwrap()
@@ -354,7 +354,7 @@ mod tests {
 			file_name: "bench-compile".to_string(),
 			crates: Vec::new(),
 		};
-		let mut p = Exe::compile(&src_file, "test/stmts-10").unwrap();
+		let mut p = Exe::compile(&src_file, "test/stmts-10", None).unwrap();
 		let err = {
 			let mut s = String::new();
 			p.stderr().read_to_string(&mut s).unwrap();
@@ -372,7 +372,7 @@ mod tests {
 			file_name: "bench-compile".to_string(),
 			crates: Vec::new(),
 		};
-		let mut p = Exe::compile(&src_file, "test/stmts-20").unwrap();
+		let mut p = Exe::compile(&src_file, "test/stmts-20", None).unwrap();
 		let err = {
 			let mut s = String::new();
 			p.stderr().read_to_string(&mut s).unwrap();

@@ -177,7 +177,11 @@ fn build_source<Term: Terminal>(data: &mut ReplData<Term>, additional: Additiona
 	}
 
 	SourceFile {
-		src: code(&statements, &items, data.linking.as_ref().map(|s| s.crate_name)),
+		src: code(
+			&statements,
+			&items,
+			data.linking.as_ref().map(|s| s.crate_name),
+		),
 		file_name: String::from("mem-code"),
 		file_type: SourceFileType::Rs,
 		crates: crates,
@@ -316,6 +320,7 @@ mod tests {
 						&format!("test/{}", src_file.split(".").nth(0).unwrap()),
 						src,
 						&MemoryTerminal::new(),
+						None,
 					);
 					let b = eval.is_ok();
 					if let Err(e) = eval {
@@ -350,6 +355,7 @@ mod tests {
 						&format!("test/{}", src_file.split(".").nth(0).unwrap()),
 						src,
 						&MemoryTerminal::new(),
+						None,
 					);
 					let b = eval.is_ok();
 					if let Err(e) = eval {

@@ -5,10 +5,6 @@ script:
   - cargo clean
   - cargo build
   - cargo test -- --test-threads=1
-branches:
-  only:
-    - master
-    - auto
 os:
   - linux
   - windows
@@ -26,13 +22,6 @@ matrix:
             - libssl-dev
   allow_failures:
     - os: "windows"
-
-jobs:
-  include:
-  - stage: deploy
-    script:
-    - bash pass_build_push.sh
-
 
 before_cache: |
   if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
