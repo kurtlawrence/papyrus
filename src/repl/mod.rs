@@ -1,5 +1,6 @@
 mod command;
 mod eval;
+mod linking;
 mod print;
 mod read;
 mod writer;
@@ -42,6 +43,8 @@ pub struct ReplData<Term: Terminal> {
 	/// The directory for which compilation is done within.
 	/// Defaults to `$HOME/.papyrus/`.
 	pub compilation_dir: PathBuf,
+	/// The external crate linking configuration,
+	linking: Option<linking::LinkingConfiguration>,
 }
 
 struct ReplTerminal<Term: Terminal> {
@@ -81,6 +84,7 @@ impl<Term: Terminal> Default for ReplData<Term> {
 			prompt_colour: Color::Cyan,
 			out_colour: Color::BrightGreen,
 			compilation_dir: default_compile_dir(),
+			linking: None,
 		};
 		// help
 		r.commands.push(Command::new(
@@ -152,6 +156,22 @@ impl<Term: Terminal> Default for ReplData<Term> {
 		));
 
 		r
+	}
+}
+
+impl<Term: Terminal> ReplData<Term> {
+	pub fn with_compilation_dir<P: AsRef<Path>>(mut self, dir: P) -> Self {
+		let dir = dir.as_ref();
+		assert!(dir.is_dir());
+		self.compilation_dir = dir.to_path_buf();
+		self
+	}
+
+	pub fn with_external_crate(mut self, crate_name: &'static str) -> Self {
+		self.linking = Some(linking::LinkingConfiguration {
+			crate_name: crate_name,
+		});
+		self
 	}
 }
 
