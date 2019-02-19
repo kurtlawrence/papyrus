@@ -222,12 +222,6 @@ fn main_contents(source: &SourceFile) -> String {
 			.join("\n"),
 		src = match source.file_type {
 			SourceFileType::Rs => source.src.clone(),
-			SourceFileType::Rscript => format!(
-				r#"fn main() {{
-	{}
-}}"#,
-				source.src
-			),
 		}
 	)
 }
@@ -248,7 +242,6 @@ fn create_file_and_dir<P: AsRef<Path>>(file: &P) -> Result<fs::File, failure::Co
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use std::io::Read;
 	use std::path;
 
 	#[test]
@@ -260,7 +253,7 @@ mod tests {
 		fs::remove_file(p).unwrap();
 		assert!(!p.exists());
 
-		let p = path::Path::new("tests/foo");
+		let p = path::Path::new("test/foo");
 		assert!(!p.exists());
 		create_file_and_dir(&p).unwrap();
 		assert!(p.exists());
@@ -277,17 +270,17 @@ mod tests {
 			crates: Vec::new(),
 		};
 
-		build_compile_dir(&source, &"tests/compile-dir/test-dir").unwrap();
-		assert!(Path::new("tests/compile-dir/test-dir/src/main.rs").exists());
-		assert!(Path::new("tests/compile-dir/test-dir/Cargo.toml").exists());
+		build_compile_dir(&source, &"test/compile-dir/test-dir").unwrap();
+		assert!(Path::new("test/compile-dir/test-dir/src/main.rs").exists());
+		assert!(Path::new("test/compile-dir/test-dir/Cargo.toml").exists());
 
-		fs::remove_dir_all("tests/compile-dir/test-dir").unwrap();
+		fs::remove_dir_all("test/compile-dir/test-dir").unwrap();
 	}
 
 	#[test]
 	fn test_run_success() {
 		use std::env;
-		let dir = "tests/compile-dir/test-run";
+		let dir = "test/compile-dir/test-run";
 		let source = SourceFile {
 			src: TEST_CONTENTS.to_string(),
 			file_type: SourceFileType::Rs,
@@ -307,7 +300,7 @@ mod tests {
 
 	#[test]
 	fn fail_compile() {
-		let dir = "tests/compile-dir/test-run";
+		let dir = "test/compile-dir/test-run";
 
 		let source = SourceFile {
 			src: "fn main() { let a = 1 }".to_string(),
@@ -327,7 +320,7 @@ mod tests {
 	#[test]
 	fn fail_runtime() {
 		use std::env;
-		let dir = "tests/compile-dir/test-run";
+		let dir = "test/compile-dir/test-run";
 
 		let source = SourceFile {
 			src: r#"fn main() { panic!("runtime error!"); }"#.to_string(),
@@ -346,71 +339,5 @@ mod tests {
 		fs::remove_dir_all(dir).unwrap();
 	}
 
-	#[test]
-	fn test_10_stmts_compile() {
-		let src_file = SourceFile {
-			src: String::from(STMTS_10),
-			file_type: SourceFileType::Rscript,
-			file_name: "bench-compile".to_string(),
-			crates: Vec::new(),
-		};
-		let mut p = Exe::compile(&src_file, "test/stmts-10", None).unwrap();
-		let err = {
-			let mut s = String::new();
-			p.stderr().read_to_string(&mut s).unwrap();
-			s
-		};
-		println!("{}", err);
-		p.wait().unwrap();
-	}
-
-	#[test]
-	fn test_20_stmts_compile() {
-		let src_file = SourceFile {
-			src: String::from(STMTS_20),
-			file_type: SourceFileType::Rscript,
-			file_name: "bench-compile".to_string(),
-			crates: Vec::new(),
-		};
-		let mut p = Exe::compile(&src_file, "test/stmts-20", None).unwrap();
-		let err = {
-			let mut s = String::new();
-			p.stderr().read_to_string(&mut s).unwrap();
-			s
-		};
-		println!("{}", err);
-		p.wait().unwrap();
-	}
-
 	const TEST_CONTENTS: &str = "fn main() { println!(\"Hello, world!\"); }";
-	const STMTS_10: &str = r#"let a = 1;
-let b = 2;
-let c = a * b;
-let c = a * c + 10;
-let a = a * b * c;
-let mut s = String::from("Hello");
-let a = a + b + c;
-let c = a - b;
-s.push_str(", world!");
-s;"#;
-	const STMTS_20: &str = r#"let a = 1;
-let b = 2;
-let c = a * b;
-let c = a * c + 10;
-let a = a * b * c;
-let mut s = String::from("Hello ");
-let a = a + b + c;
-let c = a - b;
-let d = a + b + c;
-let e = a + b + c  + d;
-let f = d - e;
-let a = a - d - e;
-let b = d - f;
-s.push_str(&a.to_string());
-s.push_str(&b.to_string());
-s.push_str(&c.to_string());
-s.push_str(&d.to_string());
-s.push_str(&e.to_string());
-s.push_str(&f.to_string());
-s;"#;
 }

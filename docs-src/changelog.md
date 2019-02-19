@@ -11,6 +11,8 @@ Major change in api as the library is shifted towards a new repl direction.
 - `Repl`s use `ReplData` which is passed between states and instantiated outside the repl machine
 - Documentation is not up to date, and will not be until some features stablise
 - `Repl`s can now link external crates. [See documentation](./repl/linking.md)
+- Removed context menu functionality
+- Removed repl file loading
 
 ## 0.6.1
 

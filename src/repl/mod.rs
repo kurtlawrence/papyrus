@@ -7,7 +7,7 @@ mod writer;
 
 use compile::*;
 use file::{CrateType, SourceFile};
-use input::{self, Input, InputReader, InputResult};
+use input::{Input, InputReader, InputResult};
 
 use colored::*;
 use linefeed::terminal::Terminal;
@@ -144,16 +144,6 @@ impl<Term: Terminal> Default for ReplData<Term> {
 			"Cancels more input",
 			|repl, _| Ok(repl.print("cancelled input")),
 		));
-		// load
-		r.commands.push(Command::new(
-			"load",
-			CmdArgs::Filename,
-			"load *.rs or *.rscript as inputs",
-			|repl, arg| {
-				let eval = repl.load(arg);
-				eval.eval()
-			},
-		));
 
 		r
 	}
@@ -171,29 +161,6 @@ impl<Term: Terminal> ReplData<Term> {
 	}
 }
 
-impl<'data, S, Term: Terminal> Repl<'data, S, Term> {
-	/// Load a file into the repl, no matter the current state. Returns a repl awaiting evaluation.
-	pub fn load<P: AsRef<Path>>(self, file_path: P) -> Repl<'data, Evaluate, Term> {
-		let result = load_and_parse(file_path);
-		Repl {
-			state: Evaluate { result },
-			terminal: self.terminal,
-			data: self.data,
-		}
-	}
-
-	// TODO make this clean the repl as well.
-	pub fn clean(&self) {
-		match self.data.compilation_dir.canonicalize() {
-			Ok(d) => {
-				let target_dir = format!("{}/target", d.to_string_lossy());
-				fs::remove_dir_all(target_dir).is_ok();
-			}
-			_ => (),
-		}
-	}
-}
-
 #[derive(Clone)]
 struct Additional {
 	items: Option<Vec<String>>,
@@ -205,32 +172,6 @@ struct Additional {
 struct AdditionalStatements {
 	stmts: Vec<String>,
 	print_stmt: String,
-}
-
-fn load_and_parse<P: AsRef<Path>>(file_path: P) -> InputResult {
-	match SourceFile::load(file_path) {
-		Ok(src) => {
-			// add crates back in....
-			let src = format!(
-				"{}\n{}",
-				src.crates.into_iter().fold(String::new(), |mut acc, x| {
-					acc.push_str(&x.src_line);
-					acc.push('\n');
-					acc
-				}),
-				src.src
-			);
-			let r = input::parse_program(&src);
-			if r == InputResult::More {
-				// there is a trailing a semi colon, parse with an empty fn
-				debug!("parsing again as there was no returning expression");
-				input::parse_program(&format!("{}\n()", src))
-			} else {
-				r
-			}
-		}
-		Err(e) => InputResult::InputError(e),
-	}
 }
 
 /// `$HOME/.papyrus`

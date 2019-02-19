@@ -1,9 +1,0 @@
-fn a() {
-
-}
-
-#[derive(Debug)]
-struct A {
-	a: i32,
-	b: i32
-}

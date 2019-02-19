@@ -1,4 +1,0 @@
-extern crate rand as r;
-
-let x: u8 = r::random();
-println!("{}", x);
