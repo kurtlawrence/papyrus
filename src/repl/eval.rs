@@ -114,10 +114,7 @@ fn build_additionals(input: Input, statement_num: usize) -> Additional {
 	if stmts.len() > 0 {
 		if let Some(mut last) = stmts.pop() {
 			let expr = if !last.semi {
-				print_stmt = format!(
-					"println!(\"{}{{:?}}\", out{});",
-					PAPYRUS_SPLIT_PATTERN, statement_num
-				);
+				print_stmt = format!("format!(\"{{:?}}\", out{})", statement_num);
 				format!("let out{} = {};", statement_num, last.expr)
 			} else {
 				last.expr.to_string()
@@ -220,41 +217,10 @@ where
 	};
 
 	match c.wait() {
-		Ok(exe) => {
-			let mut c = exe.run(&::std::env::current_dir().unwrap());
-			// print out the stdout as each line comes
-			// split out on the split pattern, and do not print that section!
-			let print = {
-				let rdr = BufReader::new(c.stdout());
-				let mut s = String::new();
-				for line in rdr.lines() {
-					let line = line.unwrap();
-					let mut split = line.split(PAPYRUS_SPLIT_PATTERN);
-					if let Some(first) = split.next() {
-						if !first.is_empty() {
-							writeln!(Writer(terminal), "{}", first).unwrap();
-						}
-					}
-					if let Some(second) = split.next() {
-						s.push_str(second);
-					}
-				}
-				s
-			};
-
-			let stderr = {
-				let mut s = String::new();
-				let mut rdr = BufReader::new(c.stderr());
-				rdr.read_to_string(&mut s).unwrap();
-				s
-			};
-
-			if c.wait().success() {
-				Ok(print)
-			} else {
-				Err(stderr)
-			}
-		}
+		Ok(exe) => match exe.run(&::std::env::current_dir().unwrap()) {
+			Ok(s) => Ok(s),
+			Err(e) => Err(e.to_string()),
+		},
 		Err(_) => Err(compilation_stderr),
 	}
 }
@@ -263,8 +229,9 @@ fn code(statements: &str, items: &str, external_crate: Option<&str>) -> String {
 	if let Some(external_crate) = external_crate {
 		format!(
 			r#"extern crate {crate_name};
-		
-fn main() {{
+
+#[no_mangle]	
+pub extern "C" fn _intern_method_() -> String {{
     {stmts}
 }}
 
@@ -277,7 +244,8 @@ fn main() {{
 	} else {
 		format!(
 			r#"
-fn main() {{
+#[no_mangle]	
+pub extern "C" fn _intern_method_() -> String {{
     {stmts}
 }}
 

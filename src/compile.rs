@@ -1,7 +1,7 @@
 use failure::ResultExt;
 use file::{SourceFile, SourceFileType};
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStderr, ChildStdout, Command, ExitStatus, Stdio};
 use std::{error, fmt, fs};
 
@@ -74,7 +74,7 @@ impl Exe {
 		}
 
 		let mut _s_tmp = String::new();
-		let mut args = vec!["rustc", "--bin", "mem-code", "--", "-Awarnings"];
+		let mut args = vec!["rustc", "--", "-Awarnings"];
 		if let Some(external_crate_name) = external_crate_name {
 			args.push("--extern");
 			_s_tmp = format!("{0}=lib{}.rlib", external_crate_name);
@@ -97,30 +97,24 @@ impl Exe {
 	}
 
 	/// Run the `Exe`.
-	pub fn run<P: AsRef<Path>>(&self, working_dir: P) -> Process {
-		// lets test the external function calling
-		use libloading::{Library, Symbol};
-		type AddFunc = unsafe fn(isize, isize) -> isize;
-		let lib =
-			Library::new(Path::new(&self.path).parent().unwrap().join("memcode.dll")).unwrap();
-		let value = unsafe {
-			let func: Symbol<AddFunc> = lib.get(b"add").unwrap();
-			func(1, 2)
-		};
-		dbg!(value);
+	pub fn run<P: AsRef<Path>>(&self, working_dir: P) -> Result<String, &'static str> {
+		let p = Path::new(&self.path).to_path_buf();
+		run_external_func(p)
+	}
+}
 
-		Process {
-			child: Command::new(&self.path)
-				.current_dir(working_dir)
-				.env("RUST_BACKTRACE", "0")
-				.stdout(Stdio::piped())
-				.stderr(Stdio::piped())
-				.spawn()
-				.expect(&format!(
-					"failed to start the executable {}, which is unlikely.",
-					self.path
-				)),
-		}
+type AddFunc = unsafe fn() -> String;
+fn run_external_func(p: PathBuf) -> Result<String, &'static str> {
+	use libloading::{Library, Symbol};
+	let lib = Library::new(p.parent().unwrap().join("memcode.dll")).unwrap();
+	let res = std::panic::catch_unwind(|| unsafe {
+		let func: Symbol<AddFunc> = lib.get(b"_intern_method_").unwrap();
+		func()
+	});
+
+	match res {
+		Ok(s) => Ok(s),
+		Err(_) => Err("a panic occured with evaluation"),
 	}
 }
 
@@ -167,15 +161,15 @@ fn build_compile_dir<P: AsRef<Path>>(
 	compile_dir: &P,
 ) -> Result<(), InitialisingError> {
 	let compile_dir = compile_dir.as_ref();
-	let mut main_file = create_file_and_dir(&compile_dir.join("src/main.rs"))
+	let mut main_file = create_file_and_dir(&compile_dir.join("src/lib.rs"))
 		.map_err(|e| InitialisingError::IOError(e.to_string()))?;
 	let mut cargo_file = create_file_and_dir(&compile_dir.join("Cargo.toml"))
 		.map_err(|e| InitialisingError::IOError(e.to_string()))?;
 	let cargo = cargotoml_contents(source);
-	let content = main_contents(source);
+	let content = lib_contents(source);
 	main_file
 		.write_all(content.as_bytes())
-		.context("failed writing contents of main.rs".to_string())
+		.context("failed writing contents of lib.rs".to_string())
 		.map_err(|e| InitialisingError::IOError(e.to_string()))?;
 	cargo_file
 		.write_all(cargo.as_bytes())
@@ -188,7 +182,7 @@ fn build_compile_dir<P: AsRef<Path>>(
 pub fn fmt<P: AsRef<Path>>(compile_dir: P) -> bool {
 	match Command::new("cargo")
 		.current_dir(compile_dir)
-		.args(&["+nightly", "fmt"])
+		.args(&["fmt"])
 		.output()
 	{
 		Ok(output) => output.status.success(),
@@ -223,7 +217,7 @@ path = "src/lib.rs"
 	)
 }
 
-fn main_contents(source: &SourceFile) -> String {
+fn lib_contents(source: &SourceFile) -> String {
 	format!(
 		r#"
 {crates}
