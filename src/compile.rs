@@ -2,7 +2,7 @@ use failure::ResultExt;
 use file::{SourceFile, SourceFileType};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{Child, ChildStderr, ChildStdout, Command, ExitStatus, Stdio};
+use std::process::{Child, ChildStderr, Command, ExitStatus, Stdio};
 use std::{error, fmt, fs};
 
 /// The resulting compiled executable.
@@ -97,7 +97,7 @@ impl Exe {
 	}
 
 	/// Run the `Exe`.
-	pub fn run<P: AsRef<Path>>(&self, working_dir: P) -> Result<String, &'static str> {
+	pub fn run(&self) -> Result<String, &'static str> {
 		let p = Path::new(&self.path).to_path_buf();
 		run_external_func(p)
 	}
@@ -129,11 +129,6 @@ impl Process {
 	/// The `stderr` handle.
 	pub fn stderr(&mut self) -> &mut ChildStderr {
 		self.child.stderr.as_mut().expect("stderr should be piped")
-	}
-
-	/// The `stdout` handle.
-	pub fn stdout(&mut self) -> &mut ChildStdout {
-		self.child.stdout.as_mut().expect("stderr should be piped")
 	}
 }
 

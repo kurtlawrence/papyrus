@@ -4,11 +4,8 @@ use file::SourceFileType;
 
 use linefeed::terminal::Terminal;
 use std::io::BufRead;
-use std::io::Read as IoRead;
 
 type HandleInputResult = (String, bool);
-
-const PAPYRUS_SPLIT_PATTERN: &'static str = "<!papyrus-split>";
 
 impl<'data, Term: Terminal> Repl<'data, Evaluate, Term> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
@@ -217,7 +214,7 @@ where
 	};
 
 	match c.wait() {
-		Ok(exe) => match exe.run(&::std::env::current_dir().unwrap()) {
+		Ok(exe) => match exe.run() {
 			Ok(s) => Ok(s),
 			Err(e) => Err(e.to_string()),
 		},
