@@ -1,9 +1,9 @@
 //! Pertains to compiling a working directory into a library.
 
-use super::*;
+use pfh::*;
 use std::io::{self, BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Child, ChildStderr, Command, ExitStatus, Stdio};
+use std::process::{Command, Stdio};
 use std::{error, fmt, fs};
 
 /// Constructs the compile directory.
@@ -45,6 +45,21 @@ where
 		.write_all(cargotoml_contents(LIBRARY_NAME, crates.into_iter()).as_bytes())?;
 
 	Ok(())
+}
+
+/// Run `cargo fmt` in the given directory.
+pub fn fmt<P: AsRef<Path>>(compile_dir: P) -> bool {
+	match Command::new("cargo")
+		.current_dir(compile_dir)
+		.args(&["fmt"])
+		.output()
+	{
+		Ok(output) => output.status.success(),
+		Err(e) => {
+			debug!("{}", e);
+			false
+		}
+	}
 }
 
 pub fn compile<P, F>(
@@ -104,6 +119,8 @@ where
 	}
 }
 
+type AddFunc = unsafe fn() -> String;
+
 pub fn execute<P: AsRef<Path>>(
 	library_file: P,
 	function_name: &str,
@@ -121,22 +138,6 @@ pub fn execute<P: AsRef<Path>>(
 	}
 }
 
-/// The resulting compiled executable.
-pub struct Exe {
-	path: String,
-}
-
-/// A current operating child process.
-pub struct Process {
-	child: Child,
-}
-
-/// A current compiling process.
-pub struct CompilingProcess {
-	exe: Exe,
-	process: Process,
-}
-
 /// Error type for compilation.
 #[derive(Debug)]
 pub enum CompilationError {
@@ -147,9 +148,6 @@ pub enum CompilationError {
 	/// Generic IO errors.
 	IOError(io::Error),
 }
-/// Error type for compilation.
-#[derive(Debug)]
-pub struct CompileError;
 
 impl error::Error for CompilationError {}
 
@@ -161,113 +159,6 @@ impl fmt::Display for CompilationError {
 			}
 			CompilationError::CompileError(e) => write!(f, "{}", e),
 			CompilationError::IOError(e) => write!(f, "io error occurred: {}", e),
-		}
-	}
-}
-
-impl error::Error for CompileError {}
-
-impl fmt::Display for CompileError {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "compilation failed")
-	}
-}
-
-// impl Exe {
-// 	/// Compile a `SourceFile` in the given directory.
-// 	pub fn compile<P: AsRef<Path>>(
-// 		src: &SourceFile,
-// 		compile_dir: P,
-// 		external_crate_name: Option<&str>,
-// 	) -> Result<CompilingProcess, InitialisingError> {
-// 		build_compile_dir(src, &compile_dir)?;
-// 		fmt(&compile_dir);
-
-// 		let mut exe = format!(
-// 			"{}/target/debug/{}",
-// 			compile_dir.as_ref().to_string_lossy(),
-// 			src.file_name
-// 		);
-// 		if cfg!(windows) {
-// 			exe.push_str(".exe");
-// 		}
-
-// 		let mut _s_tmp = String::new();
-// 		let mut args = vec!["rustc", "--", "-Awarnings"];
-// 		if let Some(external_crate_name) = external_crate_name {
-// 			args.push("--extern");
-// 			_s_tmp = format!("{0}=lib{}.rlib", external_crate_name);
-// 			args.push(&_s_tmp);
-// 		}
-
-// 		match Command::new("cargo")
-// 			.current_dir(compile_dir)
-// 			.args(&args)
-// 			.stdout(Stdio::piped())
-// 			.stderr(Stdio::piped())
-// 			.spawn()
-// 		{
-// 			Ok(c) => Ok(CompilingProcess {
-// 				exe: Exe { path: exe },
-// 				process: Process { child: c },
-// 			}),
-// 			Err(_) => Err(InitialisingError::NoBuildCommand),
-// 		}
-// 	}
-
-// 	/// Run the `Exe`.
-// 	pub fn run(&self) -> Result<String, &'static str> {
-// 		let p = Path::new(&self.path).to_path_buf();
-// 		run_external_func(p)
-// 	}
-// }
-
-type AddFunc = unsafe fn() -> String;
-fn run_external_func(p: PathBuf) -> Result<String, &'static str> {
-	unimplemented!();
-}
-
-impl Process {
-	/// Wait for the process to finish.
-	pub fn wait(mut self) -> ExitStatus {
-		self.child
-			.wait()
-			.expect("failed waiting for process to finish")
-	}
-
-	/// The `stderr` handle.
-	pub fn stderr(&mut self) -> &mut ChildStderr {
-		self.child.stderr.as_mut().expect("stderr should be piped")
-	}
-}
-
-impl CompilingProcess {
-	/// Wait for the process to finish. Is successful, a `Exe` pointer will be returned, which can be run.
-	pub fn wait(self) -> Result<Exe, CompileError> {
-		if self.process.wait().success() {
-			Ok(self.exe)
-		} else {
-			Err(CompileError)
-		}
-	}
-
-	/// The `stderr` handle.
-	pub fn stderr(&mut self) -> &mut ChildStderr {
-		self.process.stderr()
-	}
-}
-
-/// Run `cargo fmt` in the given directory.
-pub fn fmt<P: AsRef<Path>>(compile_dir: P) -> bool {
-	match Command::new("cargo")
-		.current_dir(compile_dir)
-		.args(&["fmt"])
-		.output()
-	{
-		Ok(output) => output.status.success(),
-		Err(e) => {
-			debug!("{}", e);
-			false
 		}
 	}
 }

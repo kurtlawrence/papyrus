@@ -32,29 +32,6 @@ impl Input {
 
 		s
 	}
-
-	pub fn construe_print_stmt(&self, input_num: usize) -> Self {
-		let mut r = self.clone();
-		if r.stmts.len() > 0 {
-			if let Some(mut last) = r.stmts.pop() {
-				let mut print_stmt = String::new();
-				let expr = if !last.semi {
-					print_stmt = format!("format!(\"{{:?}}\", out{})", input_num);
-					format!("let out{} = {};", input_num, last.expr)
-				} else {
-					last.expr.to_string()
-				};
-				last.expr = expr;
-				r.stmts.push(last);
-				r.stmts.push(Statement {
-					expr: print_stmt,
-					semi: false,
-				});
-			}
-		}
-
-		r
-	}
 }
 
 pub type SourceCode = Vec<Input>;

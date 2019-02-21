@@ -93,7 +93,6 @@ extern crate reqwest;
 extern crate syn;
 extern crate term_cursor;
 
-mod file;
 mod input;
 mod pfh;
 mod repl;

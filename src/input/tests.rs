@@ -1,4 +1,5 @@
 use super::*;
+use pfh::*;
 use linefeed::memory::MemoryTerminal;
 use linefeed::Signal;
 
