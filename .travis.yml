@@ -14,9 +14,10 @@ matrix:
         apt:
           packages:
             - libssl-dev
-  allow_failures:
     - os: windows
       rust: stable
+  allow_failures:
+    - os: windows
 
 before_cache: |
   if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
