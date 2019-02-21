@@ -1,3 +1,5 @@
+//! Pertains to compiling a working directory into a library.
+
 use failure::ResultExt;
 use file::{SourceFile, SourceFileType};
 use std::io::Write;
@@ -266,83 +268,4 @@ mod tests {
 		assert!(!p.exists());
 	}
 
-	#[test]
-	fn test_build_compile_dir() {
-		let source = SourceFile {
-			src: TEST_CONTENTS.to_string(),
-			file_type: SourceFileType::Rs,
-			file_name: "test-name".to_string(),
-			crates: Vec::new(),
-		};
-
-		build_compile_dir(&source, &"test/compile-dir/test-dir").unwrap();
-		assert!(Path::new("test/compile-dir/test-dir/src/main.rs").exists());
-		assert!(Path::new("test/compile-dir/test-dir/Cargo.toml").exists());
-
-		fs::remove_dir_all("test/compile-dir/test-dir").unwrap();
-	}
-
-	#[test]
-	fn test_run_success() {
-		use std::env;
-		let dir = "test/compile-dir/test-run";
-		let source = SourceFile {
-			src: TEST_CONTENTS.to_string(),
-			file_type: SourceFileType::Rs,
-			file_name: "test-name".to_string(),
-			crates: Vec::new(),
-		};
-		assert!(Exe::compile(&source, &dir, None)
-			.unwrap()
-			.wait()
-			.unwrap()
-			.run(&env::current_dir().unwrap())
-			.wait()
-			.success());
-
-		fs::remove_dir_all(dir).unwrap();
-	}
-
-	#[test]
-	fn fail_compile() {
-		let dir = "test/compile-dir/test-run";
-
-		let source = SourceFile {
-			src: "fn main() { let a = 1 }".to_string(),
-			file_type: SourceFileType::Rs,
-			file_name: "test-name".to_string(),
-			crates: Vec::new(),
-		};
-
-		match Exe::compile(&source, &dir, None).unwrap().wait() {
-			Err(_) => (),
-			_ => panic!("expecting compilation error"),
-		}
-
-		fs::remove_dir_all(dir).unwrap();
-	}
-
-	#[test]
-	fn fail_runtime() {
-		use std::env;
-		let dir = "test/compile-dir/test-run";
-
-		let source = SourceFile {
-			src: r#"fn main() { panic!("runtime error!"); }"#.to_string(),
-			file_type: SourceFileType::Rs,
-			file_name: "test-name".to_string(),
-			crates: Vec::new(),
-		};
-		let r = Exe::compile(&source, &dir, None)
-			.unwrap()
-			.wait()
-			.unwrap()
-			.run(&env::current_dir().unwrap())
-			.wait();
-		assert!(!r.success());
-
-		fs::remove_dir_all(dir).unwrap();
-	}
-
-	const TEST_CONTENTS: &str = "fn main() { println!(\"Hello, world!\"); }";
 }
