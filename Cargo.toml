@@ -18,8 +18,6 @@ travis-ci = { repository = "kurtlawrence/papyrus" }
 azul-widgets = [ "azul", "cansi" ]
 
 [dependencies]
-argparse = "0.2"
-failure = "0.1"
 dirs = "1.0"
 linefeed = "0.5"
 log = "0.4"

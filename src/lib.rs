@@ -87,14 +87,12 @@
 extern crate log;
 extern crate colored;
 extern crate dirs;
-extern crate failure;
 extern crate libloading;
 extern crate linefeed;
 extern crate reqwest;
 extern crate syn;
 extern crate term_cursor;
 
-mod compile;
 mod file;
 mod input;
 mod pfh;

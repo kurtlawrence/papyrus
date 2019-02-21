@@ -1,6 +1,6 @@
 use linefeed::terminal::Terminal;
 use linefeed::{Interface, ReadResult};
-use pfh::{CrateType, SourceCode};
+use pfh::{CrateType, Input};
 use syn::Expr;
 
 mod parse;
@@ -22,7 +22,7 @@ pub enum InputResult {
 	/// Command argument as `(command_name, rest_of_line)`.
 	Command(String, String),
 	/// Code as input
-	Program(SourceCode),
+	Program(Input),
 	/// An empty line
 	Empty,
 	/// Needs more input; i.e. there is an unclosed delimiter.

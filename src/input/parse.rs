@@ -66,7 +66,7 @@ pub fn parse_program(code: &str) -> InputResult {
 					},
 				}
 			}
-			InputResult::Program(SourceCode {
+			InputResult::Program(Input {
 				items: items,
 				stmts: stmts,
 				crates: crates,

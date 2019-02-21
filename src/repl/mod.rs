@@ -5,10 +5,8 @@ mod print;
 mod read;
 mod writer;
 
-use compile::*;
-use file::SourceFile;
 use input::{InputReader, InputResult};
-use pfh::CrateType;
+use pfh::{CrateType, SourceFile};
 
 use colored::*;
 use linefeed::terminal::Terminal;
@@ -29,12 +27,7 @@ pub struct ReplData<Term: Terminal> {
 	/// 	args.repl.run_file(args.arg);
 	/// }));
 	pub commands: Vec<Command<Term>>,
-	/// Items compiled into every program. These are functions, types, etc.
-	pub items: Vec<Vec<String>>,
-	/// Blocks of statements applied in order.
-	pub statements: Vec<Vec<String>>,
-	/// Crates to referenced.
-	pub crates: Vec<CrateType>,
+	pub current_file: SourceFile,
 	/// App and prompt text.
 	pub name: &'static str,
 	/// The colour of the prompt region. ie `papyrus`.
@@ -78,9 +71,7 @@ impl<Term: Terminal> Default for ReplData<Term> {
 	fn default() -> Self {
 		let mut r = ReplData {
 			commands: Vec::new(),
-			items: Vec::new(),
-			statements: Vec::new(),
-			crates: Vec::new(),
+			current_file: SourceFile::lib(),
 			name: "papyrus",
 			prompt_colour: Color::Cyan,
 			out_colour: Color::BrightGreen,
