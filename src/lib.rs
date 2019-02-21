@@ -97,6 +97,7 @@ extern crate term_cursor;
 mod compile;
 mod file;
 mod input;
+mod pfh;
 mod repl;
 mod version;
 #[cfg(feature = "azul-widgets")]

@@ -1,8 +1,8 @@
 use super::command::Commands;
 use super::*;
 use file::SourceFileType;
-
 use linefeed::terminal::Terminal;
+use pfh::SourceCode;
 use std::io::BufRead;
 
 type HandleInputResult = (String, bool);
@@ -56,7 +56,7 @@ impl<'data, Term: Terminal> Repl<'data, Evaluate, Term> {
 /// Runs a single program input.
 fn handle_input<T>(
 	data: &mut ReplData<T>,
-	input: Input,
+	input: SourceCode,
 	terminal: &T,
 ) -> Result<HandleInputResult, String>
 where
@@ -95,11 +95,11 @@ where
 	}
 }
 
-fn build_additionals(input: Input, statement_num: usize) -> Additional {
+fn build_additionals(input: SourceCode, statement_num: usize) -> Additional {
 	let mut additional_items = None;
 	let mut additional_statements = None;
 	let mut print_stmt = String::new();
-	let Input {
+	let SourceCode {
 		items,
 		mut stmts,
 		crates,

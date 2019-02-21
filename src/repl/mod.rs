@@ -6,8 +6,9 @@ mod read;
 mod writer;
 
 use compile::*;
-use file::{CrateType, SourceFile};
-use input::{Input, InputReader, InputResult};
+use file::SourceFile;
+use input::{InputReader, InputResult};
+use pfh::CrateType;
 
 use colored::*;
 use linefeed::terminal::Terminal;
