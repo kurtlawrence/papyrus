@@ -9,7 +9,11 @@ use std::{error, fmt, fs};
 /// Constructs the compile directory.
 /// Takes a list of source files and writes the contents to file.
 /// Builds `Cargo.toml` using crates found in `SourceFile`.
-pub fn build_compile_dir<'a, P, I>(compile_dir: P, files: I) -> io::Result<()>
+pub fn build_compile_dir<'a, P, I>(
+	compile_dir: P,
+	files: I,
+	linking_config: Option<&LinkingConfiguration>,
+) -> io::Result<()>
 where
 	P: AsRef<Path>,
 	I: Iterator<Item = &'a SourceFile>,
@@ -20,8 +24,17 @@ where
 
 	// write source files
 	for file in files {
+		// add linked crate if there is one to lib file
+		let mut contents = String::new();
+		if let Some(linking_config) = linking_config {
+			if file.path == Path::new("lib.rs") {
+				contents.push_str(&format!("extern crate {};", linking_config.crate_name));
+			}
+		}
+		contents.push_str(&file::code::construct(&file.contents, &file.mod_path));
+
 		create_file_and_dir(compile_dir.join("src/").join(&file.path))?
-			.write_all(file::code::construct(&file.contents, &file.mod_path).as_bytes())?;
+			.write_all(contents.as_bytes())?;
 		for c in file.contents.iter().flat_map(|x| &x.crates) {
 			crates.push(c);
 		}
@@ -34,7 +47,11 @@ where
 	Ok(())
 }
 
-pub fn compile<P, F>(compile_dir: P, stderr_line_cb: F) -> Result<PathBuf, CompilationError>
+pub fn compile<P, F>(
+	compile_dir: P,
+	linking_config: Option<&LinkingConfiguration>,
+	stderr_line_cb: F,
+) -> Result<PathBuf, CompilationError>
 where
 	P: AsRef<Path>,
 	F: Fn(&str),
@@ -49,11 +66,11 @@ where
 
 	let mut _s_tmp = String::new();
 	let mut args = vec!["rustc", "--", "-Awarnings"];
-	// if let Some(external_crate_name) = external_crate_name {
-	// 	args.push("--extern");
-	// 	_s_tmp = format!("{0}=lib{}.rlib", external_crate_name);
-	// 	args.push(&_s_tmp);
-	// }
+	if let Some(linking_config) = linking_config {
+		args.push("--extern");
+		_s_tmp = format!("{0}=lib{0}.rlib", linking_config.crate_name);
+		args.push(&_s_tmp);
+	}
 
 	let mut child = Command::new("cargo")
 		.current_dir(compile_dir)
@@ -142,8 +159,8 @@ impl fmt::Display for CompilationError {
 			CompilationError::NoBuildCommand => {
 				write!(f, "cargo build command failed to start, is rust installed?")
 			}
-			CompilationError::CompileError(e) => write!(f, "compile error occured - stderr: {}", e),
-			CompilationError::IOError(e) => write!(f, "io error occurred. {}", e),
+			CompilationError::CompileError(e) => write!(f, "{}", e),
+			CompilationError::IOError(e) => write!(f, "io error occurred: {}", e),
 		}
 	}
 }

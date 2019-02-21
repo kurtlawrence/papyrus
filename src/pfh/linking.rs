@@ -1,6 +1,4 @@
-use super::ReplData;
-use linefeed::terminal::Terminal;
-use std::path::PathBuf;
+use std::path::{Path,PathBuf};
 use std::{fs, io};
 
 pub struct LinkingConfiguration {
@@ -13,21 +11,9 @@ pub struct LinkingConfiguration {
 	pub crate_name: &'static str,
 }
 
-impl<Term: Terminal> ReplData<Term> {
-	/// Specify that the repl will link an external crate reference.
-	/// Overwrites previously specified crate name.
-	/// Uses `ReplData.compilation_dir` to copy `rlib` file into.
-	///
-	/// [See documentation](https://kurtlawrence.github.io/papyrus/repl/linking.html)
-	pub fn with_external_crate(
-		mut self,
-		crate_name: &'static str,
-		rlib_path: Option<&str>,
-	) -> io::Result<Self> {
-		self.linking = Some(LinkingConfiguration {
-			crate_name: crate_name,
-		});
-
+impl LinkingConfiguration {
+	pub fn link_external_crate<P: AsRef<Path>>(compilation_dir: P, crate_name: &'static str,
+		rlib_path: Option<&str>) -> io::Result<Self> {
 		let rlib_path = match rlib_path {
 			Some(p) => PathBuf::from(p),
 			None => get_rlib_path(crate_name)?,
@@ -37,13 +23,17 @@ impl<Term: Terminal> ReplData<Term> {
 
 		fs::copy(
 			rlib_path,
-			self.compilation_dir
+			compilation_dir.as_ref()
 				.join(&format!("lib{}.rlib", crate_name)),
 		)?;
 
-		Ok(self)
+		Ok(LinkingConfiguration {
+			crate_name: crate_name,
+		})
 	}
 }
+
+
 
 fn get_rlib_path(crate_name: &str) -> io::Result<PathBuf> {
 	let lib_name = format!("lib{}.rlib", crate_name);

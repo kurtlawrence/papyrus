@@ -2,8 +2,10 @@
 
 pub mod compile;
 mod file;
+mod linking;
 
 pub use self::file::*;
+pub use self::linking::*;
 
 pub const LIBRARY_NAME: &str = "papyrus_mem_code";
 

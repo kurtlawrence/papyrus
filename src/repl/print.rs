@@ -29,10 +29,16 @@ impl<'d, Term: Terminal> Repl<'d, Print, Term> {
 		// write
 		{
 			if state.as_out {
-				let out_stmt = format!(
-					"[out{}]",
-					data.current_file.contents.len().saturating_sub(1)
-				);
+				let num = data
+					.file_map
+					.get(&data.current_file)
+					.expect("file map does not contain key")
+					.contents
+					.iter()
+					.filter(|x| x.stmts.len() > 0)
+					.count()
+					.saturating_sub(1);
+				let out_stmt = format!("[out{}]", num);
 				writeln!(
 					Writer(&terminal.terminal),
 					"{} {}: {}",
@@ -42,7 +48,11 @@ impl<'d, Term: Terminal> Repl<'d, Print, Term> {
 				)
 				.expect("failed writing");
 			} else {
-				writeln!(Writer(&terminal.terminal), "{}", state.to_print).expect("failed writing");
+				if state.to_print.len() > 0 {
+					// only write if there is something to write.
+					writeln!(Writer(&terminal.terminal), "{}", state.to_print)
+						.expect("failed writing");
+				}
 			}
 		}
 

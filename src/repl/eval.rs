@@ -61,31 +61,58 @@ fn handle_program<T>(
 where
 	T: Terminal,
 {
-	let has_stmts = input.stmts.len() > 0;
-	data.current_file.contents.push(input); // temporarily add new source code
+	let pop_input = |repl_data| {
+		get_current_file_mut(repl_data).contents.pop();
+	};
 
-	// build directory
+	let has_stmts = input.stmts.len() > 0;
+
+	// add input file
 	{
-		let arr = [&data.current_file];
-		pfh::compile::build_compile_dir(&data.compilation_dir, arr.iter().map(|x| *x))
-			.map_err(|e| format!("failed to build compile directory: {}", e))?;
+		get_current_file_mut(data).contents.push(input);
 	}
 
+	// build directory
+	let res = pfh::compile::build_compile_dir(
+		&data.compilation_dir,
+		data.file_map.values(),
+		data.linking.as_ref(),
+	);
+	if let Err(e) = res {
+		pop_input(data);
+		return Err(format!("failed to build compile directory: {}", e));
+	}
+
+	// format
+	pfh::compile::fmt(&data.compilation_dir);
+
 	// compile
-	let lib_file = pfh::compile::compile(&data.compilation_dir, |line| {
+	let lib_file = pfh::compile::compile(&data.compilation_dir, data.linking.as_ref(), |line| {
 		Writer(terminal)
 			.overwrite_current_console_line(&line)
 			.unwrap()
-	})
-	.map_err(|e| format!("{}", e));
+	});
 	Writer(terminal).overwrite_current_console_line("").unwrap();
-	let lib_file = lib_file?;
+	let lib_file = match lib_file {
+		Ok(f) => f,
+		Err(e) => {
+			pop_input(data);
+			return Err(format!("{}", e));
+		}
+	};
 
 	if has_stmts {
 		// execute
-		match pfh::compile::execute(lib_file, &pfh::eval_fn_name(&data.current_file.mod_path)) {
+		let exec_res = {
+			let current_file = get_current_file_mut(data);
+			pfh::compile::execute(lib_file, &pfh::eval_fn_name(&current_file.mod_path))
+		};
+		match exec_res {
 			Ok(s) => Ok((s, true)),
-			Err(e) => Err(e.to_string()),
+			Err(e) => {
+				pop_input(data);
+				Err(e.to_string())
+			}
 		}
 	} else {
 		Ok((String::new(), false)) // do not execute if no extra statements have been added
@@ -120,6 +147,16 @@ where
 	// 	}
 	// 	Err(s) => Err(s),
 	// }
+}
+
+fn get_current_file_mut<T>(data: &mut ReplData<T>) -> &mut SourceFile
+where
+	T: Terminal,
+{
+	data.file_map.get_mut(&data.current_file).expect(&format!(
+		"file map does not have key: {}",
+		data.current_file.display()
+	))
 }
 
 // fn build_additionals(input: SourceCode, statement_num: usize) -> Additional {

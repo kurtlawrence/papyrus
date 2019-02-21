@@ -1,20 +1,18 @@
 mod command;
 mod eval;
-mod linking;
 mod print;
 mod read;
 mod writer;
 
-use input::{InputReader, InputResult};
-use pfh::{CrateType, SourceFile};
-
-use colored::*;
-use linefeed::terminal::Terminal;
-use std::fs;
-use std::io::{self, BufReader, Write};
-use std::path::{Path, PathBuf};
-
 use self::command::Commands;
+use colored::*;
+use input::{InputReader, InputResult};
+use linefeed::terminal::Terminal;
+use pfh::{CrateType, LinkingConfiguration, SourceFile};
+use std::collections::HashMap;
+use std::fs;
+use std::io::{self, Write};
+use std::path::{Path, PathBuf};
 
 pub use self::command::{CmdArgs, Command};
 
@@ -27,7 +25,10 @@ pub struct ReplData<Term: Terminal> {
 	/// 	args.repl.run_file(args.arg);
 	/// }));
 	pub commands: Vec<Command<Term>>,
-	pub current_file: SourceFile,
+	/// The file map of relative paths.
+	pub file_map: HashMap<PathBuf, SourceFile>,
+	/// The current editing and executing file.
+	pub current_file: PathBuf,
 	/// App and prompt text.
 	pub name: &'static str,
 	/// The colour of the prompt region. ie `papyrus`.
@@ -38,7 +39,7 @@ pub struct ReplData<Term: Terminal> {
 	/// Defaults to `$HOME/.papyrus/`.
 	pub compilation_dir: PathBuf,
 	/// The external crate linking configuration,
-	linking: Option<linking::LinkingConfiguration>,
+	linking: Option<LinkingConfiguration>,
 }
 
 struct ReplTerminal<Term: Terminal> {
@@ -69,9 +70,14 @@ pub struct Repl<'data, S, Term: Terminal> {
 
 impl<Term: Terminal> Default for ReplData<Term> {
 	fn default() -> Self {
+		let lib = SourceFile::lib();
+		let lib_path = lib.path.clone();
+		let mut map = HashMap::new();
+		map.insert(lib_path.clone(), lib);
 		let mut r = ReplData {
 			commands: Vec::new(),
-			current_file: SourceFile::lib(),
+			file_map: map,
+			current_file: lib_path,
 			name: "papyrus",
 			prompt_colour: Color::Cyan,
 			out_colour: Color::BrightGreen,
@@ -149,6 +155,24 @@ impl<Term: Terminal> ReplData<Term> {
 		}
 		assert!(dir.is_dir());
 		self.compilation_dir = dir.to_path_buf();
+		Ok(self)
+	}
+
+	/// Specify that the repl will link an external crate reference.
+	/// Overwrites previously specified crate name.
+	/// Uses `ReplData.compilation_dir` to copy `rlib` file into.
+	///
+	/// [See documentation](https://kurtlawrence.github.io/papyrus/repl/linking.html)
+	pub fn with_external_crate(
+		mut self,
+		crate_name: &'static str,
+		rlib_path: Option<&str>,
+	) -> io::Result<Self> {
+		self.linking = Some(LinkingConfiguration::link_external_crate(
+			&self.compilation_dir,
+			crate_name,
+			rlib_path,
+		)?);
 		Ok(self)
 	}
 }
