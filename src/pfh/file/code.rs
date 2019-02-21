@@ -1,5 +1,7 @@
 //! Pertains to every required for a source file contents.
 
+use linking;
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct Input {
 	/// Module-level items (`fn`, `enum`, `type`, `struct`, etc.)
@@ -49,7 +51,11 @@ pub type SourceCode = Vec<Input>;
 ///
 /// A module _will_ contain **one** evaluation function, qualified with the module path.
 /// This evaulation function is what contains the statements.
-pub fn construct(src_code: &SourceCode, mod_path: &[String]) -> String {
+pub fn construct(
+	src_code: &SourceCode,
+	mod_path: &[String],
+	linking_config: Option<&linking::LinkingConfiguration>,
+) -> String {
 	let mut code = String::new();
 
 	// add crates
@@ -61,8 +67,9 @@ pub fn construct(src_code: &SourceCode, mod_path: &[String]) -> String {
 	// wrap stmts
 	code.push_str("#[no_mangle]\n");
 	code.push_str(&format!(
-		r#"pub extern "C" fn {}() -> String {{"#,
-		::pfh::eval_fn_name(mod_path)
+		r#"pub extern "C" fn {}({}) -> String {{"#,
+		::pfh::eval_fn_name(mod_path),
+		::pfh::fn_args(linking_config),
 	));
 	code.push('\n');
 	// add stmts

@@ -101,3 +101,4 @@ mod version;
 mod widgets;
 
 pub use self::repl::{CmdArgs, Command, Repl, ReplData};
+pub use self::pfh::linking;

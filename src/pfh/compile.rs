@@ -12,7 +12,7 @@ use std::{error, fmt, fs};
 pub fn build_compile_dir<'a, P, I>(
 	compile_dir: P,
 	files: I,
-	linking_config: Option<&LinkingConfiguration>,
+	linking_config: Option<&linking::LinkingConfiguration>,
 ) -> io::Result<()>
 where
 	P: AsRef<Path>,
@@ -31,7 +31,11 @@ where
 				contents.push_str(&format!("extern crate {};", linking_config.crate_name));
 			}
 		}
-		contents.push_str(&file::code::construct(&file.contents, &file.mod_path));
+		contents.push_str(&file::code::construct(
+			&file.contents,
+			&file.mod_path,
+			linking_config,
+		));
 
 		create_file_and_dir(compile_dir.join("src/").join(&file.path))?
 			.write_all(contents.as_bytes())?;
@@ -64,7 +68,7 @@ pub fn fmt<P: AsRef<Path>>(compile_dir: P) -> bool {
 
 pub fn compile<P, F>(
 	compile_dir: P,
-	linking_config: Option<&LinkingConfiguration>,
+	linking_config: Option<&linking::LinkingConfiguration>,
 	stderr_line_cb: F,
 ) -> Result<PathBuf, CompilationError>
 where

@@ -8,7 +8,10 @@ use self::command::Commands;
 use colored::*;
 use input::{InputReader, InputResult};
 use linefeed::terminal::Terminal;
-use pfh::{CrateType, LinkingConfiguration, SourceFile};
+use pfh::{
+	linking::{ArgumentType, LinkingConfiguration, LinkingDataType},
+	CrateType, SourceFile,
+};
 use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Write};
@@ -174,6 +177,21 @@ impl<Term: Terminal> ReplData<Term> {
 			rlib_path,
 		)?);
 		Ok(self)
+	}
+
+	pub fn with_external_crate_and_data(
+		self,
+		crate_name: &'static str,
+		rlib_path: Option<&str>,
+		data_type: &'static str,
+		arg_type: ArgumentType,
+	) -> io::Result<Self> {
+		let mut r = self.with_external_crate(crate_name, rlib_path)?;
+		r.linking.as_mut().unwrap().data_type = Some(LinkingDataType {
+			name: data_type,
+			arg: arg_type,
+		});
+		Ok(r)
 	}
 }
 
