@@ -100,5 +100,5 @@ mod version;
 #[cfg(feature = "azul-widgets")]
 mod widgets;
 
-pub use self::repl::{CmdArgs, Command, Repl, ReplData};
 pub use self::pfh::linking;
+pub use self::repl::{CmdArgs, Command, Repl, ReplData};
