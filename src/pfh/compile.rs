@@ -91,6 +91,8 @@ where
 		args.push(&_s_tmp);
 	}
 
+	dbg!(&args); // output the args sent to rustc
+
 	let mut child = Command::new("cargo")
 		.current_dir(compile_dir)
 		.args(&args)

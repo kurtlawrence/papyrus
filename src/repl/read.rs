@@ -4,8 +4,8 @@ use linefeed::terminal::{DefaultTerminal, Terminal};
 use std::io;
 use version::*;
 
-impl<'data, Arg> Repl<'data, Read, DefaultTerminal, Arg> {
-	pub fn default_terminal(data: &'data mut ReplData<DefaultTerminal, Arg>) -> Self {
+impl<'data, Arg, Data> Repl<'data, Read, DefaultTerminal, Arg, Data> {
+	pub fn default_terminal(data: &'data mut ReplData<DefaultTerminal, Arg, Data>) -> Self {
 		let terminal1 =
 			linefeed::terminal::DefaultTerminal::new().expect("failed to start default terminal");
 		let terminal2 =
@@ -22,8 +22,8 @@ impl<'data, Arg> Repl<'data, Read, DefaultTerminal, Arg> {
 	}
 }
 
-impl<'data, Term: Terminal + Clone, Arg> Repl<'data, Read, Term, Arg> {
-	pub fn with_term(terminal: Term, data: &'data mut ReplData<Term, Arg>) -> Self {
+impl<'data, Term: Terminal + Clone, Arg, Data> Repl<'data, Read, Term, Arg, Data> {
+	pub fn with_term(terminal: Term, data: &'data mut ReplData<Term, Arg, Data>) -> Self {
 		let terminal2 = terminal.clone();
 		Repl {
 			state: Read,
@@ -37,9 +37,9 @@ impl<'data, Term: Terminal + Clone, Arg> Repl<'data, Read, Term, Arg> {
 	}
 }
 
-impl<'data, Term: Terminal, Arg> Repl<'data, Read, Term, Arg> {
+impl<'data, Term: Terminal, Arg, Data> Repl<'data, Read, Term, Arg, Data> {
 	/// Reads input from the input reader until an evaluation phase can begin.
-	pub fn read(mut self) -> Repl<'data, Evaluate, Term, Arg> {
+	pub fn read(mut self) -> Repl<'data, Evaluate, Term, Arg, Data> {
 		let mut more = false;
 		loop {
 			let prompt = if more {
@@ -70,7 +70,7 @@ impl<'data, Term: Terminal, Arg> Repl<'data, Read, Term, Arg> {
 	}
 }
 
-impl<'data, Term: Terminal> Repl<'data, Read, Term, linking::NoData> {
+impl<'data, Term: Terminal> Repl<'data, Read, Term, linking::NoData, ()> {
 	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
 	///
 	/// # Panics
@@ -90,12 +90,12 @@ impl<'data, Term: Terminal> Repl<'data, Read, Term, linking::NoData> {
 	}
 }
 
-impl<'data, Term: Terminal> Repl<'data, Read, Term, linking::BorrowData> {
+impl<'data, Term: Terminal, Data> Repl<'data, Read, Term, linking::BorrowData, Data> {
 	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
 	///
 	/// # Panics
 	/// - Failure to initialise `InputReader`.
-	pub fn run<Data>(self, app_data: &Data) {
+	pub fn run(self, app_data: &Data) {
 		query_and_print_ver_info(&self.terminal.terminal);
 		let mut read = self;
 
@@ -110,12 +110,12 @@ impl<'data, Term: Terminal> Repl<'data, Read, Term, linking::BorrowData> {
 	}
 }
 
-impl<'data, Term: Terminal> Repl<'data, Read, Term, linking::BorrowMutData> {
+impl<'data, Term: Terminal, Data> Repl<'data, Read, Term, linking::BorrowMutData, Data> {
 	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
 	///
 	/// # Panics
 	/// - Failure to initialise `InputReader`.
-	pub fn run<Data>(self, app_data: &mut Data) {
+	pub fn run(self, app_data: &mut Data) {
 		query_and_print_ver_info(&self.terminal.terminal);
 		let mut read = self;
 

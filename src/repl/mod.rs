@@ -10,16 +10,17 @@ use input::{InputReader, InputResult};
 use linefeed::terminal::Terminal;
 use pfh::{
 	linking::{self, LinkingConfiguration},
-	CrateType, SourceFile,
+	SourceFile,
 };
 use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Write};
+use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 pub use self::command::{CmdArgs, Command};
 
-pub struct ReplData<Term: Terminal, Arg> {
+pub struct ReplData<Term: Terminal, Arg, Data> {
 	/// The REPL handled commands.
 	/// Can be extended.
 	/// ```ignore
@@ -27,7 +28,7 @@ pub struct ReplData<Term: Terminal, Arg> {
 	/// repl.commands.push(Command::new("load", CmdArgs::Filename, "load and evaluate file contents as inputs", |args| {
 	/// 	args.repl.run_file(args.arg);
 	/// }));
-	pub commands: Vec<Command<Term, Arg>>,
+	pub commands: Vec<Command<Term, Arg, Data>>,
 	/// The file map of relative paths.
 	pub file_map: HashMap<PathBuf, SourceFile>,
 	/// The current editing and executing file.
@@ -43,6 +44,7 @@ pub struct ReplData<Term: Terminal, Arg> {
 	pub compilation_dir: PathBuf,
 	/// The external crate linking configuration,
 	linking: Option<LinkingConfiguration<Arg>>,
+	data_mrker: PhantomData<Data>,
 }
 
 struct ReplTerminal<Term: Terminal> {
@@ -65,13 +67,13 @@ pub struct Print {
 	as_out: bool,
 }
 
-pub struct Repl<'data, S, Term: Terminal, Arg> {
+pub struct Repl<'data, S, Term: Terminal, Arg, Data> {
 	state: S,
 	terminal: ReplTerminal<Term>,
-	pub data: &'data mut ReplData<Term, Arg>,
+	pub data: &'data mut ReplData<Term, Arg, Data>,
 }
 
-impl<Term: Terminal, Arg> Default for ReplData<Term, Arg> {
+impl<Term: Terminal, Arg, Data> Default for ReplData<Term, Arg, Data> {
 	fn default() -> Self {
 		let lib = SourceFile::lib();
 		let lib_path = lib.path.clone();
@@ -86,6 +88,7 @@ impl<Term: Terminal, Arg> Default for ReplData<Term, Arg> {
 			out_colour: Color::BrightGreen,
 			compilation_dir: default_compile_dir(),
 			linking: None,
+			data_mrker: PhantomData,
 		};
 		// help
 		r.commands.push(Command::new(
@@ -150,7 +153,7 @@ impl<Term: Terminal, Arg> Default for ReplData<Term, Arg> {
 	}
 }
 
-impl<Term: Terminal, Arg> ReplData<Term, Arg> {
+impl<Term: Terminal, Arg, Data> ReplData<Term, Arg, Data> {
 	pub fn with_compilation_dir<P: AsRef<Path>>(mut self, dir: P) -> io::Result<Self> {
 		let dir = dir.as_ref();
 		if !dir.exists() {
@@ -162,8 +165,8 @@ impl<Term: Terminal, Arg> ReplData<Term, Arg> {
 	}
 }
 
-impl<Term: Terminal> ReplData<Term, linking::NoData> {
-	pub fn no_extern_data(self) -> ReplData<Term, linking::NoData> {
+impl<Term: Terminal> ReplData<Term, linking::NoData, ()> {
+	pub fn no_extern_data(self) -> ReplData<Term, linking::NoData, ()> {
 		self
 	}
 
@@ -186,7 +189,7 @@ impl<Term: Terminal> ReplData<Term, linking::NoData> {
 	}
 }
 
-impl<Term: Terminal> ReplData<Term, linking::BorrowData> {
+impl<Term: Terminal, Data> ReplData<Term, linking::BorrowData, Data> {
 	pub fn with_extern_crate_and_borrow_data(
 		mut self,
 		crate_name: &'static str,
@@ -206,12 +209,12 @@ impl<Term: Terminal> ReplData<Term, linking::BorrowData> {
 	}
 }
 
-impl<Term: Terminal> ReplData<Term, linking::BorrowMutData> {
+impl<Term: Terminal, Data: TypeInfo> ReplData<Term, linking::BorrowMutData, Data> {
 	pub fn with_extern_crate_and_borrow_mut_data(
 		mut self,
 		crate_name: &'static str,
 		rlib_path: Option<&str>,
-		data_type: &'static str,
+		data_type: &Data,
 	) -> io::Result<Self> {
 		self.linking = Some(
 			LinkingConfiguration::link_external_crate(
@@ -219,24 +222,11 @@ impl<Term: Terminal> ReplData<Term, linking::BorrowMutData> {
 				crate_name,
 				rlib_path,
 			)?
-			.with_mut_borrowed_data(data_type),
+			.with_mut_borrowed_data(&data_type.type_name()),
 		);
 
 		Ok(self)
 	}
-}
-
-#[derive(Clone)]
-struct Additional {
-	items: Option<Vec<String>>,
-	stmts: Option<AdditionalStatements>,
-	crates: Vec<CrateType>,
-}
-
-#[derive(Clone)]
-struct AdditionalStatements {
-	stmts: Vec<String>,
-	print_stmt: String,
 }
 
 /// `$HOME/.papyrus`
@@ -255,3 +245,14 @@ fn test_default_compile_dir() {
 		assert!(dir.starts_with("/home/"));
 	}
 }
+
+pub trait TypeInfo {
+	fn type_name(&self) -> String;
+}
+
+// [macro_export]
+// macro_rules!  {
+// 	() => {
+
+// 	};
+// }

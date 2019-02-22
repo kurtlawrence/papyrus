@@ -39,11 +39,11 @@ impl LinkingConfiguration<NoData> {
 		})
 	}
 
-	pub fn with_borrowed_data(self, type_name: &'static str) -> LinkingConfiguration<BorrowData> {
+	pub fn with_borrowed_data(self, type_name: &str) -> LinkingConfiguration<BorrowData> {
 		let r = LinkingConfiguration {
 			crate_name: self.crate_name,
 			data_type: Some(LinkingDataType {
-				name: type_name,
+				name: type_name.to_string(),
 				arg: ArgumentType::BorrowData(BorrowData),
 			}),
 		};
@@ -51,14 +51,11 @@ impl LinkingConfiguration<NoData> {
 		r
 	}
 
-	pub fn with_mut_borrowed_data(
-		self,
-		type_name: &'static str,
-	) -> LinkingConfiguration<BorrowMutData> {
+	pub fn with_mut_borrowed_data(self, type_name: &str) -> LinkingConfiguration<BorrowMutData> {
 		let r = LinkingConfiguration {
 			crate_name: self.crate_name,
 			data_type: Some(LinkingDataType {
-				name: type_name,
+				name: type_name.to_string(),
 				arg: ArgumentType::BorrowMutData(BorrowMutData),
 			}),
 		};
@@ -98,7 +95,7 @@ pub struct BorrowMutData;
 struct LinkingDataType<A> {
 	/// The name of the data type.
 	/// Needs to be path qualified.
-	pub name: &'static str,
+	pub name: String,
 	/// The argument type to modify the function structure.
 	arg: ArgumentType<A>,
 }

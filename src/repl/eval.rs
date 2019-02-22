@@ -6,12 +6,12 @@ use std::path::Path;
 
 type HandleInputResult = (String, bool);
 
-enum CommonResult<'data, Term: Terminal, Arg> {
-	Handled(Result<Repl<'data, Print, Term, Arg>, ()>),
+enum CommonResult<'data, Term: Terminal, Arg, Data> {
+	Handled(Result<Repl<'data, Print, Term, Arg, Data>, ()>),
 	Program(
 		(
 			pfh::Input,
-			&'data mut ReplData<Term, Arg>,
+			&'data mut ReplData<Term, Arg, Data>,
 			ReplTerminal<Term>,
 		),
 	),
@@ -19,9 +19,9 @@ enum CommonResult<'data, Term: Terminal, Arg> {
 
 /// bit dumb but i have to extract out the common code otherwise i will have code maintenance hell
 /// the other code returns an Ok(Result<Print, ()>) and the program arm returns Err((input, data, terminal)) such that the input processing has already been processed.
-fn handle_common<'data, Term: Terminal, Arg>(
-	repl: Repl<'data, Evaluate, Term, Arg>,
-) -> CommonResult<Term, Arg> {
+fn handle_common<'data, Term: Terminal, Arg, Data>(
+	repl: Repl<'data, Evaluate, Term, Arg, Data>,
+) -> CommonResult<Term, Arg, Data> {
 	let Repl {
 		state,
 		terminal,
@@ -59,11 +59,11 @@ fn handle_common<'data, Term: Terminal, Arg>(
 	}))
 }
 
-impl<'data, Term: Terminal> Repl<'data, Evaluate, Term, linking::NoData> {
+impl<'data, Term: Terminal> Repl<'data, Evaluate, Term, linking::NoData, ()> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
 	/// Does not transfer any app data as configured.
-	pub fn eval(self) -> Result<Repl<'data, Print, Term, linking::NoData>, ()> {
+	pub fn eval(self) -> Result<Repl<'data, Print, Term, linking::NoData, ()>, ()> {
 		match handle_common(self) {
 			CommonResult::Handled(r) => r,
 			CommonResult::Program((input, mut data, terminal)) => {
@@ -88,14 +88,14 @@ impl<'data, Term: Terminal> Repl<'data, Evaluate, Term, linking::NoData> {
 	}
 }
 
-impl<'data, Term: Terminal> Repl<'data, Evaluate, Term, linking::BorrowData> {
+impl<'data, Term: Terminal, Data> Repl<'data, Evaluate, Term, linking::BorrowData, Data> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
 	/// Does not transfer any app data as configured.
-	pub fn eval<Data>(
+	pub fn eval(
 		self,
 		app_data: &Data,
-	) -> Result<Repl<'data, Print, Term, linking::BorrowData>, ()> {
+	) -> Result<Repl<'data, Print, Term, linking::BorrowData, Data>, ()> {
 		match handle_common(self) {
 			CommonResult::Handled(r) => r,
 			CommonResult::Program((input, mut data, terminal)) => {
@@ -120,14 +120,14 @@ impl<'data, Term: Terminal> Repl<'data, Evaluate, Term, linking::BorrowData> {
 	}
 }
 
-impl<'data, Term: Terminal> Repl<'data, Evaluate, Term, linking::BorrowMutData> {
+impl<'data, Term: Terminal, Data> Repl<'data, Evaluate, Term, linking::BorrowMutData, Data> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
 	/// Does not transfer any app data as configured.
-	pub fn eval<Data>(
+	pub fn eval(
 		self,
 		app_data: &mut Data,
-	) -> Result<Repl<'data, Print, Term, linking::BorrowMutData>, ()> {
+	) -> Result<Repl<'data, Print, Term, linking::BorrowMutData, Data>, ()> {
 		match handle_common(self) {
 			CommonResult::Handled(r) => r,
 			CommonResult::Program((input, mut data, terminal)) => {
@@ -155,8 +155,8 @@ impl<'data, Term: Terminal> Repl<'data, Evaluate, Term, linking::BorrowMutData> 
 }
 
 /// Runs a single program input.
-fn handle_program<T, Arg, Exc>(
-	data: &mut ReplData<T, Arg>,
+fn handle_program<T, Arg, Data, Exc>(
+	data: &mut ReplData<T, Arg, Data>,
 	input: Input,
 	terminal: &T,
 	exec_code: Exc,
@@ -223,7 +223,7 @@ where
 	}
 }
 
-fn get_current_file_mut<T, Arg>(data: &mut ReplData<T, Arg>) -> &mut SourceFile
+fn get_current_file_mut<T, Arg, Data>(data: &mut ReplData<T, Arg, Data>) -> &mut SourceFile
 where
 	T: Terminal,
 {
