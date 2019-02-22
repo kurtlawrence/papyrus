@@ -2,68 +2,96 @@ use super::command::Commands;
 use super::*;
 use linefeed::terminal::Terminal;
 use pfh::{self, Input};
+use std::path::Path;
 
 type HandleInputResult = (String, bool);
+type CommonErr<'data, Term, Arg> = (
+	pfh::Input,
+	&'data mut ReplData<Term, Arg>,
+	ReplTerminal<Term>,
+);
 
-impl<'data, Term: Terminal, Arg> Repl<'data, Evaluate, Term, Arg> {
+/// bit dumb but i have to extract out the common code otherwise i will have code maintenance hell
+/// the other code returns an Ok(Result<Print, ()>) and the program arm returns Err((input, data, terminal)) such that the input processing has already been processed.
+fn handle_common<'data, Term: Terminal, Arg>(
+	repl: Repl<'data, Evaluate, Term, Arg>,
+) -> Result<Result<Repl<'data, Print, Term, Arg>, ()>, CommonErr<Term, Arg>> {
+	let Repl {
+		state,
+		terminal,
+		data,
+	} = repl;
+
+	let (to_print, as_out) = match state.result {
+		InputResult::Command(name, args) => {
+			debug!("read command: {} {:?}", name, args);
+			match data.commands.find_command(&name) {
+				Err(e) => (e.to_string(), false),
+				Ok(cmd) => {
+					return Ok((cmd.action)(
+						Repl {
+							state: ManualPrint,
+							terminal: terminal,
+							data: data,
+						},
+						&args,
+					));
+				}
+			}
+		}
+		InputResult::Program(input) => {
+			return Err((input, data, terminal));
+		}
+		InputResult::Eof => return Ok(Err(())),
+		InputResult::InputError(err) => (err, false),
+		_ => (String::new(), false),
+	};
+	Ok(Ok(Repl {
+		state: Print { to_print, as_out },
+		terminal: terminal,
+		data: data,
+	}))
+}
+
+impl<'data, Term: Terminal> Repl<'data, Evaluate, Term, linking::NoData> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
-	pub fn eval<Data>(self, app_data: Data) -> Result<Repl<'data, Print, Term, Arg>, ()>
-	where
-		Data: std::panic::UnwindSafe,
-	{
-		let Repl {
-			state,
-			terminal,
-			mut data,
-		} = self;
-
-		let (to_print, as_out) = match state.result {
-			InputResult::Command(name, args) => {
-				debug!("read command: {} {:?}", name, args);
-				match data.commands.find_command(&name) {
-					Err(e) => (e.to_string(), false),
-					Ok(cmd) => {
-						return (cmd.action)(
-							Repl {
-								state: ManualPrint,
-								terminal: terminal,
-								data: data,
-							},
-							&args,
-						);
-					}
-				}
-			}
-			InputResult::Program(input) => {
+	/// Does not transfer any app data as configured.
+	pub fn eval(self) -> Result<Repl<'data, Print, Term, linking::NoData>, ()> {
+		match handle_common(self) {
+			Ok(r) => r,
+			Err((input, mut data, terminal)) => {
 				debug!("read program: {:?}", input);
-				match handle_program(&mut data, input, &terminal.terminal, app_data) {
+				let (to_print, as_out) = match handle_program(
+					&mut data,
+					input,
+					&terminal.terminal,
+					|lib_file, fn_name| pfh::compile::exec_no_data(lib_file, fn_name),
+				) {
 					Ok((s, as_out)) => (s, as_out),
 					Err(s) => (s, false),
-				}
+				};
+
+				Ok(Repl {
+					state: Print { to_print, as_out },
+					terminal: terminal,
+					data: data,
+				})
 			}
-			InputResult::Eof => return Err(()),
-			InputResult::InputError(err) => (err, false),
-			_ => (String::new(), false),
-		};
-		Ok(Repl {
-			state: Print { to_print, as_out },
-			terminal: terminal,
-			data: data,
-		})
+		}
 	}
 }
 
 /// Runs a single program input.
-fn handle_program<T, Data, Arg>(
+fn handle_program<T, Arg, Exc>(
 	data: &mut ReplData<T, Arg>,
 	input: Input,
 	terminal: &T,
-	app_data: Data,
+	exec_code: Exc,
 ) -> Result<HandleInputResult, String>
 where
 	T: Terminal,
-	Data: std::panic::UnwindSafe,
+	Exc: FnOnce(&Path, &str) -> Result<String, &'static str>,
 {
 	let pop_input = |repl_data| {
 		get_current_file_mut(repl_data).contents.pop();
@@ -109,11 +137,7 @@ where
 		// execute
 		let exec_res = {
 			let current_file = get_current_file_mut(data);
-			pfh::compile::execute(
-				lib_file,
-				&pfh::eval_fn_name(&current_file.mod_path),
-				app_data,
-			)
+			exec_code(&lib_file, &pfh::eval_fn_name(&current_file.mod_path))
 		};
 		match exec_res {
 			Ok(s) => Ok((s, true)),

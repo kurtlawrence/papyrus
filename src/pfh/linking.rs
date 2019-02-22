@@ -10,7 +10,7 @@ pub struct LinkingConfiguration<A> {
 	/// - will compile with `--extern some_lib=libsome_lib.rlib` flag
 	pub crate_name: &'static str,
 	/// An option to specify if data is to be transferred to the calling function.
-	pub data_type: Option<LinkingDataType<A>>,
+	data_type: Option<LinkingDataType<A>>,
 }
 
 impl LinkingConfiguration<NoData> {
@@ -44,7 +44,7 @@ impl LinkingConfiguration<NoData> {
 			crate_name: self.crate_name,
 			data_type: Some(LinkingDataType {
 				name: type_name,
-				arg: BorrowData,
+				arg: ArgumentType::BorrowData(BorrowData),
 			}),
 		};
 
@@ -59,11 +59,27 @@ impl LinkingConfiguration<NoData> {
 			crate_name: self.crate_name,
 			data_type: Some(LinkingDataType {
 				name: type_name,
-				arg: BorrowMutData,
+				arg: ArgumentType::BorrowMutData(BorrowMutData),
 			}),
 		};
 
 		r
+	}
+}
+
+impl<A> LinkingConfiguration<A> {
+	pub fn construct_fn_args(&self) -> String {
+		match self.data_type {
+			Some(ref d) => match d.arg {
+				ArgumentType::BorrowData(_) => {
+					format!("app_data: &{}::{}", self.crate_name, d.name)
+				}
+				ArgumentType::BorrowMutData(_) => {
+					format!("app_data: &mut {}::{}", self.crate_name, d.name)
+				}
+			},
+			None => "".to_string(),
+		}
 	}
 }
 
@@ -79,42 +95,17 @@ pub struct BorrowMutData;
 /// Example: `MyStruct` under the module `some_mod` in crate `some_lib` with `ArgumentType::Borrow`
 /// - will add `some_lib::some_mod::MyStruct` to the function argument
 /// - function looks like `fn(app_data: &some_lib::some_mode::MyStruct)`
-pub struct LinkingDataType<A> {
+struct LinkingDataType<A> {
 	/// The name of the data type.
 	/// Needs to be path qualified.
 	pub name: &'static str,
 	/// The argument type to modify the function structure.
-	arg: A,
+	arg: ArgumentType<A>,
 }
 
-pub trait FnArgs {
-	fn fn_args(&self) -> String;
-}
-
-impl FnArgs for LinkingConfiguration<NoData> {
-	fn fn_args(&self) -> String {
-		"".to_string()
-	}
-}
-
-impl FnArgs for LinkingConfiguration<BorrowData> {
-	fn fn_args(&self) -> String {
-		if let Some(ref d) = self.data_type {
-			format!("app_data: &{}::{}", self.crate_name, d.name)
-		} else {
-			"".to_string()
-		}
-	}
-}
-
-impl FnArgs for LinkingConfiguration<BorrowMutData> {
-	fn fn_args(&self) -> String {
-		if let Some(ref d) = self.data_type {
-			format!("app_data: &mut {}::{}", self.crate_name, d.name)
-		} else {
-			"".to_string()
-		}
-	}
+enum ArgumentType<A> {
+	BorrowData(A),
+	BorrowMutData(A),
 }
 
 fn get_rlib_path(crate_name: &str) -> io::Result<PathBuf> {

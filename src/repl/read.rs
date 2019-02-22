@@ -68,46 +68,49 @@ impl<'data, Term: Terminal, Arg> Repl<'data, Read, Term, Arg> {
 			}
 		}
 	}
+}
 
+impl<'data, Term: Terminal> Repl<'data, Read, Term, linking::NoData> {
 	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
 	///
 	/// # Panics
 	/// - Failure to initialise `InputReader`.
 	pub fn run(self) {
-		{
-			print!("{}", "Checking for later version...".bright_yellow());
-			io::stdout().flush().is_ok();
-			let print_line = match query() {
-				Ok(status) => match status {
-					Status::UpToDate(ver) => format!(
-						"{}{}",
-						"Running the latest papyrus version ".bright_green(),
-						ver.bright_green()
-					),
-					Status::OutOfDate(ver) => format!(
-						"{}{}{}{}",
-						"The current papyrus version ".bright_red(),
-						env!("CARGO_PKG_VERSION").bright_red(),
-						" is old, please update to ".bright_red(),
-						ver.bright_red()
-					),
-				},
-				Err(_) => format!("{}", "Failed to query crates.io".bright_yellow()),
-			};
-			let mut wtr = Writer(&self.terminal.terminal);
-			wtr.overwrite_current_console_line(&print_line).unwrap();
-			writeln!(wtr, "",).unwrap();
-		} // version information.
-
+		query_and_print_ver_info(&self.terminal.terminal);
 		let mut read = self;
 
 		loop {
 			let eval = read.read();
-			let print = eval.eval(());
+			let print = eval.eval();
 			match print {
 				Ok(r) => read = r.print(),
 				Err(_) => break,
 			}
 		}
 	}
+}
+
+fn query_and_print_ver_info<Term: Terminal>(terminal: &Term) {
+	print!("{}", "Checking for later version...".bright_yellow());
+	io::stdout().flush().is_ok();
+	let print_line = match query() {
+		Ok(status) => match status {
+			Status::UpToDate(ver) => format!(
+				"{}{}",
+				"Running the latest papyrus version ".bright_green(),
+				ver.bright_green()
+			),
+			Status::OutOfDate(ver) => format!(
+				"{}{}{}{}",
+				"The current papyrus version ".bright_red(),
+				env!("CARGO_PKG_VERSION").bright_red(),
+				" is old, please update to ".bright_red(),
+				ver.bright_red()
+			),
+		},
+		Err(_) => format!("{}", "Failed to query crates.io".bright_yellow()),
+	};
+	let mut wtr = Writer(terminal);
+	wtr.overwrite_current_console_line(&print_line).unwrap();
+	writeln!(wtr, "",).unwrap();
 }

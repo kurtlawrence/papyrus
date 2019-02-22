@@ -123,21 +123,16 @@ where
 	}
 }
 
-pub fn execute<P, Data>(
-	library_file: P,
-	function_name: &str,
-	app_data: Data,
-) -> Result<String, &'static str>
+type NoDataFunc = unsafe fn() -> String;
+pub fn exec_no_data<P>(library_file: P, function_name: &str) -> Result<String, &'static str>
 where
 	P: AsRef<Path>,
-	Data: std::panic::UnwindSafe,
 {
-	type ExternFunc<D> = unsafe fn(D) -> String;
 	use libloading::{Library, Symbol};
 	let lib = Library::new(library_file.as_ref()).unwrap();
 	let res = std::panic::catch_unwind(|| unsafe {
-		let func: Symbol<ExternFunc<Data>> = lib.get(function_name.as_bytes()).unwrap();
-		func(app_data)
+		let func: Symbol<NoDataFunc> = lib.get(function_name.as_bytes()).unwrap();
+		func()
 	});
 
 	match res {

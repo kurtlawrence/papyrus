@@ -69,7 +69,9 @@ pub fn construct<A>(
 	code.push_str(&format!(
 		r#"pub extern "C" fn {}({}) -> String {{"#,
 		::pfh::eval_fn_name(mod_path),
-		::pfh::fn_args(linking_config),
+		linking_config
+			.map(|x| x.construct_fn_args())
+			.unwrap_or(String::new())
 	));
 	code.push('\n');
 	// add stmts

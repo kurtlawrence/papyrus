@@ -9,7 +9,7 @@ use colored::*;
 use input::{InputReader, InputResult};
 use linefeed::terminal::Terminal;
 use pfh::{
-	linking::{self, LinkingConfiguration, LinkingDataType},
+	linking::{self, LinkingConfiguration},
 	CrateType, SourceFile,
 };
 use std::collections::HashMap;
