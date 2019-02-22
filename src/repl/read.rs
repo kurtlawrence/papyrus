@@ -90,6 +90,46 @@ impl<'data, Term: Terminal> Repl<'data, Read, Term, linking::NoData> {
 	}
 }
 
+impl<'data, Term: Terminal> Repl<'data, Read, Term, linking::BorrowData> {
+	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
+	///
+	/// # Panics
+	/// - Failure to initialise `InputReader`.
+	pub fn run<Data>(self, app_data: &Data) {
+		query_and_print_ver_info(&self.terminal.terminal);
+		let mut read = self;
+
+		loop {
+			let eval = read.read();
+			let print = eval.eval(app_data);
+			match print {
+				Ok(r) => read = r.print(),
+				Err(_) => break,
+			}
+		}
+	}
+}
+
+impl<'data, Term: Terminal> Repl<'data, Read, Term, linking::BorrowMutData> {
+	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
+	///
+	/// # Panics
+	/// - Failure to initialise `InputReader`.
+	pub fn run<Data>(self, app_data: &mut Data) {
+		query_and_print_ver_info(&self.terminal.terminal);
+		let mut read = self;
+
+		loop {
+			let eval = read.read();
+			let print = eval.eval(app_data);
+			match print {
+				Ok(r) => read = r.print(),
+				Err(_) => break,
+			}
+		}
+	}
+}
+
 fn query_and_print_ver_info<Term: Terminal>(terminal: &Term) {
 	print!("{}", "Checking for later version...".bright_yellow());
 	io::stdout().flush().is_ok();

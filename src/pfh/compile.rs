@@ -124,15 +124,65 @@ where
 }
 
 type NoDataFunc = unsafe fn() -> String;
+type BorrowDataFunc<D> = unsafe fn(&D) -> String;
+type BorrowMutDataFunc<D> = unsafe fn(&mut D) -> String;
+
 pub fn exec_no_data<P>(library_file: P, function_name: &str) -> Result<String, &'static str>
 where
 	P: AsRef<Path>,
 {
 	use libloading::{Library, Symbol};
 	let lib = Library::new(library_file.as_ref()).unwrap();
-	let res = std::panic::catch_unwind(|| unsafe {
+	let res = std::panic::catch_unwind(move || unsafe {
 		let func: Symbol<NoDataFunc> = lib.get(function_name.as_bytes()).unwrap();
 		func()
+	});
+
+	match res {
+		Ok(s) => Ok(s),
+		Err(_) => Err("a panic occured with evaluation"),
+	}
+}
+
+pub fn exec_borrow_data<P, Data>(
+	library_file: P,
+	function_name: &str,
+	app_data: &Data,
+) -> Result<String, &'static str>
+where
+	P: AsRef<Path>,
+{
+	use libloading::{Library, Symbol};
+	let lib = Library::new(library_file.as_ref()).unwrap();
+	let data_safe = std::panic::AssertUnwindSafe(app_data);
+	let res = std::panic::catch_unwind(move || unsafe {
+		let func: Symbol<BorrowDataFunc<Data>> = lib.get(function_name.as_bytes()).unwrap();
+		let d = *data_safe;
+		func(d)
+	});
+
+	match res {
+		Ok(s) => Ok(s),
+		Err(_) => Err("a panic occured with evaluation"),
+	}
+}
+
+pub fn exec_borrow_mut_data<P, Data>(
+	library_file: P,
+	function_name: &str,
+	app_data: &mut Data,
+) -> Result<String, &'static str>
+where
+	P: AsRef<Path>,
+{
+	use libloading::{Library, Symbol};
+	let lib = Library::new(library_file.as_ref()).unwrap();
+	let data_safe = std::panic::AssertUnwindSafe(app_data);
+	let res = std::panic::catch_unwind(move || unsafe {
+		let func: Symbol<BorrowMutDataFunc<Data>> = lib.get(function_name.as_bytes()).unwrap();
+		let mut data_safe = data_safe;
+		let d = &mut **data_safe;
+		func(d)
 	});
 
 	match res {

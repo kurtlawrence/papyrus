@@ -71,7 +71,7 @@ pub struct Repl<'data, S, Term: Terminal, Arg> {
 	pub data: &'data mut ReplData<Term, Arg>,
 }
 
-impl<Term: Terminal> Default for ReplData<Term, linking::NoData> {
+impl<Term: Terminal, Arg> Default for ReplData<Term, Arg> {
 	fn default() -> Self {
 		let lib = SourceFile::lib();
 		let lib_path = lib.path.clone();
@@ -163,12 +163,16 @@ impl<Term: Terminal, Arg> ReplData<Term, Arg> {
 }
 
 impl<Term: Terminal> ReplData<Term, linking::NoData> {
+	pub fn no_extern_data(self) -> ReplData<Term, linking::NoData> {
+		self
+	}
+
 	/// Specify that the repl will link an external crate reference.
 	/// Overwrites previously specified crate name.
 	/// Uses `ReplData.compilation_dir` to copy `rlib` file into.
 	///
 	/// [See documentation](https://kurtlawrence.github.io/papyrus/repl/linking.html)
-	pub fn with_external_crate(
+	pub fn with_extern_crate(
 		mut self,
 		crate_name: &'static str,
 		rlib_path: Option<&str>,
@@ -180,21 +184,46 @@ impl<Term: Terminal> ReplData<Term, linking::NoData> {
 		)?);
 		Ok(self)
 	}
+}
 
-	// pub fn with_external_crate_and_data(
-	// 	self,
-	// 	crate_name: &'static str,
-	// 	rlib_path: Option<&str>,
-	// 	data_type: &'static str,
-	// 	arg_type: ArgumentType,
-	// ) -> io::Result<Self> {
-	// 	let mut r = self.with_external_crate(crate_name, rlib_path)?;
-	// 	r.linking.as_mut().unwrap().data_type = Some(LinkingDataType {
-	// 		name: data_type,
-	// 		arg: arg_type,
-	// 	});
-	// 	Ok(r)
-	// }
+impl<Term: Terminal> ReplData<Term, linking::BorrowData> {
+	pub fn with_extern_crate_and_borrow_data(
+		mut self,
+		crate_name: &'static str,
+		rlib_path: Option<&str>,
+		data_type: &'static str,
+	) -> io::Result<Self> {
+		self.linking = Some(
+			LinkingConfiguration::link_external_crate(
+				&self.compilation_dir,
+				crate_name,
+				rlib_path,
+			)?
+			.with_borrowed_data(data_type),
+		);
+
+		Ok(self)
+	}
+}
+
+impl<Term: Terminal> ReplData<Term, linking::BorrowMutData> {
+	pub fn with_extern_crate_and_borrow_mut_data(
+		mut self,
+		crate_name: &'static str,
+		rlib_path: Option<&str>,
+		data_type: &'static str,
+	) -> io::Result<Self> {
+		self.linking = Some(
+			LinkingConfiguration::link_external_crate(
+				&self.compilation_dir,
+				crate_name,
+				rlib_path,
+			)?
+			.with_mut_borrowed_data(data_type),
+		);
+
+		Ok(self)
+	}
 }
 
 #[derive(Clone)]

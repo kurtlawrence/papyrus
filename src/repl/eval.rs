@@ -5,17 +5,23 @@ use pfh::{self, Input};
 use std::path::Path;
 
 type HandleInputResult = (String, bool);
-type CommonErr<'data, Term, Arg> = (
-	pfh::Input,
-	&'data mut ReplData<Term, Arg>,
-	ReplTerminal<Term>,
-);
+
+enum CommonResult<'data, Term: Terminal, Arg> {
+	Handled(Result<Repl<'data, Print, Term, Arg>, ()>),
+	Program(
+		(
+			pfh::Input,
+			&'data mut ReplData<Term, Arg>,
+			ReplTerminal<Term>,
+		),
+	),
+}
 
 /// bit dumb but i have to extract out the common code otherwise i will have code maintenance hell
 /// the other code returns an Ok(Result<Print, ()>) and the program arm returns Err((input, data, terminal)) such that the input processing has already been processed.
 fn handle_common<'data, Term: Terminal, Arg>(
 	repl: Repl<'data, Evaluate, Term, Arg>,
-) -> Result<Result<Repl<'data, Print, Term, Arg>, ()>, CommonErr<Term, Arg>> {
+) -> CommonResult<Term, Arg> {
 	let Repl {
 		state,
 		terminal,
@@ -28,7 +34,7 @@ fn handle_common<'data, Term: Terminal, Arg>(
 			match data.commands.find_command(&name) {
 				Err(e) => (e.to_string(), false),
 				Ok(cmd) => {
-					return Ok((cmd.action)(
+					return CommonResult::Handled((cmd.action)(
 						Repl {
 							state: ManualPrint,
 							terminal: terminal,
@@ -40,13 +46,13 @@ fn handle_common<'data, Term: Terminal, Arg>(
 			}
 		}
 		InputResult::Program(input) => {
-			return Err((input, data, terminal));
+			return CommonResult::Program((input, data, terminal));
 		}
-		InputResult::Eof => return Ok(Err(())),
+		InputResult::Eof => return CommonResult::Handled(Err(())),
 		InputResult::InputError(err) => (err, false),
 		_ => (String::new(), false),
 	};
-	Ok(Ok(Repl {
+	CommonResult::Handled(Ok(Repl {
 		state: Print { to_print, as_out },
 		terminal: terminal,
 		data: data,
@@ -59,14 +65,80 @@ impl<'data, Term: Terminal> Repl<'data, Evaluate, Term, linking::NoData> {
 	/// Does not transfer any app data as configured.
 	pub fn eval(self) -> Result<Repl<'data, Print, Term, linking::NoData>, ()> {
 		match handle_common(self) {
-			Ok(r) => r,
-			Err((input, mut data, terminal)) => {
+			CommonResult::Handled(r) => r,
+			CommonResult::Program((input, mut data, terminal)) => {
 				debug!("read program: {:?}", input);
 				let (to_print, as_out) = match handle_program(
 					&mut data,
 					input,
 					&terminal.terminal,
 					|lib_file, fn_name| pfh::compile::exec_no_data(lib_file, fn_name),
+				) {
+					Ok((s, as_out)) => (s, as_out),
+					Err(s) => (s, false),
+				};
+
+				Ok(Repl {
+					state: Print { to_print, as_out },
+					terminal: terminal,
+					data: data,
+				})
+			}
+		}
+	}
+}
+
+impl<'data, Term: Terminal> Repl<'data, Evaluate, Term, linking::BorrowData> {
+	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
+	/// This result gets passed back as a print ready repl.
+	/// Does not transfer any app data as configured.
+	pub fn eval<Data>(
+		self,
+		app_data: &Data,
+	) -> Result<Repl<'data, Print, Term, linking::BorrowData>, ()> {
+		match handle_common(self) {
+			CommonResult::Handled(r) => r,
+			CommonResult::Program((input, mut data, terminal)) => {
+				debug!("read program: {:?}", input);
+				let (to_print, as_out) = match handle_program(
+					&mut data,
+					input,
+					&terminal.terminal,
+					|lib_file, fn_name| pfh::compile::exec_borrow_data(lib_file, fn_name, app_data),
+				) {
+					Ok((s, as_out)) => (s, as_out),
+					Err(s) => (s, false),
+				};
+
+				Ok(Repl {
+					state: Print { to_print, as_out },
+					terminal: terminal,
+					data: data,
+				})
+			}
+		}
+	}
+}
+
+impl<'data, Term: Terminal> Repl<'data, Evaluate, Term, linking::BorrowMutData> {
+	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
+	/// This result gets passed back as a print ready repl.
+	/// Does not transfer any app data as configured.
+	pub fn eval<Data>(
+		self,
+		app_data: &mut Data,
+	) -> Result<Repl<'data, Print, Term, linking::BorrowMutData>, ()> {
+		match handle_common(self) {
+			CommonResult::Handled(r) => r,
+			CommonResult::Program((input, mut data, terminal)) => {
+				debug!("read program: {:?}", input);
+				let (to_print, as_out) = match handle_program(
+					&mut data,
+					input,
+					&terminal.terminal,
+					|lib_file, fn_name| {
+						pfh::compile::exec_borrow_mut_data(lib_file, fn_name, app_data)
+					},
 				) {
 					Ok((s, as_out)) => (s, as_out),
 					Err(s) => (s, false),

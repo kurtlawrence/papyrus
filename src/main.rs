@@ -89,16 +89,17 @@ extern crate simplelog;
 use papyrus::*;
 
 fn main() {
-    // turn on for logging
-    // simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
-    // 	.unwrap();
+	// turn on for logging
+	// simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
+	// 	.unwrap();
 
-    if cfg!(target_os = "windows") && !cfg!(debug_assertions) {
-        // disable colored text output on Windows as the Windows terminals do not support it yet
-        colored::control::set_override(false);
-    }
-    let data = &mut ReplData::default();
-    let repl = Repl::default_terminal(data);
-    repl.run();
-    println!("Thanks for using papyrus!");
+	if cfg!(target_os = "windows") && !cfg!(debug_assertions) {
+		// TODO fix this once colored crate is updated
+		// disable colored text output on Windows as the Windows terminals do not support it yet
+		colored::control::set_override(false);
+	}
+	let data = &mut ReplData::default().no_extern_data();
+	let repl = Repl::default_terminal(data);
+	repl.run();
+	println!("Thanks for using papyrus!");
 }
