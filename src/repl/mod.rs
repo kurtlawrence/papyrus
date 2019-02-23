@@ -20,6 +20,66 @@ use std::path::{Path, PathBuf};
 
 pub use self::command::{CmdArgs, Command};
 
+mod macros {
+	#[macro_export]
+	macro_rules! repl_data_brw {
+		($crate_name:expr, $type:ty) => {{
+			use papyrus;
+			let crate_name: &'static str = $crate_name;
+			let repl_data_res: std::io::Result<
+				papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
+			> = papyrus::ReplData::default().with_extern_crate_and_borrow_data(
+				crate_name,
+				None,
+				stringify!($type),
+				);
+			repl_data_res
+			}};
+		($comp_dir:expr, $crate_name:expr, $type:ty) => {{
+			use papyrus;
+			let compilation_dir: &'static str = $comp_dir;
+			let crate_name: &'static str = $crate_name;
+			let repl_data_res: std::io::Result<
+				papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
+			> = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
+			match repl_data_res {
+				Ok(r) => r.with_extern_crate_and_borrow_data(crate_name, None, stringify!($type)),
+				Err(e) => Err(e),
+				}
+			}};
+	}
+
+	#[macro_export]
+	macro_rules! repl_data_brw_mut {
+		($crate_name:expr, $type:ty) => {{
+			use papyrus;
+			let crate_name: &'static str = $crate_name;
+			let repl_data_res: std::io::Result<
+				papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
+			> = papyrus::ReplData::default().with_extern_crate_and_borrow_mut_data(
+				crate_name,
+				None,
+				stringify!($type),
+				);
+			repl_data_res
+			}};
+		($comp_dir:expr, $crate_name:expr, $type:ty) => {{
+			use papyrus;
+			let compilation_dir: &'static str = $comp_dir;
+			let crate_name: &'static str = $crate_name;
+			let repl_data_res: std::io::Result<
+				papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
+			> = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
+			match repl_data_res {
+				Ok(r) => {
+					r.with_extern_crate_and_borrow_mut_data(crate_name, None, stringify!($type))
+					}
+				Err(e) => Err(e),
+				}
+			}};
+	}
+}
+
 pub struct ReplData<Term: Terminal, Arg, Data> {
 	/// The REPL handled commands.
 	/// Can be extended.
@@ -209,12 +269,12 @@ impl<Term: Terminal, Data> ReplData<Term, linking::BorrowData, Data> {
 	}
 }
 
-impl<Term: Terminal, Data: TypeInfo> ReplData<Term, linking::BorrowMutData, Data> {
+impl<Term: Terminal, Data> ReplData<Term, linking::BorrowMutData, Data> {
 	pub fn with_extern_crate_and_borrow_mut_data(
 		mut self,
 		crate_name: &'static str,
 		rlib_path: Option<&str>,
-		data_type: &Data,
+		data_type: &'static str,
 	) -> io::Result<Self> {
 		self.linking = Some(
 			LinkingConfiguration::link_external_crate(
@@ -222,7 +282,7 @@ impl<Term: Terminal, Data: TypeInfo> ReplData<Term, linking::BorrowMutData, Data
 				crate_name,
 				rlib_path,
 			)?
-			.with_mut_borrowed_data(&data_type.type_name()),
+			.with_mut_borrowed_data(data_type),
 		);
 
 		Ok(self)
@@ -245,14 +305,3 @@ fn test_default_compile_dir() {
 		assert!(dir.starts_with("/home/"));
 	}
 }
-
-pub trait TypeInfo {
-	fn type_name(&self) -> String;
-}
-
-// [macro_export]
-// macro_rules!  {
-// 	() => {
-
-// 	};
-// }

@@ -28,7 +28,7 @@ where
 		let mut contents = String::new();
 		if let Some(linking_config) = linking_config {
 			if file.path == Path::new("lib.rs") {
-				contents.push_str(&format!("extern crate {};", linking_config.crate_name));
+				contents.push_str(&format!("extern crate {};\n", linking_config.crate_name));
 			}
 		}
 		contents.push_str(&file::code::construct(
