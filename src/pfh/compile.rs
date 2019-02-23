@@ -9,10 +9,11 @@ use std::{error, fmt, fs};
 /// Constructs the compile directory.
 /// Takes a list of source files and writes the contents to file.
 /// Builds `Cargo.toml` using crates found in `SourceFile`.
-pub fn build_compile_dir<'a, P, I, A>(
+pub fn build_compile_dir<'a, P, I>(
 	compile_dir: P,
 	files: I,
-	linking_config: Option<&linking::LinkingConfiguration<A>>,
+	linking_config: Option<&linking::LinkingConfiguration>,
+	arg_type: &linking::LinkingArgument,
 ) -> io::Result<()>
 where
 	P: AsRef<Path>,
@@ -35,6 +36,7 @@ where
 			&file.contents,
 			&file.mod_path,
 			linking_config,
+			arg_type,
 		));
 
 		create_file_and_dir(compile_dir.join("src/").join(&file.path))?
@@ -66,9 +68,9 @@ pub fn fmt<P: AsRef<Path>>(compile_dir: P) -> bool {
 	}
 }
 
-pub fn compile<P, F, A>(
+pub fn compile<P, F>(
 	compile_dir: P,
-	linking_config: Option<&linking::LinkingConfiguration<A>>,
+	linking_config: Option<&linking::LinkingConfiguration>,
 	stderr_line_cb: F,
 ) -> Result<PathBuf, CompilationError>
 where

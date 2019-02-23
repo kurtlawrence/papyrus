@@ -72,6 +72,7 @@ impl<'data, Term: Terminal> Repl<'data, Evaluate, Term, linking::NoData, ()> {
 					&mut data,
 					input,
 					&terminal.terminal,
+					&linking::LinkingArgument::NoData,
 					|lib_file, fn_name| pfh::compile::exec_no_data(lib_file, fn_name),
 				) {
 					Ok((s, as_out)) => (s, as_out),
@@ -104,6 +105,7 @@ impl<'data, Term: Terminal, Data> Repl<'data, Evaluate, Term, linking::BorrowDat
 					&mut data,
 					input,
 					&terminal.terminal,
+					&linking::LinkingArgument::BorrowData,
 					|lib_file, fn_name| pfh::compile::exec_borrow_data(lib_file, fn_name, app_data),
 				) {
 					Ok((s, as_out)) => (s, as_out),
@@ -136,6 +138,7 @@ impl<'data, Term: Terminal, Data> Repl<'data, Evaluate, Term, linking::BorrowMut
 					&mut data,
 					input,
 					&terminal.terminal,
+					&linking::LinkingArgument::BorrowMutData,
 					|lib_file, fn_name| {
 						pfh::compile::exec_borrow_mut_data(lib_file, fn_name, app_data)
 					},
@@ -159,6 +162,7 @@ fn handle_program<T, Arg, Data, Exc>(
 	data: &mut ReplData<T, Arg, Data>,
 	input: Input,
 	terminal: &T,
+	arg_type: &linking::LinkingArgument,
 	exec_code: Exc,
 ) -> Result<HandleInputResult, String>
 where
@@ -181,6 +185,7 @@ where
 		&data.compilation_dir,
 		data.file_map.values(),
 		data.linking.as_ref(),
+		arg_type,
 	);
 	if let Err(e) = res {
 		pop_input(data);

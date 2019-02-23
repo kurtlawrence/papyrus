@@ -82,6 +82,7 @@
 //! ```
 //!
 //! The `src/main.rs` will be populated with a main function encapsulating the code, and crate references placed above it. A similar `Cargo.toml` will be created as before.
+// #![warn_missing_docs]
 
 #[macro_use]
 extern crate log;

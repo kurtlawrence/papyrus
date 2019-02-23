@@ -51,10 +51,11 @@ pub type SourceCode = Vec<Input>;
 ///
 /// A module _will_ contain **one** evaluation function, qualified with the module path.
 /// This evaulation function is what contains the statements.
-pub fn construct<A>(
+pub fn construct(
 	src_code: &SourceCode,
 	mod_path: &[String],
-	linking_config: Option<&linking::LinkingConfiguration<A>>,
+	linking_config: Option<&linking::LinkingConfiguration>,
+	arg_type: &linking::LinkingArgument,
 ) -> String {
 	let mut code = String::new();
 
@@ -70,7 +71,7 @@ pub fn construct<A>(
 		r#"pub extern "C" fn {}({}) -> String {{"#,
 		::pfh::eval_fn_name(mod_path),
 		linking_config
-			.map(|x| x.construct_fn_args())
+			.map(|x| x.construct_fn_args(arg_type))
 			.unwrap_or(String::new())
 	));
 	code.push('\n');

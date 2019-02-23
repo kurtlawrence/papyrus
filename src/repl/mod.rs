@@ -103,8 +103,9 @@ pub struct ReplData<Term: Terminal, Arg, Data> {
 	/// Defaults to `$HOME/.papyrus/`.
 	pub compilation_dir: PathBuf,
 	/// The external crate linking configuration,
-	linking: Option<LinkingConfiguration<Arg>>,
+	linking: Option<LinkingConfiguration>,
 	data_mrker: PhantomData<Data>,
+	arg_mrker: PhantomData<Arg>,
 }
 
 struct ReplTerminal<Term: Terminal> {
@@ -149,6 +150,7 @@ impl<Term: Terminal, Arg, Data> Default for ReplData<Term, Arg, Data> {
 			compilation_dir: default_compile_dir(),
 			linking: None,
 			data_mrker: PhantomData,
+			arg_mrker: PhantomData,
 		};
 		// help
 		r.commands.push(Command::new(
@@ -223,6 +225,24 @@ impl<Term: Terminal, Arg, Data> ReplData<Term, Arg, Data> {
 		self.compilation_dir = dir.to_path_buf();
 		Ok(self)
 	}
+
+	pub fn with_extern_crate_and_data(
+		mut self,
+		crate_name: &'static str,
+		rlib_path: Option<&str>,
+		data_type: &str,
+	) -> io::Result<Self> {
+		self.linking = Some(
+			LinkingConfiguration::link_external_crate(
+				&self.compilation_dir,
+				crate_name,
+				rlib_path,
+			)?
+			.with_data(data_type),
+		);
+
+		Ok(self)
+	}
 }
 
 impl<Term: Terminal> ReplData<Term, linking::NoData, ()> {
@@ -245,46 +265,6 @@ impl<Term: Terminal> ReplData<Term, linking::NoData, ()> {
 			crate_name,
 			rlib_path,
 		)?);
-		Ok(self)
-	}
-}
-
-impl<Term: Terminal, Data> ReplData<Term, linking::BorrowData, Data> {
-	pub fn with_extern_crate_and_borrow_data(
-		mut self,
-		crate_name: &'static str,
-		rlib_path: Option<&str>,
-		data_type: &'static str,
-	) -> io::Result<Self> {
-		self.linking = Some(
-			LinkingConfiguration::link_external_crate(
-				&self.compilation_dir,
-				crate_name,
-				rlib_path,
-			)?
-			.with_borrowed_data(data_type),
-		);
-
-		Ok(self)
-	}
-}
-
-impl<Term: Terminal, Data> ReplData<Term, linking::BorrowMutData, Data> {
-	pub fn with_extern_crate_and_borrow_mut_data(
-		mut self,
-		crate_name: &'static str,
-		rlib_path: Option<&str>,
-		data_type: &'static str,
-	) -> io::Result<Self> {
-		self.linking = Some(
-			LinkingConfiguration::link_external_crate(
-				&self.compilation_dir,
-				crate_name,
-				rlib_path,
-			)?
-			.with_mut_borrowed_data(data_type),
-		);
-
 		Ok(self)
 	}
 }
