@@ -23,27 +23,57 @@ pub use self::command::{CmdArgs, Command};
 mod macros {
 	#[macro_export]
 	macro_rules! repl_data_brw {
+		// (crate_name, type)
 		($crate_name:expr, $type:ty) => {{
 			use papyrus;
 			let crate_name: &'static str = $crate_name;
 			let repl_data_res: std::io::Result<
 				papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
-			> = papyrus::ReplData::default().with_extern_crate_and_borrow_data(
+			> = papyrus::ReplData::default().with_extern_crate_and_data(
 				crate_name,
 				None,
 				stringify!($type),
 				);
 			repl_data_res
 			}};
+		// ((crate_name, rlib_path), type)
+		($crate_and_rlib:expr, $type:ty) => {{
+			use papyrus;
+			let (crate_name, rlib_path): (&'static str, &str) = $crate_and_rlib;
+			let repl_data_res: std::io::Result<
+				papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
+			> = papyrus::ReplData::default().with_extern_crate_and_data(
+				crate_name,
+				Some(rlib_path),
+				stringify!($type),
+				);
+			repl_data_res
+			}};
+		// (compilation_dir, crate_name, type)
 		($comp_dir:expr, $crate_name:expr, $type:ty) => {{
 			use papyrus;
-			let compilation_dir: &'static str = $comp_dir;
+			let compilation_dir: &str = $comp_dir;
 			let crate_name: &'static str = $crate_name;
 			let repl_data_res: std::io::Result<
 				papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
 			> = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
 			match repl_data_res {
-				Ok(r) => r.with_extern_crate_and_borrow_data(crate_name, None, stringify!($type)),
+				Ok(r) => r.with_extern_crate_and_data(crate_name, None, stringify!($type)),
+				Err(e) => Err(e),
+				}
+			}};
+		// (compilation_dir, (crate_name, rlb_path), type)
+		($comp_dir:expr, $crate_and_rlib:expr, $type:ty) => {{
+			use papyrus;
+			let compilation_dir: &str = $comp_dir;
+			let (crate_name, rlib_path): (&'static str, &str) = $crate_and_rlib;
+			let repl_data_res: std::io::Result<
+				papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
+			> = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
+			match repl_data_res {
+				Ok(r) => {
+					r.with_extern_crate_and_data(crate_name, Some(rlib_path), stringify!($type))
+					}
 				Err(e) => Err(e),
 				}
 			}};
@@ -51,28 +81,56 @@ mod macros {
 
 	#[macro_export]
 	macro_rules! repl_data_brw_mut {
+		// (crate_name, type)
 		($crate_name:expr, $type:ty) => {{
 			use papyrus;
 			let crate_name: &'static str = $crate_name;
 			let repl_data_res: std::io::Result<
 				papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
-			> = papyrus::ReplData::default().with_extern_crate_and_borrow_mut_data(
+			> = papyrus::ReplData::default().with_extern_crate_and_data(
 				crate_name,
 				None,
 				stringify!($type),
 				);
 			repl_data_res
 			}};
+		// ((crate_name, rlib_path), type)
+		($crate_and_rlib:expr, $type:ty) => {{
+			use papyrus;
+			let (crate_name, rlib_path): (&'static str, &str) = $crate_and_rlib;
+			let repl_data_res: std::io::Result<
+				papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
+			> = papyrus::ReplData::default().with_extern_crate_and_data(
+				crate_name,
+				Some(rlib_path),
+				stringify!($type),
+				);
+			repl_data_res
+			}};
+		// (compilation_dir, crate_name, type)
 		($comp_dir:expr, $crate_name:expr, $type:ty) => {{
 			use papyrus;
-			let compilation_dir: &'static str = $comp_dir;
+			let compilation_dir: &str = $comp_dir;
 			let crate_name: &'static str = $crate_name;
 			let repl_data_res: std::io::Result<
 				papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
 			> = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
 			match repl_data_res {
+				Ok(r) => r.with_extern_crate_and_data(crate_name, None, stringify!($type)),
+				Err(e) => Err(e),
+				}
+			}};
+		// (compilation_dir, (crate_name, rlb_path), type)
+		($comp_dir:expr, $crate_and_rlib:expr, $type:ty) => {{
+			use papyrus;
+			let compilation_dir: &str = $comp_dir;
+			let (crate_name, rlib_path): (&'static str, &str) = $crate_and_rlib;
+			let repl_data_res: std::io::Result<
+				papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
+			> = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
+			match repl_data_res {
 				Ok(r) => {
-					r.with_extern_crate_and_borrow_mut_data(crate_name, None, stringify!($type))
+					r.with_extern_crate_and_data(crate_name, Some(rlib_path), stringify!($type))
 					}
 				Err(e) => Err(e),
 				}
