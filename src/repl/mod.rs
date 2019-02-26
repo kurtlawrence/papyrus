@@ -1,3 +1,39 @@
+//! The repl takes the commands given and evaluates them, setting a local variable such that the data can be continually referenced.
+//! 
+//! ```sh
+//! papyrus=> let a = 1;
+//! papyrus.> a
+//! papyrus [out0]: 1
+//! papyrus=>
+//! ```
+//! 
+//! Here we define a variable `let a = 1;`. Papyrus knows that the end result is not an expression (given the trailing semi colon) so waits for more input (`.>`). We then give it `a` which is an expression and gets evaluated. If compilation is successful the expression is set to the variable `out0` (where the number will increment with expressions) and then be printed with the `Debug` trait. If an expression evaluates to something that is not `Debug` then you will receive a compilation error. Finally the repl awaits more input `=>`.
+//! 
+//! > The expression is using `let out# = <expr>;` behind the scenes.
+//! 
+//! You can also define structures and functions.
+//! 
+//! ```sh
+//! papyrus=> fn a(i: u32) -> u32 {
+//! papyrus.> i + 1
+//! papyrus.> }
+//! papyrus=> a(1)
+//! papyrus [out0]: 2
+//! papyrus=>
+//! ```
+//! 
+//! ```txt
+//! papyrus=> #[derive(Debug)] struct A {
+//! papyrus.> a: u32,
+//! papyrus.> b: u32
+//! papyrus.> }
+//! papyrus=> let a = A {a: 1, b: 2};
+//! papyrus.> a
+//! papyrus [out0]: A { a: 1, b: 2 }
+//! papyrus=>
+//! ```
+//! 
+//! Please help if the Repl cannot parse your statements, or help with documentation! [https://github.com/kurtlawrence/papyrus](https://github.com/kurtlawrence/papyrus).
 mod command;
 mod eval;
 mod print;
@@ -19,124 +55,6 @@ use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 
 pub use self::command::{CmdArgs, Command};
-
-mod macros {
-	#[macro_export]
-	macro_rules! repl_data_brw {
-		// (crate_name, type)
-		($crate_name:expr, $type:ty) => {{
-			use papyrus;
-			let crate_name: &'static str = $crate_name;
-			let repl_data_res: std::io::Result<
-				papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
-			> = papyrus::ReplData::default().with_extern_crate_and_data(
-				crate_name,
-				None,
-				stringify!($type),
-				);
-			repl_data_res
-			}};
-		// ((crate_name, rlib_path), type)
-		($crate_and_rlib:expr, $type:ty) => {{
-			use papyrus;
-			let (crate_name, rlib_path): (&'static str, &str) = $crate_and_rlib;
-			let repl_data_res: std::io::Result<
-				papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
-			> = papyrus::ReplData::default().with_extern_crate_and_data(
-				crate_name,
-				Some(rlib_path),
-				stringify!($type),
-				);
-			repl_data_res
-			}};
-		// (compilation_dir, crate_name, type)
-		($comp_dir:expr, $crate_name:expr, $type:ty) => {{
-			use papyrus;
-			let compilation_dir: &str = $comp_dir;
-			let crate_name: &'static str = $crate_name;
-			let repl_data_res: std::io::Result<
-				papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
-			> = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
-			match repl_data_res {
-				Ok(r) => r.with_extern_crate_and_data(crate_name, None, stringify!($type)),
-				Err(e) => Err(e),
-				}
-			}};
-		// (compilation_dir, (crate_name, rlb_path), type)
-		($comp_dir:expr, $crate_and_rlib:expr, $type:ty) => {{
-			use papyrus;
-			let compilation_dir: &str = $comp_dir;
-			let (crate_name, rlib_path): (&'static str, &str) = $crate_and_rlib;
-			let repl_data_res: std::io::Result<
-				papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
-			> = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
-			match repl_data_res {
-				Ok(r) => {
-					r.with_extern_crate_and_data(crate_name, Some(rlib_path), stringify!($type))
-					}
-				Err(e) => Err(e),
-				}
-			}};
-	}
-
-	#[macro_export]
-	macro_rules! repl_data_brw_mut {
-		// (crate_name, type)
-		($crate_name:expr, $type:ty) => {{
-			use papyrus;
-			let crate_name: &'static str = $crate_name;
-			let repl_data_res: std::io::Result<
-				papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
-			> = papyrus::ReplData::default().with_extern_crate_and_data(
-				crate_name,
-				None,
-				stringify!($type),
-				);
-			repl_data_res
-			}};
-		// ((crate_name, rlib_path), type)
-		($crate_and_rlib:expr, $type:ty) => {{
-			use papyrus;
-			let (crate_name, rlib_path): (&'static str, &str) = $crate_and_rlib;
-			let repl_data_res: std::io::Result<
-				papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
-			> = papyrus::ReplData::default().with_extern_crate_and_data(
-				crate_name,
-				Some(rlib_path),
-				stringify!($type),
-				);
-			repl_data_res
-			}};
-		// (compilation_dir, crate_name, type)
-		($comp_dir:expr, $crate_name:expr, $type:ty) => {{
-			use papyrus;
-			let compilation_dir: &str = $comp_dir;
-			let crate_name: &'static str = $crate_name;
-			let repl_data_res: std::io::Result<
-				papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
-			> = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
-			match repl_data_res {
-				Ok(r) => r.with_extern_crate_and_data(crate_name, None, stringify!($type)),
-				Err(e) => Err(e),
-				}
-			}};
-		// (compilation_dir, (crate_name, rlb_path), type)
-		($comp_dir:expr, $crate_and_rlib:expr, $type:ty) => {{
-			use papyrus;
-			let compilation_dir: &str = $comp_dir;
-			let (crate_name, rlib_path): (&'static str, &str) = $crate_and_rlib;
-			let repl_data_res: std::io::Result<
-				papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
-			> = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
-			match repl_data_res {
-				Ok(r) => {
-					r.with_extern_crate_and_data(crate_name, Some(rlib_path), stringify!($type))
-					}
-				Err(e) => Err(e),
-				}
-			}};
-	}
-}
 
 pub struct ReplData<Term: Terminal, Arg, Data> {
 	/// The REPL handled commands.

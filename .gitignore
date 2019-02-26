@@ -1,6 +1,8 @@
 /target
 **/*.rs.bk
 /test
+/.vscode
+/docs
 ROADMAP.md
 PUSHING_PROCEDURE.md
-.vscode/
+readme.config
