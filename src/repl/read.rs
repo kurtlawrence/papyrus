@@ -2,7 +2,6 @@ use super::*;
 
 use linefeed::terminal::{DefaultTerminal, Terminal};
 use std::io;
-use version::*;
 
 impl<'data, Arg, Data> Repl<'data, Read, DefaultTerminal, Arg, Data> {
 	pub fn default_terminal(data: &'data mut ReplData<DefaultTerminal, Arg, Data>) -> Self {
@@ -131,26 +130,6 @@ impl<'data, Term: Terminal, Data> Repl<'data, Read, Term, linking::BorrowMutData
 }
 
 fn query_and_print_ver_info<Term: Terminal>(terminal: &Term) {
-	print!("{}", "Checking for later version...".bright_yellow());
-	io::stdout().flush().is_ok();
-	let print_line = match query() {
-		Ok(status) => match status {
-			Status::UpToDate(ver) => format!(
-				"{}{}",
-				"Running the latest papyrus version ".bright_green(),
-				ver.bright_green()
-			),
-			Status::OutOfDate(ver) => format!(
-				"{}{}{}{}",
-				"The current papyrus version ".bright_red(),
-				env!("CARGO_PKG_VERSION").bright_red(),
-				" is old, please update to ".bright_red(),
-				ver.bright_red()
-			),
-		},
-		Err(_) => format!("{}", "Failed to query crates.io".bright_yellow()),
-	};
-	let mut wtr = Writer(terminal);
-	wtr.overwrite_current_console_line(&print_line).unwrap();
-	writeln!(wtr, "",).unwrap();
+	use cratesiover;
+	cratesiover::output_with_term("papyrus", env!("CARGO_PKG_VERSION"), terminal);
 }

@@ -6,7 +6,7 @@
 //! 
 //! There are four variations when using each macro, each applies to `repl_data_brw_mut!` as well.
 //! 
-//! ```rust
+//! ```ignore
 //! repl_data_brw!(crate_name, type);
 //! repl_data_brw!((crate_name, rlib_path), type);
 //! repl_data_brw!(compilation_dir, crate_name, type);
@@ -17,20 +17,20 @@
 //! 
 //! # Worked Example - No Data
 //! 
-//! 
 //! Let's work on a crate called `some-lib`.
 //! 
 //! ## File Setup
 //! 
 //! ***main.rs***:
 //! 
-//! ```rust
+//! ```ignore
 //! use papyrus::{Repl, ReplData};
 //! 
 //! fn main() {
 //!   let mut data = ReplData::default()
-//!     .with_external_crate("some_lib", None)
-//!     .expect("failed linking crate");
+//!     .with_extern_crate("some_lib", None)
+//!     .expect("failed linking crate")
+//! 	.no_extern_data();
 //!   let repl = Repl::default_terminal(&mut data);
 //! 
 //!   repl.run();
@@ -101,7 +101,7 @@
 //! 
 //! ***main.rs***:
 //! 
-//! ```rust
+//! ```ignore
 //! extern crate somelib;
 //! 
 //! use somelib::MyStruct;
