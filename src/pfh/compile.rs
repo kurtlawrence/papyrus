@@ -93,8 +93,6 @@ where
 		args.push(&_s_tmp);
 	}
 
-	dbg!(&args); // output the args sent to rustc
-
 	let mut child = Command::new("cargo")
 		.current_dir(compile_dir)
 		.args(&args)
@@ -148,7 +146,7 @@ where
 	}
 }
 
-pub fn exec_borrow_data<P, Data>(
+pub fn exec_brw_data<P, Data>(
 	library_file: P,
 	function_name: &str,
 	app_data: &Data,
@@ -171,7 +169,7 @@ where
 	}
 }
 
-pub fn exec_borrow_mut_data<P, Data>(
+pub fn exec_brw_mut_data<P, Data>(
 	library_file: P,
 	function_name: &str,
 	app_data: &mut Data,
@@ -269,4 +267,134 @@ path = "src/lib.rs"
 			.collect::<Vec<_>>()
 			.join("\n")
 	)
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use linking::{LinkingArgument, LinkingConfiguration};
+
+	#[test]
+	fn nodata_build_fmt_compile_eval_test() {
+		let compile_dir = "test/nodata_build_fmt_compile_eval_test";
+		let files = vec![test_file()];
+		let linking_config = None;
+
+		// build
+		build_compile_dir(
+			&compile_dir,
+			files.iter(),
+			linking_config,
+			&LinkingArgument::NoData,
+		)
+		.unwrap();
+		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+			.unwrap()
+			.contains("\nlet out0 = 2+2;"));
+
+		// fmt
+		assert!(fmt(&compile_dir));
+		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+			.unwrap()
+			.contains("\n    let out0 = 2 + 2;")); // should be tabbed in (once, unless i wrap it more)
+
+		// compile
+		let path = compile(&compile_dir, linking_config, |_| ()).unwrap();
+
+		// eval
+		let r = exec_no_data(path, "__intern_eval").unwrap(); // execute library fn
+
+		assert_eq!(&r, "4");
+	}
+
+	#[test]
+	fn brw_data_build_fmt_compile_eval_test() {
+		let compile_dir = "test/brw_data_build_fmt_compile_eval_test";
+		let files = vec![test_file()];
+		let linking_config = LinkingConfiguration::link_external_crate(
+			&compile_dir,
+			"papyrus_extern_test",
+			Some("test-resources/libpapyrus_extern_test.rlib"),
+		)
+		.unwrap();
+		let linking_config = Some(linking_config);
+
+		// build
+		build_compile_dir(
+			&compile_dir,
+			files.iter(),
+			linking_config.as_ref(),
+			&LinkingArgument::NoData,
+		)
+		.unwrap();
+		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+			.unwrap()
+			.contains("\nlet out0 = 2+2;"));
+
+		// fmt
+		assert!(fmt(&compile_dir));
+		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+			.unwrap()
+			.contains("\n    let out0 = 2 + 2;")); // should be tabbed in (once, unless i wrap it more)
+
+		// compile
+		let path = compile(&compile_dir, linking_config.as_ref(), |_| ()).unwrap();
+
+		// eval
+		let r = exec_brw_data(path, "__intern_eval", &"some_val").unwrap(); // execute library fn
+
+		assert_eq!(&r, "4");
+	}
+
+	#[test]
+	fn mut_brw_data_build_fmt_compile_eval_test() {
+		let compile_dir = "test/mut_brw_data_build_fmt_compile_eval_test";
+		let files = vec![test_file()];
+		let linking_config = LinkingConfiguration::link_external_crate(
+			&compile_dir,
+			"papyrus_extern_test",
+			Some("test-resources/libpapyrus_extern_test.rlib"),
+		)
+		.unwrap();
+		let linking_config = Some(linking_config);
+
+		// build
+		build_compile_dir(
+			&compile_dir,
+			files.iter(),
+			linking_config.as_ref(),
+			&LinkingArgument::NoData,
+		)
+		.unwrap();
+		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+			.unwrap()
+			.contains("\nlet out0 = 2+2;"));
+
+		// fmt
+		assert!(fmt(&compile_dir));
+		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+			.unwrap()
+			.contains("\n    let out0 = 2 + 2;")); // should be tabbed in (once, unless i wrap it more)
+
+		// compile
+		let path = compile(&compile_dir, linking_config.as_ref(), |_| ()).unwrap();
+
+		// eval
+		let r = exec_brw_mut_data(path, "__intern_eval", &mut "some_val".to_string()).unwrap(); // execute library fn
+
+		assert_eq!(&r, "4");
+	}
+
+	fn test_file() -> SourceFile {
+		let mut file = SourceFile::lib();
+		file.contents = vec![Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "2+2".to_string(),
+				semi: false,
+			}],
+			crates: vec![],
+		}];
+		file
+	}
 }

@@ -106,7 +106,7 @@ impl<'data, Term: Terminal, Data> Repl<'data, Evaluate, Term, linking::BorrowDat
 					input,
 					&terminal.terminal,
 					&linking::LinkingArgument::BorrowData,
-					|lib_file, fn_name| pfh::compile::exec_borrow_data(lib_file, fn_name, app_data),
+					|lib_file, fn_name| pfh::compile::exec_brw_data(lib_file, fn_name, app_data),
 				) {
 					Ok((s, as_out)) => (s, as_out),
 					Err(s) => (s, false),
@@ -140,7 +140,7 @@ impl<'data, Term: Terminal, Data> Repl<'data, Evaluate, Term, linking::BorrowMut
 					&terminal.terminal,
 					&linking::LinkingArgument::BorrowMutData,
 					|lib_file, fn_name| {
-						pfh::compile::exec_borrow_mut_data(lib_file, fn_name, app_data)
+						pfh::compile::exec_brw_mut_data(lib_file, fn_name, app_data)
 					},
 				) {
 					Ok((s, as_out)) => (s, as_out),

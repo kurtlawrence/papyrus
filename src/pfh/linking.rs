@@ -302,11 +302,14 @@ impl LinkingConfiguration {
 			None => get_rlib_path(crate_name)?,
 		};
 
+		let compilation_dir = compilation_dir.as_ref();
+		if !compilation_dir.exists() {
+			fs::create_dir_all(compilation_dir)?;
+		}
+
 		fs::copy(
 			rlib_path,
-			compilation_dir
-				.as_ref()
-				.join(&format!("lib{}.rlib", crate_name)),
+			compilation_dir.join(&format!("lib{}.rlib", crate_name)),
 		)?;
 
 		Ok(LinkingConfiguration {
