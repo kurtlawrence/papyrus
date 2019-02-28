@@ -288,7 +288,7 @@ pub struct LinkingConfiguration {
 	/// Example: `MyStruct` under the module `some_mod` in crate `some_lib` with `ArgumentType::Borrow`
 	/// - will add `some_lib::some_mod::MyStruct` to the function argument
 	/// - function looks like `fn(app_data: &some_lib::some_mode::MyStruct)`
-	data_type: Option<String>,
+	pub data_type: Option<String>,
 }
 
 impl LinkingConfiguration {

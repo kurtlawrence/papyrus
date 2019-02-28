@@ -7,24 +7,34 @@ use std::path::PathBuf;
 
 /// Holds the contents of a source file, along with meta data about itself.
 pub struct SourceFile {
-    /// Source code contents.
-    /// Made of a vector of inputs.
-    pub contents: SourceCode,
-    /// Relative path to file.
-    /// > relative to `lib.rs`, ie `${COMPILE_DIR}/src/path`.
-    pub path: PathBuf,
-    /// Relative module path.
-    /// > relative to the root (lib).
-    /// > sequence of module names (as if using `module::nested::name` -> `["module", "nested", "name"]`).
-    pub mod_path: Vec<String>,
+	/// Source code contents.
+	/// Made of a vector of inputs.
+	pub contents: SourceCode,
+	/// Relative path to file.
+	/// > relative to `lib.rs`, ie `${COMPILE_DIR}/src/path`.
+	pub path: PathBuf,
+	/// Relative module path.
+	/// > relative to the root (lib).
+	/// > sequence of module names (as if using `module::nested::name` -> `["module", "nested", "name"]`).
+	pub mod_path: Vec<String>,
 }
 
 impl SourceFile {
-    pub fn lib() -> Self {
-        SourceFile {
-            contents: Vec::new(),
-            path: PathBuf::from("lib.rs"),
-            mod_path: vec!["".to_string()],
-        }
-    }
+	pub fn lib() -> Self {
+		SourceFile {
+			contents: Vec::new(),
+			path: PathBuf::from("lib.rs"),
+			mod_path: vec!["".to_string()],
+		}
+	}
+}
+
+#[test]
+fn lib_ctor_test() {
+	use std::path::Path;
+
+	let src = SourceFile::lib();
+	assert_eq!(src.contents, Vec::new());
+	assert_eq!(&src.path, Path::new("lib.rs"));
+	assert_eq!(src.mod_path, vec![String::new()]);
 }

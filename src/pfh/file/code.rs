@@ -127,24 +127,264 @@ pub struct CrateType {
 
 impl CrateType {
 	pub fn parse_str(string: &str) -> Result<Self, &'static str> {
-		let line = match string.trim().split("\n").nth(0) {
-			Some(s) => Ok(s),
-			None => Err("string should have one line"),
-		}?;
+		let line = string
+			.replace(";", "")
+			.replace("_", "-")
+			.trim()
+			.split("\n")
+			.nth(0)
+			.expect("string should have one line")
+			.to_string();
 		if line.contains("extern crate ") {
-			match line
-				.split(" ")
-				.nth(2)
-				.map(|s| s.replace(";", "").replace("_", "-"))
-			{
-				Some(s) => Ok(CrateType {
-					src_line: line.to_string(),
-					cargo_name: s,
-				}),
-				None => Err("no crate name"),
-			}
+			Ok(CrateType {
+				src_line: string.to_string(),
+				cargo_name: line
+					.split(" ")
+					.nth(2)
+					.expect("should always have trailing item")
+					.to_string(),
+			})
 		} else {
-			Err("line needs `extern crate `")
+			Err("line needs `extern crate NAME;`")
 		}
 	}
+}
+
+#[test]
+fn test_parse_crate() {
+	let err = Err("line needs `extern crate NAME;`");
+	let c = CrateType::parse_str("extern crat name;");
+	assert_eq!(c, err);
+
+	let c = CrateType::parse_str("extern crate  ");
+	assert_eq!(c, err);
+
+	let c = CrateType::parse_str("extern crate ;");
+	assert_eq!(c, err);
+
+	let s = String::from("extern crate somelib;");
+	let c = CrateType::parse_str(&s);
+	assert_eq!(
+		c,
+		Ok(CrateType {
+			src_line: s,
+			cargo_name: String::from("somelib"),
+		})
+	);
+
+	let s = String::from("extern crate some-lib;");
+	let c = CrateType::parse_str(&s);
+	assert_eq!(
+		c,
+		Ok(CrateType {
+			src_line: s,
+			cargo_name: String::from("some-lib"),
+		})
+	);
+
+	let s = String::from("extern crate some lib;");
+	let c = CrateType::parse_str(&s);
+	assert_eq!(
+		c,
+		Ok(CrateType {
+			src_line: s,
+			cargo_name: String::from("some"),
+		})
+	);
+
+	let s = String::from("extern crate some_lib;");
+	let c = CrateType::parse_str(&s);
+	assert_eq!(
+		c,
+		Ok(CrateType {
+			src_line: s,
+			cargo_name: String::from("some-lib"),
+		})
+	);
+}
+
+#[test]
+fn assign_let_binding_test() {
+	let mut input = Input {
+		items: vec![],
+		stmts: vec![],
+		crates: vec![],
+	};
+
+	let s = input.assign_let_binding(0);
+	assert_eq!(&s, "");
+
+	input.items.push("asdf".to_string());
+	input
+		.crates
+		.push(CrateType::parse_str("extern crate rand;").unwrap());
+
+	let s = input.assign_let_binding(0);
+	assert_eq!(&s, ""); // should still be nothing, done on statements
+
+	input.stmts.push(Statement {
+		expr: "a".to_string(),
+		semi: false,
+	});
+
+	let s = input.assign_let_binding(0);
+	assert_eq!(&s, "let out0 = a;");
+
+	input.stmts.push(Statement {
+		expr: "b".to_string(),
+		semi: false,
+	});
+
+	let s = input.assign_let_binding(0);
+	assert_eq!(&s, "a\nlet out0 = b;");
+
+	let s = input.assign_let_binding(100);
+	assert_eq!(&s, "a\nlet out100 = b;");
+}
+
+#[test]
+fn construct_test() {
+	use linking::{LinkingArgument, LinkingConfiguration};
+
+	let mut src_code = vec![Input {
+		items: vec![],
+		stmts: vec![],
+		crates: vec![],
+	}];
+	let mod_path = [];
+	let linking_config = None;
+	let arg_type = LinkingArgument::NoData;
+
+	let s = construct(&src_code, &mod_path, linking_config, &arg_type);
+	assert_eq!(
+		&s,
+		r##"#[no_mangle]
+pub extern "C" fn __intern_eval() -> String {
+
+format!("{:?}", out0)
+}
+"##
+	);
+
+	// alter mod path
+	let mod_path = ["some".to_string(), "path".to_string()];
+
+	let s = construct(&src_code, &mod_path, linking_config, &arg_type);
+	assert_eq!(
+		&s,
+		r##"#[no_mangle]
+pub extern "C" fn _some_path_intern_eval() -> String {
+
+format!("{:?}", out0)
+}
+"##
+	);
+
+	// alter arg_type -- should do nothing without linking config
+	let arg_type = LinkingArgument::BorrowMutData;
+
+	let s = construct(&src_code, &mod_path, linking_config, &arg_type);
+	assert_eq!(
+		&s,
+		r##"#[no_mangle]
+pub extern "C" fn _some_path_intern_eval() -> String {
+
+format!("{:?}", out0)
+}
+"##
+	);
+
+	// alter the linking config
+	let linking_config = Some(LinkingConfiguration {
+		crate_name: "a_crate",
+		data_type: Some("String".to_string()),
+	});
+
+	let s = construct(&src_code, &mod_path, linking_config.as_ref(), &arg_type);
+	assert_eq!(
+		&s,
+		r##"#[no_mangle]
+pub extern "C" fn _some_path_intern_eval(app_data: &mut a_crate::String) -> String {
+
+format!("{:?}", out0)
+}
+"##
+	);
+
+	// add an item and new input
+	src_code[0].items.push("fn a() {}".to_string());
+	src_code.push(Input {
+		items: vec!["fn b() {}".to_string()],
+		stmts: vec![],
+		crates: vec![],
+	});
+
+	let s = construct(&src_code, &mod_path, linking_config.as_ref(), &arg_type);
+	assert_eq!(
+		&s,
+		r##"#[no_mangle]
+pub extern "C" fn _some_path_intern_eval(app_data: &mut a_crate::String) -> String {
+
+format!("{:?}", out0)
+}
+fn a() {}
+fn b() {}
+"##
+	);
+
+	// add stmts
+	src_code[0].stmts.push(Statement {
+		expr: "let a = 1".to_string(),
+		semi: true,
+	});
+	src_code[0].stmts.push(Statement {
+		expr: "b".to_string(),
+		semi: false,
+	});
+	src_code[1].stmts.push(Statement {
+		expr: "let c = 2".to_string(),
+		semi: true,
+	});
+	src_code[1].stmts.push(Statement {
+		expr: "d".to_string(),
+		semi: false,
+	});
+
+	let s = construct(&src_code, &mod_path, linking_config.as_ref(), &arg_type);
+	assert_eq!(
+		&s,
+		r##"#[no_mangle]
+pub extern "C" fn _some_path_intern_eval(app_data: &mut a_crate::String) -> String {
+let a = 1;
+let out0 = b;
+let c = 2;
+let out1 = d;
+format!("{:?}", out1)
+}
+fn a() {}
+fn b() {}
+"##
+	);
+
+	// add crate
+	src_code[0]
+		.crates
+		.push(CrateType::parse_str("extern crate some_crate as some;").unwrap());
+
+	let s = construct(&src_code, &mod_path, linking_config.as_ref(), &arg_type);
+	assert_eq!(
+		&s,
+		r##"extern crate some_crate as some;
+#[no_mangle]
+pub extern "C" fn _some_path_intern_eval(app_data: &mut a_crate::String) -> String {
+let a = 1;
+let out0 = b;
+let c = 2;
+let out1 = d;
+format!("{:?}", out1)
+}
+fn a() {}
+fn b() {}
+"##
+	);
 }
