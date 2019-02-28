@@ -314,7 +314,7 @@ mod tests {
 		let linking_config = LinkingConfiguration::link_external_crate(
 			&compile_dir,
 			"papyrus_extern_test",
-			Some("test-resources/libpapyrus_extern_test.rlib"),
+			Some("test-resources/external_crate/target/debug/libexternal_crate.rlib"),
 		)
 		.unwrap();
 		let linking_config = Some(linking_config);
@@ -353,7 +353,7 @@ mod tests {
 		let linking_config = LinkingConfiguration::link_external_crate(
 			&compile_dir,
 			"papyrus_extern_test",
-			Some("test-resources/libpapyrus_extern_test.rlib"),
+			Some("test-resources/external_crate/target/debug/libexternal_crate.rlib"),
 		)
 		.unwrap();
 		let linking_config = Some(linking_config);

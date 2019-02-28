@@ -1,0 +1,7 @@
+[package]
+name = "external_crate"
+version = "0.1.0"
+
+[lib]
+name = "external_crate"
+crate-type = ["rlib"]
