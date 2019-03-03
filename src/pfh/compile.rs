@@ -82,7 +82,7 @@ where
 	let lib_file = if cfg!(windows) {
 		lib_file.join(format!("{}.dll", LIBRARY_NAME))
 	} else {
-		lib_file.join(format!("{}.so", LIBRARY_NAME))
+		lib_file.join(format!("lib{}.so", LIBRARY_NAME))
 	};
 
 	let mut _s_tmp = String::new();
