@@ -218,6 +218,20 @@ impl fmt::Display for CompilationError {
 	}
 }
 
+#[test]
+fn compilation_error_fmt_test() {
+	let e = CompilationError::NoBuildCommand;
+	assert_eq!(
+		&e.to_string(),
+		"cargo build command failed to start, is rust installed?"
+	);
+	let e = CompilationError::CompileError("compile err".to_string());
+	assert_eq!(&e.to_string(), "compile err");
+	let ioe = io::Error::new(io::ErrorKind::Other, "test");
+	let e = CompilationError::IOError(ioe);
+	assert_eq!(&e.to_string(), "io error occurred: test");
+}
+
 /// Creates the specified file along with the directory to it if it doesn't exist.
 fn create_file_and_dir<P: AsRef<Path>>(file: P) -> io::Result<fs::File> {
 	let file = file.as_ref();
