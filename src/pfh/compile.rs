@@ -355,7 +355,7 @@ mod tests {
 		let path = compile(&compile_dir, linking_config.as_ref(), |_| ()).unwrap();
 
 		// eval
-		let r = exec_brw_data(path, "__intern_eval", &"some_val").unwrap(); // execute library fn
+		let r = exec_brw_data(path, "__intern_eval", &()).unwrap(); // execute library fn
 
 		assert_eq!(&r, "4");
 	}
@@ -394,7 +394,7 @@ mod tests {
 		let path = compile(&compile_dir, linking_config.as_ref(), |_| ()).unwrap();
 
 		// eval
-		let r = exec_brw_mut_data(path, "__intern_eval", &mut "some_val".to_string()).unwrap(); // execute library fn
+		let r = exec_brw_mut_data(path, "__intern_eval", &mut ()).unwrap(); // execute library fn
 
 		assert_eq!(&r, "4");
 	}
