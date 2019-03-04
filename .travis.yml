@@ -1,7 +1,7 @@
 sudo: required
 language: rust
 cache: cargo
-env: RUST_BACKKTRACE=1
+env: RUST_BACKTRACE=1
 
 matrix:
   include:
