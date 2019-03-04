@@ -27,7 +27,9 @@ before_cache: |
 script:
   - cd ..
   - git clone https://github.com/kurtlawrence/azul.git
-  - cd papyrus/
+  - cd papyrus/test-resources/external_crate
+  - cargo build
+  - cd ../..
   - cargo clean
   - cargo build
   - cargo test -- --test-threads=1
