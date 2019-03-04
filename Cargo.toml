@@ -23,7 +23,7 @@ linefeed = "0.5"
 log = "0.4"
 syn = {	version = "0.15", default-features = false,	features =  [ "full" ] }
 simplelog = "0.5"
-colored = "1.6"
+colored = "1.7"
 term_cursor = "0.2"
 reqwest = "0.9"
 azul = { path = "../azul/azul", optional = true }
