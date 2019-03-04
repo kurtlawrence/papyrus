@@ -428,21 +428,13 @@ mod tests {
 		.unwrap();
 		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
 			.unwrap()
-			.contains("\nlet out0 = panic!();"));
+			.contains("\nlet out0 = panic!(\"eval panic\");"));
 
 		// compile
 		let path = compile(&compile_dir, linking_config, |_| ()).unwrap();
 
 		// eval
 		let r = exec_no_data(&path, "__intern_eval"); // execute library fn
-		assert!(r.is_err());
-		assert_eq!(r, Err("a panic occured with evaluation"));
-
-		let r = exec_brw_data(&path, "__intern_eval", &""); // execute library fn
-		assert!(r.is_err());
-		assert_eq!(r, Err("a panic occured with evaluation"));
-
-		let r = exec_brw_mut_data(&path, "__intern_eval", &mut ""); // execute library fn
 		assert!(r.is_err());
 		assert_eq!(r, Err("a panic occured with evaluation"));
 	}
@@ -477,7 +469,7 @@ mod tests {
 		file.contents = vec![Input {
 			items: vec![],
 			stmts: vec![Statement {
-				expr: "panic!()".to_string(),
+				expr: "panic!(\"eval panic\")".to_string(),
 				semi: false,
 			}],
 			crates: vec![],
