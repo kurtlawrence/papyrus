@@ -1,3 +1,4 @@
+set -e
 cd ../azul
 git pull
 cd ../papyrus
