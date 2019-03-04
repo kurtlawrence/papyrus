@@ -277,7 +277,7 @@ mod tests {
 	#[test]
 	fn nodata_build_fmt_compile_eval_test() {
 		let compile_dir = "test/nodata_build_fmt_compile_eval_test";
-		let files = vec![test_file()];
+		let files = vec![pass_compile_eval_file()];
 		let linking_config = None;
 
 		// build
@@ -310,7 +310,7 @@ mod tests {
 	#[test]
 	fn brw_data_build_fmt_compile_eval_test() {
 		let compile_dir = "test/brw_data_build_fmt_compile_eval_test";
-		let files = vec![test_file()];
+		let files = vec![pass_compile_eval_file()];
 		let linking_config = LinkingConfiguration::link_external_crate(
 			&compile_dir,
 			"papyrus_extern_test",
@@ -349,7 +349,7 @@ mod tests {
 	#[test]
 	fn mut_brw_data_build_fmt_compile_eval_test() {
 		let compile_dir = "test/mut_brw_data_build_fmt_compile_eval_test";
-		let files = vec![test_file()];
+		let files = vec![pass_compile_eval_file()];
 		let linking_config = LinkingConfiguration::link_external_crate(
 			&compile_dir,
 			"papyrus_extern_test",
@@ -385,12 +385,99 @@ mod tests {
 		assert_eq!(&r, "4");
 	}
 
-	fn test_file() -> SourceFile {
+	#[test]
+	fn fail_compile_test() {
+		let compile_dir = "test/fail_compile";
+		let files = vec![faile_compile_file()];
+		let linking_config = None;
+
+		// build
+		build_compile_dir(
+			&compile_dir,
+			files.iter(),
+			linking_config,
+			&LinkingArgument::NoData,
+		)
+		.unwrap();
+		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+			.unwrap()
+			.contains("\nlet out0 = 2+;"));
+
+		// compile
+		let r = compile(&compile_dir, linking_config, |_| ());
+		assert!(r.is_err());
+		match r.unwrap_err() {
+			CompilationError::CompileError(_) => (),
+			_ => panic!("expecting CompileError"),
+		}
+	}
+
+	#[test]
+	fn fail_eval_test() {
+		let compile_dir = "test/fail_eval_test";
+		let files = vec![fail_eval_file()];
+		let linking_config = None;
+
+		// build
+		build_compile_dir(
+			&compile_dir,
+			files.iter(),
+			linking_config,
+			&LinkingArgument::NoData,
+		)
+		.unwrap();
+		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+			.unwrap()
+			.contains("\nlet out0 = panic!();"));
+
+		// compile
+		let path = compile(&compile_dir, linking_config, |_| ()).unwrap();
+
+		// eval
+		let r = exec_no_data(&path, "__intern_eval"); // execute library fn
+		assert!(r.is_err());
+		assert_eq!(r, Err("a panic occured with evaluation"));
+
+		let r = exec_brw_data(&path, "__intern_eval", &""); // execute library fn
+		assert!(r.is_err());
+		assert_eq!(r, Err("a panic occured with evaluation"));
+
+		let r = exec_brw_mut_data(&path, "__intern_eval", &mut ""); // execute library fn
+		assert!(r.is_err());
+		assert_eq!(r, Err("a panic occured with evaluation"));
+	}
+
+	fn pass_compile_eval_file() -> SourceFile {
 		let mut file = SourceFile::lib();
 		file.contents = vec![Input {
 			items: vec![],
 			stmts: vec![Statement {
 				expr: "2+2".to_string(),
+				semi: false,
+			}],
+			crates: vec![],
+		}];
+		file
+	}
+
+	fn faile_compile_file() -> SourceFile {
+		let mut file = SourceFile::lib();
+		file.contents = vec![Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "2+".to_string(),
+				semi: false,
+			}],
+			crates: vec![],
+		}];
+		file
+	}
+	fn fail_eval_file() -> SourceFile {
+		let mut file = SourceFile::lib();
+		file.contents = vec![Input {
+			items: vec![],
+			stmts: vec![Statement {
+				expr: "panic!()".to_string(),
 				semi: false,
 			}],
 			crates: vec![],
