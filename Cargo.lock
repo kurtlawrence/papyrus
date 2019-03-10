@@ -353,6 +353,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "cmdtree"
+version = "0.1.0"
+dependencies = [
+ "colored 1.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "linefeed 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "cocoa"
 version = "0.18.4"
 source = "git+https://github.com/maps4print/azul-dependencies?rev=009eab6903820aadc9f30d6c76e104843a1e3253#009eab6903820aadc9f30d6c76e104843a1e3253"
@@ -1322,6 +1330,7 @@ version = "0.7.0"
 dependencies = [
  "azul 0.1.0",
  "cansi 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cmdtree 0.1.0",
  "colored 1.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cratesiover 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "dirs 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
