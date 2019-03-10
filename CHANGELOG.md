@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.0
+
+- The macros to create `ReplData` have been simplfied to a single `repl_data!` macro
+  - there is no more variants for borrowing patterns, only the specified data type
+
 ## 0.7.0
 
 Major change in api as the library is shifted towards a new repl direction.
