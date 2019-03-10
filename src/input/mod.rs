@@ -19,8 +19,8 @@ pub struct InputReader<Term: Terminal> {
 /// Possible results from reading input from `InputReader`
 #[derive(Debug, PartialEq)]
 pub enum InputResult {
-    /// Command argument as `(command_name, rest_of_line)`.
-    Command(String, String),
+    /// Command or commands in a line.
+    Command(String),
     /// Code as input
     Program(Input),
     /// An empty line
@@ -49,7 +49,7 @@ impl<Term: Terminal> InputReader<Term> {
     /// Reads a single command, item, or statement from `stdin`.
     /// Returns `More` if further input is required for a complete result.
     /// In this case, the input received so far is buffered internally.
-    pub fn read_input(&mut self, prompt: &str) -> InputResult {
+    pub fn read_input(&mut self, prompt: &str, treat_as_cmd: bool) -> InputResult {
         self.interface
             .set_prompt(prompt)
             .expect("failed to set prompt");
@@ -62,10 +62,10 @@ impl<Term: Terminal> InputReader<Term> {
         let r = r
             .unwrap_or(Some(ReadResult::Eof))
             .expect("should always be some by this point");
-        self.handle_input(r)
+        self.handle_input(r, treat_as_cmd)
     }
 
-    fn handle_input(&mut self, result: ReadResult) -> InputResult {
+    fn handle_input(&mut self, result: ReadResult, treat_as_cmd: bool) -> InputResult {
         let line = match result {
             ReadResult::Eof => return InputResult::Eof,
             ReadResult::Input(s) => s,
@@ -74,7 +74,10 @@ impl<Term: Terminal> InputReader<Term> {
                 return InputResult::Empty;
             }
         };
-        let r = self.determine_result(&line);
+
+		
+
+        let r = self.determine_result(&line, treat_as_cmd);
         match &r {
             InputResult::Empty => (),
             _ => self.interface.add_history(line),
@@ -83,7 +86,7 @@ impl<Term: Terminal> InputReader<Term> {
         r
     }
 
-    fn determine_result(&mut self, line: &str) -> InputResult {
+    fn determine_result(&mut self, line: &str, treat_as_cmd: bool) -> InputResult {
         debug!("input value: {}", line);
 
         self.buffer.push_str(&line);
@@ -91,7 +94,7 @@ impl<Term: Terminal> InputReader<Term> {
             return InputResult::Empty;
         }
 
-        let res = if is_command(&line) {
+        let res = if treat_as_cmd || is_command(&line) {
             parse_command(&line)
         } else {
             // check if the final statement ends with a semi

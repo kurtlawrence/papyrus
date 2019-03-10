@@ -132,12 +132,12 @@ mod macros {
     macro_rules! repl_data {
         () => {{
             use papyrus;
-            let repl_data: papyrus::ReplData<_, ()> = papyrus::ReplData::default();
+            let repl_data: papyrus::ReplData<()> = papyrus::ReplData::default();
             repl_data
         }};
         ($type:ty) => {{
             use papyrus;
-            let repl_data: papyrus::ReplData<_, $type> =
+            let repl_data: papyrus::ReplData<$type> =
                 papyrus::ReplData::default().set_data_type(stringify!($type));
             repl_data
         }};

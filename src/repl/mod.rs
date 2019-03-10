@@ -50,18 +50,13 @@ use std::fs;
 use std::io::{self, Write};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
+use cmdtree::*;
 
 pub use self::command::{CmdArgs, Command};
 
-pub struct ReplData<Term: Terminal, Data> {
-    /// The REPL handled commands.
-    /// Can be extended.
-    /// ```ignore
-    /// let mut repl = Repl::new();
-    /// repl.commands.push(Command::new("load", CmdArgs::Filename, "load and evaluate file contents as inputs", |args| {
-    /// 	args.repl.run_file(args.arg);
-    /// }));
-    pub commands: Vec<Command<Term, Data>>,
+pub struct ReplData<Data> {
+    /// The REPL commands as a `cmdtree::Commander`.
+    pub cmdtree: Commander<'static, CommandResult>,
     /// The file map of relative paths.
     pub file_map: HashMap<PathBuf, SourceFile>,
     /// The current editing and executing file.
@@ -103,17 +98,28 @@ pub struct Print {
 pub struct Repl<'data, S, Term: Terminal, Data> {
     state: S,
     terminal: ReplTerminal<Term>,
-    pub data: &'data mut ReplData<Term, Data>,
+    pub data: &'data mut ReplData< Data>,
 }
 
-impl<Term: Terminal, Data> Default for ReplData<Term, Data> {
+pub enum CommandResult {
+	CancelInput,
+}
+
+impl<Data> Default for ReplData< Data> {
     fn default() -> Self {
+		// build a default command tree
+		let cmdr = Builder::new("papyrus").add_action("esc", "Cancels more input", |_|
+		{
+			CommandResult::CancelInput
+		}).into_commander().expect("should build fine");
+
         let lib = SourceFile::lib();
         let lib_path = lib.path.clone();
         let mut map = HashMap::new();
         map.insert(lib_path.clone(), lib);
+
         let mut r = ReplData {
-            commands: Vec::new(),
+            cmdtree: cmdr,
             file_map: map,
             current_file: lib_path,
             name: "papyrus",
@@ -123,70 +129,13 @@ impl<Term: Terminal, Data> Default for ReplData<Term, Data> {
             linking: LinkingConfiguration::default(),
             data_mrker: PhantomData,
         };
-        // help
-        r.commands.push(Command::new(
-            "help",
-            CmdArgs::Text,
-            "Show help for commands",
-            |repl, arg| {
-                // colour output
-                let output = repl.data.commands.build_help_response(if arg.is_empty() {
-                    None
-                } else {
-                    Some(arg)
-                });
-                // colour the output here rather than in print section
-                let mut wtr = Vec::new();
-                output.split("\n").into_iter().for_each(|line| {
-                    if !line.is_empty() {
-                        if line.starts_with("Available commands") {
-                            writeln!(wtr, "{}", line).unwrap();
-                        } else {
-                            let mut line_split = line.split(" ");
-                            writeln!(
-                                wtr,
-                                "{} {}",
-                                line_split
-                                    .next()
-                                    .expect("expecting multiple elements")
-                                    .bright_yellow(),
-                                line_split.into_iter().collect::<Vec<_>>().join(" ")
-                            )
-                            .unwrap();
-                        }
-                    }
-                });
-
-                Ok(repl.print(&String::from_utf8_lossy(&wtr)))
-            },
-        ));
-        // exit
-        r.commands.push(Command::new(
-            "exit",
-            CmdArgs::None,
-            "Exit repl",
-            |_, _| Err(()), // flag to break
-        ));
-        // cancel
-        r.commands.push(Command::new(
-            "cancel",
-            CmdArgs::None,
-            "Cancels more input",
-            |repl, _| Ok(repl.print("cancelled input")),
-        ));
-        // cancel (with c)
-        r.commands.push(Command::new(
-            "c",
-            CmdArgs::None,
-            "Cancels more input",
-            |repl, _| Ok(repl.print("cancelled input")),
-        ));
+       
 
         r
     }
 }
 
-impl<Term: Terminal, Data> ReplData<Term, Data> {
+impl< Data> ReplData< Data> {
     pub fn with_compilation_dir<P: AsRef<Path>>(mut self, dir: P) -> io::Result<Self> {
         let dir = dir.as_ref();
         if !dir.exists() {

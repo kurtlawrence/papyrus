@@ -4,7 +4,7 @@ use linefeed::terminal::{DefaultTerminal, Terminal};
 use std::io;
 
 impl<'data, Data> Repl<'data, Read, DefaultTerminal, Data> {
-    pub fn default_terminal(data: &'data mut ReplData<DefaultTerminal, Data>) -> Self {
+    pub fn default_terminal(data: &'data mut ReplData<Data>) -> Self {
         let terminal1 =
             linefeed::terminal::DefaultTerminal::new().expect("failed to start default terminal");
         let terminal2 =
@@ -22,7 +22,7 @@ impl<'data, Data> Repl<'data, Read, DefaultTerminal, Data> {
 }
 
 impl<'data, Term: Terminal + Clone, Data> Repl<'data, Read, Term, Data> {
-    pub fn with_term(terminal: Term, data: &'data mut ReplData<Term, Data>) -> Self {
+    pub fn with_term(terminal: Term, data: &'data mut ReplData<Data>) -> Self {
         let terminal2 = terminal.clone();
         Repl {
             state: Read,
@@ -39,18 +39,20 @@ impl<'data, Term: Terminal + Clone, Data> Repl<'data, Read, Term, Data> {
 impl<'data, Term: Terminal, Data> Repl<'data, Read, Term, Data> {
     /// Reads input from the input reader until an evaluation phase can begin.
     pub fn read(mut self) -> Repl<'data, Evaluate, Term, Data> {
+		// if the cmdr is not sitting at root then always just send it as a command
+		let at_root = self.data.cmdtree.at_root();
         let mut more = false;
         loop {
             let prompt = if more {
-                format!("{}.> ", self.data.name.color(self.data.prompt_colour))
+                format!("{}.> ", self.data.cmdtree.path().color(self.data.prompt_colour))
             } else {
-                format!("{}=> ", self.data.name.color(self.data.prompt_colour))
+                format!("{}=> ", self.data.cmdtree.path().color(self.data.prompt_colour))
             };
 
-            let result = self.terminal.input_rdr.read_input(&prompt);
+            let result = self.terminal.input_rdr.read_input(&prompt, at_root);
 
             more = match &result {
-                InputResult::Command(_, _) => false,
+                InputResult::Command(_) => false,
                 InputResult::Program(_) => false,
                 InputResult::Empty => more,
                 InputResult::More => true,
@@ -66,6 +68,7 @@ impl<'data, Term: Terminal, Data> Repl<'data, Read, Term, Data> {
                 };
             }
         }
+		
     }
 }
 

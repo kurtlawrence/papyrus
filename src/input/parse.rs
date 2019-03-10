@@ -6,19 +6,11 @@ use syn::{self, Block, Item, Stmt};
 /// Parses a line of input as a command.
 /// Returns either a `Command` value or an `InputError` value.
 pub fn parse_command(line: &str) -> InputResult {
-    if !is_command(line) {
-        return InputResult::InputError("command must begin with `.` or `:`".to_string());
-    }
-
-    let line = &line[1..];
-    let mut words = line.trim_right().splitn(2, ' ');
-
-    match words.next() {
-        Some(name) if !name.is_empty() => {
-            InputResult::Command(name.to_string(), words.next().unwrap_or(&"").to_string())
-        }
-        _ => InputResult::InputError("expected command name".to_string()),
-    }
+InputResult::Command(  if line.starts_with(".") {
+	  &line[1..]
+  } else {
+	  line
+  }.to_string())
 }
 
 /// Parses a line of input as a program.

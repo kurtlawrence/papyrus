@@ -26,6 +26,7 @@ extern crate linefeed;
 extern crate reqwest;
 extern crate syn;
 extern crate term_cursor;
+extern crate cmdtree;
 
 mod input;
 mod pfh;

@@ -11,7 +11,7 @@ enum CommonResult<'data, Term: Terminal, Data> {
     Program(
         (
             pfh::Input,
-            &'data mut ReplData<Term, Data>,
+            &'data mut ReplData< Data>,
             ReplTerminal<Term>,
         ),
     ),
@@ -29,21 +29,10 @@ fn handle_common<'data, Term: Terminal, Data>(
     } = repl;
 
     let (to_print, as_out) = match state.result {
-        InputResult::Command(name, args) => {
-            debug!("read command: {} {:?}", name, args);
-            match data.commands.find_command(&name) {
-                Err(e) => (e.to_string(), false),
-                Ok(cmd) => {
-                    return CommonResult::Handled((cmd.action)(
-                        Repl {
-                            state: ManualPrint,
-                            terminal: terminal,
-                            data: data,
-                        },
-                        &args,
-                    ));
-                }
-            }
+        InputResult::Command(cmds) => {
+            debug!("read command: {}", cmds);
+			unimplemented!();
+           
         }
         InputResult::Program(input) => {
             return CommonResult::Program((input, data, terminal));
@@ -86,7 +75,7 @@ impl<'data, Term: Terminal, Data> Repl<'data, Evaluate, Term, Data> {
 
 /// Runs a single program input.
 fn handle_program<T, Data>(
-    data: &mut ReplData<T, Data>,
+    data: &mut ReplData<Data>,
     input: Input,
     terminal: &T,
     app_data: Data,
@@ -156,9 +145,7 @@ where
     }
 }
 
-fn get_current_file_mut<T, Data>(data: &mut ReplData<T, Data>) -> &mut SourceFile
-where
-    T: Terminal,
+fn get_current_file_mut< Data>(data: &mut ReplData< Data>) -> &mut SourceFile
 {
     data.file_map.get_mut(&data.current_file).expect(&format!(
         "file map does not have key: {}",
