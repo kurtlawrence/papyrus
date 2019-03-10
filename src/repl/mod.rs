@@ -56,7 +56,7 @@ use std::path::{Path, PathBuf};
 
 pub use self::command::{CmdArgs, Command};
 
-pub struct ReplData<Term: Terminal, Arg, Data> {
+pub struct ReplData<Term: Terminal,Data> {
 	/// The REPL handled commands.
 	/// Can be extended.
 	/// ```ignore
@@ -64,7 +64,7 @@ pub struct ReplData<Term: Terminal, Arg, Data> {
 	/// repl.commands.push(Command::new("load", CmdArgs::Filename, "load and evaluate file contents as inputs", |args| {
 	/// 	args.repl.run_file(args.arg);
 	/// }));
-	pub commands: Vec<Command<Term, Arg, Data>>,
+	pub commands: Vec<Command<Term,Data>>,
 	/// The file map of relative paths.
 	pub file_map: HashMap<PathBuf, SourceFile>,
 	/// The current editing and executing file.
@@ -81,7 +81,6 @@ pub struct ReplData<Term: Terminal, Arg, Data> {
 	/// The external crate linking configuration,
 	linking: Option<LinkingConfiguration>,
 	data_mrker: PhantomData<Data>,
-	arg_mrker: PhantomData<Arg>,
 }
 
 struct ReplTerminal<Term: Terminal> {
@@ -104,13 +103,13 @@ pub struct Print {
 	as_out: bool,
 }
 
-pub struct Repl<'data, S, Term: Terminal, Arg, Data> {
+pub struct Repl<'data, S, Term: Terminal, Data> {
 	state: S,
 	terminal: ReplTerminal<Term>,
-	pub data: &'data mut ReplData<Term, Arg, Data>,
+	pub data: &'data mut ReplData<Term, Data>,
 }
 
-impl<Term: Terminal, Arg, Data> Default for ReplData<Term, Arg, Data> {
+impl<Term: Terminal, Data> Default for ReplData<Term, Data> {
 	fn default() -> Self {
 		let lib = SourceFile::lib();
 		let lib_path = lib.path.clone();
@@ -126,7 +125,6 @@ impl<Term: Terminal, Arg, Data> Default for ReplData<Term, Arg, Data> {
 			compilation_dir: default_compile_dir(),
 			linking: None,
 			data_mrker: PhantomData,
-			arg_mrker: PhantomData,
 		};
 		// help
 		r.commands.push(Command::new(
@@ -191,7 +189,7 @@ impl<Term: Terminal, Arg, Data> Default for ReplData<Term, Arg, Data> {
 	}
 }
 
-impl<Term: Terminal, Arg, Data> ReplData<Term, Arg, Data> {
+impl<Term: Terminal,Data> ReplData<Term,Data> {
 	pub fn with_compilation_dir<P: AsRef<Path>>(mut self, dir: P) -> io::Result<Self> {
 		let dir = dir.as_ref();
 		if !dir.exists() {
@@ -221,8 +219,8 @@ impl<Term: Terminal, Arg, Data> ReplData<Term, Arg, Data> {
 	}
 }
 
-impl<Term: Terminal> ReplData<Term, linking::NoData, ()> {
-	pub fn no_extern_data(self) -> ReplData<Term, linking::NoData, ()> {
+impl<Term: Terminal> ReplData<Term, ()> {
+	pub fn no_extern_data(self) -> ReplData<Term, ()> {
 		self
 	}
 

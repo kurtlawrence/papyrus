@@ -55,7 +55,6 @@ pub fn construct(
 	src_code: &SourceCode,
 	mod_path: &[String],
 	linking_config: Option<&linking::LinkingConfiguration>,
-	arg_type: &linking::LinkingArgument,
 ) -> String {
 	let mut code = String::new();
 
@@ -71,7 +70,7 @@ pub fn construct(
 		r#"pub extern "C" fn {}({}) -> String {{"#,
 		::pfh::eval_fn_name(mod_path),
 		linking_config
-			.map(|x| x.construct_fn_args(arg_type))
+			.map(|x| x.construct_fn_args())
 			.unwrap_or(String::new())
 	));
 	code.push('\n');
@@ -244,7 +243,7 @@ fn assign_let_binding_test() {
 
 #[test]
 fn construct_test() {
-	use linking::{LinkingArgument, LinkingConfiguration};
+	use linking::{ LinkingConfiguration};
 
 	let mut src_code = vec![Input {
 		items: vec![],
@@ -253,9 +252,8 @@ fn construct_test() {
 	}];
 	let mod_path = [];
 	let linking_config = None;
-	let arg_type = LinkingArgument::NoData;
 
-	let s = construct(&src_code, &mod_path, linking_config, &arg_type);
+	let s = construct(&src_code, &mod_path, linking_config);
 	assert_eq!(
 		&s,
 		r##"#[no_mangle]
@@ -269,7 +267,7 @@ format!("{:?}", out0)
 	// alter mod path
 	let mod_path = ["some".to_string(), "path".to_string()];
 
-	let s = construct(&src_code, &mod_path, linking_config, &arg_type);
+	let s = construct(&src_code, &mod_path, linking_config);
 	assert_eq!(
 		&s,
 		r##"#[no_mangle]
@@ -280,10 +278,7 @@ format!("{:?}", out0)
 "##
 	);
 
-	// alter arg_type -- should do nothing without linking config
-	let arg_type = LinkingArgument::BorrowMutData;
-
-	let s = construct(&src_code, &mod_path, linking_config, &arg_type);
+	let s = construct(&src_code, &mod_path, linking_config);
 	assert_eq!(
 		&s,
 		r##"#[no_mangle]
@@ -300,11 +295,11 @@ format!("{:?}", out0)
 		data_type: Some("String".to_string()),
 	});
 
-	let s = construct(&src_code, &mod_path, linking_config.as_ref(), &arg_type);
+	let s = construct(&src_code, &mod_path, linking_config.as_ref());
 	assert_eq!(
 		&s,
 		r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: &mut a_crate::String) -> String {
+pub extern "C" fn _some_path_intern_eval(app_data: String) -> String {
 
 format!("{:?}", out0)
 }
@@ -319,11 +314,11 @@ format!("{:?}", out0)
 		crates: vec![],
 	});
 
-	let s = construct(&src_code, &mod_path, linking_config.as_ref(), &arg_type);
+	let s = construct(&src_code, &mod_path, linking_config.as_ref());
 	assert_eq!(
 		&s,
 		r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: &mut a_crate::String) -> String {
+pub extern "C" fn _some_path_intern_eval(app_data: String) -> String {
 
 format!("{:?}", out0)
 }
@@ -350,11 +345,11 @@ fn b() {}
 		semi: false,
 	});
 
-	let s = construct(&src_code, &mod_path, linking_config.as_ref(), &arg_type);
+	let s = construct(&src_code, &mod_path, linking_config.as_ref());
 	assert_eq!(
 		&s,
 		r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: &mut a_crate::String) -> String {
+pub extern "C" fn _some_path_intern_eval(app_data: String) -> String {
 let a = 1;
 let out0 = b;
 let c = 2;
@@ -371,12 +366,12 @@ fn b() {}
 		.crates
 		.push(CrateType::parse_str("extern crate some_crate as some;").unwrap());
 
-	let s = construct(&src_code, &mod_path, linking_config.as_ref(), &arg_type);
+	let s = construct(&src_code, &mod_path, linking_config.as_ref());
 	assert_eq!(
 		&s,
 		r##"extern crate some_crate as some;
 #[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: &mut a_crate::String) -> String {
+pub extern "C" fn _some_path_intern_eval(app_data: String) -> String {
 let a = 1;
 let out0 = b;
 let c = 2;

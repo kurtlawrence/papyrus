@@ -31,6 +31,6 @@ fn main() {
 	}
 	let data = &mut ReplData::default().no_extern_data();
 	let repl = Repl::default_terminal(data);
-	repl.run();
+	repl.run(());
 	println!("Thanks for using papyrus!");
 }

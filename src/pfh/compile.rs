@@ -13,7 +13,6 @@ pub fn build_compile_dir<'a, P, I>(
 	compile_dir: P,
 	files: I,
 	linking_config: Option<&linking::LinkingConfiguration>,
-	arg_type: &linking::LinkingArgument,
 ) -> io::Result<()>
 where
 	P: AsRef<Path>,
@@ -36,7 +35,6 @@ where
 			&file.contents,
 			&file.mod_path,
 			linking_config,
-			arg_type,
 		));
 
 		create_file_and_dir(compile_dir.join("src/").join(&file.path))?
@@ -125,67 +123,22 @@ where
 	}
 }
 
-type NoDataFunc = unsafe fn() -> String;
-type BorrowDataFunc<D> = unsafe fn(&D) -> String;
-type BorrowMutDataFunc<D> = unsafe fn(&mut D) -> String;
+type DataFunc<D> = unsafe fn(D) -> String;
 
-pub fn exec_no_data<P>(library_file: P, function_name: &str) -> Result<String, &'static str>
-where
-	P: AsRef<Path>,
-{
-	use libloading::{Library, Symbol};
-	let lib = Library::new(library_file.as_ref()).unwrap();
-	let res = std::panic::catch_unwind(|| unsafe {
-		let func: Symbol<NoDataFunc> = lib.get(function_name.as_bytes()).unwrap();
-		func()
-	});
-
-	match res {
-		Ok(s) => Ok(s),
-		Err(_) => Err("a panic occured with evaluation"),
-	}
-}
-
-pub fn exec_brw_data<P, Data>(
+pub fn exec<P, Data>(
 	library_file: P,
 	function_name: &str,
-	app_data: &Data,
+	app_data: Data,
 ) -> Result<String, &'static str>
 where
 	P: AsRef<Path>,
 {
 	use libloading::{Library, Symbol};
 	let lib = Library::new(library_file.as_ref()).unwrap();
-	let data_safe = std::panic::AssertUnwindSafe(app_data);
-	let res = std::panic::catch_unwind(|| unsafe {
-		let func: Symbol<BorrowDataFunc<Data>> = lib.get(function_name.as_bytes()).unwrap();
-		let d = *data_safe;
-		func(d)
-	});
-
-	match res {
-		Ok(s) => Ok(s),
-		Err(_) => Err("a panic occured with evaluation"),
-	}
-}
-
-pub fn exec_brw_mut_data<P, Data>(
-	library_file: P,
-	function_name: &str,
-	app_data: &mut Data,
-) -> Result<String, &'static str>
-where
-	P: AsRef<Path>,
-{
-	use libloading::{Library, Symbol};
-	let lib = Library::new(library_file.as_ref()).unwrap();
-	let data_safe = std::panic::AssertUnwindSafe(app_data);
-	let res = std::panic::catch_unwind(|| unsafe {
-		let func: Symbol<BorrowMutDataFunc<Data>> = lib.get(function_name.as_bytes()).unwrap();
-		let mut data_safe = data_safe;
-		let d = &mut **data_safe;
-		func(d)
-	});
+	let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
+		let func: Symbol<DataFunc<Data>> = lib.get(function_name.as_bytes()).unwrap();
+		func(app_data)
+	}));
 
 	match res {
 		Ok(s) => Ok(s),
@@ -286,7 +239,7 @@ path = "src/lib.rs"
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use linking::{LinkingArgument, LinkingConfiguration};
+	use linking::{ LinkingConfiguration};
 
 	#[test]
 	fn nodata_build_fmt_compile_eval_test() {
@@ -299,7 +252,6 @@ mod tests {
 			&compile_dir,
 			files.iter(),
 			linking_config,
-			&LinkingArgument::NoData,
 		)
 		.unwrap();
 		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
@@ -316,7 +268,7 @@ mod tests {
 		let path = compile(&compile_dir, linking_config, |_| ()).unwrap();
 
 		// eval
-		let r = exec_no_data(path, "__intern_eval").unwrap(); // execute library fn
+		let r = exec(path, "__intern_eval", ()).unwrap(); // execute library fn
 
 		assert_eq!(&r, "4");
 	}
@@ -337,8 +289,7 @@ mod tests {
 		build_compile_dir(
 			&compile_dir,
 			files.iter(),
-			linking_config.as_ref(),
-			&LinkingArgument::NoData,
+			linking_config.as_ref() 
 		)
 		.unwrap();
 		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
@@ -355,7 +306,7 @@ mod tests {
 		let path = compile(&compile_dir, linking_config.as_ref(), |_| ()).unwrap();
 
 		// eval
-		let r = exec_brw_data(path, "__intern_eval", &()).unwrap(); // execute library fn
+		let r = exec(path, "__intern_eval", &()).unwrap(); // execute library fn
 
 		assert_eq!(&r, "4");
 	}
@@ -377,7 +328,6 @@ mod tests {
 			&compile_dir,
 			files.iter(),
 			linking_config.as_ref(),
-			&LinkingArgument::NoData,
 		)
 		.unwrap();
 		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
@@ -394,7 +344,7 @@ mod tests {
 		let path = compile(&compile_dir, linking_config.as_ref(), |_| ()).unwrap();
 
 		// eval
-		let r = exec_brw_mut_data(path, "__intern_eval", &mut ()).unwrap(); // execute library fn
+		let r = exec(path, "__intern_eval", ()).unwrap(); // execute library fn
 
 		assert_eq!(&r, "4");
 	}
@@ -410,7 +360,6 @@ mod tests {
 			&compile_dir,
 			files.iter(),
 			linking_config,
-			&LinkingArgument::NoData,
 		)
 		.unwrap();
 		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
@@ -437,7 +386,6 @@ mod tests {
 			&compile_dir,
 			files.iter(),
 			linking_config,
-			&LinkingArgument::NoData,
 		)
 		.unwrap();
 		assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
@@ -448,7 +396,7 @@ mod tests {
 		let path = compile(&compile_dir, linking_config, |_| ()).unwrap();
 
 		// eval
-		let r = exec_no_data(&path, "__intern_eval"); // execute library fn
+		let r = exec(&path, "__intern_eval", ()); // execute library fn
 		assert!(r.is_err());
 		assert_eq!(r, Err("a panic occured with evaluation"));
 	}

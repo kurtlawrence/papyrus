@@ -257,19 +257,6 @@ mod macros {
 				}
 			}};
 	}
-
-	// FIXME enable this at some point?
-	// #[test]
-	// fn macros_test() {
-	// 	repl_data_brw!("crate_name", String);
-	// 	repl_data_brw!("crate_name", "some/path/to/rlib", String);
-	// 	repl_data_brw!("crate_name", String, "compile_dir");
-	// 	repl_data_brw!("crate_name", "some/path/to/rlib", String, "compile_dir");
-	// 	repl_data_brw_mut!("crate_name", String);
-	// 	repl_data_brw_mut!("crate_name", "some/path/to/rlib", String);
-	// 	repl_data_brw_mut!("crate_name", String, "compile_dir");
-	// 	repl_data_brw_mut!("crate_name", "some/path/to/rlib", String, "compile_dir");
-	// }
 }
 
 pub struct LinkingConfiguration {
@@ -323,28 +310,9 @@ impl LinkingConfiguration {
 		self
 	}
 
-	pub fn construct_fn_args(&self, arg_type: &LinkingArgument) -> String {
-		match self.data_type {
-			Some(ref d) => match arg_type {
-				LinkingArgument::BorrowData => format!("app_data: &{}::{}", self.crate_name, d),
-				LinkingArgument::BorrowMutData => {
-					format!("app_data: &mut {}::{}", self.crate_name, d)
-				}
-				LinkingArgument::NoData => String::new(),
-			},
-			None => String::new(),
-		}
+	pub fn construct_fn_args(&self) -> String {
+		self.data_type.as_ref().map(|d| format!("app_data: {}", d)).unwrap_or(String::new())
 	}
-}
-
-pub struct NoData;
-pub struct BorrowData;
-pub struct BorrowMutData;
-
-pub enum LinkingArgument {
-	NoData,
-	BorrowData,
-	BorrowMutData,
 }
 
 fn get_rlib_path(crate_name: &str) -> io::Result<PathBuf> {
@@ -389,15 +357,7 @@ fn linking_config_test() {
 
 	// test no data type fn args
 	assert_eq!(
-		lc.construct_fn_args(&LinkingArgument::NoData),
-		String::new()
-	);
-	assert_eq!(
-		lc.construct_fn_args(&LinkingArgument::BorrowData),
-		String::new()
-	);
-	assert_eq!(
-		lc.construct_fn_args(&LinkingArgument::BorrowMutData),
+		lc.construct_fn_args(),
 		String::new()
 	);
 
@@ -406,15 +366,8 @@ fn linking_config_test() {
 
 	// test data type fn args
 	assert_eq!(
-		lc.construct_fn_args(&LinkingArgument::NoData),
-		String::new()
+		&lc.construct_fn_args(),
+		"app_data: String"
 	);
-	assert_eq!(
-		&lc.construct_fn_args(&LinkingArgument::BorrowData),
-		"app_data: &some_crate::String"
-	);
-	assert_eq!(
-		&lc.construct_fn_args(&LinkingArgument::BorrowMutData),
-		"app_data: &mut some_crate::String"
-	);
+	
 }

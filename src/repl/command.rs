@@ -1,12 +1,12 @@
 use super::*;
 
-type CommandAction<T, Arg, Data> = for<'data> fn(
-	Repl<'data, ManualPrint, T, Arg, Data>,
+type CommandAction<T,Data> = for<'data> fn(
+	Repl<'data, ManualPrint, T,Data>,
 	&str,
-) -> Result<Repl<'data, Print, T, Arg, Data>, ()>;
+) -> Result<Repl<'data, Print, T,Data>, ()>;
 
 /// A command definition.
-pub struct Command<Term: Terminal, Arg, Data> {
+pub struct Command<Term: Terminal,Data> {
 	/// The command name.
 	pub name: &'static str,
 	/// Arguments expected type.
@@ -14,7 +14,7 @@ pub struct Command<Term: Terminal, Arg, Data> {
 	/// Help string.
 	pub help: &'static str,
 	/// Action to take.
-	pub action: CommandAction<Term, Arg, Data>,
+	pub action: CommandAction<Term,Data>,
 }
 
 /// Command arguments variants.
@@ -30,13 +30,13 @@ pub enum CmdArgs {
 	Expr,
 }
 
-impl<Term: Terminal, Arg, Data> Command<Term, Arg, Data> {
+impl<Term: Terminal,Data> Command<Term,Data> {
 	/// Create a new `Command`.
 	pub fn new(
 		name: &'static str,
 		arg_type: CmdArgs,
 		help: &'static str,
-		action: CommandAction<Term, Arg, Data>,
+		action: CommandAction<Term,Data>,
 	) -> Self {
 		Command {
 			name: name,
@@ -47,7 +47,7 @@ impl<Term: Terminal, Arg, Data> Command<Term, Arg, Data> {
 	}
 }
 
-impl<Term: Terminal, Arg, Data> Clone for Command<Term, Arg, Data> {
+impl<Term: Terminal,Data> Clone for Command<Term,Data> {
 	fn clone(&self) -> Self {
 		Command {
 			name: self.name,
@@ -58,18 +58,18 @@ impl<Term: Terminal, Arg, Data> Clone for Command<Term, Arg, Data> {
 	}
 }
 
-pub trait Commands<Term: Terminal, Arg, Data> {
+pub trait Commands<Term: Terminal,Data> {
 	/// Builds the help string of the commands.
 	fn build_help_response(&self, command: Option<&str>) -> String;
 	/// Conveniance function to lookup the Commands and return if found.
-	fn find_command(&self, command: &str) -> Result<Command<Term, Arg, Data>, String>;
+	fn find_command(&self, command: &str) -> Result<Command<Term,Data>, String>;
 }
 
-impl<Term: Terminal, Arg, Data> Commands<Term, Arg, Data> for Vec<Command<Term, Arg, Data>> {
+impl<Term: Terminal,Data> Commands<Term,Data> for Vec<Command<Term,Data>> {
 	fn build_help_response(&self, command: Option<&str>) -> String {
 		let mut ret = String::new();
 
-		let write_cmd_line = |cmd: &Command<Term, Arg, Data>, str_builder: &mut String| {
+		let write_cmd_line = |cmd: &Command<Term,Data>, str_builder: &mut String| {
 			str_builder.push_str(&cmd.name);
 
 			match cmd.arg_type {
@@ -95,7 +95,7 @@ impl<Term: Terminal, Arg, Data> Commands<Term, Arg, Data> for Vec<Command<Term, 
 		ret
 	}
 
-	fn find_command(&self, command: &str) -> Result<Command<Term, Arg, Data>, String> {
+	fn find_command(&self, command: &str) -> Result<Command<Term,Data>, String> {
 		match self.iter().find(|c| c.name == command) {
 			None => Err(format!("unrecognized command: {}", command)),
 			Some(cmd) => Ok(cmd.clone()),
