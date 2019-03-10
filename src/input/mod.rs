@@ -75,8 +75,6 @@ impl<Term: Terminal> InputReader<Term> {
             }
         };
 
-		
-
         let r = self.determine_result(&line, treat_as_cmd);
         match &r {
             InputResult::Empty => (),

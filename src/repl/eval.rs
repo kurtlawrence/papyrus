@@ -8,13 +8,7 @@ type HandleInputResult = (String, bool);
 
 enum CommonResult<'data, Term: Terminal, Data> {
     Handled(Result<Repl<'data, Print, Term, Data>, ()>),
-    Program(
-        (
-            pfh::Input,
-            &'data mut ReplData< Data>,
-            ReplTerminal<Term>,
-        ),
-    ),
+    Program((pfh::Input, &'data mut ReplData<Data>, ReplTerminal<Term>)),
 }
 
 /// bit dumb but i have to extract out the common code otherwise i will have code maintenance hell
@@ -31,8 +25,7 @@ fn handle_common<'data, Term: Terminal, Data>(
     let (to_print, as_out) = match state.result {
         InputResult::Command(cmds) => {
             debug!("read command: {}", cmds);
-			unimplemented!();
-           
+            unimplemented!();
         }
         InputResult::Program(input) => {
             return CommonResult::Program((input, data, terminal));
@@ -51,104 +44,116 @@ fn handle_common<'data, Term: Terminal, Data>(
 impl<'data, Term: Terminal, Data> Repl<'data, Evaluate, Term, Data> {
     /// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
     /// This result gets passed back as a print ready repl.
-    /// Does not transfer any app data as configured.
-    pub fn eval(self, app_data: Data) -> Result<Repl<'data, Print, Term, Data>, ()> {
-        match handle_common(self) {
-            CommonResult::Handled(r) => r,
-            CommonResult::Program((input, mut data, terminal)) => {
-                debug!("read program: {:?}", input);
-                let (to_print, as_out) =
-                    match handle_program(&mut data, input, &terminal.terminal, app_data) {
-                        Ok((s, as_out)) => (s, as_out),
-                        Err(s) => (s, false),
-                    };
+    pub fn eval(self, app_data: Data) -> Result<Repl<'data, Print, Term, Data>, EvalSignal> {
+        let Repl {
+            state,
+            terminal,
+            data,
+        } = self;
 
-                Ok(Repl {
-                    state: Print { to_print, as_out },
-                    terminal: terminal,
-                    data: data,
-                })
-            }
-        }
-    }
-}
-
-/// Runs a single program input.
-fn handle_program<T, Data>(
-    data: &mut ReplData<Data>,
-    input: Input,
-    terminal: &T,
-    app_data: Data,
-) -> Result<HandleInputResult, String>
-where
-    T: Terminal,
-{
-    let pop_input = |repl_data| {
-        get_current_file_mut(repl_data).contents.pop();
-    };
-
-    let has_stmts = input.stmts.len() > 0;
-
-    // add input file
-    {
-        get_current_file_mut(data).contents.push(input);
-    }
-
-    // build directory
-    let res = pfh::compile::build_compile_dir(
-        &data.compilation_dir,
-        data.file_map.values(),
-        &data.linking,
-    );
-    if let Err(e) = res {
-        pop_input(data);
-        return Err(format!("failed to build compile directory: {}", e));
-    }
-
-    // format
-    pfh::compile::fmt(&data.compilation_dir);
-
-    // compile
-    let lib_file = pfh::compile::compile(&data.compilation_dir, &data.linking, |line| {
-        Writer(terminal)
-            .overwrite_current_console_line(&line)
-            .unwrap()
-    });
-    Writer(terminal).overwrite_current_console_line("").unwrap();
-    let lib_file = match lib_file {
-        Ok(f) => f,
-        Err(e) => {
-            pop_input(data);
-            return Err(format!("{}", e));
-        }
-    };
-
-    if has_stmts {
-        // execute
-        let exec_res = {
-            let current_file = get_current_file_mut(data);
-            pfh::compile::exec(
-                &lib_file,
-                &pfh::eval_fn_name(&current_file.mod_path),
-                app_data,
-            )
+        let (to_print, as_out) = match state.result {
+            InputResult::Command(cmds) => data.handle_command(&cmds, &terminal.terminal)?,
+            InputResult::Program(input) => data.handle_program(input, &terminal.terminal, app_data),
+            InputResult::InputError(err) => (err, false),
+            InputResult::Eof => return Err(EvalSignal::Exit),
+            _ => (String::new(), false),
         };
-        match exec_res {
-            Ok(s) => Ok((s, true)),
-            Err(e) => {
-                pop_input(data);
-                Err(e.to_string())
-            }
-        }
-    } else {
-        Ok((String::new(), false)) // do not execute if no extra statements have been added
+
+        Ok(Repl {
+            state: Print { to_print, as_out },
+            terminal: terminal,
+            data: data,
+        })
     }
 }
 
-fn get_current_file_mut< Data>(data: &mut ReplData< Data>) -> &mut SourceFile
-{
-    data.file_map.get_mut(&data.current_file).expect(&format!(
-        "file map does not have key: {}",
-        data.current_file.display()
-    ))
+impl<Data> ReplData<Data> {
+    fn handle_command<T: Terminal>(&mut self, cmds: &str, terminal: &T) -> Result<HandleInputResult, EvalSignal>  {
+        use cmdtree::LineResult as lr;
+
+        let tuple = match self.cmdtree.parse_line(cmds, true, &mut Writer(terminal)) {
+            lr::Exit => return Err(EvalSignal::Exit),
+            lr::Action(res) => match res {
+                CommandResult::CancelInput => ("cancelled input".to_string(), false),
+            },
+            _ => (String::new(), false),
+        };
+
+		Ok(tuple)
+    }
+
+    fn handle_program<T: Terminal>(
+        &mut self,
+        input: Input,
+        terminal: &T,
+        app_data: Data,
+    ) -> HandleInputResult {
+        let pop_input = |repl_data: &mut ReplData<_>| {
+            repl_data.get_current_file_mut().contents.pop();
+        };
+
+        let has_stmts = input.stmts.len() > 0;
+
+        // add input file
+        {
+            self.get_current_file_mut().contents.push(input);
+        }
+
+        // build directory
+        let res = pfh::compile::build_compile_dir(
+            &self.compilation_dir,
+            self.file_map.values(),
+            &self.linking,
+        );
+        if let Err(e) = res {
+            pop_input(self); // failed so don't save
+            return (format!("failed to build compile directory: {}", e), false);
+        }
+
+        // format
+        pfh::compile::fmt(&self.compilation_dir);
+
+        // compile
+        let lib_file = pfh::compile::compile(&self.compilation_dir, &self.linking, |line| {
+            Writer(terminal)
+                .overwrite_current_console_line(&line)
+                .unwrap()
+        });
+        Writer(terminal).overwrite_current_console_line("").unwrap();
+        let lib_file = match lib_file {
+            Ok(f) => f,
+            Err(e) => {
+                pop_input(self); // failed so don't save
+                return (format!("{}", e), false);
+            }
+        };
+
+        if has_stmts {
+            // execute
+            let exec_res = {
+                let current_file = self.get_current_file_mut();
+                pfh::compile::exec(
+                    &lib_file,
+                    &pfh::eval_fn_name(&current_file.mod_path),
+                    app_data,
+                )
+            };
+            match exec_res {
+                Ok(s) => ((s, true)),
+                Err(e) => {
+                    pop_input(self); // failed so don't save
+                    (e.to_string(), false)
+                }
+            }
+        } else {
+            (String::new(), false) // do not execute if no extra statements have been added
+        }
+    }
+
+    fn get_current_file_mut(&mut self) -> &mut SourceFile {
+        self.file_map.get_mut(&self.current_file).expect(&format!(
+            "file map does not have key: {}",
+            self.current_file.display()
+        ))
+    }
 }

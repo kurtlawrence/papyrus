@@ -6,11 +6,14 @@ use syn::{self, Block, Item, Stmt};
 /// Parses a line of input as a command.
 /// Returns either a `Command` value or an `InputError` value.
 pub fn parse_command(line: &str) -> InputResult {
-InputResult::Command(  if line.starts_with(".") {
-	  &line[1..]
-  } else {
-	  line
-  }.to_string())
+    InputResult::Command(
+        if line.starts_with(".") {
+            &line[1..]
+        } else {
+            line
+        }
+        .to_string(),
+    )
 }
 
 /// Parses a line of input as a program.

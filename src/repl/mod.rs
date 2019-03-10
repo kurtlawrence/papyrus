@@ -1,18 +1,18 @@
 //! The repl takes the commands given and evaluates them, setting a local variable such that the data can be continually referenced.
-//! 
+//!
 //! ```sh
 //! papyrus=> let a = 1;
 //! papyrus.> a
 //! papyrus [out0]: 1
 //! papyrus=>
 //! ```
-//! 
+//!
 //! Here we define a variable `let a = 1;`. Papyrus knows that the end result is not an expression (given the trailing semi colon) so waits for more input (`.>`). We then give it `a` which is an expression and gets evaluated. If compilation is successful the expression is set to the variable `out0` (where the number will increment with expressions) and then be printed with the `Debug` trait. If an expression evaluates to something that is not `Debug` then you will receive a compilation error. Finally the repl awaits more input `=>`.
-//! 
+//!
 //! > The expression is using `let out# = <expr>;` behind the scenes.
-//! 
+//!
 //! You can also define structures and functions.
-//! 
+//!
 //! ```sh
 //! papyrus=> fn a(i: u32) -> u32 {
 //! papyrus.> i + 1
@@ -21,7 +21,7 @@
 //! papyrus [out0]: 2
 //! papyrus=>
 //! ```
-//! 
+//!
 //! ```txt
 //! papyrus=> #[derive(Debug)] struct A {
 //! papyrus.> a: u32,
@@ -32,7 +32,7 @@
 //! papyrus [out0]: A { a: 1, b: 2 }
 //! papyrus=>
 //! ```
-//! 
+//!
 //! Please help if the Repl cannot parse your statements, or help with documentation! [https://github.com/kurtlawrence/papyrus](https://github.com/kurtlawrence/papyrus).
 mod command;
 mod eval;
@@ -41,6 +41,7 @@ mod read;
 mod writer;
 
 use self::command::Commands;
+use cmdtree::*;
 use colored::*;
 use input::{InputReader, InputResult};
 use linefeed::terminal::Terminal;
@@ -50,7 +51,6 @@ use std::fs;
 use std::io::{self, Write};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
-use cmdtree::*;
 
 pub use self::command::{CmdArgs, Command};
 
@@ -98,20 +98,24 @@ pub struct Print {
 pub struct Repl<'data, S, Term: Terminal, Data> {
     state: S,
     terminal: ReplTerminal<Term>,
-    pub data: &'data mut ReplData< Data>,
+    pub data: &'data mut ReplData<Data>,
 }
 
 pub enum CommandResult {
-	CancelInput,
+    CancelInput,
 }
 
-impl<Data> Default for ReplData< Data> {
+pub enum EvalSignal {
+	Exit
+}
+
+impl<Data> Default for ReplData<Data> {
     fn default() -> Self {
-		// build a default command tree
-		let cmdr = Builder::new("papyrus").add_action("esc", "Cancels more input", |_|
-		{
-			CommandResult::CancelInput
-		}).into_commander().expect("should build fine");
+        // build a default command tree
+        let cmdr = Builder::new("papyrus")
+            .add_action("esc", "Cancels more input", |_| CommandResult::CancelInput)
+            .into_commander()
+            .expect("should build fine");
 
         let lib = SourceFile::lib();
         let lib_path = lib.path.clone();
@@ -129,13 +133,12 @@ impl<Data> Default for ReplData< Data> {
             linking: LinkingConfiguration::default(),
             data_mrker: PhantomData,
         };
-       
 
         r
     }
 }
 
-impl< Data> ReplData< Data> {
+impl<Data> ReplData<Data> {
     pub fn with_compilation_dir<P: AsRef<Path>>(mut self, dir: P) -> io::Result<Self> {
         let dir = dir.as_ref();
         if !dir.exists() {

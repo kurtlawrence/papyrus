@@ -39,17 +39,23 @@ impl<'data, Term: Terminal + Clone, Data> Repl<'data, Read, Term, Data> {
 impl<'data, Term: Terminal, Data> Repl<'data, Read, Term, Data> {
     /// Reads input from the input reader until an evaluation phase can begin.
     pub fn read(mut self) -> Repl<'data, Evaluate, Term, Data> {
-		// if the cmdr is not sitting at root then always just send it as a command
-		let at_root = self.data.cmdtree.at_root();
+        // if the cmdr is not sitting at root then always just send it as a command
+        let treat_as_cmd = !self.data.cmdtree.at_root();
         let mut more = false;
         loop {
             let prompt = if more {
-                format!("{}.> ", self.data.cmdtree.path().color(self.data.prompt_colour))
+                format!(
+                    "{}.> ",
+                    self.data.cmdtree.path().color(self.data.prompt_colour)
+                )
             } else {
-                format!("{}=> ", self.data.cmdtree.path().color(self.data.prompt_colour))
+                format!(
+                    "{}=> ",
+                    self.data.cmdtree.path().color(self.data.prompt_colour)
+                )
             };
 
-            let result = self.terminal.input_rdr.read_input(&prompt, at_root);
+            let result = self.terminal.input_rdr.read_input(&prompt, treat_as_cmd);
 
             more = match &result {
                 InputResult::Command(_) => false,
@@ -68,7 +74,6 @@ impl<'data, Term: Terminal, Data> Repl<'data, Read, Term, Data> {
                 };
             }
         }
-		
     }
 }
 
@@ -86,7 +91,9 @@ impl<'data, Term: Terminal, Data: Copy> Repl<'data, Read, Term, Data> {
             let print = eval.eval(app_data);
             match print {
                 Ok(r) => read = r.print(),
-                Err(_) => break,
+                Err(sig) => match sig {
+					EvalSignal::Exit => break,
+				}
             }
         }
     }
