@@ -44,10 +44,7 @@ use self::command::Commands;
 use colored::*;
 use input::{InputReader, InputResult};
 use linefeed::terminal::Terminal;
-use pfh::{
-    linking::{self, LinkingConfiguration},
-    SourceFile,
-};
+use pfh::{linking::LinkingConfiguration, SourceFile};
 use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Write};
@@ -79,7 +76,7 @@ pub struct ReplData<Term: Terminal, Data> {
     /// Defaults to `$HOME/.papyrus/`.
     pub compilation_dir: PathBuf,
     /// The external crate linking configuration,
-    linking: Option<LinkingConfiguration>,
+    linking: LinkingConfiguration,
     data_mrker: PhantomData<Data>,
 }
 
@@ -123,7 +120,7 @@ impl<Term: Terminal, Data> Default for ReplData<Term, Data> {
             prompt_colour: Color::Cyan,
             out_colour: Color::BrightGreen,
             compilation_dir: default_compile_dir(),
-            linking: None,
+            linking: LinkingConfiguration::default(),
             data_mrker: PhantomData,
         };
         // help
@@ -200,30 +197,6 @@ impl<Term: Terminal, Data> ReplData<Term, Data> {
         Ok(self)
     }
 
-    pub fn with_extern_crate_and_data(
-        mut self,
-        crate_name: &'static str,
-        rlib_path: Option<&str>,
-        data_type: &str,
-    ) -> io::Result<Self> {
-        self.linking = Some(
-            LinkingConfiguration::link_external_crate(
-                &self.compilation_dir,
-                crate_name,
-                rlib_path,
-            )?
-            .with_data(data_type),
-        );
-
-        Ok(self)
-    }
-}
-
-impl<Term: Terminal> ReplData<Term, ()> {
-    pub fn no_extern_data(self) -> ReplData<Term, ()> {
-        self
-    }
-
     /// Specify that the repl will link an external crate reference.
     /// Overwrites previously specified crate name.
     /// Uses `ReplData.compilation_dir` to copy `rlib` file into.
@@ -234,12 +207,20 @@ impl<Term: Terminal> ReplData<Term, ()> {
         crate_name: &'static str,
         rlib_path: Option<&str>,
     ) -> io::Result<Self> {
-        self.linking = Some(LinkingConfiguration::link_external_crate(
-            &self.compilation_dir,
-            crate_name,
-            rlib_path,
-        )?);
+        self.linking =
+            self.linking
+                .link_external_crate(&self.compilation_dir, crate_name, rlib_path)?;
         Ok(self)
+    }
+
+    /// Not meant to used by developer. Use the macros instead.
+    pub fn set_data_type(mut self, data_type: &str) -> Self {
+        self.linking = self.linking.with_data(data_type);
+        self
+    }
+
+    pub fn linking(&self) -> &LinkingConfiguration {
+        &self.linking
     }
 }
 

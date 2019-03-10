@@ -137,136 +137,18 @@ use std::{fs, io};
 
 mod macros {
     /// Create `ReplData`
-    #[macro_use]
+    #[macro_export]
     macro_rules! repl_data {
-		() => {{
-			use papyrus;
-			let repl_data_res: std::io::Result<
-				papyrus::ReplData<_, ()>,
-			> = papyrus::ReplData::default().no_extern_data()
-			repl_data_res
-		}}
-	}
-
-    /// Create `ReplData` with expectation to borrow the data type `type`.
-    #[macro_export]
-    macro_rules! repl_data_brw {
-        // (crate_name, type)
-        ($crate_name:expr, $type:ty) => {{
+        () => {{
             use papyrus;
-            let crate_name: &'static str = $crate_name;
-            let repl_data_res: std::io::Result<
-                papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
-            > = papyrus::ReplData::default().with_extern_crate_and_data(
-                crate_name,
-                None,
-                stringify!($type),
-            );
-            repl_data_res
+            let repl_data: papyrus::ReplData<_, ()> = papyrus::ReplData::default();
+            repl_data
         }};
-        // (crate_name, rlib_path, type)
-        ($crate_name:expr, $rlib_path:expr, $type:ty) => {{
+        ($type:ty) => {{
             use papyrus;
-            let crate_name: &str = $crate_name;
-            let rlib_path: &str = $rlib_path;
-            let repl_data_res: std::io::Result<
-                papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
-            > = papyrus::ReplData::default().with_extern_crate_and_data(
-                crate_name,
-                Some(rlib_path),
-                stringify!($type),
-            );
-            repl_data_res
-        }};
-        // (crate_name, type, compilation_dir)
-        ($crate_name:expr, $type:ty, $comp_dir:expr) => {{
-            use papyrus;
-            let compilation_dir: &str = $comp_dir;
-            let crate_name: &'static str = $crate_name;
-            let repl_data_res: std::io::Result<
-                papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
-            > = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
-            match repl_data_res {
-                Ok(r) => r.with_extern_crate_and_data(crate_name, None, stringify!($type)),
-                Err(e) => Err(e),
-            }
-        }};
-        // (crate_name, rlb_path, type, compilation_dir)
-        ($crate_name:expr, $rlib_path:expr, $type:ty, $comp_dir:expr) => {{
-            use papyrus;
-            let compilation_dir: &str = $comp_dir;
-            let crate_name: &str = $crate_name;
-            let rlib_path: &str = $rlib_path;
-            let repl_data_res: std::io::Result<
-                papyrus::ReplData<_, papyrus::linking::BorrowData, $type>,
-            > = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
-            match repl_data_res {
-                Ok(r) => {
-                    r.with_extern_crate_and_data(crate_name, Some(rlib_path), stringify!($type))
-                }
-                Err(e) => Err(e),
-            }
-        }};
-    }
-
-    /// Create `ReplData` with expectation to mutably borrow the data type `type`.
-    #[macro_export]
-    macro_rules! repl_data_brw_mut {
-        // (crate_name, type)
-        ($crate_name:expr, $type:ty) => {{
-            use papyrus;
-            let crate_name: &'static str = $crate_name;
-            let repl_data_res: std::io::Result<
-                papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
-            > = papyrus::ReplData::default().with_extern_crate_and_data(
-                crate_name,
-                None,
-                stringify!($type),
-            );
-            repl_data_res
-        }};
-        // (crate_name, rlib_path, type)
-        ($crate_name:expr, $rlib_path:expr, $type:ty) => {{
-            use papyrus;
-            let crate_name: &str = $crate_name;
-            let rlib_path: &str = $rlib_path;
-            let repl_data_res: std::io::Result<
-                papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
-            > = papyrus::ReplData::default().with_extern_crate_and_data(
-                crate_name,
-                Some(rlib_path),
-                stringify!($type),
-            );
-            repl_data_res
-        }};
-        // (crate_name, type, compilation_dir)
-        ($crate_name:expr, $type:ty, $comp_dir:expr) => {{
-            use papyrus;
-            let compilation_dir: &str = $comp_dir;
-            let crate_name: &'static str = $crate_name;
-            let repl_data_res: std::io::Result<
-                papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
-            > = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
-            match repl_data_res {
-                Ok(r) => r.with_extern_crate_and_data(crate_name, None, stringify!($type)),
-                Err(e) => Err(e),
-            }
-        }};
-        // (crate_name, rlb_path, type, compilation_dir)
-        ($crate_name:expr, $rlib_path:expr, $type:ty, $comp_dir:expr) => {{
-            use papyrus;
-            let compilation_dir: &str = $comp_dir;
-            let crate_name: &str = $crate_name;
-            let rlib_path: &str = $rlib_path;
-            let repl_data_res: std::io::Result<
-                papyrus::ReplData<_, papyrus::linking::BorrowMutData, $type>,
-            > = papyrus::ReplData::default().with_compilation_dir(compilation_dir);
-            match repl_data_res {
-                Ok(r) => {
-                    r.with_extern_crate_and_data(crate_name, Some(rlib_path), stringify!($type))
-                }
-                Err(e) => Err(e),
-            }
+            let repl_data: papyrus::ReplData<_, $type> =
+                papyrus::ReplData::default().set_data_type(stringify!($type));
+            repl_data
         }};
     }
 }
@@ -278,7 +160,7 @@ pub struct LinkingConfiguration {
     /// - will search for `libsome_lib.rlib` in filesystem
     /// - will add `extern crate some_lib;` to source file
     /// - will compile with `--extern some_lib=libsome_lib.rlib` flag
-    pub crate_name: &'static str,
+    pub crate_name: Option<&'static str>,
     /// Linking data configuration.
     /// If the user wants to transfer data from the calling application then it can specify the type of data as a string.
     /// The string must include module path if not accesible from the root of the external crate.
@@ -290,8 +172,18 @@ pub struct LinkingConfiguration {
     pub data_type: Option<String>,
 }
 
+impl Default for LinkingConfiguration {
+    fn default() -> Self {
+        LinkingConfiguration {
+            crate_name: None,
+            data_type: None,
+        }
+    }
+}
+
 impl LinkingConfiguration {
     pub fn link_external_crate<P: AsRef<Path>>(
+        mut self,
         compilation_dir: P,
         crate_name: &'static str,
         rlib_path: Option<&str>,
@@ -311,10 +203,8 @@ impl LinkingConfiguration {
             compilation_dir.join(&format!("lib{}.rlib", crate_name)),
         )?;
 
-        Ok(LinkingConfiguration {
-            crate_name: crate_name,
-            data_type: None,
-        })
+        self.crate_name = Some(crate_name);
+        Ok(self)
     }
 
     pub fn with_data(mut self, type_name: &str) -> Self {
@@ -358,16 +248,17 @@ fn get_rlib_path_test() {
 fn linking_config_test() {
     let dir = PathBuf::from("test/linking_config_test/");
     fs::create_dir_all(&dir).unwrap();
-    let lc = LinkingConfiguration::link_external_crate(&dir, "some_crate", None);
+    let lc = LinkingConfiguration::default().link_external_crate(&dir, "some_crate", None);
     assert!(lc.is_err());
     fs::write(dir.join("asdf.txt"), "").unwrap();
-    let lc = LinkingConfiguration::link_external_crate(
-        &dir,
-        "some_crate",
-        Some("test/linking_config_test/asdf.txt"),
-    )
-    .unwrap();
-    assert_eq!(lc.crate_name, "some_crate");
+    let lc = LinkingConfiguration::default()
+        .link_external_crate(
+            &dir,
+            "some_crate",
+            Some("test/linking_config_test/asdf.txt"),
+        )
+        .unwrap();
+    assert_eq!(lc.crate_name, Some("some_crate"));
     assert_eq!(lc.data_type, None);
 
     // test no data type fn args

@@ -12,7 +12,7 @@ use std::{error, fmt, fs};
 pub fn build_compile_dir<'a, P, I>(
     compile_dir: P,
     files: I,
-    linking_config: Option<&linking::LinkingConfiguration>,
+    linking_config: &linking::LinkingConfiguration,
 ) -> io::Result<()>
 where
     P: AsRef<Path>,
@@ -26,9 +26,9 @@ where
     for file in files {
         // add linked crate if there is one to lib file
         let mut contents = String::new();
-        if let Some(linking_config) = linking_config {
+        if let Some(cname) = linking_config.crate_name {
             if file.path == Path::new("lib.rs") {
-                contents.push_str(&format!("extern crate {};\n", linking_config.crate_name));
+                contents.push_str(&format!("extern crate {};\n", cname));
             }
         }
         contents.push_str(&file::code::construct(
@@ -68,7 +68,7 @@ pub fn fmt<P: AsRef<Path>>(compile_dir: P) -> bool {
 
 pub fn compile<P, F>(
     compile_dir: P,
-    linking_config: Option<&linking::LinkingConfiguration>,
+    linking_config: &linking::LinkingConfiguration,
     stderr_line_cb: F,
 ) -> Result<PathBuf, CompilationError>
 where
@@ -85,9 +85,9 @@ where
 
     let mut _s_tmp = String::new();
     let mut args = vec!["rustc", "--", "-Awarnings"];
-    if let Some(linking_config) = linking_config {
+    if let Some(crate_name) = linking_config.crate_name {
         args.push("--extern");
-        _s_tmp = format!("{0}=lib{0}.rlib", linking_config.crate_name);
+        _s_tmp = format!("{0}=lib{0}.rlib", crate_name);
         args.push(&_s_tmp);
     }
 
@@ -245,10 +245,10 @@ mod tests {
     fn nodata_build_fmt_compile_eval_test() {
         let compile_dir = "test/nodata_build_fmt_compile_eval_test";
         let files = vec![pass_compile_eval_file()];
-        let linking_config = None;
+        let linking_config = LinkingConfiguration::default();
 
         // build
-        build_compile_dir(&compile_dir, files.iter(), linking_config).unwrap();
+        build_compile_dir(&compile_dir, files.iter(), &linking_config).unwrap();
         assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
             .unwrap()
             .contains("\nlet out0 = 2+2;"));
@@ -260,7 +260,7 @@ mod tests {
         // 	.contains("\n    let out0 = 2 + 2;")); // should be tabbed in (once, unless i wrap it more)
 
         // compile
-        let path = compile(&compile_dir, linking_config, |_| ()).unwrap();
+        let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
 
         // eval
         let r = exec(path, "__intern_eval", ()).unwrap(); // execute library fn
@@ -272,16 +272,16 @@ mod tests {
     fn brw_data_build_fmt_compile_eval_test() {
         let compile_dir = "test/brw_data_build_fmt_compile_eval_test";
         let files = vec![pass_compile_eval_file()];
-        let linking_config = LinkingConfiguration::link_external_crate(
-            &compile_dir,
-            "papyrus_extern_test",
-            Some("test-resources/external_crate/target/debug/libexternal_crate.rlib"),
-        )
-        .unwrap();
-        let linking_config = Some(linking_config);
+        let linking_config = LinkingConfiguration::default()
+            .link_external_crate(
+                &compile_dir,
+                "papyrus_extern_test",
+                Some("test-resources/external_crate/target/debug/libexternal_crate.rlib"),
+            )
+            .unwrap();
 
         // build
-        build_compile_dir(&compile_dir, files.iter(), linking_config.as_ref()).unwrap();
+        build_compile_dir(&compile_dir, files.iter(), &linking_config).unwrap();
         assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
             .unwrap()
             .contains("\nlet out0 = 2+2;"));
@@ -293,7 +293,7 @@ mod tests {
         // 	.contains("\n    let out0 = 2 + 2;")); // should be tabbed in (once, unless i wrap it more)
 
         // compile
-        let path = compile(&compile_dir, linking_config.as_ref(), |_| ()).unwrap();
+        let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
 
         // eval
         let r = exec(path, "__intern_eval", &()).unwrap(); // execute library fn
@@ -305,16 +305,16 @@ mod tests {
     fn mut_brw_data_build_fmt_compile_eval_test() {
         let compile_dir = "test/mut_brw_data_build_fmt_compile_eval_test";
         let files = vec![pass_compile_eval_file()];
-        let linking_config = LinkingConfiguration::link_external_crate(
-            &compile_dir,
-            "papyrus_extern_test",
-            Some("test-resources/external_crate/target/debug/libexternal_crate.rlib"),
-        )
-        .unwrap();
-        let linking_config = Some(linking_config);
+        let linking_config = LinkingConfiguration::default()
+            .link_external_crate(
+                &compile_dir,
+                "papyrus_extern_test",
+                Some("test-resources/external_crate/target/debug/libexternal_crate.rlib"),
+            )
+            .unwrap();
 
         // build
-        build_compile_dir(&compile_dir, files.iter(), linking_config.as_ref()).unwrap();
+        build_compile_dir(&compile_dir, files.iter(), &linking_config).unwrap();
         assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
             .unwrap()
             .contains("\nlet out0 = 2+2;"));
@@ -326,7 +326,7 @@ mod tests {
         // 	.contains("\n    let out0 = 2 + 2;")); // should be tabbed in (once, unless i wrap it more)
 
         // compile
-        let path = compile(&compile_dir, linking_config.as_ref(), |_| ()).unwrap();
+        let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
 
         // eval
         let r = exec(path, "__intern_eval", ()).unwrap(); // execute library fn
@@ -338,16 +338,16 @@ mod tests {
     fn fail_compile_test() {
         let compile_dir = "test/fail_compile";
         let files = vec![faile_compile_file()];
-        let linking_config = None;
+        let linking_config = LinkingConfiguration::default();
 
         // build
-        build_compile_dir(&compile_dir, files.iter(), linking_config).unwrap();
+        build_compile_dir(&compile_dir, files.iter(), &linking_config).unwrap();
         assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
             .unwrap()
             .contains("\nlet out0 = 2+;"));
 
         // compile
-        let r = compile(&compile_dir, linking_config, |_| ());
+        let r = compile(&compile_dir, &linking_config, |_| ());
         assert!(r.is_err());
         match r.unwrap_err() {
             CompilationError::CompileError(_) => (),
@@ -359,16 +359,16 @@ mod tests {
     fn fail_eval_test() {
         let compile_dir = "test/fail_eval_test";
         let files = vec![fail_eval_file()];
-        let linking_config = None;
+        let linking_config = LinkingConfiguration::default();
 
         // build
-        build_compile_dir(&compile_dir, files.iter(), linking_config).unwrap();
+        build_compile_dir(&compile_dir, files.iter(), &linking_config).unwrap();
         assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
             .unwrap()
             .contains("\nlet out0 = panic!(\"eval panic\");"));
 
         // compile
-        let path = compile(&compile_dir, linking_config, |_| ()).unwrap();
+        let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
 
         // eval
         let r = exec(&path, "__intern_eval", ()); // execute library fn

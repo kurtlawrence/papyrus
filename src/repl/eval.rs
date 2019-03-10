@@ -109,7 +109,7 @@ where
     let res = pfh::compile::build_compile_dir(
         &data.compilation_dir,
         data.file_map.values(),
-        data.linking.as_ref(),
+        &data.linking,
     );
     if let Err(e) = res {
         pop_input(data);
@@ -120,7 +120,7 @@ where
     pfh::compile::fmt(&data.compilation_dir);
 
     // compile
-    let lib_file = pfh::compile::compile(&data.compilation_dir, data.linking.as_ref(), |line| {
+    let lib_file = pfh::compile::compile(&data.compilation_dir, &data.linking, |line| {
         Writer(terminal)
             .overwrite_current_console_line(&line)
             .unwrap()

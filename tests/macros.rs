@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate papyrus;
 
 use papyrus::*;
@@ -6,22 +5,29 @@ use papyrus::*;
 #[test]
 fn macros_test() {
     // No external crate or data
-    let data = repl_data!().unwrap();
-    Repl::default_terminal(data);
+    let mut data = repl_data!();
+    Repl::default_terminal(&mut data);
 
-    let data = repl_data_brw!("crate_name", String);
-    Repl::default_terminal(data);
-    let data = repl_data_brw!("crate_name", "some/path/to/rlib", String);
-    Repl::default_terminal(data);
-    let data = repl_data_brw!("crate_name", String, "compile_dir");
-    Repl::default_terminal(data);
-    let data = repl_data_brw!("crate_name", "some/path/to/rlib", String, "compile_dir");
-    Repl::default_terminal(data);
-    let data = repl_data_brw_mut!("crate_name", String);
-    Repl::default_terminal(data);
-    let data = repl_data_brw_mut!("crate_name", "some/path/to/rlib", String);
-    Repl::default_terminal(data);
-    let data = repl_data_brw_mut!("crate_name", String, "compile_dir");
-    Repl::default_terminal(data);
-    let data = repl_data_brw_mut!("crate_name", "some/path/to/rlib", String, "compile_dir");
+    // data type
+    let mut data = repl_data!(String);
+    Repl::default_terminal(&mut data);
+}
+
+#[test]
+fn different_data_patterns() {
+    let mut data = repl_data!();
+    assert_eq!(data.linking().data_type, None);
+    Repl::default_terminal(&mut data);
+
+    let mut data = repl_data!(String);
+    assert_eq!(data.linking().data_type, Some("String".to_string()));
+    Repl::default_terminal(&mut data);
+
+    let mut data = repl_data!(&String);
+    assert_eq!(data.linking().data_type, Some("&String".to_string()));
+    Repl::default_terminal(&mut data);
+
+    let mut data = repl_data!(&mut String);
+    assert_eq!(data.linking().data_type, Some("&mut String".to_string()));
+    Repl::default_terminal(&mut data);
 }

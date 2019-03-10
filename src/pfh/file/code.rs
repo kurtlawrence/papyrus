@@ -54,7 +54,7 @@ pub type SourceCode = Vec<Input>;
 pub fn construct(
     src_code: &SourceCode,
     mod_path: &[String],
-    linking_config: Option<&linking::LinkingConfiguration>,
+    linking_config: &linking::LinkingConfiguration,
 ) -> String {
     let mut code = String::new();
 
@@ -69,9 +69,7 @@ pub fn construct(
     code.push_str(&format!(
         r#"pub extern "C" fn {}({}) -> String {{"#,
         ::pfh::eval_fn_name(mod_path),
-        linking_config
-            .map(|x| x.construct_fn_args())
-            .unwrap_or(String::new())
+        linking_config.construct_fn_args()
     ));
     code.push('\n');
     // add stmts
@@ -251,9 +249,9 @@ fn construct_test() {
         crates: vec![],
     }];
     let mod_path = [];
-    let linking_config = None;
+    let linking_config = LinkingConfiguration::default();
 
-    let s = construct(&src_code, &mod_path, linking_config);
+    let s = construct(&src_code, &mod_path, &linking_config);
     assert_eq!(
         &s,
         r##"#[no_mangle]
@@ -267,7 +265,7 @@ format!("{:?}", out0)
     // alter mod path
     let mod_path = ["some".to_string(), "path".to_string()];
 
-    let s = construct(&src_code, &mod_path, linking_config);
+    let s = construct(&src_code, &mod_path, &linking_config);
     assert_eq!(
         &s,
         r##"#[no_mangle]
@@ -278,7 +276,7 @@ format!("{:?}", out0)
 "##
     );
 
-    let s = construct(&src_code, &mod_path, linking_config);
+    let s = construct(&src_code, &mod_path, &linking_config);
     assert_eq!(
         &s,
         r##"#[no_mangle]
@@ -290,12 +288,12 @@ format!("{:?}", out0)
     );
 
     // alter the linking config
-    let linking_config = Some(LinkingConfiguration {
-        crate_name: "a_crate",
+    let linking_config = LinkingConfiguration {
+        crate_name: Some("a_crate"),
         data_type: Some("String".to_string()),
-    });
+    };
 
-    let s = construct(&src_code, &mod_path, linking_config.as_ref());
+    let s = construct(&src_code, &mod_path, &linking_config);
     assert_eq!(
         &s,
         r##"#[no_mangle]
@@ -314,7 +312,7 @@ format!("{:?}", out0)
         crates: vec![],
     });
 
-    let s = construct(&src_code, &mod_path, linking_config.as_ref());
+    let s = construct(&src_code, &mod_path, &linking_config);
     assert_eq!(
         &s,
         r##"#[no_mangle]
@@ -345,7 +343,7 @@ fn b() {}
         semi: false,
     });
 
-    let s = construct(&src_code, &mod_path, linking_config.as_ref());
+    let s = construct(&src_code, &mod_path, &linking_config);
     assert_eq!(
         &s,
         r##"#[no_mangle]
@@ -366,7 +364,7 @@ fn b() {}
         .crates
         .push(CrateType::parse_str("extern crate some_crate as some;").unwrap());
 
-    let s = construct(&src_code, &mod_path, linking_config.as_ref());
+    let s = construct(&src_code, &mod_path, &linking_config);
     assert_eq!(
         &s,
         r##"extern crate some_crate as some;
