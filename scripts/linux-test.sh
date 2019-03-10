@@ -1,6 +1,8 @@
 set -e
 cd ../azul
 git pull
+cd ../cmdtree
+git pull
 cd ../papyrus
 git pull  # maybe git reset --hard master if Cargo.lock playing up
 cd test-resources/external_crate
