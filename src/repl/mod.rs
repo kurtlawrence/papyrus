@@ -152,7 +152,10 @@ impl<Data> ReplData<Data> {
     /// Uses the given `Builder` as the root of the command tree.
     /// The builder is amended with the `esc` command at the root, an error will be
     /// returned if the command already exists.
-    pub fn with_cmdtree_builder(mut self, builder: Builder<'static, CommandResult>) -> Result<Self, BuildError> {
+    pub fn with_cmdtree_builder(
+        mut self,
+        builder: Builder<'static, CommandResult>,
+    ) -> Result<Self, BuildError> {
         let cmdr = builder
             .root()
             .add_action("esc", "Cancels more input", |_| CommandResult::CancelInput)

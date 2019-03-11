@@ -5,9 +5,8 @@ extern crate papyrus;
 
 use azul::prelude::*;
 use azul::widgets::label::Label;
-use cansi::*;
+use azul::widgets::text_input::{TextInput, TextInputState};
 use linefeed::memory::MemoryTerminal;
-
 use papyrus::*;
 
 pub const TEST_OUTPUT: u8 = 123;
@@ -15,21 +14,21 @@ pub const TEST_OUTPUT: u8 = 123;
 struct MyApp {
     terminal: MemoryTerminal,
     last_terminal_string: String,
+    text_input: TextInputState,
 }
 
 impl Layout for MyApp {
-    fn layout(&self, _: WindowInfo<Self>) -> Dom<Self> {
+    fn layout(&self, _: LayoutInfo<Self>) -> Dom<Self> {
         let term_str = create_terminal_string(&self.terminal);
-        // println!("{}", String::from_utf8_lossy(term_str.as_bytes()));
         let categorised = cansi::categorise_text(&term_str);
-        let text = construct_text_no_codes(&categorised);
-        // println!("{}", text);
-        let dom = Dom::new(NodeType::Div)
+        let text = cansi::construct_text_no_codes(&categorised);
+
+        Label::new(text)
+            .dom()
             .with_class("terminal")
             .with_callback(On::TextInput, Callback(on_text_input))
-            .with_callback(On::VirtualKeyDown, Callback(on_vk_keydown));
-
-        dom.with_child(Label::new(text).dom().with_class("terminal"))
+            .with_callback(On::VirtualKeyDown, Callback(on_vk_keydown))
+            .with_tab_index(TabIndex::Auto) // make focusable
     }
 }
 
@@ -45,34 +44,34 @@ fn create_terminal_string(term: &MemoryTerminal) -> String {
     string
 }
 
-fn on_text_input(state: &mut AppState<MyApp>, event: WindowEvent<MyApp>) -> UpdateScreen {
-    let keyboard_state = state.windows[event.window].get_keyboard_state();
+fn on_text_input(state: &mut AppState<MyApp>, event: &mut CallbackInfo<MyApp>) -> UpdateScreen {
+    let keyboard_state = state.windows[event.window_id].get_keyboard_state();
     if let Some(ch) = keyboard_state.current_char {
         state
             .data
             .modify(|s| s.terminal.push_input(&ch.to_string()));
-        UpdateScreen::Redraw
+        Redraw
     } else {
-        UpdateScreen::DontRedraw
+        DontRedraw
     }
 }
 
-fn on_vk_keydown(state: &mut AppState<MyApp>, event: WindowEvent<MyApp>) -> UpdateScreen {
-    let keyboard_state = state.windows[event.window].get_keyboard_state();
+fn on_vk_keydown(state: &mut AppState<MyApp>, event: &mut CallbackInfo<MyApp>) -> UpdateScreen {
+    let keyboard_state = state.windows[event.window_id].get_keyboard_state();
     match keyboard_state.latest_virtual_keycode {
         Some(VirtualKeyCode::Back) => {
             state.data.modify(|s| s.terminal.push_input("\x08")); // backspace character
-            UpdateScreen::Redraw
+            Redraw
         }
         Some(VirtualKeyCode::Tab) => {
             state.data.modify(|s| s.terminal.push_input("\t"));
-            UpdateScreen::Redraw
+            Redraw
         }
         Some(VirtualKeyCode::Return) => {
             state.data.modify(|s| s.terminal.push_input("\n")); // this allows the read_line() to exit
-            UpdateScreen::Redraw
+            Redraw
         }
-        _ => UpdateScreen::DontRedraw,
+        _ => DontRedraw,
     }
 }
 
@@ -80,9 +79,9 @@ fn check_terminal_change(app: &mut MyApp, _: &mut AppResources) -> (UpdateScreen
     let new_str = create_terminal_string(&app.terminal);
     if new_str != app.last_terminal_string {
         app.last_terminal_string = new_str;
-        (UpdateScreen::Redraw, TerminateDaemon::Continue)
+        (Redraw, TerminateDaemon::Continue)
     } else {
-        (UpdateScreen::DontRedraw, TerminateDaemon::Continue)
+        (DontRedraw, TerminateDaemon::Continue)
     }
 }
 
@@ -97,7 +96,7 @@ fn main() {
         let terminal = closure_term.clone();
         let mut repl = Repl::with_term(terminal.clone(), &mut repl_data);
         loop {
-            repl = match repl.read().eval() {
+            repl = match repl.read().eval(()) {
                 Ok(print) => print.print(),
                 Err(_) => break, // this will stop the repl if we get here
             };
@@ -109,6 +108,7 @@ fn main() {
             MyApp {
                 terminal: term,
                 last_terminal_string: String::new(),
+                text_input: TextInputState::new(String::new()),
             },
             AppConfig {
                 enable_logging: Some(LevelFilter::Error),
@@ -130,21 +130,22 @@ fn main() {
     } else {
         Window::new(WindowCreateOptions::default(), css::native()).unwrap()
     };
-    let daemon = Daemon::unique(DaemonCallback(check_terminal_change))
-        .run_every(std::time::Duration::from_millis(2));
-    app.add_daemon(daemon);
+    let daemon =
+        Daemon::new(check_terminal_change).with_interval(std::time::Duration::from_millis(2));
+    app.add_daemon(DaemonId::new(), daemon);
 
     app.run(window).unwrap();
 }
 
 // put down here as it will be largeish
-fn colour_slice<T: Layout>(cat_slice: &CategorisedSlice) -> Dom<T> {
+fn colour_slice<T: Layout>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
+    use cansi::Color as cc;
     let s = String::from_utf8_lossy(cat_slice.text_as_bytes);
 
     let label = Label::new(s).dom().with_class("terminal-text");
     let label = match cat_slice.fg_colour {
-        Color::Cyan => {
-            label.with_style_override("fg_colour", CssProperty::TextColor(StyleTextColor(CYAN)))
+        cc::Cyan => {
+            label.with_css_override("fg_colour", CssProperty::TextColor(StyleTextColor(CYAN)))
         }
         _ => label,
     };
