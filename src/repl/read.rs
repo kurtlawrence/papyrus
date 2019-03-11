@@ -92,8 +92,8 @@ impl<'data, Term: Terminal, Data: Copy> Repl<'data, Read, Term, Data> {
             match print {
                 Ok(r) => read = r.print(),
                 Err(sig) => match sig {
-					EvalSignal::Exit => break,
-				}
+                    EvalSignal::Exit => break,
+                },
             }
         }
     }

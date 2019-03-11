@@ -68,7 +68,11 @@ impl<'data, Term: Terminal, Data> Repl<'data, Evaluate, Term, Data> {
 }
 
 impl<Data> ReplData<Data> {
-    fn handle_command<T: Terminal>(&mut self, cmds: &str, terminal: &T) -> Result<HandleInputResult, EvalSignal>  {
+    fn handle_command<T: Terminal>(
+        &mut self,
+        cmds: &str,
+        terminal: &T,
+    ) -> Result<HandleInputResult, EvalSignal> {
         use cmdtree::LineResult as lr;
 
         let tuple = match self.cmdtree.parse_line(cmds, true, &mut Writer(terminal)) {
@@ -79,7 +83,7 @@ impl<Data> ReplData<Data> {
             _ => (String::new(), false),
         };
 
-		Ok(tuple)
+        Ok(tuple)
     }
 
     fn handle_program<T: Terminal>(

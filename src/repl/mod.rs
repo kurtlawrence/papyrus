@@ -106,7 +106,7 @@ pub enum CommandResult {
 }
 
 pub enum EvalSignal {
-	Exit
+    Exit,
 }
 
 impl<Data> Default for ReplData<Data> {
@@ -149,6 +149,19 @@ impl<Data> ReplData<Data> {
         Ok(self)
     }
 
+    /// Uses the given `Builder` as the root of the command tree.
+    /// The builder is amended with the `esc` command at the root, an error will be
+    /// returned if the command already exists.
+    pub fn with_cmdtree_builder(mut self, builder: Builder) -> Result<Self, BuildError> {
+        let cmdr = builder
+            .root()
+            .add_action("esc", "Cancels more input", |_| CommandResult::CancelInput)
+            .into_commander()?;
+
+        self.cmdtree = cmdr;
+        Ok(self)
+    }
+
     /// Specify that the repl will link an external crate reference.
     /// Overwrites previously specified crate name.
     /// Uses `ReplData.compilation_dir` to copy `rlib` file into.
@@ -166,6 +179,7 @@ impl<Data> ReplData<Data> {
     }
 
     /// Not meant to used by developer. Use the macros instead.
+    /// [See _linking_ module](../pfh/linking.html)
     pub fn set_data_type(mut self, data_type: &str) -> Self {
         self.linking = self.linking.with_data(data_type);
         self

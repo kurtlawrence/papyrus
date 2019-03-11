@@ -36,3 +36,6 @@ mod widgets;
 
 pub use self::pfh::linking;
 pub use self::repl::{CmdArgs, Command, Repl, ReplData};
+
+// re-exports
+pub use cmdtree::{BuildError, Builder, BuilderChain};
