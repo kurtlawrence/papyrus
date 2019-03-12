@@ -18,6 +18,8 @@
 
 #[macro_use]
 extern crate log;
+extern crate azul;
+extern crate cansi;
 extern crate cmdtree;
 extern crate colored;
 extern crate cratesiover;
@@ -32,7 +34,7 @@ mod input;
 mod pfh;
 pub mod repl;
 #[cfg(feature = "azul-widgets")]
-mod widgets;
+pub mod widgets;
 
 pub use self::pfh::linking;
 pub use self::repl::{CmdArgs, Command, Repl, ReplData};

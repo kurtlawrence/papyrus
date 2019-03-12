@@ -1,11 +1,20 @@
 .terminal {
-	margin-left: 1em;
-	text-align: left;
-	align-content: flex-end;
-	font-family: Arial, Helvetica, sans-serif;
-	line-height: 135%;
+	background-color: black;
+	padding: 5px;
+}
+
+.terminal-line {
+	flex-direction: row;
 }
 
 .terminal-text {
+	color: [[ ansi_esc_color | white ]];
 	text-align: left;
+	line-height: 135%;
+	font-size: 1em;
+	font-family: Lucida Console,Lucida Sans Typewriter,monaco,Bitstream Vera Sans Mono,monospace;
+}
+
+.terminal-text:hover {
+	border: 1px solid #9b9b9b;
 }

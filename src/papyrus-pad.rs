@@ -4,31 +4,37 @@ extern crate linefeed;
 extern crate papyrus;
 
 use azul::prelude::*;
-use azul::widgets::label::Label;
-use azul::widgets::text_input::{TextInput, TextInputState};
 use linefeed::memory::MemoryTerminal;
 use papyrus::*;
-
-pub const TEST_OUTPUT: u8 = 123;
 
 struct MyApp {
     terminal: MemoryTerminal,
     last_terminal_string: String,
-    text_input: TextInputState,
 }
 
 impl Layout for MyApp {
     fn layout(&self, _: LayoutInfo<Self>) -> Dom<Self> {
         let term_str = create_terminal_string(&self.terminal);
-        let categorised = cansi::categorise_text(&term_str);
-        let text = cansi::construct_text_no_codes(&categorised);
 
-        Label::new(text)
-            .dom()
+        let categorised = cansi::categorise_text(&term_str);
+
+        let mut container = Dom::div()
             .with_class("terminal")
             .with_callback(On::TextInput, Callback(on_text_input))
             .with_callback(On::VirtualKeyDown, Callback(on_vk_keydown))
-            .with_tab_index(TabIndex::Auto) // make focusable
+            .with_tab_index(TabIndex::Auto); // make focusable
+
+        for line in cansi::line_iter(&categorised) {
+            let mut line_div = Dom::div().with_class("terminal-line");
+            for cat in line {
+                line_div.add_child(colour_slice(&cat));
+            }
+            container.add_child(line_div);
+        }
+
+        //container.debug_dump();	// debug layout
+
+        container
     }
 }
 
@@ -81,13 +87,11 @@ fn check_terminal_change(app: &mut MyApp, _: &mut AppResources) -> (UpdateScreen
         app.last_terminal_string = new_str;
         (Redraw, TerminateDaemon::Continue)
     } else {
-        (DontRedraw, TerminateDaemon::Continue)
+        (Redraw, TerminateDaemon::Continue)
     }
 }
 
 fn main() {
-    println!("hello world",);
-
     let term = MemoryTerminal::new();
     let closure_term = term.clone();
 
@@ -108,7 +112,6 @@ fn main() {
             MyApp {
                 terminal: term,
                 last_terminal_string: String::new(),
-                text_input: TextInputState::new(String::new()),
             },
             AppConfig {
                 enable_logging: Some(LevelFilter::Error),
@@ -140,22 +143,14 @@ fn main() {
 // put down here as it will be largeish
 fn colour_slice<T: Layout>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
     use cansi::Color as cc;
+    const PROPERTY_STR: &str = "ansi_esc_color";
     let s = String::from_utf8_lossy(cat_slice.text_as_bytes);
 
-    let label = Label::new(s).dom().with_class("terminal-text");
+    let label = Dom::label(s).with_class("terminal-text");
     let label = match cat_slice.fg_colour {
-        cc::Cyan => {
-            label.with_css_override("fg_colour", CssProperty::TextColor(StyleTextColor(CYAN)))
-        }
+        cc::Cyan => label.with_css_override(PROPERTY_STR, StyleTextColor(CYAN).into()),
         _ => label,
     };
 
     label
 }
-
-const CYAN: ColorU = ColorU {
-    r: 0,
-    b: 170,
-    g: 170,
-    a: 0,
-};
