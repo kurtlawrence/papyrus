@@ -5,6 +5,7 @@ extern crate papyrus;
 
 use azul::prelude::*;
 use linefeed::memory::MemoryTerminal;
+use papyrus::widgets;
 use papyrus::*;
 
 struct MyApp {
@@ -142,15 +143,11 @@ fn main() {
 
 // put down here as it will be largeish
 fn colour_slice<T: Layout>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
-    use cansi::Color as cc;
     const PROPERTY_STR: &str = "ansi_esc_color";
     let s = String::from_utf8_lossy(cat_slice.text_as_bytes);
 
-    let label = Dom::label(s).with_class("terminal-text");
-    let label = match cat_slice.fg_colour {
-        cc::Cyan => label.with_css_override(PROPERTY_STR, StyleTextColor(CYAN).into()),
-        _ => label,
-    };
-
-    label
+    Dom::label(s).with_class("terminal-text").with_css_override(
+        PROPERTY_STR,
+        StyleTextColor(widgets::color::map(&cat_slice.fg_colour)).into(),
+    )
 }
