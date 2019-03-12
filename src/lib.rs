@@ -18,7 +18,9 @@
 
 #[macro_use]
 extern crate log;
+#[cfg(feature = "azul-widgets")]
 extern crate azul;
+#[cfg(feature = "azul-widgets")]
 extern crate cansi;
 extern crate cmdtree;
 extern crate colored;
