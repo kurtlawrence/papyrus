@@ -144,8 +144,7 @@ where
 
 		let (tx, rx) = std::sync::mpsc::channel();
 
-		let mut stdout_gag = gag::windows::stdout().expect("failed to gag stdout");
-		let mut stderr_gag = gag::windows::stderr().expect("failed to gag stderr");
+		let (stdout_gag, stderr_gag) = get_gags();
 
 		let jh =
 			std::thread::spawn(move || redirect_output(std_pipes_cb, rx, stdout_gag, stderr_gag));
@@ -164,13 +163,32 @@ where
 	}
 }
 
-fn redirect_output<F>(
+#[cfg(windows)]
+fn get_gags() -> (gag::windows::Gag<io::Stdout>, gag::windows::Gag<io::Stderr>) {
+	(
+		gag::windows::stdout().expect("failed to gag stdout"),
+		gag::windows::stderr().expect("failed to gag stderr"),
+	)
+}
+
+/// Returns (stdout, stderr).
+#[cfg(unix)]
+fn get_gags() -> (gag::BufferRedirect, gag::BufferRedirect) {
+	(
+		gag::BufferRedirect::stdout().expect("failed to gag stdout"),
+		gag::BufferRedirect::stderr().expect("failed to gag stderr"),
+	)
+}
+
+fn redirect_output<F, R1, R2>(
 	mut cb: F,
 	rx: mpsc::Receiver<()>,
-	mut stdout_gag: gag::windows::Gag<io::Stdout>,
-	mut stderr_gag: gag::windows::Gag<io::Stderr>,
+	mut stdout_gag: R1,
+	mut stderr_gag: R2,
 ) where
 	F: FnOnce(&[u8]) + Clone,
+	R1: io::Read,
+	R2: io::Read,
 {
 	use std::io::Read;
 
