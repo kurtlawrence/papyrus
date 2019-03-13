@@ -134,7 +134,7 @@ pub fn exec<'c, P, Data, F>(
 ) -> Result<String, &'static str>
 where
 	P: AsRef<Path>,
-	F: FnOnce(&[u8]) + Clone + Send + 'static,
+	F: Fn(&[u8]) + Send + 'static,
 {
 	use libloading::{Library, Symbol};
 
@@ -186,7 +186,7 @@ fn redirect_output<F, R1, R2>(
 	mut stdout_gag: R1,
 	mut stderr_gag: R2,
 ) where
-	F: FnOnce(&[u8]) + Clone,
+	F: Fn(&[u8]),
 	R1: io::Read,
 	R2: io::Read,
 {
@@ -206,8 +206,7 @@ fn redirect_output<F, R1, R2>(
 			.read_to_end(&mut buf)
 			.expect("failed to read stdout gag");
 
-		let cb_clone = cb.clone();
-		cb_clone(&buf);
+		cb(&buf);
 
 		match rx.try_recv() {
 			Ok(_) => break,                                 // stop signal sent
