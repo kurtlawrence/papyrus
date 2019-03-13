@@ -4,6 +4,7 @@ use pfh::*;
 use std::io::{self, BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::mpsc;
 use std::{error, fmt, fs};
 
 /// Constructs the compile directory.
@@ -125,24 +126,75 @@ where
 
 type DataFunc<D> = unsafe fn(D) -> String;
 
-pub fn exec<P, Data>(
+pub fn exec<'c, P, Data, F>(
     library_file: P,
     function_name: &str,
     app_data: Data,
+    stdout_cb: F,
 ) -> Result<String, &'static str>
 where
     P: AsRef<Path>,
+    F: FnOnce(&[u8]) + Clone + Send + 'static,
 {
     use libloading::{Library, Symbol};
+
     let lib = Library::new(library_file.as_ref()).unwrap();
     let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
         let func: Symbol<DataFunc<Data>> = lib.get(function_name.as_bytes()).unwrap();
-        func(app_data)
+
+        let (tx, rx) = std::sync::mpsc::channel();
+
+        let mut stdout_gag = gag::windows::stdout().expect("failed to gag stdout");
+        let mut stderr_gag = gag::windows::stderr().expect("failed to gag stderr");
+
+        let jh = std::thread::spawn(move || redirect_output(stdout_cb, rx, stdout_gag, stderr_gag));
+
+        let r = func(app_data);
+
+        tx.send(());
+        jh.join();
+
+        r
     }));
 
     match res {
         Ok(s) => Ok(s),
         Err(_) => Err("a panic occured with evaluation"),
+    }
+}
+
+fn redirect_output<F>(
+    mut cb: F,
+    rx: mpsc::Receiver<()>,
+    mut stdout_gag: gag::windows::Gag<io::Stdout>,
+    mut stderr_gag: gag::windows::Gag<io::Stderr>,
+) where
+    F: FnOnce(&[u8]) + Clone,
+{
+    use std::io::Read;
+
+    loop {
+        std::thread::sleep(std::time::Duration::from_millis(2)); // add in some delay as reading occurs to avoid smashing cpu.
+
+        let mut buf = Vec::new();
+
+        // read/write stderr first
+        stderr_gag
+            .read_to_end(&mut buf)
+            .expect("failed to read stdout gag");
+
+        stdout_gag
+            .read_to_end(&mut buf)
+            .expect("failed to read stdout gag");
+
+        let cb_clone = cb.clone();
+        cb_clone(&buf);
+
+        match rx.try_recv() {
+            Ok(_) => break,                                 // stop signal sent
+            Err(mpsc::TryRecvError::Disconnected) => break, // tx dropped
+            _ => (),
+        };
     }
 }
 

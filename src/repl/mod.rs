@@ -51,6 +51,7 @@ use std::fs;
 use std::io::{self, Write};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 pub use self::command::{CmdArgs, Command};
 
@@ -77,12 +78,14 @@ pub struct ReplData<Data> {
 
 struct ReplTerminal<Term: Terminal> {
     /// The underlying terminal of `input_rdr`, used to directly control terminal
-    terminal: Term,
+    /// Kept as a `Arc` such that multiple references to the terminal can be shared across threads.
+    /// Lucky for us that `Terminal` implements an atomic locking interface.
+    terminal: Arc<Term>,
     /// The persistent input reader.
     input_rdr: InputReader<Term>,
 }
 
-struct Writer<'a, T: Terminal>(&'a T);
+struct Writer<'a, T: Terminal>(&'a Arc<T>);
 
 pub struct Read;
 pub struct Evaluate {

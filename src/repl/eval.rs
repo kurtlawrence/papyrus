@@ -41,7 +41,7 @@ fn handle_common<'data, Term: Terminal, Data>(
     }))
 }
 
-impl<'data, Term: Terminal, Data> Repl<'data, Evaluate, Term, Data> {
+impl<'data, Term: Terminal + 'static, Data> Repl<'data, Evaluate, Term, Data> {
     /// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
     /// This result gets passed back as a print ready repl.
     pub fn eval(self, app_data: Data) -> Result<Repl<'data, Print, Term, Data>, EvalSignal> {
@@ -71,11 +71,12 @@ impl<Data> ReplData<Data> {
     fn handle_command<T: Terminal>(
         &mut self,
         cmds: &str,
-        terminal: &T,
+        terminal: &Arc<T>,
     ) -> Result<HandleInputResult, EvalSignal> {
         use cmdtree::LineResult as lr;
 
-        let tuple = match self.cmdtree.parse_line(cmds, true, &mut Writer(terminal)) {
+        // this will write to Writer(terminal)
+        let tuple = match self.cmdtree.parse_line(cmds, true, &mut Writer(&terminal)) {
             lr::Exit => return Err(EvalSignal::Exit),
             lr::Action(res) => match res {
                 CommandResult::CancelInput => ("cancelled input".to_string(), false),
@@ -86,10 +87,10 @@ impl<Data> ReplData<Data> {
         Ok(tuple)
     }
 
-    fn handle_program<T: Terminal>(
+    fn handle_program<T: Terminal + 'static>(
         &mut self,
         input: Input,
-        terminal: &T,
+        terminal: &Arc<T>,
         app_data: Data,
     ) -> HandleInputResult {
         let pop_input = |repl_data: &mut ReplData<_>| {
@@ -136,10 +137,14 @@ impl<Data> ReplData<Data> {
             // execute
             let exec_res = {
                 let current_file = self.get_current_file_mut();
+
+                let terminal_clone = Arc::clone(&terminal);
+
                 pfh::compile::exec(
                     &lib_file,
                     &pfh::eval_fn_name(&current_file.mod_path),
                     app_data,
+                    move |buf| write_exec_buffer_into_terminal(buf, terminal_clone),
                 )
             };
             match exec_res {
@@ -160,4 +165,11 @@ impl<Data> ReplData<Data> {
             self.current_file.display()
         ))
     }
+}
+
+fn write_exec_buffer_into_terminal<T: Terminal>(buf: &[u8], terminal: Arc<T>) {
+    use std::io::Write;
+    Writer(&terminal)
+        .write_all(buf)
+        .expect("failed redirecting output to terminal writer");
 }

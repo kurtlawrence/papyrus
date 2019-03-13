@@ -13,7 +13,7 @@ impl<'a, T: Terminal> Writer<'a, T> {
 impl<'a, T: Terminal> Write for Writer<'a, T> {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
         let mut wtr = self.0.lock_write();
-        wtr.write(&String::from_utf8_lossy(buf)).unwrap();
+        wtr.write(&String::from_utf8_lossy(buf))?;
         Ok(buf.len())
     }
 

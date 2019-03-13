@@ -15,23 +15,25 @@
 //!
 //! ***main.rs***:
 //!
-//! ```ignore
+//! ```rust, no_run
+//! #[macro_use]
+//! extern crate papyrus;
+//!
 //! use papyrus::{Repl, ReplData};
 //!
 //! fn main() {
-//!   let mut data = ReplData::default()
+//!   let mut data = repl_data!()
 //!     .with_extern_crate("some_lib", None)
-//!     .expect("failed linking crate")
-//! 	.no_extern_data();
+//!     .expect("failed linking crate");
 //!   let repl = Repl::default_terminal(&mut data);
 //!
-//!   repl.run();
+//!   repl.run(());
 //! }
 //! ```
 //!
 //! ***lib.rs***:
 //!
-//! ```rust
+//! ```rust, no_run
 //! pub struct MyStruct {
 //!   a: i32,
 //!   b: i32,
@@ -93,7 +95,7 @@
 //!
 //! ***main.rs***:
 //!
-//! ```ignore
+//! ```rust, ignore
 //! extern crate somelib;
 //!
 //! use somelib::MyStruct;

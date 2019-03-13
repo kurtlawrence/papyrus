@@ -12,7 +12,7 @@ impl<'data, Data> Repl<'data, Read, DefaultTerminal, Data> {
         Repl {
             state: Read,
             terminal: ReplTerminal {
-                terminal: terminal1,
+                terminal: Arc::new(terminal1),
                 input_rdr: InputReader::with_term("papyrus", terminal2)
                     .expect("failed to start input reader"),
             },
@@ -27,7 +27,7 @@ impl<'data, Term: Terminal + Clone, Data> Repl<'data, Read, Term, Data> {
         Repl {
             state: Read,
             terminal: ReplTerminal {
-                terminal: terminal,
+                terminal: Arc::new(terminal),
                 input_rdr: InputReader::with_term("papyrus", terminal2)
                     .expect("failed to start input reader"),
             },
@@ -77,13 +77,13 @@ impl<'data, Term: Terminal, Data> Repl<'data, Read, Term, Data> {
     }
 }
 
-impl<'data, Term: Terminal, Data: Copy> Repl<'data, Read, Term, Data> {
+impl<'data, Term: Terminal + 'static, Data: Copy> Repl<'data, Read, Term, Data> {
     /// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
     ///
     /// # Panics
     /// - Failure to initialise `InputReader`.
     pub fn run(self, app_data: Data) {
-        query_and_print_ver_info(&self.terminal.terminal);
+        query_and_print_ver_info(self.terminal.terminal.as_ref());
         let mut read = self;
 
         loop {

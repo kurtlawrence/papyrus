@@ -148,6 +148,6 @@ fn colour_slice<T: Layout>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
 
     Dom::label(s).with_class("terminal-text").with_css_override(
         PROPERTY_STR,
-        StyleTextColor(widgets::color::map(&cat_slice.fg_colour)).into(),
+        StyleTextColor(widgets::colour::map(&cat_slice.fg_colour)).into(),
     )
 }
