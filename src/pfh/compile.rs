@@ -144,12 +144,10 @@ where
 
 		let (tx, rx) = std::sync::mpsc::channel();
 
-		//let (stdout_gag, stderr_gag) = get_gags();
+		let (stdout_gag, stderr_gag) = get_gags();
 
-		// let jh =
-		// 	std::thread::spawn(move || redirect_output(std_pipes_cb, rx, stdout_gag, stderr_gag));
-
-		let jh = std::thread::spawn(move || {});
+		let jh =
+			std::thread::spawn(move || redirect_output(std_pipes_cb, rx, stdout_gag, stderr_gag));
 
 		let r = func(app_data);
 
