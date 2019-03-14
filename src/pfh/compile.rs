@@ -138,7 +138,29 @@ where
 {
 	use libloading::{Library, Symbol};
 
-	let lib = Library::new(library_file.as_ref()).unwrap();
+	// Has to be done to make linux builds work
+	// see:
+	//		https://github.com/nagisa/rust_libloading/issues/5
+	//		https://github.com/nagisa/rust_libloading/issues/41
+	//		https://github.com/nagisa/rust_libloading/issues/49
+	//
+	// Basically the api function `dlopen` will keep loaded libraries in memory to avoid
+	// continuously allocating memory. It only does not release the library when thread_local data
+	// is hanging around, and it seems `println!()` is something that does this.
+	// Hence to avoid not having the library not updated with a new `new()` call, a different lib
+	// name is passed to the function.
+	// This is very annoying as it has needless fs interactions and a growing fs footprint but
+	// what can you do ¯\_(ツ)_/¯
+	let lib_file = rename_lib_file(library_file).map_err(|_| "failed renaming library file")?;
+
+	// If segfaults are occurring maybe use this, SIGSEV?
+	// This is shown in https://github.com/nagisa/rust_libloading/issues/41
+	// let lib: Library =
+	// 	libloading::os::unix::Library::open(Some(library_file.as_ref()), 0x2 | 0x1000)
+	// 		.unwrap()
+	// 		.into();
+
+	let lib = Library::new(lib_file).unwrap();
 	let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
 		let func: Symbol<DataFunc<Data>> = lib.get(function_name.as_bytes()).unwrap();
 
@@ -161,6 +183,24 @@ where
 		Ok(s) => Ok(s),
 		Err(_) => Err("a panic occured with evaluation"),
 	}
+}
+
+/// Renames the library into a distinct file name by incrementing a counter.
+/// Could fail if the number of libs grows enormous, greater than `u64`. This would mean, with
+/// `u64 = 18,446,744,073,709,551,615`, even with 1KB files (prolly not) this would be
+/// 18,446,744,073 TB. User will probably know something is up.
+fn rename_lib_file<P: AsRef<Path>>(compiled_lib: P) -> io::Result<PathBuf> {
+	let no_parent = PathBuf::new();
+	let mut idx: u64 = 0;
+	let parent = compiled_lib.as_ref().parent().unwrap_or(&no_parent);
+	let name = |i| format!("papyrus.mem-code.lib.{}", i);
+	let mut lib_path = parent.join(&name(idx));
+	while lib_path.exists() {
+		idx += 1;
+		lib_path = parent.join(&name(idx));
+	}
+	std::fs::rename(&compiled_lib, &lib_path)?;
+	Ok(lib_path)
 }
 
 #[cfg(windows)]
