@@ -161,23 +161,22 @@ where
 	// 		.into();
 
 	let lib = Library::new(lib_file).unwrap();
-	let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
-		let func: Symbol<DataFunc<Data>> = lib.get(function_name.as_bytes()).unwrap();
 
-		let (tx, rx) = std::sync::mpsc::channel();
+	let func: Symbol<DataFunc<Data>> = unsafe { lib.get(function_name.as_bytes()).unwrap() };
 
-		let (stdout_gag, stderr_gag) = get_gags();
+	let (tx, rx) = std::sync::mpsc::channel();
 
-		let jh =
-			std::thread::spawn(move || redirect_output(std_pipes_cb, rx, stdout_gag, stderr_gag));
+	let (stdout_gag, stderr_gag) = get_gags();
 
-		let r = func(app_data);
+	print!(""); // send an empty write to trigger non blocking reads on the gags
+	eprint!("");
 
-		tx.send(());
-		jh.join();
+	let jh = std::thread::spawn(move || redirect_output(std_pipes_cb, rx, stdout_gag, stderr_gag));
 
-		r
-	}));
+	let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe { func(app_data) }));
+
+	tx.send(());
+	jh.join();
 
 	match res {
 		Ok(s) => Ok(s),
