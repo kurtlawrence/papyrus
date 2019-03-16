@@ -26,7 +26,7 @@ extern crate cmdtree;
 extern crate colored;
 extern crate cratesiover;
 extern crate dirs;
-extern crate gag;
+extern crate shh;
 extern crate libloading;
 extern crate linefeed;
 extern crate reqwest;
