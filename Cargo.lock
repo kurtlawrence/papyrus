@@ -1338,7 +1338,7 @@ dependencies = [
  "linefeed 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "reqwest 0.9.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "shh 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "shh 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "simplelog 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.15.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "term_cursor 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1927,7 +1927,7 @@ dependencies = [
 
 [[package]]
 name = "shh"
-version = "0.1.0"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.2.50 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2854,7 +2854,7 @@ source = "git+https://github.com/maps4print/azul-dependencies?rev=009eab6903820a
 "checksum sha2 0.7.1 (git+https://github.com/maps4print/azul-dependencies?rev=009eab6903820aadc9f30d6c76e104843a1e3253)" = "<none>"
 "checksum shared_library 0.1.9 (git+https://github.com/maps4print/azul-dependencies?rev=009eab6903820aadc9f30d6c76e104843a1e3253)" = "<none>"
 "checksum shared_library 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)" = "5a9e7e0f2bfae24d8a5b5a66c5b257a83c7412304311512a0c054cd5e619da11"
-"checksum shh 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3f4558d7b82a8f3bd1cd24b07b24aa29bc2b44e2e2f98feba5f6a1ed20558d3b"
+"checksum shh 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9cff8b151d3d290604d9c93f0400bd4d98e2837a5461532bc6c95d0129ea0964"
 "checksum simplecss 0.1.0 (git+https://github.com/fschutt/simplecss.git?rev=0bf3b7800f49a4524b889687d7761b163e8b4101)" = "<none>"
 "checksum simplelog 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2e95345f185d5adeb8ec93459d2dc99654e294cc6ccf5b75414d8ea262de9a13"
 "checksum siphasher 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "0b8de496cf83d4ed58b6be86c3a275b8602f6ffe98d3024a869e124147a9a3ac"

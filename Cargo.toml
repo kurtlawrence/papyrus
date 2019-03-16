@@ -31,7 +31,7 @@ cansi = { version = "1.1", optional = true }
 libloading = "0.5"
 cratesiover = "2.1"
 cmdtree = { path = "../cmdtree" }
-shh = "0.1"
+shh = "1.0"
 
 [dev-dependencies]
 # criterion = "0.2"
