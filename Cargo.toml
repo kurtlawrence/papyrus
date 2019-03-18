@@ -9,7 +9,7 @@ repository = "https://github.com/kurtlawrence/papyrus"
 documentation = "https://docs.rs/papyrus/"
 readme = "README.md"
 keywords = [ "repl", "script" ]
-edition = "2015"
+edition = "2018"
 
 [badges]
 travis-ci = { repository = "kurtlawrence/papyrus" }

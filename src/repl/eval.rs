@@ -1,7 +1,7 @@
 use super::command::Commands;
 use super::*;
+use crate::pfh::{self, Input};
 use linefeed::terminal::Terminal;
-use pfh::{self, Input};
 use std::path::Path;
 use std::sync::mpsc;
 

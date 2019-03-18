@@ -1,6 +1,6 @@
+use crate::pfh::{CrateType, Input};
 use linefeed::terminal::Terminal;
 use linefeed::{Interface, ReadResult};
-use pfh::{CrateType, Input};
 use syn::Expr;
 
 mod parse;
