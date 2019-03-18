@@ -18,20 +18,6 @@
 
 #[macro_use]
 extern crate log;
-#[cfg(feature = "azul-widgets")]
-extern crate azul;
-#[cfg(feature = "azul-widgets")]
-extern crate cansi;
-extern crate cmdtree;
-extern crate colored;
-extern crate cratesiover;
-extern crate dirs;
-extern crate shh;
-extern crate libloading;
-extern crate linefeed;
-extern crate reqwest;
-extern crate syn;
-extern crate term_cursor;
 
 mod input;
 mod pfh;

@@ -1,5 +1,5 @@
+use crate::pfh::*;
 use libloading::{Library, Symbol};
-use pfh::*;
 use std::io::{self, BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};

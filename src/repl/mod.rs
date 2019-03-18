@@ -41,11 +41,11 @@ mod read;
 mod writer;
 
 use self::command::Commands;
+use crate::input::{InputReader, InputResult};
+use crate::pfh::{linking::LinkingConfiguration, SourceFile};
 use cmdtree::*;
 use colored::*;
-use input::{InputReader, InputResult};
 use linefeed::terminal::Terminal;
-use pfh::{linking::LinkingConfiguration, SourceFile};
 use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Write};
