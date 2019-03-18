@@ -32,4 +32,19 @@ fn different_data_patterns() {
 		repl.data.linking().data_type,
 		Some("&mut String".to_string())
 	);
+
+	let repl = repl_with_term!(linefeed::memory::MemoryTerminal::new());
+	assert_eq!(repl.data.linking().data_type, None);
+
+	let repl = repl_with_term!(linefeed::memory::MemoryTerminal::new(), String);
+	assert_eq!(repl.data.linking().data_type, Some("String".to_string()));
+
+	let repl = repl_with_term!(linefeed::memory::MemoryTerminal::new(), &String);
+	assert_eq!(repl.data.linking().data_type, Some("&String".to_string()));
+
+	let repl = repl_with_term!(linefeed::memory::MemoryTerminal::new(), &mut String);
+	assert_eq!(
+		repl.data.linking().data_type,
+		Some("&mut String".to_string())
+	);
 }

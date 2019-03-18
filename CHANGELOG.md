@@ -2,10 +2,11 @@
 
 ## 0.8.0
 
-- The macros to create `ReplData` have been simplfied to a single `repl_data!` macro
-  - there is no more variants for borrowing patterns, only the specified data type
+- The macros have been changed. Now `repl!` and `repl_with_term!` are used to create a `Repl` instance, with access to the public `.data` field to customise the repl data.
+- there is no more variants for borrowing patterns, only the specified data type
 - Added a `push_input()` function a `Read` repl. This allows for pushing of characters onto the repl without reading from `stdin`.
 - `Repl` now takes ownership of `ReplData`. It did not make sense to borrow as you would have to drop `Repl` to make any changes to `ReplData`...
+- 
 
 ## 0.7.0
 

@@ -162,6 +162,41 @@ mod macros {
 				r
 			}};
 	}
+	/// Create `Repl` with terminal
+	#[macro_export]
+	macro_rules! repl_with_term {
+		// &mut T type with term
+		($term:expr, &mut $type:ty) => {{
+			use papyrus;
+			let mut r: papyrus::repl::Repl<_, _, $type, papyrus::linking::BrwMut> =
+				papyrus::repl::Repl::with_term($term);
+			r.data = r.data.set_data_type(&format!("&mut {}", stringify!($type)));
+				r
+			}};
+		// &T type with term
+		($term:expr, &$type:ty) => {{
+			use papyrus;
+			let mut r: papyrus::repl::Repl<_, _, $type, papyrus::linking::Brw> =
+				papyrus::repl::Repl::with_term($term);
+			r.data = r.data.set_data_type(&format!("&{}", stringify!($type)));
+				r
+			}};
+		// T type with term
+		($term:expr, $type:ty) => {{
+			use papyrus;
+			let mut r: papyrus::repl::Repl<_, _, $type, papyrus::linking::NoRef> =
+				papyrus::repl::Repl::with_term($term);
+			r.data = r.data.set_data_type(stringify!($type));
+				r
+			}};
+		// No data with term
+		($term:expr) => {{
+			use papyrus;
+			let r: papyrus::repl::Repl<_, _, (), papyrus::linking::NoRef> =
+				papyrus::repl::Repl::with_term($term);
+				r
+			}};
+	}
 }
 
 pub struct LinkingConfiguration {

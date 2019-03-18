@@ -97,9 +97,7 @@ fn main() {
     let closure_term = term.clone();
 
     std::thread::spawn(move || {
-        let repl_data = ReplData::default();
-        let terminal = closure_term.clone();
-        let mut repl = Repl::with_term(terminal.clone(), repl_data);
+		let mut repl = repl_with_term!(closure_term);
         loop {
             repl = match repl.read().eval(()) {
                 Ok(print) => print.print(),
