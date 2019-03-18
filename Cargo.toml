@@ -32,6 +32,7 @@ libloading = "0.5"
 cratesiover = "2.2"
 cmdtree = { path = "../cmdtree" }
 shh = "1.0"
+crossbeam = "0.7"
 
 [dev-dependencies]
 # criterion = "0.2"

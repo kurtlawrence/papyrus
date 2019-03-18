@@ -25,11 +25,12 @@ extern crate cansi;
 extern crate cmdtree;
 extern crate colored;
 extern crate cratesiover;
+extern crate crossbeam;
 extern crate dirs;
-extern crate shh;
 extern crate libloading;
 extern crate linefeed;
 extern crate reqwest;
+extern crate shh;
 extern crate syn;
 extern crate term_cursor;
 

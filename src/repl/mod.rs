@@ -43,6 +43,8 @@ mod writer;
 use self::command::Commands;
 use cmdtree::*;
 use colored::*;
+use crossbeam::channel::Receiver;
+use crossbeam::thread::ScopedJoinHandle;
 use input::{InputReader, InputResult};
 use linefeed::terminal::Terminal;
 use pfh::{linking::LinkingConfiguration, SourceFile};
@@ -94,6 +96,9 @@ struct OwnedWriter<T: Terminal>(Arc<T>);
 pub struct Read;
 pub struct Evaluate {
 	result: InputResult,
+}
+pub struct Evaluating<'data, Term: Terminal, Data> {
+	jh: Receiver<Result<Repl<'data, Print, Term, Data>, EvalSignal>>,
 }
 pub struct ManualPrint;
 pub struct Print {
