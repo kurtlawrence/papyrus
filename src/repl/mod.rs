@@ -219,20 +219,26 @@ impl ReplData {
 	/// Overwrites previously specified crate name.
 	/// Uses `ReplData.compilation_dir` to copy `rlib` file into.
 	///
-	/// [See documentation](https://kurtlawrence.github.io/papyrus/repl/linking.html)
+	/// [See documentation.](https://kurtlawrence.github.io/papyrus/repl/linking.html)
 	pub fn with_extern_crate(
-		mut self,
+		&mut self,
 		crate_name: &'static str,
 		rlib_path: Option<&str>,
-	) -> io::Result<Self> {
-		self.linking =
-			self.linking
-				.link_external_crate(&self.compilation_dir, crate_name, rlib_path)?;
-		Ok(self)
+	) -> io::Result<()> {
+		self.linking = std::mem::replace(&mut self.linking, LinkingConfiguration::default())
+			.link_external_crate(&self.compilation_dir, crate_name, rlib_path)?;
+		Ok(())
 	}
 
 	pub fn linking(&self) -> &LinkingConfiguration {
 		&self.linking
+	}
+
+	/// Not meant to used by developer. Use the macros instead.
+	/// [See _linking_ module](../pfh/linking.html)
+	pub fn set_data_type(mut self, data_type: &str) -> Self {
+		self.linking = self.linking.with_data(data_type);
+		self
 	}
 }
 

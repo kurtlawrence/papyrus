@@ -22,10 +22,8 @@
 //! use papyrus::{Repl, ReplData};
 //!
 //! fn main() {
-//!   let mut data = repl_data!()
-//!     .with_extern_crate("some_lib", None)
-//!     .expect("failed linking crate");
-//!   let repl = Repl::default_terminal(data);
+//!   let mut repl = repl!();
+//!   repl.data.with_extern_crate("some_lib", None).expect("failed linking crate");
 //!
 //!   repl.run(());
 //! }
@@ -135,26 +133,32 @@ mod macros {
 		// &mut T type
 		(&mut $type:ty) => {{
 			use papyrus;
-			// data.set_data_type(stringify!($type));
-			let r: papyrus::repl::Repl<_, _, $type, papyrus::linking::BrwMut> = papyrus::repl::Repl::default();
+			let mut r: papyrus::repl::Repl<_, _, $type, papyrus::linking::BrwMut> =
+				papyrus::repl::Repl::default();
+			r.data = r.data.set_data_type(&format!("&mut {}", stringify!($type)));
 				r
 			}};
 		// &T type
 		(&$type:ty) => {{
 			use papyrus;
-			let r: papyrus::repl::Repl<_, _, $type, papyrus::linking::Brw> = papyrus::repl::Repl::default();
+			let mut r: papyrus::repl::Repl<_, _, $type, papyrus::linking::Brw> =
+				papyrus::repl::Repl::default();
+			r.data = r.data.set_data_type(&format!("&{}", stringify!($type)));
 				r
 			}};
 		// T type
 		($type:ty) => {{
 			use papyrus;
-			let r: papyrus::repl::Repl<_, _, $type, papyrus::linking::NoRef> = papyrus::repl::Repl::default();
+			let mut r: papyrus::repl::Repl<_, _, $type, papyrus::linking::NoRef> =
+				papyrus::repl::Repl::default();
+			r.data = r.data.set_data_type(stringify!($type));
 				r
 			}};
 		// No data
 		() => {{
 			use papyrus;
-			let r: papyrus::repl::Repl<_, _, (), papyrus::linking::NoRef> = papyrus::repl::Repl::default();
+			let r: papyrus::repl::Repl<_, _, (), papyrus::linking::NoRef> =
+				papyrus::repl::Repl::default();
 				r
 			}};
 	}

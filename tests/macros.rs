@@ -4,11 +4,16 @@ use papyrus::*;
 
 #[test]
 fn macros_test() {
+	// tests macro syntax
+
 	// No external crate or data
 	repl!();
-
 	// data type
 	repl!(String);
+	// data type
+	repl!(&String);
+	// data type
+	repl!(&mut String);
 }
 
 #[test]
