@@ -4,6 +4,7 @@
 
 - The macros to create `ReplData` have been simplfied to a single `repl_data!` macro
   - there is no more variants for borrowing patterns, only the specified data type
+- Added a `push_input()` function a `Read` repl. This allows for pushing of characters onto the repl without reading from `stdin`.
 
 ## 0.7.0
 
