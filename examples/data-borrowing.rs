@@ -8,8 +8,8 @@ fn main() {
 	// first, lets show how to pass through a simple number
 	let v = 123;
 
-	let mut data = repl_data!(u32);
-	let mut repl = papyrus::Repl::default_terminal(&mut data);
+	let data = repl_data!(u32);
+	let mut repl = papyrus::Repl::default_terminal(data);
 
 	repl = execute_line(repl, v, "app_data");
 	execute_line(repl, v, "app_data + 123");
@@ -17,29 +17,39 @@ fn main() {
 	// second, how about a borrowed value?
 	let v = String::from("Hello, world!");
 
-	let mut data = repl_data!(&String);
-	let mut repl = papyrus::Repl::default_terminal(&mut data);
+	let data = repl_data!(&String);
+	let mut repl = papyrus::Repl::default_terminal(data);
 
-	repl = execute_line(repl, &v, "app_data");	// <-- borrowed!
+	repl = execute_line(repl, &v, "app_data"); // <-- borrowed!
 	execute_line(repl, &v, "app_data.to_uppercase()");
 
 	// third, lets try a mutable borrow
 	let mut v = String::from("Hello,");
 
-	let mut data = repl_data!(&mut String);
-	let mut repl = papyrus::Repl::default_terminal(&mut data);
+	let data = repl_data!(&mut String);
+	let mut repl = papyrus::Repl::default_terminal(data);
+
+	// for ch in ", world!".chars() {
+	// 	v.push(ch);
+	// }
+
+	// println!("{}", v);
 
 	for ch in "app_data\n".chars() {
+		let tmp = &mut v;
 		repl = match repl.push_input(ch) {
 			papyrus::repl::PushResult::Read(r) => r,
-			papyrus::repl::PushResult::Eval(r) => r.eval(&mut v).unwrap().print(),
+			papyrus::repl::PushResult::Eval(r) => r.eval(tmp).unwrap().print(),
 		}
 	}
 }
 
-
 /// Adds the newline for us!
-fn execute_line<'a, T: linefeed::Terminal + 'static, D: Copy>(repl: Repl<'a, repl::Read, T, D>, app_data: D, line: &str) -> Repl<'a, repl::Read, T, D> {
+fn execute_line<T: linefeed::Terminal + 'static, D: Copy>(
+	repl: Repl<repl::Read, T, D>,
+	app_data: D,
+	line: &str,
+) -> Repl<repl::Read, T, D> {
 	let mut repl = repl;
 	for ch in line.chars().into_iter().chain("\n".chars()) {
 		repl = match repl.push_input(ch) {

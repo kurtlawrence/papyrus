@@ -3,8 +3,8 @@ use super::*;
 use linefeed::terminal::{DefaultTerminal, Terminal};
 use std::io;
 
-impl<'data, Data> Repl<'data, Read, DefaultTerminal, Data> {
-	pub fn default_terminal(data: &'data mut ReplData<Data>) -> Self {
+impl<Data> Repl<Read, DefaultTerminal, Data> {
+	pub fn default_terminal(mut data: ReplData<Data>) -> Self {
 		data.redirect_on_execution = false;
 		let terminal1 =
 			linefeed::terminal::DefaultTerminal::new().expect("failed to start default terminal");
@@ -22,8 +22,8 @@ impl<'data, Data> Repl<'data, Read, DefaultTerminal, Data> {
 	}
 }
 
-impl<'data, Term: Terminal + Clone, Data> Repl<'data, Read, Term, Data> {
-	pub fn with_term(terminal: Term, data: &'data mut ReplData<Data>) -> Self {
+impl<Term: Terminal + Clone, Data> Repl<Read, Term, Data> {
+	pub fn with_term(terminal: Term, data: ReplData<Data>) -> Self {
 		let terminal2 = terminal.clone();
 		Repl {
 			state: Read,
@@ -37,9 +37,9 @@ impl<'data, Term: Terminal + Clone, Data> Repl<'data, Read, Term, Data> {
 	}
 }
 
-impl<'data, Term: Terminal, Data> Repl<'data, Read, Term, Data> {
+impl<Term: Terminal, Data> Repl<Read, Term, Data> {
 	/// Reads input from the input reader until an evaluation phase can begin.
-	pub fn read(mut self) -> Repl<'data, Evaluate, Term, Data> {
+	pub fn read(mut self) -> Repl<Evaluate, Term, Data> {
 		let mut more = false;
 		let treat_as_cmd = !self.data.cmdtree.at_root();
 		loop {
@@ -66,7 +66,7 @@ impl<'data, Term: Terminal, Data> Repl<'data, Read, Term, Data> {
 		}
 	}
 
-	pub fn push_input(mut self, input: char) -> PushResult<'data, Term, Data> {
+	pub fn push_input(mut self, input: char) -> PushResult<Term, Data> {
 		let prompt = self.prompt(false);
 		let treat_as_cmd = !self.data.cmdtree.at_root();
 		match self
@@ -104,7 +104,7 @@ impl<'data, Term: Terminal, Data> Repl<'data, Read, Term, Data> {
 	}
 }
 
-impl<'data, Term: Terminal + 'static, Data: Copy> Repl<'data, Read, Term, Data> {
+impl<Term: Terminal + 'static, Data: Copy> Repl<Read, Term, Data> {
 	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
 	///
 	/// # Panics

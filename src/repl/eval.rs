@@ -7,15 +7,15 @@ use std::sync::mpsc;
 
 type HandleInputResult = (String, bool);
 
-enum CommonResult<'data, Term: Terminal, Data> {
-	Handled(Result<Repl<'data, Print, Term, Data>, ()>),
-	Program((pfh::Input, &'data mut ReplData<Data>, ReplTerminal<Term>)),
+enum CommonResult<Term: Terminal, Data> {
+	Handled(Result<Repl<Print, Term, Data>, ()>),
+	Program((pfh::Input, ReplData<Data>, ReplTerminal<Term>)),
 }
 
 /// bit dumb but i have to extract out the common code otherwise i will have code maintenance hell
 /// the other code returns an Ok(Result<Print, ()>) and the program arm returns Err((input, data, terminal)) such that the input processing has already been processed.
-fn handle_common<'data, Term: Terminal, Data>(
-	repl: Repl<'data, Evaluate, Term, Data>,
+fn handle_common<Term: Terminal, Data>(
+	repl: Repl<Evaluate, Term, Data>,
 ) -> CommonResult<Term, Data> {
 	let Repl {
 		state,
@@ -42,14 +42,14 @@ fn handle_common<'data, Term: Terminal, Data>(
 	}))
 }
 
-impl<'data, Term: Terminal + 'static, Data> Repl<'data, Evaluate, Term, Data> {
+impl<Term: Terminal + 'static, Data> Repl<Evaluate, Term, Data> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
-	pub fn eval(self, app_data: Data) -> Result<Repl<'data, Print, Term, Data>, EvalSignal> {
+	pub fn eval(self, app_data: Data) -> Result<Repl<Print, Term, Data>, EvalSignal> {
 		let Repl {
 			state,
 			terminal,
-			data,
+			mut data,
 		} = self;
 
 		let (to_print, as_out) = match state.result {
@@ -68,14 +68,12 @@ impl<'data, Term: Terminal + 'static, Data> Repl<'data, Evaluate, Term, Data> {
 	}
 }
 
-impl<'data: 'static, Term: Terminal + 'static, Data: Send + 'static>
-	Repl<'data, Evaluate, Term, Data>
-{
-	pub fn eval_async(self, app_data: Data) -> Evaluating<'data, Term, Data> {
+impl<Term: Terminal + 'static, Data: Send + 'static> Repl<Evaluate, Term, Data> {
+	pub fn eval_async(self, app_data: Data) -> Evaluating<Term, Data> {
 		let Repl {
 			state,
 			terminal,
-			data,
+			mut data,
 		} = self;
 
 		let (tx, rx) = crossbeam::channel::bounded(0);

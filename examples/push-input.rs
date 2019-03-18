@@ -3,7 +3,7 @@ extern crate papyrus;
 
 fn main() {
 	let mut data = repl_data!();
-	let mut repl = papyrus::Repl::default_terminal(&mut data);
+	let mut repl = papyrus::Repl::default_terminal(data);
 
 	let input = "1+2\n";
 
