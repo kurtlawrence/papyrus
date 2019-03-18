@@ -34,13 +34,11 @@
 //! ```
 //!
 //! Please help if the Repl cannot parse your statements, or help with documentation! [https://github.com/kurtlawrence/papyrus](https://github.com/kurtlawrence/papyrus).
-mod command;
 mod eval;
 mod print;
 mod read;
 mod writer;
 
-// use self::command::Commands;
 use crate::input::{InputReader, InputResult};
 use crate::pfh::{linking::LinkingConfiguration, SourceFile};
 use cmdtree::*;
@@ -54,8 +52,6 @@ use std::io::{self, Write};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-
-// pub use self::command::{CmdArgs, Command};
 
 pub struct ReplData {
 	/// The REPL commands as a `cmdtree::Commander`.
