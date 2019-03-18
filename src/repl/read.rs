@@ -110,7 +110,12 @@ impl<'data, Term: Terminal + 'static, Data: Copy> Repl<'data, Read, Term, Data> 
 	/// # Panics
 	/// - Failure to initialise `InputReader`.
 	pub fn run(self, app_data: Data) {
-		//query_and_print_ver_info(self.terminal.terminal.as_ref());
+		cratesiover::output_to_writer(
+			"papyrus",
+			env!("CARGO_PKG_VERSION"),
+			&mut Writer(self.terminal.terminal.as_ref()),
+		)
+		.unwrap();
 		let mut read = self;
 
 		loop {
@@ -125,8 +130,3 @@ impl<'data, Term: Terminal + 'static, Data: Copy> Repl<'data, Read, Term, Data> 
 		}
 	}
 }
-
-// fn query_and_print_ver_info<Term: Terminal>(terminal: &Term) {
-// 	use cratesiover;
-// 	cratesiover::output_with_term("papyrus", env!("CARGO_PKG_VERSION"), terminal);
-// }
