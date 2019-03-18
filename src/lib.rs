@@ -25,8 +25,10 @@ pub mod repl;
 #[cfg(feature = "azul-widgets")]
 pub mod widgets;
 
-pub use self::pfh::linking;
-pub use self::repl::{Repl, ReplData};
-
 // re-exports
 pub use cmdtree::{BuildError, Builder, BuilderChain};
+
+pub mod prelude {
+	pub use crate::pfh::linking;
+	pub use crate::repl::{self, Repl, ReplData};
+}

@@ -1,6 +1,6 @@
 use super::*;
 
-use crate::linking::{Brw, BrwMut, NoRef};
+use crate::pfh::linking::{Brw, BrwMut, NoRef};
 use linefeed::terminal::{DefaultTerminal, Terminal};
 use std::io;
 

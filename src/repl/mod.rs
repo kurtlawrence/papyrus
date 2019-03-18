@@ -1,18 +1,18 @@
 //! The repl takes the commands given and evaluates them, setting a local variable such that the data can be continually referenced.
-//!
+//! 
 //! ```sh
 //! papyrus=> let a = 1;
 //! papyrus.> a
 //! papyrus [out0]: 1
 //! papyrus=>
 //! ```
-//!
+//! 
 //! Here we define a variable `let a = 1;`. Papyrus knows that the end result is not an expression (given the trailing semi colon) so waits for more input (`.>`). We then give it `a` which is an expression and gets evaluated. If compilation is successful the expression is set to the variable `out0` (where the number will increment with expressions) and then be printed with the `Debug` trait. If an expression evaluates to something that is not `Debug` then you will receive a compilation error. Finally the repl awaits more input `=>`.
-//!
+//! 
 //! > The expression is using `let out# = <expr>;` behind the scenes.
-//!
+//! 
 //! You can also define structures and functions.
-//!
+//! 
 //! ```sh
 //! papyrus=> fn a(i: u32) -> u32 {
 //! papyrus.> i + 1
@@ -21,7 +21,7 @@
 //! papyrus [out0]: 2
 //! papyrus=>
 //! ```
-//!
+//! 
 //! ```txt
 //! papyrus=> #[derive(Debug)] struct A {
 //! papyrus.> a: u32,
@@ -32,8 +32,9 @@
 //! papyrus [out0]: A { a: 1, b: 2 }
 //! papyrus=>
 //! ```
-//!
+//! 
 //! Please help if the Repl cannot parse your statements, or help with documentation! [https://github.com/kurtlawrence/papyrus](https://github.com/kurtlawrence/papyrus).
+mod data;
 mod eval;
 mod print;
 mod read;
@@ -52,6 +53,26 @@ use std::io::{self, Write};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+
+pub struct Repl<S, Term: Terminal, Data, Ref> {
+	pub data: ReplData,
+	state: S,
+	terminal: ReplTerminal<Term>,
+	data_mrker: PhantomData<Data>,
+	ref_mrker: PhantomData<Ref>,
+}
+
+impl<S, T: Terminal, D, R> Repl<S, T, D, R> {
+	fn move_state<N>(self, state: N) -> Repl<N, T, D, R> {
+		Repl {
+			state: state,
+			terminal: self.terminal,
+			data: self.data,
+			data_mrker: self.data_mrker,
+			ref_mrker: self.ref_mrker,
+		}
+	}
+}
 
 pub struct ReplData {
 	/// The REPL commands as a `cmdtree::Commander`.
@@ -95,31 +116,10 @@ pub struct Evaluate {
 pub struct Evaluating<Term: Terminal, Data, Ref> {
 	jh: Receiver<Result<Repl<Print, Term, Data, Ref>, EvalSignal>>,
 }
-pub struct ManualPrint;
 pub struct Print {
 	to_print: String,
 	/// Specifies whether to print the `[out#]`
 	as_out: bool,
-}
-
-pub struct Repl<S, Term: Terminal, Data, Ref> {
-	state: S,
-	terminal: ReplTerminal<Term>,
-	pub data: ReplData,
-	data_mrker: PhantomData<Data>,
-	ref_mrker: PhantomData<Ref>,
-}
-
-impl<S, T: Terminal, D, R> Repl<S, T, D, R> {
-	fn move_state<N>(self, state: N) -> Repl<N, T, D, R> {
-		Repl {
-			state: state,
-			terminal: self.terminal,
-			data: self.data,
-			data_mrker: self.data_mrker,
-			ref_mrker: self.ref_mrker,
-		}
-	}
 }
 
 pub enum CommandResult {
@@ -134,108 +134,6 @@ pub enum EvalSignal {
 pub enum PushResult<Term: Terminal, Data, Ref> {
 	Read(Repl<Read, Term, Data, Ref>),
 	Eval(Repl<Evaluate, Term, Data, Ref>),
-}
-
-impl Default for ReplData {
-	fn default() -> Self {
-		let lib = SourceFile::lib();
-		let lib_path = lib.path.clone();
-		let mut map = HashMap::new();
-		map.insert(lib_path.clone(), lib);
-
-		let mut r = ReplData {
-			cmdtree: Builder::new("papyrus")
-				.into_commander()
-				.expect("empty should pass"),
-			file_map: map,
-			current_file: lib_path,
-			name: "papyrus",
-			prompt_colour: Color::Cyan,
-			out_colour: Color::BrightGreen,
-			compilation_dir: default_compile_dir(),
-			linking: LinkingConfiguration::default(),
-			redirect_on_execution: true,
-		};
-
-		r.with_cmdtree_builder(Builder::new("papyrus"))
-			.expect("should build fine")
-	}
-}
-
-// impl<Data> ReplData<Data, linking::Brw> {
-// 	/// Not meant to used by developer. Use the macros instead.
-// 	/// [See _linking_ module](../pfh/linking.html)
-// 	fn with_brw(data_type: &str) -> Self {
-// 		let repl = ReplData::default();
-// 		repl.ref_mrker = PhantomData;
-// 		repl.linking = repl.linking.with_data(data_type);
-// 		repl
-// 	}
-// }
-
-// impl<Data> ReplData<Data, linking::BrwMut> {
-// 	/// Not meant to used by developer. Use the macros instead.
-// 	/// [See _linking_ module](../pfh/linking.html)
-// 	fn with_brw_mut(data_type: &str) -> Self {
-// 		let repl = ReplData::default();
-// 		repl.ref_mrker = PhantomData;
-// 		repl.linking = repl.linking.with_data(data_type);
-// 		repl
-// 	}
-// }
-
-impl ReplData {
-	pub fn with_compilation_dir<P: AsRef<Path>>(mut self, dir: P) -> io::Result<Self> {
-		let dir = dir.as_ref();
-		if !dir.exists() {
-			fs::create_dir_all(dir)?;
-		}
-		assert!(dir.is_dir());
-		self.compilation_dir = dir.to_path_buf();
-		Ok(self)
-	}
-
-	/// Uses the given `Builder` as the root of the command tree.
-	/// The builder is amended with the `esc` command at the root, an error will be
-	/// returned if the command already exists.
-	pub fn with_cmdtree_builder(
-		mut self,
-		builder: Builder<'static, CommandResult>,
-	) -> Result<Self, BuildError> {
-		let cmdr = builder
-			.root()
-			.add_action("esc", "Cancels more input", |_| CommandResult::CancelInput)
-			.into_commander()?;
-
-		self.cmdtree = cmdr;
-		Ok(self)
-	}
-
-	/// Specify that the repl will link an external crate reference.
-	/// Overwrites previously specified crate name.
-	/// Uses `ReplData.compilation_dir` to copy `rlib` file into.
-	///
-	/// [See documentation.](https://kurtlawrence.github.io/papyrus/repl/linking.html)
-	pub fn with_extern_crate(
-		&mut self,
-		crate_name: &'static str,
-		rlib_path: Option<&str>,
-	) -> io::Result<()> {
-		self.linking = std::mem::replace(&mut self.linking, LinkingConfiguration::default())
-			.link_external_crate(&self.compilation_dir, crate_name, rlib_path)?;
-		Ok(())
-	}
-
-	pub fn linking(&self) -> &LinkingConfiguration {
-		&self.linking
-	}
-
-	/// Not meant to used by developer. Use the macros instead.
-	/// [See _linking_ module](../pfh/linking.html)
-	pub fn set_data_type(mut self, data_type: &str) -> Self {
-		self.linking = self.linking.with_data(data_type);
-		self
-	}
 }
 
 /// `$HOME/.papyrus`

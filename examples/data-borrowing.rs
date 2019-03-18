@@ -2,7 +2,7 @@
 extern crate papyrus;
 extern crate linefeed;
 
-use papyrus::*;
+use papyrus::prelude::*;
 
 fn main() {
 	// first, lets show how to pass through a simple number

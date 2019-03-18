@@ -1,5 +1,5 @@
 use super::*;
-use crate::linking::{Brw, BrwMut, NoRef};
+use crate::pfh::linking::{Brw, BrwMut, NoRef};
 use crate::pfh::{self, Input};
 use linefeed::terminal::Terminal;
 use std::path::Path;

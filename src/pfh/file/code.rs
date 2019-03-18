@@ -1,6 +1,6 @@
 //! Pertains to every required for a source file contents.
 
-use crate::linking;
+use crate::pfh::linking;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Input {
