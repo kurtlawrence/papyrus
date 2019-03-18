@@ -1,5 +1,6 @@
-use super::command::Commands;
+// use super::command::Commands;
 use super::*;
+use crate::linking::{Brw, BrwMut, NoRef};
 use crate::pfh::{self, Input};
 use linefeed::terminal::Terminal;
 use std::path::Path;
@@ -7,49 +8,16 @@ use std::sync::mpsc;
 
 type HandleInputResult = (String, bool);
 
-enum CommonResult<Term: Terminal, Data> {
-	Handled(Result<Repl<Print, Term, Data>, ()>),
-	Program((pfh::Input, ReplData<Data>, ReplTerminal<Term>)),
-}
-
-/// bit dumb but i have to extract out the common code otherwise i will have code maintenance hell
-/// the other code returns an Ok(Result<Print, ()>) and the program arm returns Err((input, data, terminal)) such that the input processing has already been processed.
-fn handle_common<Term: Terminal, Data>(
-	repl: Repl<Evaluate, Term, Data>,
-) -> CommonResult<Term, Data> {
-	let Repl {
-		state,
-		terminal,
-		data,
-	} = repl;
-
-	let (to_print, as_out) = match state.result {
-		InputResult::Command(cmds) => {
-			debug!("read command: {}", cmds);
-			unimplemented!();
-		}
-		InputResult::Program(input) => {
-			return CommonResult::Program((input, data, terminal));
-		}
-		InputResult::Eof => return CommonResult::Handled(Err(())),
-		InputResult::InputError(err) => (err, false),
-		_ => (String::new(), false),
-	};
-	CommonResult::Handled(Ok(Repl {
-		state: Print { to_print, as_out },
-		terminal: terminal,
-		data: data,
-	}))
-}
-
-impl<Term: Terminal + 'static, Data> Repl<Evaluate, Term, Data> {
+impl<Term: Terminal + 'static, Data> Repl<Evaluate, Term, Data, NoRef> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
-	pub fn eval(self, app_data: Data) -> Result<Repl<Print, Term, Data>, EvalSignal> {
+	pub fn eval(self, app_data: Data) -> Result<Repl<Print, Term, Data, NoRef>, EvalSignal> {
 		let Repl {
 			state,
 			terminal,
 			mut data,
+			data_mrker: PhantomData,
+			ref_mrker: PhantomData,
 		} = self;
 
 		let (to_print, as_out) = match state.result {
@@ -64,16 +32,82 @@ impl<Term: Terminal + 'static, Data> Repl<Evaluate, Term, Data> {
 			state: Print { to_print, as_out },
 			terminal: terminal,
 			data: data,
+			data_mrker: PhantomData,
+			ref_mrker: PhantomData,
 		})
 	}
 }
 
-impl<Term: Terminal + 'static, Data: Send + 'static> Repl<Evaluate, Term, Data> {
-	pub fn eval_async(self, app_data: Data) -> Evaluating<Term, Data> {
+impl<Term: Terminal + 'static, Data> Repl<Evaluate, Term, Data, Brw> {
+	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
+	/// This result gets passed back as a print ready repl.
+	pub fn eval(self, app_data: &Data) -> Result<Repl<Print, Term, Data, Brw>, EvalSignal> {
 		let Repl {
 			state,
 			terminal,
 			mut data,
+			data_mrker: PhantomData,
+			ref_mrker: PhantomData,
+		} = self;
+
+		let (to_print, as_out) = match state.result {
+			InputResult::Command(cmds) => data.handle_command(&cmds, &terminal.terminal)?,
+			InputResult::Program(input) => data.handle_program(input, &terminal.terminal, app_data),
+			InputResult::InputError(err) => (err, false),
+			InputResult::Eof => return Err(EvalSignal::Exit),
+			_ => (String::new(), false),
+		};
+
+		Ok(Repl {
+			state: Print { to_print, as_out },
+			terminal: terminal,
+			data: data,
+			data_mrker: PhantomData,
+			ref_mrker: PhantomData,
+		})
+	}
+}
+
+impl<Term: Terminal + 'static, Data> Repl<Evaluate, Term, Data, BrwMut> {
+	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
+	/// This result gets passed back as a print ready repl.
+	pub fn eval(self, app_data: &mut Data) -> Result<Repl<Print, Term, Data, BrwMut>, EvalSignal> {
+		let Repl {
+			state,
+			terminal,
+			mut data,
+			data_mrker: PhantomData,
+			ref_mrker: PhantomData,
+		} = self;
+
+		let (to_print, as_out) = match state.result {
+			InputResult::Command(cmds) => data.handle_command(&cmds, &terminal.terminal)?,
+			InputResult::Program(input) => data.handle_program(input, &terminal.terminal, app_data),
+			InputResult::InputError(err) => (err, false),
+			InputResult::Eof => return Err(EvalSignal::Exit),
+			_ => (String::new(), false),
+		};
+
+		Ok(Repl {
+			state: Print { to_print, as_out },
+			terminal: terminal,
+			data: data,
+			data_mrker: PhantomData,
+			ref_mrker: PhantomData,
+		})
+	}
+}
+
+impl<Term: Terminal + 'static, Data: Send + 'static, Ref: Send + 'static>
+	Repl<Evaluate, Term, Data, Ref>
+{
+	pub fn eval_async(self, app_data: Data) -> Evaluating<Term, Data, Ref> {
+		let Repl {
+			state,
+			terminal,
+			mut data,
+			data_mrker: PhantomData,
+			ref_mrker: PhantomData,
 		} = self;
 
 		let (tx, rx) = crossbeam::channel::bounded(0);
@@ -97,6 +131,8 @@ impl<Term: Terminal + 'static, Data: Send + 'static> Repl<Evaluate, Term, Data> 
 					state: Print { to_print, as_out },
 					terminal: terminal,
 					data: data,
+					data_mrker: PhantomData,
+					ref_mrker: PhantomData,
 				}
 			});
 
@@ -107,7 +143,7 @@ impl<Term: Terminal + 'static, Data: Send + 'static> Repl<Evaluate, Term, Data> 
 	}
 }
 
-impl<Data> ReplData<Data> {
+impl ReplData {
 	fn handle_command<T: Terminal>(
 		&mut self,
 		cmds: &str,
@@ -130,13 +166,13 @@ impl<Data> ReplData<Data> {
 		Ok(tuple)
 	}
 
-	fn handle_program<T: Terminal + 'static>(
+	fn handle_program<T: Terminal + 'static, Data>(
 		&mut self,
 		input: Input,
 		terminal: &Arc<T>,
 		app_data: Data,
 	) -> HandleInputResult {
-		let pop_input = |repl_data: &mut ReplData<_>| {
+		let pop_input = |repl_data: &mut ReplData| {
 			repl_data.get_current_file_mut().contents.pop();
 		};
 

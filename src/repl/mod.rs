@@ -1,18 +1,18 @@
 //! The repl takes the commands given and evaluates them, setting a local variable such that the data can be continually referenced.
-//! 
+//!
 //! ```sh
 //! papyrus=> let a = 1;
 //! papyrus.> a
 //! papyrus [out0]: 1
 //! papyrus=>
 //! ```
-//! 
+//!
 //! Here we define a variable `let a = 1;`. Papyrus knows that the end result is not an expression (given the trailing semi colon) so waits for more input (`.>`). We then give it `a` which is an expression and gets evaluated. If compilation is successful the expression is set to the variable `out0` (where the number will increment with expressions) and then be printed with the `Debug` trait. If an expression evaluates to something that is not `Debug` then you will receive a compilation error. Finally the repl awaits more input `=>`.
-//! 
+//!
 //! > The expression is using `let out# = <expr>;` behind the scenes.
-//! 
+//!
 //! You can also define structures and functions.
-//! 
+//!
 //! ```sh
 //! papyrus=> fn a(i: u32) -> u32 {
 //! papyrus.> i + 1
@@ -21,7 +21,7 @@
 //! papyrus [out0]: 2
 //! papyrus=>
 //! ```
-//! 
+//!
 //! ```txt
 //! papyrus=> #[derive(Debug)] struct A {
 //! papyrus.> a: u32,
@@ -32,7 +32,7 @@
 //! papyrus [out0]: A { a: 1, b: 2 }
 //! papyrus=>
 //! ```
-//! 
+//!
 //! Please help if the Repl cannot parse your statements, or help with documentation! [https://github.com/kurtlawrence/papyrus](https://github.com/kurtlawrence/papyrus).
 mod command;
 mod eval;
@@ -40,7 +40,7 @@ mod print;
 mod read;
 mod writer;
 
-use self::command::Commands;
+// use self::command::Commands;
 use crate::input::{InputReader, InputResult};
 use crate::pfh::{linking::LinkingConfiguration, SourceFile};
 use cmdtree::*;
@@ -55,9 +55,9 @@ use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-pub use self::command::{CmdArgs, Command};
+// pub use self::command::{CmdArgs, Command};
 
-pub struct ReplData<Data> {
+pub struct ReplData {
 	/// The REPL commands as a `cmdtree::Commander`.
 	pub cmdtree: Commander<'static, CommandResult>,
 	/// The file map of relative paths.
@@ -75,7 +75,6 @@ pub struct ReplData<Data> {
 	pub compilation_dir: PathBuf,
 	/// The external crate linking configuration,
 	linking: LinkingConfiguration,
-	data_mrker: PhantomData<Data>,
 	/// Flag if output is to be redirected. Generally redirection is needed, `DefaultTerminal` however will not require it (fucks linux).
 	redirect_on_execution: bool,
 }
@@ -97,8 +96,8 @@ pub struct Read;
 pub struct Evaluate {
 	result: InputResult,
 }
-pub struct Evaluating<Term: Terminal, Data> {
-	jh: Receiver<Result<Repl<Print, Term, Data>, EvalSignal>>,
+pub struct Evaluating<Term: Terminal, Data, Ref> {
+	jh: Receiver<Result<Repl<Print, Term, Data, Ref>, EvalSignal>>,
 }
 pub struct ManualPrint;
 pub struct Print {
@@ -107,10 +106,24 @@ pub struct Print {
 	as_out: bool,
 }
 
-pub struct Repl<S, Term: Terminal, Data> {
+pub struct Repl<S, Term: Terminal, Data, Ref> {
 	state: S,
 	terminal: ReplTerminal<Term>,
-	pub data: ReplData<Data>,
+	pub data: ReplData,
+	data_mrker: PhantomData<Data>,
+	ref_mrker: PhantomData<Ref>,
+}
+
+impl<S, T: Terminal, D, R> Repl<S, T, D, R> {
+	fn move_state<N>(self, state: N) -> Repl<N, T, D, R> {
+		Repl {
+			state: state,
+			terminal: self.terminal,
+			data: self.data,
+			data_mrker: self.data_mrker,
+			ref_mrker: self.ref_mrker,
+		}
+	}
 }
 
 pub enum CommandResult {
@@ -122,12 +135,12 @@ pub enum EvalSignal {
 	Exit,
 }
 
-pub enum PushResult<Term: Terminal, Data> {
-	Read(Repl<Read, Term, Data>),
-	Eval(Repl<Evaluate, Term, Data>),
+pub enum PushResult<Term: Terminal, Data, Ref> {
+	Read(Repl<Read, Term, Data, Ref>),
+	Eval(Repl<Evaluate, Term, Data, Ref>),
 }
 
-impl<Data> Default for ReplData<Data> {
+impl Default for ReplData {
 	fn default() -> Self {
 		let lib = SourceFile::lib();
 		let lib_path = lib.path.clone();
@@ -145,7 +158,6 @@ impl<Data> Default for ReplData<Data> {
 			out_colour: Color::BrightGreen,
 			compilation_dir: default_compile_dir(),
 			linking: LinkingConfiguration::default(),
-			data_mrker: PhantomData,
 			redirect_on_execution: true,
 		};
 
@@ -154,7 +166,29 @@ impl<Data> Default for ReplData<Data> {
 	}
 }
 
-impl<Data> ReplData<Data> {
+// impl<Data> ReplData<Data, linking::Brw> {
+// 	/// Not meant to used by developer. Use the macros instead.
+// 	/// [See _linking_ module](../pfh/linking.html)
+// 	fn with_brw(data_type: &str) -> Self {
+// 		let repl = ReplData::default();
+// 		repl.ref_mrker = PhantomData;
+// 		repl.linking = repl.linking.with_data(data_type);
+// 		repl
+// 	}
+// }
+
+// impl<Data> ReplData<Data, linking::BrwMut> {
+// 	/// Not meant to used by developer. Use the macros instead.
+// 	/// [See _linking_ module](../pfh/linking.html)
+// 	fn with_brw_mut(data_type: &str) -> Self {
+// 		let repl = ReplData::default();
+// 		repl.ref_mrker = PhantomData;
+// 		repl.linking = repl.linking.with_data(data_type);
+// 		repl
+// 	}
+// }
+
+impl ReplData {
 	pub fn with_compilation_dir<P: AsRef<Path>>(mut self, dir: P) -> io::Result<Self> {
 		let dir = dir.as_ref();
 		if !dir.exists() {
@@ -195,13 +229,6 @@ impl<Data> ReplData<Data> {
 			self.linking
 				.link_external_crate(&self.compilation_dir, crate_name, rlib_path)?;
 		Ok(self)
-	}
-
-	/// Not meant to used by developer. Use the macros instead.
-	/// [See _linking_ module](../pfh/linking.html)
-	pub fn set_data_type(mut self, data_type: &str) -> Self {
-		self.linking = self.linking.with_data(data_type);
-		self
 	}
 
 	pub fn linking(&self) -> &LinkingConfiguration {

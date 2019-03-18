@@ -2,9 +2,9 @@ use super::*;
 
 use linefeed::terminal::Terminal;
 
-impl<Term: Terminal, Data> Repl<ManualPrint, Term, Data> {
+impl<Term: Terminal, Data, Ref> Repl<ManualPrint, Term, Data, Ref> {
 	/// asdfdsa
-	pub fn print(self, result_output: &str) -> Repl<Print, Term, Data> {
+	pub fn print(self, result_output: &str) -> Repl<Print, Term, Data, Ref> {
 		let to_print = result_output.to_string();
 		Repl {
 			state: Print {
@@ -13,17 +13,21 @@ impl<Term: Terminal, Data> Repl<ManualPrint, Term, Data> {
 			},
 			terminal: self.terminal,
 			data: self.data,
+			data_mrker: PhantomData,
+			ref_mrker: PhantomData,
 		}
 	}
 }
 
-impl<Term: Terminal, Data> Repl<Print, Term, Data> {
+impl<Term: Terminal, Data, Ref> Repl<Print, Term, Data, Ref> {
 	/// Prints the result if successful as `[out#]` or the failure message if any.
-	pub fn print(self) -> Repl<Read, Term, Data> {
+	pub fn print(self) -> Repl<Read, Term, Data, Ref> {
 		let Repl {
 			state,
 			terminal,
 			data,
+			data_mrker: PhantomData,
+			ref_mrker: PhantomData,
 		} = self;
 
 		// write
@@ -60,6 +64,8 @@ impl<Term: Terminal, Data> Repl<Print, Term, Data> {
 			state: Read,
 			terminal: terminal,
 			data: data,
+			data_mrker: PhantomData,
+			ref_mrker: PhantomData,
 		}
 	}
 }

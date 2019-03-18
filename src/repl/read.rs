@@ -1,10 +1,12 @@
 use super::*;
 
+use crate::linking::{Brw, BrwMut, NoRef};
 use linefeed::terminal::{DefaultTerminal, Terminal};
 use std::io;
 
-impl<Data> Repl<Read, DefaultTerminal, Data> {
-	pub fn default_terminal(mut data: ReplData<Data>) -> Self {
+impl<Data, Ref> Default for Repl<Read, DefaultTerminal, Data, Ref> {
+	fn default() -> Self {
+		let mut data = ReplData::default();
 		data.redirect_on_execution = false;
 		let terminal1 =
 			linefeed::terminal::DefaultTerminal::new().expect("failed to start default terminal");
@@ -18,12 +20,15 @@ impl<Data> Repl<Read, DefaultTerminal, Data> {
 					.expect("failed to start input reader"),
 			},
 			data: data,
+			data_mrker: PhantomData,
+			ref_mrker: PhantomData,
 		}
 	}
 }
 
-impl<Term: Terminal + Clone, Data> Repl<Read, Term, Data> {
-	pub fn with_term(terminal: Term, data: ReplData<Data>) -> Self {
+impl<Term: Terminal + Clone, Data, Ref> Repl<Read, Term, Data, Ref> {
+	pub fn with_term(terminal: Term) -> Self {
+		let data = ReplData::default();
 		let terminal2 = terminal.clone();
 		Repl {
 			state: Read,
@@ -33,13 +38,15 @@ impl<Term: Terminal + Clone, Data> Repl<Read, Term, Data> {
 					.expect("failed to start input reader"),
 			},
 			data: data,
+			data_mrker: PhantomData,
+			ref_mrker: PhantomData,
 		}
 	}
 }
 
-impl<Term: Terminal, Data> Repl<Read, Term, Data> {
+impl<Term: Terminal, Data, Ref> Repl<Read, Term, Data, Ref> {
 	/// Reads input from the input reader until an evaluation phase can begin.
-	pub fn read(mut self) -> Repl<Evaluate, Term, Data> {
+	pub fn read(mut self) -> Repl<Evaluate, Term, Data, Ref> {
 		let mut more = false;
 		let treat_as_cmd = !self.data.cmdtree.at_root();
 		loop {
@@ -48,25 +55,18 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
 			let result = self.terminal.input_rdr.read_input(&prompt, treat_as_cmd);
 
 			more = match &result {
-				InputResult::Command(_) => false,
-				InputResult::Program(_) => false,
 				InputResult::Empty => more,
 				InputResult::More => true,
-				InputResult::Eof => false,
-				InputResult::InputError(_) => false,
+				_ => false,
 			};
 
 			if !more {
-				return Repl {
-					state: Evaluate { result },
-					terminal: self.terminal,
-					data: self.data,
-				};
+				return self.move_state(Evaluate { result });
 			}
 		}
 	}
 
-	pub fn push_input(mut self, input: char) -> PushResult<Term, Data> {
+	pub fn push_input(mut self, input: char) -> PushResult<Term, Data, Ref> {
 		let prompt = self.prompt(false);
 		let treat_as_cmd = !self.data.cmdtree.at_root();
 		match self
@@ -78,11 +78,7 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
 				if result == InputResult::More {
 					PushResult::Read(self)
 				} else {
-					PushResult::Eval(Repl {
-						state: Evaluate { result },
-						terminal: self.terminal,
-						data: self.data,
-					})
+					PushResult::Eval(self.move_state(Evaluate { result }))
 				}
 			}
 			None => PushResult::Read(self),
@@ -90,38 +86,27 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
 	}
 
 	fn prompt(&self, more: bool) -> String {
+		let s = self.data.cmdtree.path().color(self.data.prompt_colour);
 		if more {
-			format!(
-				"{}.> ",
-				self.data.cmdtree.path().color(self.data.prompt_colour)
-			)
+			format!("{}.> ", s)
 		} else {
-			format!(
-				"{}=> ",
-				self.data.cmdtree.path().color(self.data.prompt_colour)
-			)
+			format!("{}=> ", s)
 		}
 	}
 }
 
-impl<Term: Terminal + 'static, Data: Copy> Repl<Read, Term, Data> {
+impl<Term: Terminal + 'static, Data: Copy> Repl<Read, Term, Data, NoRef> {
 	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
+	/// Data must implement `Copy` such that it can loop.
 	///
 	/// # Panics
 	/// - Failure to initialise `InputReader`.
 	pub fn run(self, app_data: Data) {
-		cratesiover::output_to_writer(
-			"papyrus",
-			env!("CARGO_PKG_VERSION"),
-			&mut Writer(self.terminal.terminal.as_ref()),
-		)
-		.unwrap();
-		let mut read = self;
+		output_ver(self.terminal.terminal.as_ref());
 
+		let mut read = self;
 		loop {
-			let eval = read.read();
-			let print = eval.eval(app_data);
-			match print {
+			match read.read().eval(app_data) {
 				Ok(r) => read = r.print(),
 				Err(sig) => match sig {
 					EvalSignal::Exit => break,
@@ -129,4 +114,48 @@ impl<Term: Terminal + 'static, Data: Copy> Repl<Read, Term, Data> {
 			}
 		}
 	}
+}
+
+impl<Term: Terminal + 'static, Data> Repl<Read, Term, Data, Brw> {
+	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
+	///
+	/// # Panics
+	/// - Failure to initialise `InputReader`.
+	pub fn run(self, app_data: &Data) {
+		output_ver(self.terminal.terminal.as_ref());
+
+		let mut read = self;
+		loop {
+			match read.read().eval(app_data) {
+				Ok(r) => read = r.print(),
+				Err(sig) => match sig {
+					EvalSignal::Exit => break,
+				},
+			}
+		}
+	}
+}
+
+impl<Term: Terminal + 'static, Data> Repl<Read, Term, Data, BrwMut> {
+	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
+	///
+	/// # Panics
+	/// - Failure to initialise `InputReader`.
+	pub fn run(self, app_data: &mut Data) {
+		output_ver(self.terminal.terminal.as_ref());
+
+		let mut read = self;
+		loop {
+			match read.read().eval(app_data) {
+				Ok(r) => read = r.print(),
+				Err(sig) => match sig {
+					EvalSignal::Exit => break,
+				},
+			}
+		}
+	}
+}
+
+fn output_ver<T: Terminal>(term: &T) {
+	cratesiover::output_to_writer("papyrus", env!("CARGO_PKG_VERSION"), &mut Writer(term)).unwrap();
 }
