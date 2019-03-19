@@ -11,4 +11,4 @@ macro_rules! cb {
 }
 
 pub mod colour;
-pub mod pad;
+pub mod repl_terminal;

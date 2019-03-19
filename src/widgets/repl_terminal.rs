@@ -10,7 +10,7 @@ use std::marker::PhantomData;
 type KickOffEvalDaemon = bool;
 type HandleCb = (UpdateScreen, KickOffEvalDaemon);
 
-pub struct PadState {
+pub struct ReplTerminalState {
     terminal: MemoryTerminal,
     repl: Option<Repl<repl::Read, MemoryTerminal, (), linking::NoRef>>,
     eval: Option<repl::Evaluating<MemoryTerminal, (), linking::NoRef>>,
@@ -18,9 +18,9 @@ pub struct PadState {
     eval_daemon_id: DaemonId,
 }
 
-impl PadState {
+impl ReplTerminalState {
     pub fn new(repl: Repl<repl::Read, MemoryTerminal, (), linking::NoRef>) -> Self {
-        PadState {
+        ReplTerminalState {
             terminal: repl.terminal_inner().clone(),
             repl: Some(repl),
             eval: None,
@@ -29,7 +29,7 @@ impl PadState {
         }
     }
 
-    pub fn update_state_on_text_input<T: Layout + GetPad>(
+    pub fn update_state_on_text_input<T: Layout + GetReplTerminal>(
         &mut self,
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
@@ -45,7 +45,7 @@ impl PadState {
         )
     }
 
-    pub fn update_state_on_vk_down<T: Layout + GetPad>(
+    pub fn update_state_on_vk_down<T: Layout + GetReplTerminal>(
         &mut self,
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
@@ -91,18 +91,22 @@ impl PadState {
     }
 }
 
-pub trait GetPad {
-    fn pad_state(&mut self) -> &mut PadState;
+pub trait GetReplTerminal {
+    fn repl_term(&mut self) -> &mut ReplTerminalState;
 }
 
-pub struct Pad<T: Layout> {
+pub struct ReplTerminal<T: Layout> {
     text_input_cb_id: DefaultCallbackId,
     vk_down_cb_id: DefaultCallbackId,
     mrkr: PhantomData<T>,
 }
 
-impl<T: Layout + GetPad> Pad<T> {
-    pub fn new(window: &mut FakeWindow<T>, state_to_bind: &PadState, full_data_model: &T) -> Self {
+impl<T: Layout + GetReplTerminal> ReplTerminal<T> {
+    pub fn new(
+        window: &mut FakeWindow<T>,
+        state_to_bind: &ReplTerminalState,
+        full_data_model: &T,
+    ) -> Self {
         let ptr = StackCheckedPointer::new(full_data_model, state_to_bind).unwrap();
         let text_input_cb_id =
             window.add_callback(ptr, DefaultCallback(Self::update_state_on_text_input));
@@ -116,7 +120,7 @@ impl<T: Layout + GetPad> Pad<T> {
         }
     }
 
-    pub fn dom(self, state_to_render: &PadState) -> Dom<T> {
+    pub fn dom(self, state_to_render: &ReplTerminalState) -> Dom<T> {
         let term_str = create_terminal_string(&state_to_render.terminal);
 
         let categorised = cansi::categorise_text(&term_str);
@@ -140,11 +144,11 @@ impl<T: Layout + GetPad> Pad<T> {
         container
     }
 
-    cb!(PadState, update_state_on_text_input);
-    cb!(PadState, update_state_on_vk_down);
+    cb!(ReplTerminalState, update_state_on_text_input);
+    cb!(ReplTerminalState, update_state_on_vk_down);
 }
 
-fn maybe_kickoff_daemon<T: Layout + GetPad>(
+fn maybe_kickoff_daemon<T: Layout + GetReplTerminal>(
     app_state: &mut AppStateNoData<T>,
     daemon_id: DaemonId,
     handle_result: HandleCb,
@@ -159,11 +163,11 @@ fn maybe_kickoff_daemon<T: Layout + GetPad>(
     r
 }
 
-fn check_evaluating_done<T: GetPad>(
+fn check_evaluating_done<T: GetReplTerminal>(
     app: &mut T,
     _: &mut AppResources,
 ) -> (UpdateScreen, TerminateDaemon) {
-    let pad = app.pad_state();
+    let pad = app.repl_term();
     if pad.eval.is_none() {
         (DontRedraw, TerminateDaemon::Terminate) // if there is no eval, may as well stop checking
     } else {
@@ -182,7 +186,7 @@ fn check_evaluating_done<T: GetPad>(
     }
 }
 
-fn redraw_on_term_chg(pad: &mut PadState) -> UpdateScreen {
+fn redraw_on_term_chg(pad: &mut ReplTerminalState) -> UpdateScreen {
     let new_str = create_terminal_string(&pad.terminal);
     if new_str != pad.last_terminal_string {
         pad.last_terminal_string = new_str;
@@ -213,3 +217,26 @@ fn colour_slice<T: Layout>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
         StyleTextColor(widgets::colour::map(&cat_slice.fg_colour)).into(),
     )
 }
+
+pub const PAD_CSS: &'static str = r##"
+.terminal {
+	background-color: black;
+	padding: 5px;
+}
+
+.terminal-line {
+	flex-direction: row;
+}
+
+.terminal-text {
+	color: [[ ansi_esc_color | white ]];
+	text-align: left;
+	line-height: 135%;
+	font-size: 1em;
+	font-family: Lucida Console,Lucida Sans Typewriter,monaco,Bitstream Vera Sans Mono,monospace;
+}
+
+.terminal-text:hover {
+	border: 1px solid #9b9b9b;
+}
+"##;
