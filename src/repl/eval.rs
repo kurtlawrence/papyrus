@@ -4,6 +4,7 @@ use crate::pfh::{self, Input};
 use linefeed::terminal::Terminal;
 use std::path::Path;
 use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
 
 type HandleInputResult = (String, bool);
 
@@ -11,29 +12,7 @@ impl<Term: Terminal, Data> Repl<Evaluate, Term, Data, NoRef> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
 	pub fn eval(self, app_data: Data) -> Result<Repl<Print, Term, Data, NoRef>, EvalSignal> {
-		let Repl {
-			state,
-			terminal,
-			mut data,
-			data_mrker: PhantomData,
-			ref_mrker: PhantomData,
-		} = self;
-
-		let (to_print, as_out) = match state.result {
-			InputResult::Command(cmds) => data.handle_command(&cmds, &terminal.terminal)?,
-			InputResult::Program(input) => data.handle_program(input, &terminal.terminal, app_data),
-			InputResult::InputError(err) => (err, false),
-			InputResult::Eof => return Err(EvalSignal::Exit),
-			_ => (String::new(), false),
-		};
-
-		Ok(Repl {
-			state: Print { to_print, as_out },
-			terminal: terminal,
-			data: data,
-			data_mrker: PhantomData,
-			ref_mrker: PhantomData,
-		})
+		map_variants(self, app_data)
 	}
 }
 
@@ -41,29 +20,7 @@ impl<Term: Terminal, Data> Repl<Evaluate, Term, Data, Brw> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
 	pub fn eval(self, app_data: &Data) -> Result<Repl<Print, Term, Data, Brw>, EvalSignal> {
-		let Repl {
-			state,
-			terminal,
-			mut data,
-			data_mrker: PhantomData,
-			ref_mrker: PhantomData,
-		} = self;
-
-		let (to_print, as_out) = match state.result {
-			InputResult::Command(cmds) => data.handle_command(&cmds, &terminal.terminal)?,
-			InputResult::Program(input) => data.handle_program(input, &terminal.terminal, app_data),
-			InputResult::InputError(err) => (err, false),
-			InputResult::Eof => return Err(EvalSignal::Exit),
-			_ => (String::new(), false),
-		};
-
-		Ok(Repl {
-			state: Print { to_print, as_out },
-			terminal: terminal,
-			data: data,
-			data_mrker: PhantomData,
-			ref_mrker: PhantomData,
-		})
+		map_variants(self, app_data)
 	}
 }
 
@@ -71,76 +28,85 @@ impl<Term: Terminal, Data> Repl<Evaluate, Term, Data, BrwMut> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
 	pub fn eval(self, app_data: &mut Data) -> Result<Repl<Print, Term, Data, BrwMut>, EvalSignal> {
-		let Repl {
-			state,
-			terminal,
-			mut data,
-			data_mrker: PhantomData,
-			ref_mrker: PhantomData,
-		} = self;
+		map_variants(self, app_data)
+	}
+}
 
-		let (to_print, as_out) = match state.result {
-			InputResult::Command(cmds) => data.handle_command(&cmds, &terminal.terminal)?,
-			InputResult::Program(input) => data.handle_program(input, &terminal.terminal, app_data),
-			InputResult::InputError(err) => (err, false),
-			InputResult::Eof => return Err(EvalSignal::Exit),
-			_ => (String::new(), false),
-		};
+impl<Term: Terminal + 'static, Data: Send + 'static> Repl<Evaluate, Term, Data, NoRef> {
+	pub fn eval_async(self, app_data: Data) -> Evaluating<Term, Data, NoRef> {
+		let (tx, rx) = crossbeam::channel::bounded(0);
 
-		Ok(Repl {
+		std::thread::spawn(move || {
+			tx.send(map_variants(self, app_data)).unwrap();
+		});
+
+		Evaluating { jh: rx }
+	}
+}
+
+impl<Term: Terminal + 'static, Data: Send + Sync + 'static> Repl<Evaluate, Term, Data, Brw> {
+	pub fn eval_async(self, app_data: &Arc<Data>) -> Evaluating<Term, Data, Brw> {
+		let (tx, rx) = crossbeam::channel::bounded(0);
+
+		let clone = Arc::clone(app_data);
+
+		std::thread::spawn(move || {
+			let app_data: &Data = clone.as_ref();
+			tx.send(map_variants(self, app_data)).unwrap();
+		});
+
+		Evaluating { jh: rx }
+	}
+}
+
+impl<Term: Terminal + 'static, Data: Send + 'static> Repl<Evaluate, Term, Data, BrwMut> {
+	pub fn eval_async(self, app_data: &Arc<Mutex<Data>>) -> Evaluating<Term, Data, BrwMut> {
+		use std::borrow::BorrowMut;
+
+		let (tx, rx) = crossbeam::channel::bounded(0);
+
+		let clone = Arc::clone(app_data);
+
+		std::thread::spawn(move || {
+			let mut lock = clone.lock().expect("failed getting lock of data");
+			let app_data: &mut Data = lock.borrow_mut();
+			tx.send(map_variants(self, app_data)).unwrap();
+		});
+
+		Evaluating { jh: rx }
+	}
+}
+
+fn map_variants<T: Terminal, D, R, Data>(
+	repl: Repl<Evaluate, T, D, R>,
+	app_data: Data,
+) -> Result<Repl<Print, T, D, R>, EvalSignal> {
+	let Repl {
+		state,
+		terminal,
+		mut data,
+		..
+	} = repl;
+
+	// map variants into Result<HandleInputResult, EvalSignal>
+	match state.result {
+		InputResult::Command(cmds) => data.handle_command(&cmds, &terminal.terminal),
+		InputResult::Program(input) => Ok(data.handle_program(input, &terminal.terminal, app_data)),
+		InputResult::InputError(err) => Ok((err, false)),
+		InputResult::Eof => Err(EvalSignal::Exit),
+		_ => Ok((String::new(), false)),
+	}
+	.map(move |hir| {
+		let (to_print, as_out) = hir;
+		Repl {
 			state: Print { to_print, as_out },
 			terminal: terminal,
 			data: data,
 			data_mrker: PhantomData,
 			ref_mrker: PhantomData,
-		})
-	}
+		}
+	})
 }
-
-// impl<Term: Terminal, Data: Send + 'static, Ref: Send + 'static>
-// 	Repl<Evaluate, Term, Data, Ref>
-// {
-// 	pub fn eval_async(self, app_data: Data) -> Evaluating<Term, Data, Ref> {
-// 		let Repl {
-// 			state,
-// 			terminal,
-// 			mut data,
-// 			data_mrker: PhantomData,
-// 			ref_mrker: PhantomData,
-// 		} = self;
-
-// 		let (tx, rx) = crossbeam::channel::bounded(0);
-
-// 		std::thread::spawn(move || {
-// 			let print_repl = {
-// 				// map variants into Result<HandleInputResult, EvalSignal>
-// 				match state.result {
-// 					InputResult::Command(cmds) => data.handle_command(&cmds, &terminal.terminal),
-// 					InputResult::Program(input) => {
-// 						Ok(data.handle_program(input, &terminal.terminal, app_data))
-// 					}
-// 					InputResult::InputError(err) => Ok((err, false)),
-// 					InputResult::Eof => Err(EvalSignal::Exit),
-// 					_ => Ok((String::new(), false)),
-// 				}
-// 			}
-// 			.map(move |hir| {
-// 				let (to_print, as_out) = hir;
-// 				Repl {
-// 					state: Print { to_print, as_out },
-// 					terminal: terminal,
-// 					data: data,
-// 					data_mrker: PhantomData,
-// 					ref_mrker: PhantomData,
-// 				}
-// 			});
-
-// 			tx.send(print_repl).unwrap();
-// 		});
-
-// 		Evaluating { jh: rx }
-// 	}
-// }
 
 impl ReplData {
 	fn handle_command<T: Terminal>(
