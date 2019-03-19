@@ -126,13 +126,13 @@ impl<T: Layout + GetReplTerminal> ReplTerminal<T> {
         let categorised = cansi::categorise_text(&term_str);
 
         let mut container = Dom::div()
-            .with_class("terminal")
+            .with_class("repl-terminal")
             .with_tab_index(TabIndex::Auto); // make focusable
         container.add_default_callback_id(On::TextInput, self.text_input_cb_id);
         container.add_default_callback_id(On::VirtualKeyDown, self.vk_down_cb_id);
 
         for line in cansi::line_iter(&categorised) {
-            let mut line_div = Dom::div().with_class("terminal-line");
+            let mut line_div = Dom::div().with_class("repl-terminal-line");
             for cat in line {
                 line_div.add_child(colour_slice(&cat));
             }
@@ -212,23 +212,23 @@ fn colour_slice<T: Layout>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
     const PROPERTY_STR: &str = "ansi_esc_color";
     let s = String::from_utf8_lossy(cat_slice.text_as_bytes);
 
-    Dom::label(s).with_class("terminal-text").with_css_override(
+    Dom::label(s).with_class("repl-terminal-text").with_css_override(
         PROPERTY_STR,
         StyleTextColor(widgets::colour::map(&cat_slice.fg_colour)).into(),
     )
 }
 
 pub const PAD_CSS: &'static str = r##"
-.terminal {
+.repl-terminal {
 	background-color: black;
 	padding: 5px;
 }
 
-.terminal-line {
+.repl-terminal-line {
 	flex-direction: row;
 }
 
-.terminal-text {
+.repl-terminal-text {
 	color: [[ ansi_esc_color | white ]];
 	text-align: left;
 	line-height: 135%;
@@ -236,7 +236,7 @@ pub const PAD_CSS: &'static str = r##"
 	font-family: Lucida Console,Lucida Sans Typewriter,monaco,Bitstream Vera Sans Mono,monospace;
 }
 
-.terminal-text:hover {
+.repl-terminal-text:hover {
 	border: 1px solid #9b9b9b;
 }
 "##;

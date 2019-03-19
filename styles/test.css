@@ -1,13 +1,13 @@
-.terminal {
+.repl-terminal {
 	background-color: black;
 	padding: 5px;
 }
 
-.terminal-line {
+.repl-terminal-line {
 	flex-direction: row;
 }
 
-.terminal-text {
+.repl-terminal-text {
 	color: [[ ansi_esc_color | white ]];
 	text-align: left;
 	line-height: 135%;
@@ -15,6 +15,6 @@
 	font-family: Lucida Console,Lucida Sans Typewriter,monaco,Bitstream Vera Sans Mono,monospace;
 }
 
-.terminal-text:hover {
+.repl-terminal-text:hover {
 	border: 1px solid #9b9b9b;
 }
