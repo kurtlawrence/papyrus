@@ -7,7 +7,7 @@ use std::sync::mpsc;
 
 type HandleInputResult = (String, bool);
 
-impl<Term: Terminal + 'static, Data> Repl<Evaluate, Term, Data, NoRef> {
+impl<Term: Terminal, Data> Repl<Evaluate, Term, Data, NoRef> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
 	pub fn eval(self, app_data: Data) -> Result<Repl<Print, Term, Data, NoRef>, EvalSignal> {
@@ -37,7 +37,7 @@ impl<Term: Terminal + 'static, Data> Repl<Evaluate, Term, Data, NoRef> {
 	}
 }
 
-impl<Term: Terminal + 'static, Data> Repl<Evaluate, Term, Data, Brw> {
+impl<Term: Terminal, Data> Repl<Evaluate, Term, Data, Brw> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
 	pub fn eval(self, app_data: &Data) -> Result<Repl<Print, Term, Data, Brw>, EvalSignal> {
@@ -67,7 +67,7 @@ impl<Term: Terminal + 'static, Data> Repl<Evaluate, Term, Data, Brw> {
 	}
 }
 
-impl<Term: Terminal + 'static, Data> Repl<Evaluate, Term, Data, BrwMut> {
+impl<Term: Terminal, Data> Repl<Evaluate, Term, Data, BrwMut> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
 	pub fn eval(self, app_data: &mut Data) -> Result<Repl<Print, Term, Data, BrwMut>, EvalSignal> {
@@ -97,50 +97,50 @@ impl<Term: Terminal + 'static, Data> Repl<Evaluate, Term, Data, BrwMut> {
 	}
 }
 
-impl<Term: Terminal + 'static, Data: Send + 'static, Ref: Send + 'static>
-	Repl<Evaluate, Term, Data, Ref>
-{
-	pub fn eval_async(self, app_data: Data) -> Evaluating<Term, Data, Ref> {
-		let Repl {
-			state,
-			terminal,
-			mut data,
-			data_mrker: PhantomData,
-			ref_mrker: PhantomData,
-		} = self;
+// impl<Term: Terminal, Data: Send + 'static, Ref: Send + 'static>
+// 	Repl<Evaluate, Term, Data, Ref>
+// {
+// 	pub fn eval_async(self, app_data: Data) -> Evaluating<Term, Data, Ref> {
+// 		let Repl {
+// 			state,
+// 			terminal,
+// 			mut data,
+// 			data_mrker: PhantomData,
+// 			ref_mrker: PhantomData,
+// 		} = self;
 
-		let (tx, rx) = crossbeam::channel::bounded(0);
+// 		let (tx, rx) = crossbeam::channel::bounded(0);
 
-		std::thread::spawn(move || {
-			let print_repl = {
-				// map variants into Result<HandleInputResult, EvalSignal>
-				match state.result {
-					InputResult::Command(cmds) => data.handle_command(&cmds, &terminal.terminal),
-					InputResult::Program(input) => {
-						Ok(data.handle_program(input, &terminal.terminal, app_data))
-					}
-					InputResult::InputError(err) => Ok((err, false)),
-					InputResult::Eof => Err(EvalSignal::Exit),
-					_ => Ok((String::new(), false)),
-				}
-			}
-			.map(move |hir| {
-				let (to_print, as_out) = hir;
-				Repl {
-					state: Print { to_print, as_out },
-					terminal: terminal,
-					data: data,
-					data_mrker: PhantomData,
-					ref_mrker: PhantomData,
-				}
-			});
+// 		std::thread::spawn(move || {
+// 			let print_repl = {
+// 				// map variants into Result<HandleInputResult, EvalSignal>
+// 				match state.result {
+// 					InputResult::Command(cmds) => data.handle_command(&cmds, &terminal.terminal),
+// 					InputResult::Program(input) => {
+// 						Ok(data.handle_program(input, &terminal.terminal, app_data))
+// 					}
+// 					InputResult::InputError(err) => Ok((err, false)),
+// 					InputResult::Eof => Err(EvalSignal::Exit),
+// 					_ => Ok((String::new(), false)),
+// 				}
+// 			}
+// 			.map(move |hir| {
+// 				let (to_print, as_out) = hir;
+// 				Repl {
+// 					state: Print { to_print, as_out },
+// 					terminal: terminal,
+// 					data: data,
+// 					data_mrker: PhantomData,
+// 					ref_mrker: PhantomData,
+// 				}
+// 			});
 
-			tx.send(print_repl).unwrap();
-		});
+// 			tx.send(print_repl).unwrap();
+// 		});
 
-		Evaluating { jh: rx }
-	}
-}
+// 		Evaluating { jh: rx }
+// 	}
+// }
 
 impl ReplData {
 	fn handle_command<T: Terminal>(
@@ -165,7 +165,7 @@ impl ReplData {
 		Ok(tuple)
 	}
 
-	fn handle_program<T: Terminal + 'static, Data>(
+	fn handle_program<T: Terminal, Data>(
 		&mut self,
 		input: Input,
 		terminal: &Arc<T>,

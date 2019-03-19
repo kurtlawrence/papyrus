@@ -25,7 +25,7 @@ where
 	}
 }
 
-pub fn exec_and_redirect<'c, P: AsRef<Path>, Data, W: Write + Send + 'static>(
+pub fn exec_and_redirect<'c, P: AsRef<Path>, Data, W: Write + Send>(
 	library_file: P,
 	function_name: &str,
 	app_data: Data,
@@ -34,21 +34,24 @@ pub fn exec_and_redirect<'c, P: AsRef<Path>, Data, W: Write + Send + 'static>(
 	let lib = get_lib(library_file)?;
 	let func = get_func(&lib, function_name)?;
 
-	let (tx, rx) = std::sync::mpsc::channel();
+	let (tx, rx) = crossbeam::channel::bounded(0);
 
 	let (stdout_gag, stderr_gag) =
 		get_gags().map_err(|_| "failed to apply redirect gags on stdout and stderr")?;
 
-	let jh = std::thread::spawn(move || {
-		redirect_output_loop(&mut output_wtr, rx, stdout_gag, stderr_gag)
+	let res = crossbeam::scope(|scope| {
+		let jh = scope.spawn(|_| redirect_output_loop(&mut output_wtr, rx, stdout_gag, stderr_gag));
+
+		let res =
+			std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe { func(app_data) }));
+
+		tx.send(());
+		jh.join();
+		res
 	});
 
-	let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe { func(app_data) }));
-
-	tx.send(());
-	jh.join()
-		.map_err(|_| "error joining redirection thread")?
-		.map_err(|_| "redirection thread encountered error!")?;
+	let res = res.map_err(|_| "crossbeam scoping failed")?;
+	// let jh = std::thread::spawn(move || {});
 
 	match res {
 		Ok(s) => Ok(s),
@@ -82,7 +85,7 @@ fn get_gags() -> io::Result<(shh::ShhStdout, shh::ShhStderr)> {
 
 fn redirect_output_loop<W: Write, R1: io::Read, R2: io::Read>(
 	wtr: &mut W,
-	rx: mpsc::Receiver<()>,
+	rx: crossbeam::channel::Receiver<()>,
 	mut stdout_gag: R1,
 	mut stderr_gag: R2,
 ) -> io::Result<()> {
@@ -99,8 +102,8 @@ fn redirect_output_loop<W: Write, R1: io::Read, R2: io::Read>(
 		wtr.write_all(&buf)?;
 
 		match rx.try_recv() {
-			Ok(_) => break,                                 // stop signal sent
-			Err(mpsc::TryRecvError::Disconnected) => break, // tx dropped
+			Ok(_) => break,                                               // stop signal sent
+			Err(crossbeam::channel::TryRecvError::Disconnected) => break, // tx dropped
 			_ => (),
 		};
 	}

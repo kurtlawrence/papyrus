@@ -95,7 +95,7 @@ impl<Term: Terminal, Data, Ref> Repl<Read, Term, Data, Ref> {
 	}
 }
 
-impl<Term: Terminal + 'static, Data: Copy> Repl<Read, Term, Data, NoRef> {
+impl<Term: Terminal, Data: Copy> Repl<Read, Term, Data, NoRef> {
 	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
 	/// Data must implement `Copy` such that it can loop.
 	///
@@ -116,7 +116,7 @@ impl<Term: Terminal + 'static, Data: Copy> Repl<Read, Term, Data, NoRef> {
 	}
 }
 
-impl<Term: Terminal + 'static, Data> Repl<Read, Term, Data, Brw> {
+impl<Term: Terminal, Data> Repl<Read, Term, Data, Brw> {
 	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
 	///
 	/// # Panics
@@ -136,7 +136,7 @@ impl<Term: Terminal + 'static, Data> Repl<Read, Term, Data, Brw> {
 	}
 }
 
-impl<Term: Terminal + 'static, Data> Repl<Read, Term, Data, BrwMut> {
+impl<Term: Terminal, Data> Repl<Read, Term, Data, BrwMut> {
 	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
 	///
 	/// # Panics
