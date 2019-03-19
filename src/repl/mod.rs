@@ -64,6 +64,10 @@ pub struct Repl<S, Term: Terminal, Data, Ref> {
 }
 
 impl<S, T: Terminal, D, R> Repl<S, T, D, R> {
+	pub fn terminal_inner(&self) -> &T {
+		self.terminal.terminal.as_ref()
+	}
+
     fn move_state<N>(self, state: N) -> Repl<N, T, D, R> {
         Repl {
             state: state,

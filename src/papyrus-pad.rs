@@ -52,13 +52,9 @@ fn create_terminal_string(term: &MemoryTerminal) -> String {
 }
 
 fn on_text_input(state: &mut AppState<MyApp>, event: &mut CallbackInfo<MyApp>) -> UpdateScreen {
-    let keyboard_state = state.windows[event.window_id].get_keyboard_state();
-    if let Some(ch) = keyboard_state.current_char {
-        state.data.modify(|s| s.handle_input(ch));
-        Redraw
-    } else {
-        DontRedraw
-    }
+    let ch = state.windows[event.window_id].get_keyboard_state().current_char?;
+    state.data.modify(|s| s.handle_input(ch));
+    Redraw
 }
 
 fn on_vk_keydown(state: &mut AppState<MyApp>, event: &mut CallbackInfo<MyApp>) -> UpdateScreen {
