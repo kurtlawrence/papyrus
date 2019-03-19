@@ -4,38 +4,17 @@ extern crate papyrus;
 use azul::prelude::*;
 use linefeed::memory::MemoryTerminal;
 use papyrus::prelude::*;
-use papyrus::widgets;
+use papyrus::widgets::{self, pad::*};
 
 struct MyApp {
     terminal: MemoryTerminal,
     last_terminal_string: String,
-    repl: Option<Repl<repl::Read, MemoryTerminal, (), linking::NoRef>>,
-    eval: Option<repl::Evaluating<MemoryTerminal, (), linking::NoRef>>,
+    pad: PadState,
 }
 
 impl Layout for MyApp {
-    fn layout(&self, _: LayoutInfo<Self>) -> Dom<Self> {
-        let term_str = create_terminal_string(&self.terminal);
-
-        let categorised = cansi::categorise_text(&term_str);
-
-        let mut container = Dom::div()
-            .with_class("terminal")
-            .with_callback(On::TextInput, Callback(on_text_input))
-            .with_callback(On::VirtualKeyDown, Callback(on_vk_keydown))
-            .with_tab_index(TabIndex::Auto); // make focusable
-
-        for line in cansi::line_iter(&categorised) {
-            let mut line_div = Dom::div().with_class("terminal-line");
-            for cat in line {
-                line_div.add_child(colour_slice(&cat));
-            }
-            container.add_child(line_div);
-        }
-
-        //container.debug_dump();	// debug layout
-
-        container
+    fn layout(&self, info: LayoutInfo<Self>) -> Dom<Self> {
+        Dom::div().with_child(Pad::new(info.window, &self.pad, &self).dom(&self.pad))
     }
 }
 
@@ -51,30 +30,30 @@ fn create_terminal_string(term: &MemoryTerminal) -> String {
     string
 }
 
-fn on_text_input(state: &mut AppState<MyApp>, event: &mut CallbackInfo<MyApp>) -> UpdateScreen {
-    let ch = state.windows[event.window_id].get_keyboard_state().current_char?;
-    state.data.modify(|s| s.handle_input(ch));
-    Redraw
-}
+// fn on_text_input(state: &mut AppState<MyApp>, event: &mut CallbackInfo<MyApp>) -> UpdateScreen {
+//     let ch = state.windows[event.window_id].get_keyboard_state().current_char?;
+//     state.data.modify(|s| s.handle_input(ch));
+//     Redraw
+// }
 
-fn on_vk_keydown(state: &mut AppState<MyApp>, event: &mut CallbackInfo<MyApp>) -> UpdateScreen {
-    let keyboard_state = state.windows[event.window_id].get_keyboard_state();
-    match keyboard_state.latest_virtual_keycode {
-        Some(VirtualKeyCode::Back) => {
-            state.data.modify(|s| s.handle_input('\x08')); // backspace character
-            Redraw
-        }
-        Some(VirtualKeyCode::Tab) => {
-            state.data.modify(|s| s.handle_input('\t'));
-            Redraw
-        }
-        Some(VirtualKeyCode::Return) => {
-            state.data.modify(|s| s.handle_input('\n')); // this allows the read_line() to exit
-            Redraw
-        }
-        _ => DontRedraw,
-    }
-}
+// fn on_vk_keydown(state: &mut AppState<MyApp>, event: &mut CallbackInfo<MyApp>) -> UpdateScreen {
+//     let keyboard_state = state.windows[event.window_id].get_keyboard_state();
+//     match keyboard_state.latest_virtual_keycode {
+//         Some(VirtualKeyCode::Back) => {
+//             state.data.modify(|s| s.handle_input('\x08')); // backspace character
+//             Redraw
+//         }
+//         Some(VirtualKeyCode::Tab) => {
+//             state.data.modify(|s| s.handle_input('\t'));
+//             Redraw
+//         }
+//         Some(VirtualKeyCode::Return) => {
+//             state.data.modify(|s| s.handle_input('\n')); // this allows the read_line() to exit
+//             Redraw
+//         }
+//         _ => DontRedraw,
+//     }
+// }
 
 fn check_terminal_change(app: &mut MyApp, _: &mut AppResources) -> (UpdateScreen, TerminateDaemon) {
     let new_str = create_terminal_string(&app.terminal);
@@ -86,35 +65,35 @@ fn check_terminal_change(app: &mut MyApp, _: &mut AppResources) -> (UpdateScreen
     }
 }
 
-fn check_evaluating_done(app: &mut MyApp, _: &mut AppResources) -> (UpdateScreen, TerminateDaemon) {
-    let done = app.eval.as_ref().map_or(false, |e| e.completed());
-    if done {
-        let eval = app.eval.take().expect("should be some");
-        app.repl = Some(
-            eval.wait()
-                .expect("got an eval signal, which I have not handled yet")
-                .print(),
-        );
-        (Redraw, TerminateDaemon::Continue)
-    } else {
-        (DontRedraw, TerminateDaemon::Continue)
-    }
-}
+// fn check_evaluating_done(app: &mut MyApp, _: &mut AppResources) -> (UpdateScreen, TerminateDaemon) {
+//     let done = app.eval.as_ref().map_or(false, |e| e.completed());
+//     if done {
+//         let eval = app.eval.take().expect("should be some");
+//         app.repl = Some(
+//             eval.wait()
+//                 .expect("got an eval signal, which I have not handled yet")
+//                 .print(),
+//         );
+//         (Redraw, TerminateDaemon::Continue)
+//     } else {
+//         (DontRedraw, TerminateDaemon::Continue)
+//     }
+// }
 
-impl MyApp {
-    fn handle_input(&mut self, input: char) {
-        if self.eval.is_none() {
-            let repl = self
-                .repl
-                .take()
-                .expect("repl was empty, which would indicate a broken state?");
-            match repl.push_input(input) {
-                repl::PushResult::Read(r) => self.repl = Some(r),
-                repl::PushResult::Eval(r) => self.eval = Some(r.eval_async(())),
-            }
-        }
-    }
-}
+// impl MyApp {
+//     fn handle_input(&mut self, input: char) {
+//         if self.eval.is_none() {
+//             let repl = self
+//                 .repl
+//                 .take()
+//                 .expect("repl was empty, which would indicate a broken state?");
+//             match repl.push_input(input) {
+//                 repl::PushResult::Read(r) => self.repl = Some(r),
+//                 repl::PushResult::Eval(r) => self.eval = Some(r.eval_async(())),
+//             }
+//         }
+//     }
+// }
 
 fn main() {
     let term = MemoryTerminal::new();
@@ -130,13 +109,14 @@ fn main() {
     //     }
     // });
 
+    let repl = repl_with_term!(term.clone());
+
     let mut app = {
         App::new(
             MyApp {
                 terminal: term,
                 last_terminal_string: String::new(),
-                repl: Some(repl_with_term!(closure_term)),
-                eval: None,
+                pad: PadState::new(repl),
             },
             AppConfig {
                 enable_logging: Some(LevelFilter::Error),
@@ -162,9 +142,9 @@ fn main() {
         Daemon::new(check_terminal_change).with_interval(std::time::Duration::from_millis(2));
     app.add_daemon(DaemonId::new(), daemon);
 
-    let daemon =
-        Daemon::new(check_evaluating_done).with_interval(std::time::Duration::from_millis(2));
-    app.add_daemon(DaemonId::new(), daemon);
+    // let daemon =
+    //     Daemon::new(check_evaluating_done).with_interval(std::time::Duration::from_millis(2));
+    // app.add_daemon(DaemonId::new(), daemon);
 
     app.run(window).unwrap();
 }
