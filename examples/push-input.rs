@@ -28,4 +28,20 @@ hello()
 			papyrus::repl::PushResult::Eval(r) => repl = r.eval(()).unwrap().print(),
 		}
 	}
+
+	// there is another way to handle this, we can send through a block of code and get it to eval straight away
+	// A slice is returned of the unread code, meaning you can place into a loop
+	// I am eliding checking of EvalSignals and the push_input_str
+	let code = r#"fn hello2() -> &'static str {
+"hello2"
+}
+hello2()
+"#;
+
+	let mut slice = code;
+	while slice.len() > 0 {
+		let (eval, s) = repl.push_input_str(slice).unwrap();
+		slice = s;
+		repl = eval.eval(()).unwrap().print();
+	}
 }

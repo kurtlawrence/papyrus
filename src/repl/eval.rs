@@ -7,11 +7,12 @@ use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
 type HandleInputResult = (String, bool);
+type EvalResult<Term, Data, Ref> = Result<Repl<Print, Term, Data, Ref>, EvalSignal>;
 
 impl<Term: Terminal, Data> Repl<Evaluate, Term, Data, NoRef> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
-	pub fn eval(self, app_data: Data) -> Result<Repl<Print, Term, Data, NoRef>, EvalSignal> {
+	pub fn eval(self, app_data: Data) -> EvalResult<Term, Data, NoRef> {
 		map_variants(self, app_data)
 	}
 }
@@ -19,7 +20,7 @@ impl<Term: Terminal, Data> Repl<Evaluate, Term, Data, NoRef> {
 impl<Term: Terminal, Data> Repl<Evaluate, Term, Data, Brw> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
-	pub fn eval(self, app_data: &Data) -> Result<Repl<Print, Term, Data, Brw>, EvalSignal> {
+	pub fn eval(self, app_data: &Data) -> EvalResult<Term, Data, Brw> {
 		map_variants(self, app_data)
 	}
 }
@@ -27,14 +28,14 @@ impl<Term: Terminal, Data> Repl<Evaluate, Term, Data, Brw> {
 impl<Term: Terminal, Data> Repl<Evaluate, Term, Data, BrwMut> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
-	pub fn eval(self, app_data: &mut Data) -> Result<Repl<Print, Term, Data, BrwMut>, EvalSignal> {
+	pub fn eval(self, app_data: &mut Data) -> EvalResult<Term, Data, BrwMut> {
 		map_variants(self, app_data)
 	}
 }
 
 impl<Term: Terminal + 'static, Data: Send + 'static> Repl<Evaluate, Term, Data, NoRef> {
 	pub fn eval_async(self, app_data: Data) -> Evaluating<Term, Data, NoRef> {
-		let (tx, rx) = crossbeam::channel::bounded(0);
+		let (tx, rx) = crossbeam::channel::bounded(1);
 
 		std::thread::spawn(move || {
 			tx.send(map_variants(self, app_data)).unwrap();
@@ -46,7 +47,7 @@ impl<Term: Terminal + 'static, Data: Send + 'static> Repl<Evaluate, Term, Data, 
 
 impl<Term: Terminal + 'static, Data: Send + Sync + 'static> Repl<Evaluate, Term, Data, Brw> {
 	pub fn eval_async(self, app_data: &Arc<Data>) -> Evaluating<Term, Data, Brw> {
-		let (tx, rx) = crossbeam::channel::bounded(0);
+		let (tx, rx) = crossbeam::channel::bounded(1);
 
 		let clone = Arc::clone(app_data);
 
@@ -63,7 +64,7 @@ impl<Term: Terminal + 'static, Data: Send + 'static> Repl<Evaluate, Term, Data, 
 	pub fn eval_async(self, app_data: &Arc<Mutex<Data>>) -> Evaluating<Term, Data, BrwMut> {
 		use std::borrow::BorrowMut;
 
-		let (tx, rx) = crossbeam::channel::bounded(0);
+		let (tx, rx) = crossbeam::channel::bounded(1);
 
 		let clone = Arc::clone(app_data);
 
@@ -77,10 +78,22 @@ impl<Term: Terminal + 'static, Data: Send + 'static> Repl<Evaluate, Term, Data, 
 	}
 }
 
+impl<Term: Terminal, Data, Ref> Evaluating<Term, Data, Ref> {
+	pub fn completed(&self) -> bool {
+		!self.jh.is_empty()
+	}
+
+	pub fn wait(self) -> EvalResult<Term, Data, Ref> {
+		self.jh
+			.recv()
+			.expect("receiving eval result from async thread failed")
+	}
+}
+
 fn map_variants<T: Terminal, D, R, Data>(
 	repl: Repl<Evaluate, T, D, R>,
 	app_data: Data,
-) -> Result<Repl<Print, T, D, R>, EvalSignal> {
+) -> EvalResult<T, D, R> {
 	let Repl {
 		state,
 		terminal,

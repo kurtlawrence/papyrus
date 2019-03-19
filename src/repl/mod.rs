@@ -1,18 +1,18 @@
 //! The repl takes the commands given and evaluates them, setting a local variable such that the data can be continually referenced.
-//! 
+//!
 //! ```sh
 //! papyrus=> let a = 1;
 //! papyrus.> a
 //! papyrus [out0]: 1
 //! papyrus=>
 //! ```
-//! 
+//!
 //! Here we define a variable `let a = 1;`. Papyrus knows that the end result is not an expression (given the trailing semi colon) so waits for more input (`.>`). We then give it `a` which is an expression and gets evaluated. If compilation is successful the expression is set to the variable `out0` (where the number will increment with expressions) and then be printed with the `Debug` trait. If an expression evaluates to something that is not `Debug` then you will receive a compilation error. Finally the repl awaits more input `=>`.
-//! 
+//!
 //! > The expression is using `let out# = <expr>;` behind the scenes.
-//! 
+//!
 //! You can also define structures and functions.
-//! 
+//!
 //! ```sh
 //! papyrus=> fn a(i: u32) -> u32 {
 //! papyrus.> i + 1
@@ -21,7 +21,7 @@
 //! papyrus [out0]: 2
 //! papyrus=>
 //! ```
-//! 
+//!
 //! ```txt
 //! papyrus=> #[derive(Debug)] struct A {
 //! papyrus.> a: u32,
@@ -32,7 +32,7 @@
 //! papyrus [out0]: A { a: 1, b: 2 }
 //! papyrus=>
 //! ```
-//! 
+//!
 //! Please help if the Repl cannot parse your statements, or help with documentation! [https://github.com/kurtlawrence/papyrus](https://github.com/kurtlawrence/papyrus).
 mod data;
 mod eval;
@@ -48,6 +48,7 @@ use crossbeam::channel::Receiver;
 use crossbeam::thread::ScopedJoinHandle;
 use linefeed::terminal::Terminal;
 use std::collections::HashMap;
+use std::fmt;
 use std::fs;
 use std::io::{self, Write};
 use std::marker::PhantomData;
@@ -71,6 +72,12 @@ impl<S, T: Terminal, D, R> Repl<S, T, D, R> {
 			data_mrker: self.data_mrker,
 			ref_mrker: self.ref_mrker,
 		}
+	}
+}
+
+impl<S: fmt::Debug, T: Terminal, D, R> fmt::Debug for Repl<S, T, D, R> {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "Repl in <{:?}> state instance", self.state)
 	}
 }
 
@@ -109,6 +116,7 @@ struct Writer<'a, T: Terminal>(&'a T);
 /// This is done to be able to `Send` a writer with a reference to the terminal in it.
 struct OwnedWriter<T: Terminal>(Arc<T>);
 
+#[derive(Debug)]
 pub struct Read;
 pub struct Evaluate {
 	result: InputResult,

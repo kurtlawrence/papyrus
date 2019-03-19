@@ -69,11 +69,41 @@ impl<Term: Terminal, Data, Ref> Repl<Read, Term, Data, Ref> {
 	pub fn push_input(mut self, input: char) -> PushResult<Term, Data, Ref> {
 		let prompt = self.prompt(false);
 		let treat_as_cmd = !self.data.cmdtree.at_root();
-		match self
-			.terminal
-			.input_rdr
-			.push_input(&prompt, treat_as_cmd, input)
-		{
+		self.handle_ch(&prompt, treat_as_cmd, input)
+	}
+
+	pub fn push_input_str<'s>(
+		self,
+		input: &'s str,
+	) -> Result<(Repl<Evaluate, Term, Data, Ref>, &'s str), Repl<Read, Term, Data, Ref>> {
+		let treat_as_cmd = !self.data.cmdtree.at_root();
+		let prompt = self.prompt(false);
+
+		let mut idx = 0;
+
+		let mut result = PushResult::Read(self);
+		for ch in input.chars() {
+			result = match result {
+				PushResult::Read(repl) => repl.handle_ch(&prompt, treat_as_cmd, ch),
+				PushResult::Eval(repl) => return Ok((repl, &input[idx..])),
+			};
+
+			idx += 1; // consumed one character
+		}
+
+		match result {
+			PushResult::Read(r) => Err(r),
+			PushResult::Eval(r) => Ok((r, &input[idx..])),
+		}
+	}
+
+	fn handle_ch(
+		mut self,
+		prompt: &str,
+		treat_as_cmd: bool,
+		ch: char,
+	) -> PushResult<Term, Data, Ref> {
+		match self.terminal.input_rdr.push_input(prompt, treat_as_cmd, ch) {
 			Some(result) => {
 				if result == InputResult::More {
 					PushResult::Read(self)
