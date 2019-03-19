@@ -6,7 +6,8 @@
 - there is no more variants for borrowing patterns, only the specified data type
 - Added a `push_input()` function a `Read` repl. This allows for pushing of characters onto the repl without reading from `stdin`.
 - `Repl` now takes ownership of `ReplData`. It did not make sense to borrow as you would have to drop `Repl` to make any changes to `ReplData`...
-- 
+- Added `push_input_str()` - an extension of `push_input()`
+- Added `eval_async` functions for `Repl`s in the `Evaluate` stage
 
 ## 0.7.0
 
