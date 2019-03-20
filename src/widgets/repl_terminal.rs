@@ -212,10 +212,12 @@ fn colour_slice<T: Layout>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
     const PROPERTY_STR: &str = "ansi_esc_color";
     let s = String::from_utf8_lossy(cat_slice.text_as_bytes);
 
-    Dom::label(s).with_class("repl-terminal-text").with_css_override(
-        PROPERTY_STR,
-        StyleTextColor(widgets::colour::map(&cat_slice.fg_colour)).into(),
-    )
+    Dom::label(s)
+        .with_class("repl-terminal-text")
+        .with_css_override(
+            PROPERTY_STR,
+            StyleTextColor(widgets::colour::map(&cat_slice.fg_colour)).into(),
+        )
 }
 
 pub const PAD_CSS: &'static str = r##"

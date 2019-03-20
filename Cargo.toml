@@ -20,6 +20,7 @@ azul-widgets = [ "azul", "cansi" ]
 [dependencies]
 dirs = "1.0"
 linefeed = { git="https://github.com/kurtlawrence/linefeed", rev = "e66e1ea0477fc2d298a4cca5f84800da858d3e14" }
+# linefeed = { path = "../linefeed" }
 log = "0.4"
 syn = {	version = "0.15", default-features = false,	features =  [ "full" ] }
 simplelog = "0.5"
