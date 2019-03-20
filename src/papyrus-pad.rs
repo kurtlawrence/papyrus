@@ -5,26 +5,27 @@ use azul::prelude::*;
 use linefeed::memory::MemoryTerminal;
 use papyrus::prelude::*;
 use papyrus::widgets::pad::*;
+use std::sync::{Arc, Mutex};
 
-type TypedPadState<'a> = PadState<'a, (), linking::NoRef>;
+type TypedPadState = PadState<String>;
 
-struct MyApp<'a> {
-    repl_term: TypedPadState<'a>,
+struct MyApp {
+    repl_term: TypedPadState,
 }
 
-impl<'a> std::borrow::BorrowMut<TypedPadState<'a>> for MyApp<'a> {
-    fn borrow_mut(&mut self) -> &mut TypedPadState<'a> {
+impl std::borrow::BorrowMut<TypedPadState> for MyApp {
+    fn borrow_mut(&mut self) -> &mut TypedPadState {
         &mut self.repl_term
     }
 }
 
-impl<'a> std::borrow::Borrow<TypedPadState<'a>> for MyApp<'a> {
-    fn borrow(&self) -> &TypedPadState<'a> {
+impl std::borrow::Borrow<TypedPadState> for MyApp {
+    fn borrow(&self) -> &TypedPadState {
         &self.repl_term
     }
 }
 
-impl<'a> Layout for MyApp<'a> {
+impl Layout for MyApp {
     fn layout(&self, info: LayoutInfo<Self>) -> Dom<Self> {
         Dom::div()
             .with_child(ReplTerminal::new(info.window, &self.repl_term, &self).dom(&self.repl_term))
@@ -34,12 +35,12 @@ impl<'a> Layout for MyApp<'a> {
 fn main() {
     let term = MemoryTerminal::new();
 
-    let repl = repl_with_term!(term.clone());
+    let repl = repl_with_term!(term.clone(), &mut String);
 
     let app = {
         App::new(
             MyApp {
-                repl_term: PadState::new(repl, ()),
+                repl_term: PadState::new_brw_mut(repl, Arc::new(Mutex::new(12345.to_string()))),
             },
             AppConfig {
                 enable_logging: Some(LevelFilter::Error),
