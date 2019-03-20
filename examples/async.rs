@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate papyrus;
 
-use papyrus::prelude::*;
 use std::sync::{Arc, Mutex};
 
 fn main() {
