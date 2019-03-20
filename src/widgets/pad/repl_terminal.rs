@@ -11,19 +11,24 @@ type KickOffEvalDaemon = bool;
 type HandleCb = (UpdateScreen, KickOffEvalDaemon);
 
 pub struct ReplTerminalState {
+	repl: EvalState,
     terminal: MemoryTerminal,
-    repl: Option<Repl<repl::Read, MemoryTerminal, (), linking::NoRef>>,
-    eval: Option<repl::Evaluating<MemoryTerminal, (), linking::NoRef>>,
+    // repl: Option<Repl<repl::Read, MemoryTerminal, (), linking::NoRef>>,
+    // eval: Option<repl::Evaluating<MemoryTerminal, (), linking::NoRef>>,
     last_terminal_string: String,
     eval_daemon_id: DaemonId,
 }
 
+
+
+
+
 impl ReplTerminalState {
     pub fn new(repl: Repl<repl::Read, MemoryTerminal, (), linking::NoRef>) -> Self {
+		let term = repl.terminal_inner().clone();
         ReplTerminalState {
-            terminal: repl.terminal_inner().clone(),
-            repl: Some(repl),
-            eval: None,
+			repl: EvalState::new(repl),
+            terminal: term,
             last_terminal_string: String::new(),
             eval_daemon_id: DaemonId::new(),
         }
@@ -63,22 +68,36 @@ impl ReplTerminalState {
 
     fn handle_input(&mut self, input: char) -> HandleCb {
         let mut kickoff = false;
-        if self.eval.is_none() {
-            let repl = self
-                .repl
-                .take()
-                .expect("repl was empty, which would indicate a broken state?");
-            match repl.push_input(input) {
-                repl::PushResult::Read(r) => self.repl = Some(r),
-                repl::PushResult::Eval(r) => {
-                    kickoff = true;
-                    self.eval = Some(r.eval_async(()));
-                }
-            }
-            (Redraw, kickoff)
-        } else {
-            (DontRedraw, kickoff)
-        }
+		match self.repl.take_read() {
+			Some(repl) => {
+				match repl.push_input(input) {
+					repl::PushResult::Read(r) => self.repl.put_read(r),
+					repl::PushResult::Eval(r) => {
+						kickoff = true;
+						self.repl.put_eval(r.eval_async(()));
+					}
+				}
+				(Redraw, kickoff)
+			},
+			None => 			(DontRedraw, kickoff)				,
+		}
+
+        // if self.eval.is_none() {
+        //     let repl = self
+        //         .repl
+        //         .take()
+        //         .expect("repl was empty, which would indicate a broken state?");
+        //     match repl.push_input(input) {
+        //         repl::PushResult::Read(r) => self.repl = Some(r),
+        //         repl::PushResult::Eval(r) => {
+        //             kickoff = true;
+        //             self.eval = Some(r.eval_async(()));
+        //         }
+        //     }
+        //     (Redraw, kickoff)
+        // } else {
+        //     (DontRedraw, kickoff)
+        // }
     }
 
     fn handle_vk(&mut self, vk: VirtualKeyCode) -> HandleCb {
@@ -168,22 +187,56 @@ fn check_evaluating_done<T: GetReplTerminal>(
     _: &mut AppResources,
 ) -> (UpdateScreen, TerminateDaemon) {
     let pad = app.repl_term();
-    if pad.eval.is_none() {
-        (DontRedraw, TerminateDaemon::Terminate) // if there is no eval, may as well stop checking
-    } else {
-        let done = pad.eval.as_ref().map_or(false, |e| e.completed());
-        if done {
-            let eval = pad.eval.take().expect("should be some");
-            pad.repl = Some(
-                eval.wait()
-                    .expect("got an eval signal, which I have not handled yet")
-                    .print(),
-            );
-            (Redraw, TerminateDaemon::Terminate) // turn off daemon now
-        } else {
-            (redraw_on_term_chg(pad), TerminateDaemon::Continue) // continue to check later
-        }
-    }
+
+	match pad.repl.take_eval() {
+		Some(eval) => {
+			if eval.completed() {
+				pad.repl.put_read(eval.wait()
+						.expect("got an eval signal, which I have not handled yet")
+						.print());				
+				(Redraw, TerminateDaemon::Terminate) // turn off daemon now
+			} else {
+				pad.repl.put_eval(eval);
+				(redraw_on_term_chg(pad), TerminateDaemon::Continue) // continue to check later
+			}
+		},
+		None => (DontRedraw, TerminateDaemon::Terminate) // if there is no eval, may as well stop checking
+	}
+
+
+
+	// match pad.repl {
+	// 	EvalState::Read(_) => 
+	// 	EvalState::Eval(eval) => {
+	// 		if eval.completed() {
+	// 			pad.repl = EvalState::Read(
+	// 				eval.wait()
+	// 					.expect("got an eval signal, which I have not handled yet")
+	// 					.print(),
+	// 			);
+	// 			(Redraw, TerminateDaemon::Terminate) // turn off daemon now
+	// 		} else {
+	// 			(redraw_on_term_chg(pad), TerminateDaemon::Continue) // continue to check later
+	// 		}
+	// 	}
+	// }
+
+    // if pad.eval.is_none() {
+    //     (DontRedraw, TerminateDaemon::Terminate) // if there is no eval, may as well stop checking
+    // } else {
+    //     let done = pad.eval.as_ref().map_or(false, |e| e.completed());
+    //     if done {
+    //         let eval = pad.eval.take().expect("should be some");
+    //         pad.repl = Some(
+    //             eval.wait()
+    //                 .expect("got an eval signal, which I have not handled yet")
+    //                 .print(),
+    //         );
+    //         (Redraw, TerminateDaemon::Terminate) // turn off daemon now
+    //     } else {
+    //         (redraw_on_term_chg(pad), TerminateDaemon::Continue) // continue to check later
+    //     }
+    // }
 }
 
 fn redraw_on_term_chg(pad: &mut ReplTerminalState) -> UpdateScreen {
