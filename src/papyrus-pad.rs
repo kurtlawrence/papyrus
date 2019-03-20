@@ -35,12 +35,12 @@ impl Layout for MyApp {
 fn main() {
     let term = MemoryTerminal::new();
 
-    let repl = repl_with_term!(term.clone(), &mut String);
+    let repl = repl_with_term!(term.clone(), String);
 
     let app = {
         App::new(
             MyApp {
-                repl_term: PadState::new_brw_mut(repl, Arc::new(Mutex::new(12345.to_string()))),
+                repl_term: PadState::new(repl, Arc::new(Mutex::new(12345.to_string()))),
             },
             AppConfig {
                 enable_logging: Some(LevelFilter::Error),

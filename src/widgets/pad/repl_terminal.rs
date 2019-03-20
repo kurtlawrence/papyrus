@@ -12,7 +12,7 @@ use std::marker::PhantomData;
 type KickOffEvalDaemon = bool;
 type HandleCb = (UpdateScreen, KickOffEvalDaemon);
 
-impl<D: 'static + Send + Sync> PadState<D> {
+impl<D: 'static + Send> PadState<D> {
     pub fn update_state_on_text_input<T: Layout + BorrowMut<PadState<D>>>(
         &mut self,
         app_state: &mut AppStateNoData<T>,
@@ -55,89 +55,34 @@ impl<D: 'static + Send + Sync> PadState<D> {
     }
 }
 
-impl<D: 'static + Send + Sync> PadState<D> {
+impl<D: 'static + Send> PadState<D> {
     fn handle_input(&mut self, input: char) -> HandleCb {
-        match &mut self.repl {
-            RefTypeVariant::NoRef(r) => handle_input_no_ref(r, input, &self.data),
-            RefTypeVariant::Brw(r) => handle_input_brw(r, input, &self.data),
-            RefTypeVariant::BrwMut(r) => handle_input_brw_mut(r, input, &self.data),
-        }
+        let mut kickoff = false;
+		match self.repl.take_read() {
+			Some(repl) => {
+				match repl.push_input(input) {
+					repl::PushResult::Read(r) => self.repl.put_read(r),
+					repl::PushResult::Eval(r) => {
+						kickoff = true;
+						self.repl.put_eval(r.eval_async(&self.data));
+					}
+				}
+				(Redraw, kickoff)
+			}
+			None => (DontRedraw, kickoff),
+		}
     }
 }
 
-fn handle_input_no_ref<D: Send + 'static>(
-    eval_state: &mut EvalState<D, linking::NoRef>,
-    input: char,
-    data: &Box<RefCast<D>>,
-) -> HandleCb {
-    let mut kickoff = false;
-    match eval_state.take_read() {
-        Some(repl) => {
-            match repl.push_input(input) {
-                repl::PushResult::Read(r) => eval_state.put_read(r),
-                repl::PushResult::Eval(r) => {
-                    kickoff = true;
-                    eval_state.put_eval(r.eval_async(data.as_noref()));
-                }
-            }
-            (Redraw, kickoff)
-        }
-        None => (DontRedraw, kickoff),
-    }
-}
-
-fn handle_input_brw<D: 'static + Send + Sync>(
-    eval_state: &mut EvalState<D, linking::Brw>,
-    input: char,
-    data: &Box<RefCast<D>>,
-) -> HandleCb {
-    let mut kickoff = false;
-    match eval_state.take_read() {
-        Some(repl) => {
-            match repl.push_input(input) {
-                repl::PushResult::Read(r) => eval_state.put_read(r),
-                repl::PushResult::Eval(r) => {
-                    kickoff = true;
-                    eval_state.put_eval(r.eval_async(data.as_brw()));
-                }
-            }
-            (Redraw, kickoff)
-        }
-        None => (DontRedraw, kickoff),
-    }
-}
-
-fn handle_input_brw_mut<D: 'static + Send + Sync>(
-    eval_state: &mut EvalState<D, linking::BrwMut>,
-    input: char,
-    data: &Box<RefCast<D>>,
-) -> HandleCb {
-    let mut kickoff = false;
-    match eval_state.take_read() {
-        Some(repl) => {
-            match repl.push_input(input) {
-                repl::PushResult::Read(r) => eval_state.put_read(r),
-                repl::PushResult::Eval(r) => {
-                    kickoff = true;
-                    eval_state.put_eval(r.eval_async(data.as_brw_mut()));
-                }
-            }
-            (Redraw, kickoff)
-        }
-        None => (DontRedraw, kickoff),
-    }
-}
-
-pub struct ReplTerminal<T: Layout, D, R> {
+pub struct ReplTerminal<T: Layout, D> {
     text_input_cb_id: DefaultCallbackId,
     vk_down_cb_id: DefaultCallbackId,
     mrkr: PhantomData<T>,
     mrkr_data: PhantomData<D>,
-    mrkr_ref: PhantomData<R>,
 }
 
-impl<D: 'static + Send + Sync, T: Layout + BorrowMut<PadState<D>>>
-    ReplTerminal<T, D, linking::NoRef>
+impl<D: 'static + Send, T: Layout + BorrowMut<PadState<D>>>
+    ReplTerminal<T, D>
 {
     pub fn new(
         window: &mut FakeWindow<T>,
@@ -155,7 +100,6 @@ impl<D: 'static + Send + Sync, T: Layout + BorrowMut<PadState<D>>>
             vk_down_cb_id,
             mrkr: PhantomData,
             mrkr_data: PhantomData,
-            mrkr_ref: PhantomData,
         }
     }
 
@@ -208,39 +152,24 @@ fn check_evaluating_done<D, T: BorrowMut<PadState<D>>>(
 ) -> (UpdateScreen, TerminateDaemon) {
     let pad: &mut PadState<D> = app.borrow_mut();
 
-    let mut done = match &mut pad.repl {
-        RefTypeVariant::NoRef(r) => check_evaluating_done_impl(r),
-        RefTypeVariant::Brw(r) => check_evaluating_done_impl(r),
-        RefTypeVariant::BrwMut(r) => check_evaluating_done_impl(r),
-    };
-    if done.1 == TerminateDaemon::Continue {
-        // check if a redraw is necessary
-        done.0 = redraw_on_term_chg(pad);
-    }
-
-    done
-}
-
-fn check_evaluating_done_impl<D, R>(
-    eval_state: &mut EvalState<D, R>,
-) -> (UpdateScreen, TerminateDaemon) {
-    match eval_state.take_eval() {
+    match pad.repl.take_eval() {
         Some(eval) => {
             if eval.completed() {
-                eval_state.put_read(
+                pad.repl.put_read(
                     eval.wait()
                         .expect("got an eval signal, which I have not handled yet")
                         .print(),
                 );
                 (Redraw, TerminateDaemon::Terminate) // turn off daemon now
             } else {
-                eval_state.put_eval(eval);
-                (DontRedraw, TerminateDaemon::Continue) // continue to check later
+                pad.repl.put_eval(eval);
+                (redraw_on_term_chg(pad), TerminateDaemon::Continue) // continue to check later
             }
         }
         None => (DontRedraw, TerminateDaemon::Terminate), // if there is no eval, may as well stop checking
     }
 }
+
 
 fn redraw_on_term_chg<D>(pad: &mut PadState<D>) -> UpdateScreen {
     let new_str = create_terminal_string(&pad.terminal);

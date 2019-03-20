@@ -1,20 +1,20 @@
 use crate::prelude::*;
 use linefeed::memory::MemoryTerminal;
 
-type Read<D, R> = Repl<repl::Read, MemoryTerminal, D, R>;
-type Eval<D, R> = repl::Evaluating<MemoryTerminal, D, R>;
+type Read<D> = Repl<repl::Read, MemoryTerminal, D>;
+type Eval<D> = repl::Evaluating<MemoryTerminal, D>;
 
-enum EvalStateVariant<D, R> {
-    Read(Read<D, R>),
-    Eval(Eval<D, R>),
+enum EvalStateVariant<D> {
+    Read(Read<D>),
+    Eval(Eval<D>),
 }
 
-pub struct EvalState<D, R> {
-    variant: Option<EvalStateVariant<D, R>>,
+pub struct EvalState<D> {
+    variant: Option<EvalStateVariant<D>>,
 }
 
-impl<D, R> EvalState<D, R> {
-    pub fn new(repl: Read<D, R>) -> Self {
+impl<D> EvalState<D> {
+    pub fn new(repl: Read<D>) -> Self {
         EvalState {
             variant: Some(EvalStateVariant::Read(repl)),
         }
@@ -42,7 +42,7 @@ impl<D, R> EvalState<D, R> {
         }
     }
 
-    pub fn take_read(&mut self) -> Option<Read<D, R>> {
+    pub fn take_read(&mut self) -> Option<Read<D>> {
         if self.variant.is_none() {
             panic!("found none variant, inidicating a broken state. has a take call been called twice?");
         }
@@ -56,7 +56,7 @@ impl<D, R> EvalState<D, R> {
         }
     }
 
-    pub fn take_eval(&mut self) -> Option<Eval<D, R>> {
+    pub fn take_eval(&mut self) -> Option<Eval<D>> {
         if self.variant.is_none() {
             panic!("found none variant, inidicating a broken state. has a take call been called twice?");
         }
@@ -70,7 +70,7 @@ impl<D, R> EvalState<D, R> {
         }
     }
 
-    pub fn put_read(&mut self, repl: Read<D, R>) {
+    pub fn put_read(&mut self, repl: Read<D>) {
         if self.variant.is_some() {
             panic!(
                 "found some variant, inidicating a broken state. has a put call been called twice?"
@@ -80,7 +80,7 @@ impl<D, R> EvalState<D, R> {
         self.variant = Some(EvalStateVariant::Read(repl));
     }
 
-    pub fn put_eval(&mut self, repl: Eval<D, R>) {
+    pub fn put_eval(&mut self, repl: Eval<D>) {
         if self.variant.is_some() {
             panic!(
                 "found some variant, inidicating a broken state. has a put call been called twice?"
