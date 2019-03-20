@@ -4,7 +4,7 @@ use crate::pfh::linking::{Brw, BrwMut, NoRef};
 use linefeed::terminal::{DefaultTerminal, Terminal};
 use std::io;
 
-impl<Data, Ref> Default for Repl<Read, DefaultTerminal, Data, Ref> {
+impl<Data> Default for Repl<Read, DefaultTerminal, Data> {
 	fn default() -> Self {
 		let mut data = ReplData::default();
 		data.redirect_on_execution = false;
@@ -22,7 +22,6 @@ impl<Data, Ref> Default for Repl<Read, DefaultTerminal, Data, Ref> {
 			data: data,
 			more: false,
 			data_mrker: PhantomData,
-			ref_mrker: PhantomData,
 		};
 
 		r.draw_prompt().unwrap();
@@ -30,7 +29,7 @@ impl<Data, Ref> Default for Repl<Read, DefaultTerminal, Data, Ref> {
 	}
 }
 
-impl<Term: Terminal + Clone, Data, Ref> Repl<Read, Term, Data, Ref> {
+impl<Term: Terminal + Clone, Data> Repl<Read, Term, Data> {
 	pub fn with_term(terminal: Term) -> Self {
 		let data = ReplData::default();
 		let terminal2 = terminal.clone();
@@ -44,7 +43,6 @@ impl<Term: Terminal + Clone, Data, Ref> Repl<Read, Term, Data, Ref> {
 			data: data,
 			more: false,
 			data_mrker: PhantomData,
-			ref_mrker: PhantomData,
 		};
 
 		r.draw_prompt().unwrap();
@@ -52,9 +50,9 @@ impl<Term: Terminal + Clone, Data, Ref> Repl<Read, Term, Data, Ref> {
 	}
 }
 
-impl<Term: Terminal, Data, Ref> Repl<Read, Term, Data, Ref> {
+impl<Term: Terminal, Data> Repl<Read, Term, Data> {
 	/// Reads input from the input reader until an evaluation phase can begin.
-	pub fn read(mut self) -> Repl<Evaluate, Term, Data, Ref> {
+	pub fn read(mut self) -> Repl<Evaluate, Term, Data> {
 		let treat_as_cmd = !self.data.cmdtree.at_root();
 		loop {
 			let prompt = self.prompt();
@@ -73,7 +71,7 @@ impl<Term: Terminal, Data, Ref> Repl<Read, Term, Data, Ref> {
 		}
 	}
 
-	pub fn push_input(mut self, input: char) -> PushResult<Term, Data, Ref> {
+	pub fn push_input(mut self, input: char) -> PushResult<Term, Data> {
 		let treat_as_cmd = !self.data.cmdtree.at_root();
 		self.handle_ch(input, treat_as_cmd)
 	}
@@ -81,7 +79,7 @@ impl<Term: Terminal, Data, Ref> Repl<Read, Term, Data, Ref> {
 	pub fn push_input_str<'s>(
 		self,
 		input: &'s str,
-	) -> Result<(Repl<Evaluate, Term, Data, Ref>, &'s str), Repl<Read, Term, Data, Ref>> {
+	) -> Result<(Repl<Evaluate, Term, Data>, &'s str), Repl<Read, Term, Data>> {
 		let treat_as_cmd = !self.data.cmdtree.at_root();
 
 		let mut idx = 0;
@@ -102,7 +100,7 @@ impl<Term: Terminal, Data, Ref> Repl<Read, Term, Data, Ref> {
 		}
 	}
 
-	fn handle_ch(mut self, ch: char, treat_as_cmd: bool) -> PushResult<Term, Data, Ref> {
+	fn handle_ch(mut self, ch: char, treat_as_cmd: bool) -> PushResult<Term, Data> {
 		let prompt = self.prompt();
 		match self
 			.terminal
@@ -143,48 +141,7 @@ impl<Term: Terminal, Data, Ref> Repl<Read, Term, Data, Ref> {
 	}
 }
 
-impl<Term: Terminal, Data: Copy> Repl<Read, Term, Data, NoRef> {
-	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
-	/// Data must implement `Copy` such that it can loop.
-	///
-	/// # Panics
-	/// - Failure to initialise `InputReader`.
-	pub fn run(self, app_data: Data) {
-		output_ver(self.terminal.terminal.as_ref());
-
-		let mut read = self;
-		loop {
-			match read.read().eval(app_data) {
-				Ok(r) => read = r.print(),
-				Err(sig) => match sig {
-					EvalSignal::Exit => break,
-				},
-			}
-		}
-	}
-}
-
-impl<Term: Terminal, Data> Repl<Read, Term, Data, Brw> {
-	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
-	///
-	/// # Panics
-	/// - Failure to initialise `InputReader`.
-	pub fn run(self, app_data: &Data) {
-		output_ver(self.terminal.terminal.as_ref());
-
-		let mut read = self;
-		loop {
-			match read.read().eval(app_data) {
-				Ok(r) => read = r.print(),
-				Err(sig) => match sig {
-					EvalSignal::Exit => break,
-				},
-			}
-		}
-	}
-}
-
-impl<Term: Terminal, Data> Repl<Read, Term, Data, BrwMut> {
+impl<Term: Terminal, Data> Repl<Read, Term, Data> {
 	/// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
 	///
 	/// # Panics
