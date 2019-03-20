@@ -6,27 +6,22 @@ use azul::prelude::*;
 use azul::window::FakeWindow;
 use linefeed::memory::MemoryTerminal;
 use std::marker::PhantomData;
+use super::*;
 
 type KickOffEvalDaemon = bool;
 type HandleCb = (UpdateScreen, KickOffEvalDaemon);
 
-pub struct ReplTerminalState {
-	repl: EvalState,
+pub struct PadState {
+	repl: EvalState<(), linking::NoRef>,
     terminal: MemoryTerminal,
-    // repl: Option<Repl<repl::Read, MemoryTerminal, (), linking::NoRef>>,
-    // eval: Option<repl::Evaluating<MemoryTerminal, (), linking::NoRef>>,
     last_terminal_string: String,
     eval_daemon_id: DaemonId,
 }
 
-
-
-
-
-impl ReplTerminalState {
+impl PadState {
     pub fn new(repl: Repl<repl::Read, MemoryTerminal, (), linking::NoRef>) -> Self {
 		let term = repl.terminal_inner().clone();
-        ReplTerminalState {
+        Self {
 			repl: EvalState::new(repl),
             terminal: term,
             last_terminal_string: String::new(),
@@ -34,7 +29,7 @@ impl ReplTerminalState {
         }
     }
 
-    pub fn update_state_on_text_input<T: Layout + GetReplTerminal>(
+    pub fn update_state_on_text_input<T: Layout + GetPadState>(
         &mut self,
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
@@ -50,7 +45,7 @@ impl ReplTerminalState {
         )
     }
 
-    pub fn update_state_on_vk_down<T: Layout + GetReplTerminal>(
+    pub fn update_state_on_vk_down<T: Layout + GetPadState>(
         &mut self,
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
@@ -81,23 +76,6 @@ impl ReplTerminalState {
 			},
 			None => 			(DontRedraw, kickoff)				,
 		}
-
-        // if self.eval.is_none() {
-        //     let repl = self
-        //         .repl
-        //         .take()
-        //         .expect("repl was empty, which would indicate a broken state?");
-        //     match repl.push_input(input) {
-        //         repl::PushResult::Read(r) => self.repl = Some(r),
-        //         repl::PushResult::Eval(r) => {
-        //             kickoff = true;
-        //             self.eval = Some(r.eval_async(()));
-        //         }
-        //     }
-        //     (Redraw, kickoff)
-        // } else {
-        //     (DontRedraw, kickoff)
-        // }
     }
 
     fn handle_vk(&mut self, vk: VirtualKeyCode) -> HandleCb {
@@ -108,10 +86,20 @@ impl ReplTerminalState {
             _ => (DontRedraw, false),
         }
     }
+
+	fn redraw_on_term_chg(&mut self) -> UpdateScreen {
+		let new_str = create_terminal_string(&self.terminal);
+		if new_str != self.last_terminal_string {
+			self.last_terminal_string = new_str;
+			Redraw
+		} else {
+			DontRedraw
+		}
+	}
 }
 
-pub trait GetReplTerminal {
-    fn repl_term(&mut self) -> &mut ReplTerminalState;
+pub trait GetPadState {
+    fn pad_state(&mut self) -> &mut PadState;
 }
 
 pub struct ReplTerminal<T: Layout> {
@@ -120,10 +108,10 @@ pub struct ReplTerminal<T: Layout> {
     mrkr: PhantomData<T>,
 }
 
-impl<T: Layout + GetReplTerminal> ReplTerminal<T> {
+impl<T: Layout + GetPadState> ReplTerminal<T> {
     pub fn new(
         window: &mut FakeWindow<T>,
-        state_to_bind: &ReplTerminalState,
+        state_to_bind: &PadState,
         full_data_model: &T,
     ) -> Self {
         let ptr = StackCheckedPointer::new(full_data_model, state_to_bind).unwrap();
@@ -139,7 +127,7 @@ impl<T: Layout + GetReplTerminal> ReplTerminal<T> {
         }
     }
 
-    pub fn dom(self, state_to_render: &ReplTerminalState) -> Dom<T> {
+    pub fn dom(self, state_to_render: &PadState) -> Dom<T> {
         let term_str = create_terminal_string(&state_to_render.terminal);
 
         let categorised = cansi::categorise_text(&term_str);
@@ -163,11 +151,11 @@ impl<T: Layout + GetReplTerminal> ReplTerminal<T> {
         container
     }
 
-    cb!(ReplTerminalState, update_state_on_text_input);
-    cb!(ReplTerminalState, update_state_on_vk_down);
+    cb!(PadState, update_state_on_text_input);
+    cb!(PadState, update_state_on_vk_down);
 }
 
-fn maybe_kickoff_daemon<T: Layout + GetReplTerminal>(
+fn maybe_kickoff_daemon<T: Layout + GetPadState>(
     app_state: &mut AppStateNoData<T>,
     daemon_id: DaemonId,
     handle_result: HandleCb,
@@ -182,11 +170,11 @@ fn maybe_kickoff_daemon<T: Layout + GetReplTerminal>(
     r
 }
 
-fn check_evaluating_done<T: GetReplTerminal>(
+fn check_evaluating_done<T: GetPadState>(
     app: &mut T,
     _: &mut AppResources,
 ) -> (UpdateScreen, TerminateDaemon) {
-    let pad = app.repl_term();
+    let pad = app.pad_state();
 
 	match pad.repl.take_eval() {
 		Some(eval) => {
@@ -197,56 +185,11 @@ fn check_evaluating_done<T: GetReplTerminal>(
 				(Redraw, TerminateDaemon::Terminate) // turn off daemon now
 			} else {
 				pad.repl.put_eval(eval);
-				(redraw_on_term_chg(pad), TerminateDaemon::Continue) // continue to check later
+				(pad.redraw_on_term_chg(), TerminateDaemon::Continue) // continue to check later
 			}
 		},
 		None => (DontRedraw, TerminateDaemon::Terminate) // if there is no eval, may as well stop checking
 	}
-
-
-
-	// match pad.repl {
-	// 	EvalState::Read(_) => 
-	// 	EvalState::Eval(eval) => {
-	// 		if eval.completed() {
-	// 			pad.repl = EvalState::Read(
-	// 				eval.wait()
-	// 					.expect("got an eval signal, which I have not handled yet")
-	// 					.print(),
-	// 			);
-	// 			(Redraw, TerminateDaemon::Terminate) // turn off daemon now
-	// 		} else {
-	// 			(redraw_on_term_chg(pad), TerminateDaemon::Continue) // continue to check later
-	// 		}
-	// 	}
-	// }
-
-    // if pad.eval.is_none() {
-    //     (DontRedraw, TerminateDaemon::Terminate) // if there is no eval, may as well stop checking
-    // } else {
-    //     let done = pad.eval.as_ref().map_or(false, |e| e.completed());
-    //     if done {
-    //         let eval = pad.eval.take().expect("should be some");
-    //         pad.repl = Some(
-    //             eval.wait()
-    //                 .expect("got an eval signal, which I have not handled yet")
-    //                 .print(),
-    //         );
-    //         (Redraw, TerminateDaemon::Terminate) // turn off daemon now
-    //     } else {
-    //         (redraw_on_term_chg(pad), TerminateDaemon::Continue) // continue to check later
-    //     }
-    // }
-}
-
-fn redraw_on_term_chg(pad: &mut ReplTerminalState) -> UpdateScreen {
-    let new_str = create_terminal_string(&pad.terminal);
-    if new_str != pad.last_terminal_string {
-        pad.last_terminal_string = new_str;
-        Redraw
-    } else {
-        DontRedraw
-    }
 }
 
 fn create_terminal_string(term: &MemoryTerminal) -> String {

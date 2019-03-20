@@ -1,14 +1,20 @@
-enum EvalStateVariant {
-	Read(Repl<repl::Read, MemoryTerminal, (), linking::NoRef>),
-	Eval(repl::Evaluating<MemoryTerminal, (), linking::NoRef>),
+use crate::prelude::*;
+use linefeed::memory::MemoryTerminal;
+
+type Read<D, R> = Repl<repl::Read, MemoryTerminal, D, R>;
+type Eval<D,R> = repl::Evaluating<MemoryTerminal, D, R>;
+
+enum EvalStateVariant<D,R> {
+	Read(Read<D, R>),
+	Eval(Eval<D, R>),
 }
 
-pub struct EvalState {
-	variant: Option<EvalStateVariant>,
+pub struct EvalState<D, R> {
+	variant: Option<EvalStateVariant<D, R>>,
 }
 
-impl EvalState {
-	pub fn new(repl: Repl<repl::Read, MemoryTerminal, (), linking::NoRef>) -> Self {
+impl<D, R> EvalState<D, R> {
+	pub fn new(repl: Read<D, R>) -> Self {
 		EvalState {
 			variant: Some(EvalStateVariant::Read(repl)),
 		}
@@ -36,7 +42,7 @@ impl EvalState {
 		}
 	}
 
-	pub fn take_read(&mut self) -> Option<Repl<repl::Read, MemoryTerminal, (), linking::NoRef>> {
+	pub fn take_read(&mut self) -> Option<Read<D, R>> {
 		if self.variant.is_none() {
 			panic!("found none variant, inidicating a broken state. has a take call been called twice?");
 		}
@@ -50,7 +56,7 @@ impl EvalState {
 		}
 	}
 
-	pub fn take_eval(&mut self) -> Option<repl::Evaluating<MemoryTerminal, (), linking::NoRef>> {
+	pub fn take_eval(&mut self) -> Option<Eval<D, R>> {
 		if self.variant.is_none() {
 			panic!("found none variant, inidicating a broken state. has a take call been called twice?");
 		}
@@ -64,7 +70,7 @@ impl EvalState {
 		}
 	}
 
-	pub fn put_read(&mut self, repl: Repl<repl::Read, MemoryTerminal, (), linking::NoRef>) {
+	pub fn put_read(&mut self, repl: Read<D, R>) {
 		if self.variant.is_some() {
 			panic!("found some variant, inidicating a broken state. has a put call been called twice?");
 		}
@@ -72,7 +78,7 @@ impl EvalState {
 		self.variant = Some(EvalStateVariant::Read(repl));
 	}
 
-	pub fn put_eval(&mut self, repl: repl::Evaluating<MemoryTerminal, (), linking::NoRef>) {
+	pub fn put_eval(&mut self, repl: Eval<D, R>) {
 		if self.variant.is_some() {
 			panic!("found some variant, inidicating a broken state. has a put call been called twice?");
 		}

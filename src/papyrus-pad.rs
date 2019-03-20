@@ -3,14 +3,14 @@ extern crate papyrus;
 
 use azul::prelude::*;
 use linefeed::memory::MemoryTerminal;
-use papyrus::widgets::repl_terminal::*;
+use papyrus::widgets::pad::*;
 
 struct MyApp {
-    repl_term: ReplTerminalState,
+    repl_term: PadState,
 }
 
-impl GetReplTerminal for MyApp {
-    fn repl_term(&mut self) -> &mut ReplTerminalState {
+impl GetPadState for MyApp {
+    fn pad_state(&mut self) -> &mut PadState {
         &mut self.repl_term
     }
 }
@@ -30,7 +30,7 @@ fn main() {
     let app = {
         App::new(
             MyApp {
-                repl_term: ReplTerminalState::new(repl),
+                repl_term: PadState::new(repl),
             },
             AppConfig {
                 enable_logging: Some(LevelFilter::Error),
