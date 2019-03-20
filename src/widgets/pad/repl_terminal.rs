@@ -64,7 +64,7 @@ impl<'a, D: Send + 'static> PadState<'a, D, linking::NoRef> {
                     repl::PushResult::Read(r) => self.repl.put_read(r),
                     repl::PushResult::Eval(r) => {
                         kickoff = true;
-                        self.repl.put_eval(r.eval_async(self.data));
+                        self.repl.put_eval(r.eval_async(self.data.as_noref()));
                     }
                 }
                 (Redraw, kickoff)

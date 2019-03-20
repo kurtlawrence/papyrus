@@ -3,25 +3,28 @@ extern crate papyrus;
 
 use azul::prelude::*;
 use linefeed::memory::MemoryTerminal;
+use papyrus::prelude::*;
 use papyrus::widgets::pad::*;
 
-struct MyApp {
-    repl_term: PadState,
+type TypedPadState<'a> = PadState<'a, (), linking::NoRef>;
+
+struct MyApp<'a> {
+    repl_term: TypedPadState<'a>,
 }
 
-impl std::borrow::BorrowMut<PadState> for MyApp {
-    fn borrow_mut(&mut self) -> &mut PadState {
+impl<'a> std::borrow::BorrowMut<TypedPadState<'a>> for MyApp<'a> {
+    fn borrow_mut(&mut self) -> &mut TypedPadState<'a> {
         &mut self.repl_term
     }
 }
 
-impl std::borrow::Borrow<PadState> for MyApp {
-    fn borrow(&self) -> &PadState {
+impl<'a> std::borrow::Borrow<TypedPadState<'a>> for MyApp<'a> {
+    fn borrow(&self) -> &TypedPadState<'a> {
         &self.repl_term
     }
 }
 
-impl Layout for MyApp {
+impl<'a> Layout for MyApp<'a> {
     fn layout(&self, info: LayoutInfo<Self>) -> Dom<Self> {
         Dom::div()
             .with_child(ReplTerminal::new(info.window, &self.repl_term, &self).dom(&self.repl_term))
@@ -36,7 +39,7 @@ fn main() {
     let app = {
         App::new(
             MyApp {
-                repl_term: PadState::new(repl),
+                repl_term: PadState::new(repl, ()),
             },
             AppConfig {
                 enable_logging: Some(LevelFilter::Error),
