@@ -56,67 +56,67 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub struct Repl<S, Term: Terminal, Data, Ref> {
-	pub data: ReplData,
-	state: S,
-	terminal: ReplTerminal<Term>,
-	/// A persistent flag for the prompt to change for more input.
-	more: bool,
-	data_mrker: PhantomData<Data>,
-	ref_mrker: PhantomData<Ref>,
+    pub data: ReplData,
+    state: S,
+    terminal: ReplTerminal<Term>,
+    /// A persistent flag for the prompt to change for more input.
+    more: bool,
+    data_mrker: PhantomData<Data>,
+    ref_mrker: PhantomData<Ref>,
 }
 
 impl<S, T: Terminal, D, R> Repl<S, T, D, R> {
-	pub fn terminal_inner(&self) -> &T {
-		self.terminal.terminal.as_ref()
-	}
+    pub fn terminal_inner(&self) -> &T {
+        self.terminal.terminal.as_ref()
+    }
 
-	fn move_state<N>(self, state: N) -> Repl<N, T, D, R> {
-		Repl {
-			state: state,
-			terminal: self.terminal,
-			data: self.data,
-			more: self.more,
-			data_mrker: self.data_mrker,
-			ref_mrker: self.ref_mrker,
-		}
-	}
+    fn move_state<N>(self, state: N) -> Repl<N, T, D, R> {
+        Repl {
+            state: state,
+            terminal: self.terminal,
+            data: self.data,
+            more: self.more,
+            data_mrker: self.data_mrker,
+            ref_mrker: self.ref_mrker,
+        }
+    }
 }
 
 impl<S: fmt::Debug, T: Terminal, D, R> fmt::Debug for Repl<S, T, D, R> {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "Repl in <{:?}> state instance", self.state)
-	}
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Repl in <{:?}> state instance", self.state)
+    }
 }
 
 pub struct ReplData {
-	/// The REPL commands as a `cmdtree::Commander`.
-	pub cmdtree: Commander<'static, CommandResult>,
-	/// The file map of relative paths.
-	pub file_map: HashMap<PathBuf, SourceFile>,
-	/// The current editing and executing file.
-	pub current_file: PathBuf,
-	/// App and prompt text.
-	pub name: &'static str,
-	/// The colour of the prompt region. ie `papyrus`.
-	pub prompt_colour: Color,
-	/// The colour of the out component. ie `[out0]`.
-	pub out_colour: Color,
-	/// The directory for which compilation is done within.
-	/// Defaults to `$HOME/.papyrus/`.
-	pub compilation_dir: PathBuf,
-	/// The external crate linking configuration,
-	linking: LinkingConfiguration,
-	/// Flag if output is to be redirected. Generally redirection is needed, `DefaultTerminal` however will not require it (fucks linux).
-	redirect_on_execution: bool,
+    /// The REPL commands as a `cmdtree::Commander`.
+    pub cmdtree: Commander<'static, CommandResult>,
+    /// The file map of relative paths.
+    pub file_map: HashMap<PathBuf, SourceFile>,
+    /// The current editing and executing file.
+    pub current_file: PathBuf,
+    /// App and prompt text.
+    pub name: &'static str,
+    /// The colour of the prompt region. ie `papyrus`.
+    pub prompt_colour: Color,
+    /// The colour of the out component. ie `[out0]`.
+    pub out_colour: Color,
+    /// The directory for which compilation is done within.
+    /// Defaults to `$HOME/.papyrus/`.
+    pub compilation_dir: PathBuf,
+    /// The external crate linking configuration,
+    linking: LinkingConfiguration,
+    /// Flag if output is to be redirected. Generally redirection is needed, `DefaultTerminal` however will not require it (fucks linux).
+    redirect_on_execution: bool,
 }
 
 struct ReplTerminal<Term: Terminal> {
-	/// The underlying terminal of `input_rdr`, used to directly control terminal
-	/// Kept as a `Arc` such that multiple references to the terminal can be shared across threads.
-	/// Lucky for us that `Terminal` implements an atomic locking interface.
-	terminal: Arc<Term>,
-	/// The persistent input reader.
-	input_rdr: InputReader<Term>,
+    /// The underlying terminal of `input_rdr`, used to directly control terminal
+    /// Kept as a `Arc` such that multiple references to the terminal can be shared across threads.
+    /// Lucky for us that `Terminal` implements an atomic locking interface.
+    terminal: Arc<Term>,
+    /// The persistent input reader.
+    input_rdr: InputReader<Term>,
 }
 
 struct Writer<'a, T: Terminal>(&'a T);
@@ -126,44 +126,44 @@ struct OwnedWriter<T: Terminal>(Arc<T>);
 #[derive(Debug)]
 pub struct Read;
 pub struct Evaluate {
-	result: InputResult,
+    result: InputResult,
 }
 pub struct Evaluating<Term: Terminal, Data, Ref> {
-	jh: Receiver<Result<Repl<Print, Term, Data, Ref>, EvalSignal>>,
+    jh: Receiver<Result<Repl<Print, Term, Data, Ref>, EvalSignal>>,
 }
 pub struct Print {
-	to_print: String,
-	/// Specifies whether to print the `[out#]`
-	as_out: bool,
+    to_print: String,
+    /// Specifies whether to print the `[out#]`
+    as_out: bool,
 }
 
 pub enum CommandResult {
-	CancelInput,
+    CancelInput,
 }
 
 #[derive(Debug)]
 pub enum EvalSignal {
-	Exit,
+    Exit,
 }
 
 pub enum PushResult<Term: Terminal, Data, Ref> {
-	Read(Repl<Read, Term, Data, Ref>),
-	Eval(Repl<Evaluate, Term, Data, Ref>),
+    Read(Repl<Read, Term, Data, Ref>),
+    Eval(Repl<Evaluate, Term, Data, Ref>),
 }
 
 /// `$HOME/.papyrus`
 fn default_compile_dir() -> PathBuf {
-	dirs::home_dir().unwrap_or(PathBuf::new()).join(".papyrus/")
+    dirs::home_dir().unwrap_or(PathBuf::new()).join(".papyrus/")
 }
 
 #[test]
 fn test_default_compile_dir() {
-	let dir = default_compile_dir();
-	println!("{}", dir.display());
-	assert!(dir.ends_with(".papyrus/"));
-	if cfg!(windows) {
-		assert!(dir.starts_with("C:\\Users\\"));
-	} else {
-		assert!(dir.starts_with("/home/"));
-	}
+    let dir = default_compile_dir();
+    println!("{}", dir.display());
+    assert!(dir.ends_with(".papyrus/"));
+    if cfg!(windows) {
+        assert!(dir.starts_with("C:\\Users\\"));
+    } else {
+        assert!(dir.starts_with("/home/"));
+    }
 }

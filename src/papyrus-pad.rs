@@ -9,9 +9,15 @@ struct MyApp {
     repl_term: PadState,
 }
 
-impl GetPadState for MyApp {
-    fn pad_state(&mut self) -> &mut PadState {
+impl std::borrow::BorrowMut<PadState> for MyApp {
+    fn borrow_mut(&mut self) -> &mut PadState {
         &mut self.repl_term
+    }
+}
+
+impl std::borrow::Borrow<PadState> for MyApp {
+    fn borrow(&self) -> &PadState {
+        &self.repl_term
     }
 }
 
