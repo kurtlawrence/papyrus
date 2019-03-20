@@ -41,7 +41,7 @@ mod tests {
         let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
 
         // eval
-        let r = exec(path, "__intern_eval", ()).unwrap(); // execute library fn
+        let r = exec(path, "__intern_eval", &()).unwrap(); // execute library fn
 
         assert_eq!(&r, "4");
     }
@@ -107,7 +107,7 @@ mod tests {
         let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
 
         // eval
-        let r = exec(path, "__intern_eval", ()).unwrap(); // execute library fn
+        let r = exec(path, "__intern_eval", &()).unwrap(); // execute library fn
 
         assert_eq!(&r, "4");
     }
@@ -149,7 +149,7 @@ mod tests {
         let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
 
         // eval
-        let r = exec(&path, "__intern_eval", ()); // execute library fn
+        let r = exec(&path, "__intern_eval", &()); // execute library fn
         assert!(r.is_err());
         assert_eq!(r, Err("a panic occured with evaluation"));
     }

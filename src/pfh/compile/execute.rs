@@ -6,11 +6,13 @@ use std::process::{Command, Stdio};
 use std::sync::mpsc;
 use std::{error, fmt, fs};
 
-type DataFunc<D> = unsafe fn(D) -> String;
+/// We always send through an immutable reference.
+/// The function signature will **_always_** be `(app_data: &D) -> String`.
+type DataFunc<D> = unsafe fn(&D) -> String;
 
 type ExecResult = Result<String, &'static str>;
 
-pub fn exec<'c, P, Data>(library_file: P, function_name: &str, app_data: Data) -> ExecResult
+pub fn exec<'c, P, Data>(library_file: P, function_name: &str, app_data: &Data) -> ExecResult
 where
     P: AsRef<Path>,
 {
@@ -28,7 +30,7 @@ where
 pub fn exec_and_redirect<'c, P: AsRef<Path>, Data, W: Write + Send>(
     library_file: P,
     function_name: &str,
-    app_data: Data,
+    app_data: &Data,
     mut output_wtr: W,
 ) -> ExecResult {
     let lib = get_lib(library_file)?;
@@ -51,7 +53,6 @@ pub fn exec_and_redirect<'c, P: AsRef<Path>, Data, W: Write + Send>(
     });
 
     let res = res.map_err(|_| "crossbeam scoping failed")?;
-    // let jh = std::thread::spawn(move || {});
 
     match res {
         Ok(s) => Ok(s),

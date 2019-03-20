@@ -297,7 +297,7 @@ format!("{:?}", out0)
     assert_eq!(
         &s,
         r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: String) -> String {
+pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
 
 format!("{:?}", out0)
 }
@@ -316,7 +316,7 @@ format!("{:?}", out0)
     assert_eq!(
         &s,
         r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: String) -> String {
+pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
 
 format!("{:?}", out0)
 }
@@ -347,7 +347,7 @@ fn b() {}
     assert_eq!(
         &s,
         r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: String) -> String {
+pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
 let a = 1;
 let out0 = b;
 let c = 2;
@@ -369,7 +369,7 @@ fn b() {}
         &s,
         r##"extern crate some_crate as some;
 #[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: String) -> String {
+pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
 let a = 1;
 let out0 = b;
 let c = 2;

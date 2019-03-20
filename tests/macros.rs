@@ -4,29 +4,29 @@ use papyrus::*;
 
 #[test]
 fn macros_test() {
-	// tests macro syntax
+    // tests macro syntax
 
-	// No external crate or data
-	repl!();
-	// data type
-	repl!(String);
-	// data type
-	repl!(&String);
-	// data type
-	repl!(&mut String);
+    // No external crate or data
+    repl!();
+    // data type
+    repl!(String);
+    // data type
+    repl!(&String);
+    // data type
+    repl!(&mut String);
 }
 
 #[test]
 fn different_data_patterns() {
-	let repl = repl!();
-	assert_eq!(repl.data.linking().data_type, None);
+    let repl = repl!();
+    assert_eq!(repl.data.linking().data_type, None);
 
-	let repl = repl!(String);
-	assert_eq!(repl.data.linking().data_type, Some("String".to_string()));
+    let repl = repl!(String);
+    assert_eq!(repl.data.linking().data_type, Some("String".to_string()));
 
-	let repl = repl_with_term!(linefeed::memory::MemoryTerminal::new());
-	assert_eq!(repl.data.linking().data_type, None);
+    let repl = repl_with_term!(linefeed::memory::MemoryTerminal::new());
+    assert_eq!(repl.data.linking().data_type, None);
 
-	let repl = repl_with_term!(linefeed::memory::MemoryTerminal::new(), String);
-	assert_eq!(repl.data.linking().data_type, Some("String".to_string()));
+    let repl = repl_with_term!(linefeed::memory::MemoryTerminal::new(), String);
+    assert_eq!(repl.data.linking().data_type, Some("String".to_string()));
 }
