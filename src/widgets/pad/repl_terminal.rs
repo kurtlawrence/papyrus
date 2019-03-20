@@ -18,15 +18,17 @@ impl<D: 'static + Send> PadState<D> {
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
     ) -> UpdateScreen {
-        maybe_kickoff_daemon(
-            app_state,
-            self.eval_daemon_id,
-            self.handle_input(
-                app_state.windows[window_event.window_id]
-                    .get_keyboard_state()
-                    .current_char?,
-            ),
-        )
+        let (update_screen, kickoff) = self.handle_input(
+            app_state.windows[window_event.window_id]
+                .get_keyboard_state()
+                .current_char?,
+        );
+
+        if kickoff {
+            kickoff_daemon(app_state, self.eval_daemon_id);
+        }
+
+        update_screen
     }
 
     pub fn update_state_on_vk_down<T: Layout + BorrowMut<PadState<D>>>(
@@ -34,15 +36,34 @@ impl<D: 'static + Send> PadState<D> {
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
     ) -> UpdateScreen {
-        maybe_kickoff_daemon(
-            app_state,
-            self.eval_daemon_id,
-            self.handle_vk(
-                app_state.windows[window_event.window_id]
-                    .get_keyboard_state()
-                    .latest_virtual_keycode?,
-            ),
-        )
+        let (update_screen, kickoff) = self.handle_vk(
+            app_state.windows[window_event.window_id]
+                .get_keyboard_state()
+                .latest_virtual_keycode?,
+        );
+
+        if kickoff {
+            kickoff_daemon(app_state, self.eval_daemon_id);
+        }
+
+        update_screen
+    }
+
+    fn handle_input(&mut self, input: char) -> HandleCb {
+        let mut kickoff = false;
+        match self.repl.take_read() {
+            Some(repl) => {
+                match repl.push_input(input) {
+                    repl::PushResult::Read(r) => self.repl.put_read(r),
+                    repl::PushResult::Eval(r) => {
+                        kickoff = true;
+                        self.repl.put_eval(r.eval_async(&self.data));
+                    }
+                }
+                (Redraw, kickoff)
+            }
+            None => (DontRedraw, kickoff),
+        }
     }
 
     fn handle_vk(&mut self, vk: VirtualKeyCode) -> HandleCb {
@@ -55,25 +76,6 @@ impl<D: 'static + Send> PadState<D> {
     }
 }
 
-impl<D: 'static + Send> PadState<D> {
-    fn handle_input(&mut self, input: char) -> HandleCb {
-        let mut kickoff = false;
-		match self.repl.take_read() {
-			Some(repl) => {
-				match repl.push_input(input) {
-					repl::PushResult::Read(r) => self.repl.put_read(r),
-					repl::PushResult::Eval(r) => {
-						kickoff = true;
-						self.repl.put_eval(r.eval_async(&self.data));
-					}
-				}
-				(Redraw, kickoff)
-			}
-			None => (DontRedraw, kickoff),
-		}
-    }
-}
-
 pub struct ReplTerminal<T: Layout, D> {
     text_input_cb_id: DefaultCallbackId,
     vk_down_cb_id: DefaultCallbackId,
@@ -81,9 +83,7 @@ pub struct ReplTerminal<T: Layout, D> {
     mrkr_data: PhantomData<D>,
 }
 
-impl<D: 'static + Send, T: Layout + BorrowMut<PadState<D>>>
-    ReplTerminal<T, D>
-{
+impl<D: 'static + Send, T: Layout + BorrowMut<PadState<D>>> ReplTerminal<T, D> {
     pub fn new(
         window: &mut FakeWindow<T>,
         state_to_bind: &PadState<D>,
@@ -131,19 +131,13 @@ impl<D: 'static + Send, T: Layout + BorrowMut<PadState<D>>>
     cb!(PadState, update_state_on_vk_down);
 }
 
-fn maybe_kickoff_daemon<D, T: Layout + BorrowMut<PadState<D>>>(
+fn kickoff_daemon<D, T: Layout + BorrowMut<PadState<D>>>(
     app_state: &mut AppStateNoData<T>,
     daemon_id: DaemonId,
-    handle_result: HandleCb,
-) -> UpdateScreen {
-    let (r, kickoff) = handle_result;
-    if kickoff {
-        let daemon =
-            Daemon::new(check_evaluating_done).with_interval(std::time::Duration::from_millis(2));
-        app_state.add_daemon(daemon_id, daemon);
-    }
-
-    r
+) {
+    let daemon =
+        Daemon::new(check_evaluating_done).with_interval(std::time::Duration::from_millis(2));
+    app_state.add_daemon(daemon_id, daemon);
 }
 
 fn check_evaluating_done<D, T: BorrowMut<PadState<D>>>(
@@ -169,7 +163,6 @@ fn check_evaluating_done<D, T: BorrowMut<PadState<D>>>(
         None => (DontRedraw, TerminateDaemon::Terminate), // if there is no eval, may as well stop checking
     }
 }
-
 
 fn redraw_on_term_chg<D>(pad: &mut PadState<D>) -> UpdateScreen {
     let new_str = create_terminal_string(&pad.terminal);

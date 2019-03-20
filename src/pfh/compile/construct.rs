@@ -1,9 +1,8 @@
 use crate::pfh::*;
-use std::io::{self, BufRead, BufReader, Write};
-use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
-use std::sync::mpsc;
-use std::{error, fmt, fs};
+use std::fs;
+use std::io::{self, Write};
+use std::path::Path;
+use std::process::Command;
 
 /// Constructs the compile directory.
 /// Takes a list of source files and writes the contents to file.

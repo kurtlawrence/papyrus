@@ -2,7 +2,6 @@ use super::*;
 use crate::pfh::{self, Input};
 use linefeed::terminal::Terminal;
 use std::path::Path;
-use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
 type HandleInputResult = (String, bool);
@@ -196,15 +195,6 @@ impl ReplData {
             self.current_file.display()
         ))
     }
-}
-
-fn write_exec_buffer_into_terminal<T: Terminal>(buf: &[u8], terminal: Arc<T>) {
-    use std::io::Write;
-    dbg!(&buf);
-    eprintln!("eprint {}", String::from_utf8_lossy(&buf));
-    Writer(terminal.as_ref())
-        .write_all(buf)
-        .expect("failed redirecting output to terminal writer");
 }
 
 /// Renames the library into a distinct file name by incrementing a counter.

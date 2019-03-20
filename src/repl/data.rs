@@ -7,7 +7,7 @@ impl Default for ReplData {
         let mut map = HashMap::new();
         map.insert(lib_path.clone(), lib);
 
-        let mut r = ReplData {
+        let r = ReplData {
             cmdtree: Builder::new("papyrus")
                 .into_commander()
                 .expect("empty should pass"),

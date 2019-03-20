@@ -14,7 +14,7 @@
 //! papyrus [out0]: 4
 //! ```
 
-#![warn(missing_docs)]
+//#![warn(missing_docs)] turn off for now
 
 #[macro_use]
 extern crate log;

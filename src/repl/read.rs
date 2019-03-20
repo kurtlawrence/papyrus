@@ -70,7 +70,7 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
         }
     }
 
-    pub fn push_input(mut self, input: char) -> PushResult<Term, Data> {
+    pub fn push_input(self, input: char) -> PushResult<Term, Data> {
         let treat_as_cmd = !self.data.cmdtree.at_root();
         self.handle_ch(input, treat_as_cmd)
     }

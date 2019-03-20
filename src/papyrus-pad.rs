@@ -3,7 +3,6 @@ extern crate papyrus;
 
 use azul::prelude::*;
 use linefeed::memory::MemoryTerminal;
-use papyrus::prelude::*;
 use papyrus::widgets::pad::*;
 use std::sync::{Arc, Mutex};
 

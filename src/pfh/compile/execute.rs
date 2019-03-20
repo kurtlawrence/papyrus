@@ -1,10 +1,6 @@
-use crate::pfh::*;
 use libloading::{Library, Symbol};
-use std::io::{self, BufRead, BufReader, Write};
-use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
-use std::sync::mpsc;
-use std::{error, fmt, fs};
+use std::io::{self, Write};
+use std::path::Path;
 
 /// We always send through an immutable reference.
 /// The function signature will **_always_** be `(app_data: &D) -> String`.
@@ -47,8 +43,10 @@ pub fn exec_and_redirect<'c, P: AsRef<Path>, Data, W: Write + Send>(
         let res =
             std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe { func(app_data) }));
 
-        tx.send(());
-        jh.join();
+        tx.send(()).expect("sending signal to stop gagging failed");
+        jh.join()
+            .expect("joining gagging thread failed")
+            .expect("failed to redirect output loop");
         res
     });
 

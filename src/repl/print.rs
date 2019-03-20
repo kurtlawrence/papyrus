@@ -1,6 +1,7 @@
 use super::*;
 
 use linefeed::terminal::Terminal;
+use std::io::Write;
 
 impl<Term: Terminal, Data> Repl<Print, Term, Data> {
     /// Prints the result if successful as `[out#]` or the failure message if any.

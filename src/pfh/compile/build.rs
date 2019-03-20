@@ -1,9 +1,8 @@
 use crate::pfh::*;
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::mpsc;
-use std::{error, fmt, fs};
+use std::{error, fmt};
 
 pub fn compile<P, F>(
     compile_dir: P,
