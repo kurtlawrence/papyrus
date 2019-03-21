@@ -6,7 +6,7 @@ mod execute;
 
 pub use self::build::{compile, CompilationError};
 pub use self::construct::{build_compile_dir, fmt};
-pub use self::execute::{exec, exec_and_redirect};
+pub use self::execute::exec;
 
 #[cfg(test)]
 mod tests {

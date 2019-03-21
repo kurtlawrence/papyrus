@@ -24,8 +24,8 @@ impl<D: 'static + Send> PadState<D> {
                 .current_char?,
         );
 
-		dbg!(&update_screen);
-		dbg!(&kickoff);
+        dbg!(&update_screen);
+        dbg!(&kickoff);
 
         if kickoff {
             kickoff_daemon(app_state, self.eval_daemon_id);
@@ -63,8 +63,8 @@ impl<D: 'static + Send> PadState<D> {
                         self.repl.put_eval(r.eval_async(&self.data));
                     }
                 }
-				dbg!("pushed input, telling to redraw");
-				dbg!(create_terminal_string(&self.terminal));
+                dbg!("pushed input, telling to redraw");
+                dbg!(create_terminal_string(&self.terminal));
                 (Redraw, kickoff)
             }
             None => (DontRedraw, kickoff),

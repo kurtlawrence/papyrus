@@ -179,6 +179,9 @@ pub struct LinkingConfiguration {
     /// - will add `some_lib::some_mod::MyStruct` to the function argument
     /// - function looks like `fn(app_data: &some_lib::some_mode::MyStruct)`
     pub data_type: Option<String>,
+    /// Flag whether to prepend `mut` to fn signature (ie `app_data: &mut data_type`).
+    /// Indicates a mutable block.
+    pub mutable: bool,
 }
 
 impl Default for LinkingConfiguration {
@@ -186,6 +189,7 @@ impl Default for LinkingConfiguration {
         LinkingConfiguration {
             crate_name: None,
             data_type: None,
+            mutable: false,
         }
     }
 }
@@ -224,7 +228,13 @@ impl LinkingConfiguration {
     pub fn construct_fn_args(&self) -> String {
         self.data_type
             .as_ref()
-            .map(|d| format!("app_data: &{}", d)) // matches pfh::compile::execute::DataFunc definition.
+            .map(|d| {
+                if self.mutable {
+                    format!("app_data: &mut {}", d)
+                } else {
+                    format!("app_data: &{}", d)
+                }
+            }) // matches pfh::compile::execute::DataFunc definition.
             .unwrap_or(String::new())
     }
 }
