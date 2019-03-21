@@ -56,14 +56,16 @@ fn map_variants<T: Terminal, D>(repl: Repl<Evaluate, T, D>, app_data: &D) -> Eva
 		..
 	} = repl;
 
-	data.mutating_block = false; // always cancel a mutating block on evaluation??
-							  // the alternative would be to keep alive on compilation failures, might not for now though.
-							  // this would have to be individually handled in each match arm and it, rather let the user
-							  // have to reinstate mutability if they fuck up input.
+	let mut keep_mutating = false; // default to stop mutating phase
+								// can't cancel before as handle program requires it for decisions
 
 	// map variants into Result<HandleInputResult, EvalSignal>
 	match state.result {
-		InputResult::Command(cmds) => data.handle_command(&cmds, &terminal.terminal),
+		InputResult::Command(cmds) => {
+			let r = data.handle_command(&cmds, &terminal.terminal);
+			keep_mutating = data.mutating_block; // a command can alter the mutating state, needs to persist
+			r
+		}
 		InputResult::Program(input) => Ok(data.handle_program(input, &terminal.terminal, app_data)),
 		InputResult::InputError(err) => Ok((Cow::Owned(err), false)),
 		InputResult::Eof => Err(Signal::Exit),
@@ -71,6 +73,12 @@ fn map_variants<T: Terminal, D>(repl: Repl<Evaluate, T, D>, app_data: &D) -> Eva
 	}
 	.map(move |hir| {
 		let (to_print, as_out) = hir;
+
+		data.mutating_block = keep_mutating; // always cancel a mutating block on evaluation??
+									   // the alternative would be to keep alive on compilation failures, might not for now though.
+									   // this would have to be individually handled in each match arm and it, rather let the user
+									   // have to reinstate mutability if they fuck up input.
+
 		Repl {
 			state: Print { to_print, as_out },
 			terminal: terminal,
@@ -201,13 +209,21 @@ impl ReplData {
 				}
 			};
 			match exec_res {
-				Ok(s) => ((Cow::Owned(s), true)),
+				Ok(s) => {
+					if self.mutating_block {
+						pop_input(self); // don't save mutating inputs
+						((Cow::Owned(format!("finished mutating block: {}", s)), false)) // don't print as `out#`
+					} else {
+						((Cow::Owned(s), true))
+					}
+				}
 				Err(e) => {
 					pop_input(self); // failed so don't save
 					(Cow::Borrowed(e), false)
 				}
 			}
 		} else {
+			// this will keep inputs, might not be preferrable to do so in mutating state?
 			(Cow::Borrowed(""), false) // do not execute if no extra statements have been added
 		}
 	}
