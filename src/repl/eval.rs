@@ -7,7 +7,6 @@ use std::sync::{Arc, Mutex};
 /// Represents a type of `(to_print, as_out)`.
 /// `as_out` flags to output `out#`.
 type HandleInputResult = (Cow<'static, str>, bool);
-type EvalResult<Term, Data> = Result<Repl<Print, Term, Data>, Signal>;
 
 impl<Term: Terminal, Data> Repl<Evaluate, Term, Data> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
@@ -66,7 +65,7 @@ fn map_variants<T: Terminal, D>(repl: Repl<Evaluate, T, D>, app_data: &mut D) ->
 								// can't cancel before as handle program requires it for decisions
 
 	// map variants into Result<HandleInputResult, EvalSignal>
-	match state.result {
+	let mapped = match state.result {
 		InputResult::Command(cmds) => {
 			let r = data.handle_command(&cmds, &terminal.terminal);
 			keep_mutating = data.linking.mutable; // a command can alter the mutating state, needs to persist
@@ -76,23 +75,27 @@ fn map_variants<T: Terminal, D>(repl: Repl<Evaluate, T, D>, app_data: &mut D) ->
 		InputResult::InputError(err) => Ok((Cow::Owned(err), false)),
 		InputResult::Eof => Err(Signal::Exit),
 		_ => Ok((Cow::Borrowed(""), false)),
-	}
-	.map(move |hir| {
-		let (to_print, as_out) = hir;
+	};
 
-		data.linking.mutable = keep_mutating; // always cancel a mutating block on evaluation??
-										// the alternative would be to keep alive on compilation failures, might not for now though.
-										// this would have to be individually handled in each match arm and it, rather let the user
-										// have to reinstate mutability if they fuck up input.
+	let ((to_print, as_out), sig) = match mapped {
+		Ok(hir) => (hir, Signal::None),
+		Err(sig) => ((Cow::Borrowed(""), false), sig),
+	};
 
-		Repl {
+	data.linking.mutable = keep_mutating; // always cancel a mutating block on evaluation??
+									   // the alternative would be to keep alive on compilation failures, might not for now though.
+									   // this would have to be individually handled in each match arm and it, rather let the user
+									   // have to reinstate mutability if they fuck up input.
+	EvalResult {
+		signal: sig,
+		repl: Repl {
 			state: Print { to_print, as_out },
 			terminal: terminal,
 			data: data,
 			more: more,
 			data_mrker: PhantomData,
-		}
-	})
+		},
+	}
 }
 
 impl ReplData {

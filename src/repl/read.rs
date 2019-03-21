@@ -163,12 +163,12 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
 
 		let mut read = self;
 		loop {
-			match read.read().eval(app_data) {
-				Ok(r) => read = r.print(),
-				Err(sig) => match sig {
-					Signal::Exit => break,
-				},
+			let result = read.read().eval(app_data);
+			match result.signal {
+				Signal::None => (),
+				Signal::Exit => break,
 			}
+			read = result.repl.print();
 		}
 	}
 }
