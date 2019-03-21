@@ -12,9 +12,11 @@ impl Layout for MyApp {
 }
 
 fn main() {
-    let app = App::new(MyApp, AppConfig::default());
+    let mut app = App::new(MyApp, AppConfig::default()).unwrap();
 
-    let window = Window::new(WindowCreateOptions::default(), css::native()).unwrap();
+    let window = app
+        .create_window(WindowCreateOptions::default(), css::native())
+        .unwrap();
 
     app.run(window).unwrap();
 }

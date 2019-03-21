@@ -36,20 +36,19 @@ fn main() {
 
     let repl = repl_with_term!(term.clone(), String);
 
-    let app = {
-        App::new(
-            MyApp {
-                repl_term: PadState::new(repl, Arc::new(Mutex::new(12345.to_string()))),
-            },
-            AppConfig {
-                enable_logging: Some(LevelFilter::Error),
-                log_file_path: Some("debug.log".to_string()),
-                ..Default::default()
-            },
-        )
-    };
+    let mut app = App::new(
+        MyApp {
+            repl_term: PadState::new(repl, Arc::new(Mutex::new(12345.to_string()))),
+        },
+        AppConfig {
+            enable_logging: Some(LevelFilter::Error),
+            log_file_path: Some("debug.log".to_string()),
+            ..Default::default()
+        },
+    )
+    .unwrap();
     let window = if cfg!(debug_assertions) {
-        Window::new_hot_reload(
+        app.create_hot_reload_window(
             WindowCreateOptions::default(),
             css::hot_reload_override_native(
                 "styles/test.css",
@@ -57,9 +56,11 @@ fn main() {
             ),
         )
         .unwrap()
+
     // Window::new(WindowCreateOptions::default(), css::native()).unwrap()
     } else {
-        Window::new(WindowCreateOptions::default(), css::native()).unwrap()
+        app.create_window(WindowCreateOptions::default(), css::native())
+            .unwrap()
     };
 
     app.run(window).unwrap();

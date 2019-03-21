@@ -13,7 +13,7 @@ pub struct PadState<Data> {
     repl: EvalState<Data>,
     terminal: MemoryTerminal,
     last_terminal_string: String,
-    eval_daemon_id: DaemonId,
+    eval_daemon_id: TimerId,
     data: Arc<Mutex<Data>>,
 }
 
@@ -24,7 +24,7 @@ impl<Data: 'static> PadState<Data> {
             repl: EvalState::new(repl),
             terminal: term,
             last_terminal_string: String::new(),
-            eval_daemon_id: DaemonId::new(),
+            eval_daemon_id: TimerId::new(),
             data,
         }
     }

@@ -1,8 +1,8 @@
 use super::*;
 use crate::prelude::*;
 use crate::widgets;
-use azul::app_state::AppStateNoData;
-use azul::default_callbacks::{DefaultCallback, DefaultCallbackId};
+use azul::app::AppStateNoData;
+use azul::callbacks::{DefaultCallback, DefaultCallbackId};
 use azul::prelude::*;
 use azul::window::FakeWindow;
 use linefeed::memory::MemoryTerminal;
@@ -133,17 +133,17 @@ impl<D: 'static + Send, T: Layout + BorrowMut<PadState<D>>> ReplTerminal<T, D> {
 
 fn kickoff_daemon<D, T: Layout + BorrowMut<PadState<D>>>(
     app_state: &mut AppStateNoData<T>,
-    daemon_id: DaemonId,
+    daemon_id: TimerId,
 ) {
     let daemon =
-        Daemon::new(check_evaluating_done).with_interval(std::time::Duration::from_millis(2));
-    app_state.add_daemon(daemon_id, daemon);
+        Timer::new(check_evaluating_done).with_interval(std::time::Duration::from_millis(2));
+    app_state.add_timer(daemon_id, daemon);
 }
 
 fn check_evaluating_done<D, T: BorrowMut<PadState<D>>>(
     app: &mut T,
     _: &mut AppResources,
-) -> (UpdateScreen, TerminateDaemon) {
+) -> (UpdateScreen, TerminateTimer) {
     let pad: &mut PadState<D> = app.borrow_mut();
 
     match pad.repl.take_eval() {
@@ -154,13 +154,13 @@ fn check_evaluating_done<D, T: BorrowMut<PadState<D>>>(
                         .expect("got an eval signal, which I have not handled yet")
                         .print(),
                 );
-                (Redraw, TerminateDaemon::Terminate) // turn off daemon now
+                (Redraw, TerminateTimer::Terminate) // turn off daemon now
             } else {
                 pad.repl.put_eval(eval);
-                (redraw_on_term_chg(pad), TerminateDaemon::Continue) // continue to check later
+                (redraw_on_term_chg(pad), TerminateTimer::Continue) // continue to check later
             }
         }
-        None => (DontRedraw, TerminateDaemon::Terminate), // if there is no eval, may as well stop checking
+        None => (DontRedraw, TerminateTimer::Terminate), // if there is no eval, may as well stop checking
     }
 }
 
@@ -188,7 +188,7 @@ fn create_terminal_string(term: &MemoryTerminal) -> String {
 
 fn colour_slice<T: Layout>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
     const PROPERTY_STR: &str = "ansi_esc_color";
-    let s = String::from_utf8_lossy(cat_slice.text_as_bytes);
+    let s = String::from_utf8_lossy(cat_slice.text_as_bytes).to_string();
 
     Dom::label(s)
         .with_class("repl-terminal-text")
