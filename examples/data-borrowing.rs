@@ -36,19 +36,27 @@ fn main() {
 		Err(repl) => repl,
 	};
 
-	// TODO -- this example is broken until mutating mechnism is introduced
-
 	// third, lets try a mutable borrow
 	let mut v = String::from("Hello,");
 
 	let mut repl = repl!(String);
 
 	// v mutably borrowed!
-	repl = match read_until_new_line(repl, "app_data").map(|eval| eval.eval(&mut v).repl.print()) {
+	repl = match read_until_new_line(repl, "app_data.to_string()")
+		.map(|eval| eval.eval(&mut v).repl.print())
+	{
 		Ok(repl) => repl,
 		Err(repl) => repl,
 	};
 	assert_eq!(&v, "Hello,");
+
+	// get into mutating block
+	repl = match read_until_new_line(repl, ".mut").map(|eval| eval.eval(&mut v).repl.print()) {
+		Ok(repl) => repl,
+		Err(repl) => repl,
+	};
+
+	// now change the string
 	match read_until_new_line(repl, r#"app_data.push_str(" world!"); app_data"#)
 		.map(|eval| eval.eval(&mut v).repl.print())
 	{
