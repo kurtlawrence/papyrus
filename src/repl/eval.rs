@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 
 /// Represents a type of `(to_print, as_out)`.
 /// `as_out` flags to output `out#`.
-type HandleInputResult = (String, bool);
+type HandleInputResult = (Cow<'static, str>, bool);
 type EvalResult<Term, Data> = Result<Repl<Print, Term, Data>, Signal>;
 
 impl<Term: Terminal, Data> Repl<Evaluate, Term, Data> {
@@ -60,9 +60,9 @@ fn map_variants<T: Terminal, D>(repl: Repl<Evaluate, T, D>, app_data: &D) -> Eva
 	match state.result {
 		InputResult::Command(cmds) => data.handle_command(&cmds, &terminal.terminal),
 		InputResult::Program(input) => Ok(data.handle_program(input, &terminal.terminal, app_data)),
-		InputResult::InputError(err) => Ok((err, false)),
+		InputResult::InputError(err) => Ok((Cow::Owned(err), false)),
 		InputResult::Eof => Err(Signal::Exit),
-		_ => Ok((String::new(), false)),
+		_ => Ok((Cow::Borrowed(""), false)),
 	}
 	.map(move |hir| {
 		let (to_print, as_out) = hir;
@@ -90,19 +90,21 @@ impl ReplData {
 			.parse_line(cmds, true, &mut Writer(terminal.as_ref()))
 		{
 			lr::Exit => return Err(Signal::Exit),
-			lr::Cancel => ("cancelled input and returned to root".to_string(), false),
+			lr::Cancel => ("cancelled input and returned to root", false),
 			lr::Action(res) => match res {
 				CommandResult::BeginMutBlock => {
 					dbg!("command result resulted in asking to begin mut block");
-					("beginning mut block".to_string(), false)
+					("beginning mut block", false)
 				}
 				CommandResult::ActionOnReplData(action) => {
 					action(self);
-					("executed action on repl data".to_string(), false)
+					("executed action on repl data", false)
 				}
 			},
-			_ => (String::new(), false),
+			_ => ("", false),
 		};
+
+		let tuple = (Cow::Borrowed(tuple.0), tuple.1);
 
 		Ok(tuple)
 	}
@@ -132,7 +134,10 @@ impl ReplData {
 		);
 		if let Err(e) = res {
 			pop_input(self); // failed so don't save
-			return (format!("failed to build compile directory: {}", e), false);
+			return (
+				Cow::Owned(format!("failed to build compile directory: {}", e)),
+				false,
+			);
 		}
 
 		// format
@@ -151,7 +156,7 @@ impl ReplData {
 			Ok(f) => f,
 			Err(e) => {
 				pop_input(self); // failed so don't save
-				return (format!("{}", e), false);
+				return (Cow::Owned(format!("{}", e)), false);
 			}
 		};
 
@@ -188,14 +193,14 @@ impl ReplData {
 				}
 			};
 			match exec_res {
-				Ok(s) => ((s, true)),
+				Ok(s) => ((Cow::Owned(s), true)),
 				Err(e) => {
 					pop_input(self); // failed so don't save
-					(e.to_string(), false)
+					(Cow::Borrowed(e), false)
 				}
 			}
 		} else {
-			(String::new(), false) // do not execute if no extra statements have been added
+			(Cow::Borrowed(""), false) // do not execute if no extra statements have been added
 		}
 	}
 

@@ -46,6 +46,7 @@ use cmdtree::*;
 use colored::*;
 use crossbeam::channel::Receiver;
 use linefeed::terminal::Terminal;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
 use std::fs;
@@ -129,7 +130,7 @@ pub struct Evaluating<Term: Terminal, Data> {
 	jh: Receiver<Result<Repl<Print, Term, Data>, Signal>>,
 }
 pub struct Print {
-	to_print: String,
+	to_print: Cow<'static, str>,
 	/// Specifies whether to print the `[out#]`
 	as_out: bool,
 }
