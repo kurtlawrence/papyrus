@@ -56,6 +56,11 @@ fn map_variants<T: Terminal, D>(repl: Repl<Evaluate, T, D>, app_data: &D) -> Eva
 		..
 	} = repl;
 
+	data.mutating_block = false; // always cancel a mutating block on evaluation??
+							  // the alternative would be to keep alive on compilation failures, might not for now though.
+							  // this would have to be individually handled in each match arm and it, rather let the user
+							  // have to reinstate mutability if they fuck up input.
+
 	// map variants into Result<HandleInputResult, EvalSignal>
 	match state.result {
 		InputResult::Command(cmds) => data.handle_command(&cmds, &terminal.terminal),
@@ -90,10 +95,13 @@ impl ReplData {
 			.parse_line(cmds, true, &mut Writer(terminal.as_ref()))
 		{
 			lr::Exit => return Err(Signal::Exit),
-			lr::Cancel => ("cancelled input and returned to root", false),
+			lr::Cancel => {
+				self.mutating_block = false; // reset the mutating on cancel
+				("cancelled input and returned to root", false)
+			}
 			lr::Action(res) => match res {
 				CommandResult::BeginMutBlock => {
-					dbg!("command result resulted in asking to begin mut block");
+					self.mutating_block = true;
 					("beginning mut block", false)
 				}
 				CommandResult::ActionOnReplData(action) => {

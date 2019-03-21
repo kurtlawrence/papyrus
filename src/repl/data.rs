@@ -13,12 +13,12 @@ impl Default for ReplData {
 				.expect("empty should pass"),
 			file_map: map,
 			current_file: lib_path,
-			name: "papyrus",
 			prompt_colour: Color::Cyan,
 			out_colour: Color::BrightGreen,
 			compilation_dir: default_compile_dir(),
 			linking: LinkingConfiguration::default(),
 			redirect_on_execution: true,
+			mutating_block: false,
 		};
 
 		r.with_cmdtree_builder(Builder::new("papyrus"))

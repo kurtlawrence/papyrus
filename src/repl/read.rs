@@ -121,11 +121,12 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
 	}
 
 	fn prompt(&self) -> String {
-		let s = self.data.cmdtree.path().color(self.data.prompt_colour);
+		let path = self.data.cmdtree.path().color(self.data.prompt_colour);
+		let m = if self.data.mutating_block { "-mut" } else { "" }.bright_red();
 		if self.more {
-			format!("{}.> ", s)
+			format!("{}{}.> ", path, m)
 		} else {
-			format!("{}=> ", s)
+			format!("{}{}=> ", path, m)
 		}
 	}
 

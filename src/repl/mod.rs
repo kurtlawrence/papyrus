@@ -93,8 +93,6 @@ pub struct ReplData {
 	pub file_map: HashMap<PathBuf, SourceFile>,
 	/// The current editing and executing file.
 	pub current_file: PathBuf,
-	/// App and prompt text.
-	pub name: &'static str,
 	/// The colour of the prompt region. ie `papyrus`.
 	pub prompt_colour: Color,
 	/// The colour of the out component. ie `[out0]`.
@@ -106,6 +104,8 @@ pub struct ReplData {
 	linking: LinkingConfiguration,
 	/// Flag if output is to be redirected. Generally redirection is needed, `DefaultTerminal` however will not require it (fucks linux).
 	redirect_on_execution: bool,
+	/// Flag if currently treating input and evaluation as mutable.
+	mutating_block: bool,
 }
 
 struct ReplTerminal<Term: Terminal> {
