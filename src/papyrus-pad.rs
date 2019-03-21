@@ -47,17 +47,22 @@ fn main() {
         },
     )
     .unwrap();
+
     let window = if cfg!(debug_assertions) {
-        app.create_hot_reload_window(
+        // app.create_hot_reload_window(
+        //     WindowCreateOptions::default(),
+        //     css::hot_reload_override_native(
+        //         "styles/test.css",
+        //         std::time::Duration::from_millis(1000),
+        //     ),
+        // )
+        // .unwrap()
+
+        app.create_window(
             WindowCreateOptions::default(),
-            css::hot_reload_override_native(
-                "styles/test.css",
-                std::time::Duration::from_millis(1000),
-            ),
+            css::override_native(&std::fs::read_to_string("styles/test.css").unwrap()).unwrap(),
         )
         .unwrap()
-
-    // Window::new(WindowCreateOptions::default(), css::native()).unwrap()
     } else {
         app.create_window(WindowCreateOptions::default(), css::native())
             .unwrap()
