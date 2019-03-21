@@ -90,11 +90,15 @@ impl ReplData {
 			.parse_line(cmds, true, &mut Writer(terminal.as_ref()))
 		{
 			lr::Exit => return Err(Signal::Exit),
+			lr::Cancel => ("cancelled input and returned to root".to_string(), false),
 			lr::Action(res) => match res {
-				CommandResult::CancelInput => ("cancelled input".to_string(), false),
 				CommandResult::BeginMutBlock => {
 					dbg!("command result resulted in asking to begin mut block");
 					("beginning mut block".to_string(), false)
+				}
+				CommandResult::ActionOnReplData(action) => {
+					action(self);
+					("executed action on repl data".to_string(), false)
 				}
 			},
 			_ => (String::new(), false),

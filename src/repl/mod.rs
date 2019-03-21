@@ -135,9 +135,11 @@ pub struct Print {
 }
 
 pub enum CommandResult {
-	CancelInput,
 	BeginMutBlock,
+	ActionOnReplData(ReplDataAction),
 }
+
+pub type ReplDataAction = fn(repl_data: &mut ReplData);
 
 #[derive(Debug)]
 pub enum Signal {
