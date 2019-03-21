@@ -60,13 +60,13 @@ impl ReplData {
 	///
 	/// [See documentation.](https://kurtlawrence.github.io/papyrus/repl/linking.html)
 	pub fn with_extern_crate(
-		&mut self,
+		mut self,
 		crate_name: &'static str,
 		rlib_path: Option<&str>,
-	) -> io::Result<()> {
+	) -> io::Result<Self> {
 		self.linking = std::mem::replace(&mut self.linking, LinkingConfiguration::default())
 			.link_external_crate(&self.compilation_dir, crate_name, rlib_path)?;
-		Ok(())
+		Ok(self)
 	}
 
 	pub fn linking(&self) -> &LinkingConfiguration {
