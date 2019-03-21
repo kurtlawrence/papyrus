@@ -1345,7 +1345,7 @@ dependencies = [
 
 [[package]]
 name = "papyrus"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "azul 0.1.0",
  "cansi 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
