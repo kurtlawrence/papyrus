@@ -14,7 +14,7 @@
 //! papyrus [out0]: 4
 //! ```
 
-//#![warn(missing_docs)] turn off for now
+#![warn(missing_docs)]
 
 #[macro_use]
 extern crate log;
@@ -30,6 +30,6 @@ pub use cmdtree::{BuildError, Builder, BuilderChain};
 
 /// Re-exports of most common types and modules.
 pub mod prelude {
-    pub use crate::pfh::linking;
-    pub use crate::repl::{self, Repl, ReplData};
+	pub use crate::pfh::linking;
+	pub use crate::repl::{self, Repl, ReplData};
 }

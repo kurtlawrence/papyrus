@@ -26,6 +26,10 @@ impl Default for ReplData {
 }
 
 impl ReplData {
+	/// Set the compilation directory. The default is set to `$HOME/.papyrus`.
+	/// If the directory will be different from the default and you want to link an
+	/// external crate, be sure to call this before linking the crate, as the library is
+	/// copied into whichever compilation directory is active at the time.
 	pub fn with_compilation_dir<P: AsRef<Path>>(mut self, dir: P) -> io::Result<Self> {
 		let dir = dir.as_ref();
 		if !dir.exists() {
@@ -69,6 +73,8 @@ impl ReplData {
 		Ok(self)
 	}
 
+	/// The current linking configuration.
+	/// Not mutable as it could lead to undefined behaviour if changed.
 	pub fn linking(&self) -> &LinkingConfiguration {
 		&self.linking
 	}
