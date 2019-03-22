@@ -89,22 +89,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "azul"
 version = "0.1.0"
+source = "git+https://github.com/kurtlawrence/azul.git#7913bc4d97808c0678c8ff625d10dbe842952b39"
 dependencies = [
- "azul-css 0.1.0",
- "azul-css-parser 0.1.0",
+ "azul-css 0.1.0 (git+https://github.com/kurtlawrence/azul.git)",
+ "azul-css-parser 0.1.0 (git+https://github.com/kurtlawrence/azul.git)",
  "azul-dependencies 0.1.0 (git+https://github.com/maps4print/azul-dependencies?rev=c1548977fb62399f39aa642d2e7e24a24a25246e)",
- "azul-native-style 0.1.0",
+ "azul-native-style 0.1.0 (git+https://github.com/kurtlawrence/azul.git)",
 ]
 
 [[package]]
 name = "azul-css"
 version = "0.1.0"
+source = "git+https://github.com/kurtlawrence/azul.git#7913bc4d97808c0678c8ff625d10dbe842952b39"
 
 [[package]]
 name = "azul-css-parser"
 version = "0.1.0"
+source = "git+https://github.com/kurtlawrence/azul.git#7913bc4d97808c0678c8ff625d10dbe842952b39"
 dependencies = [
- "azul-css 0.1.0",
+ "azul-css 0.1.0 (git+https://github.com/kurtlawrence/azul.git)",
  "simplecss 0.1.0 (git+https://github.com/fschutt/simplecss.git?rev=0bf3b7800f49a4524b889687d7761b163e8b4101)",
 ]
 
@@ -134,9 +137,10 @@ dependencies = [
 [[package]]
 name = "azul-native-style"
 version = "0.1.0"
+source = "git+https://github.com/kurtlawrence/azul.git#7913bc4d97808c0678c8ff625d10dbe842952b39"
 dependencies = [
- "azul-css 0.1.0",
- "azul-css-parser 0.1.0",
+ "azul-css 0.1.0 (git+https://github.com/kurtlawrence/azul.git)",
+ "azul-css-parser 0.1.0 (git+https://github.com/kurtlawrence/azul.git)",
 ]
 
 [[package]]
@@ -1347,7 +1351,7 @@ dependencies = [
 name = "papyrus"
 version = "0.8.0"
 dependencies = [
- "azul 0.1.0",
+ "azul 0.1.0 (git+https://github.com/kurtlawrence/azul.git)",
  "cansi 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "cmdtree 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "colored 1.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2600,7 +2604,11 @@ source = "git+https://github.com/maps4print/azul-dependencies?rev=c1548977fb6239
 "checksum arrayvec 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)" = "92c7fb76bc8826a8b33b4ee5bb07a247a81e76764ab4d55e8f73e3a4d8808c71"
 "checksum arrayvec 0.4.8 (git+https://github.com/maps4print/azul-dependencies?rev=c1548977fb62399f39aa642d2e7e24a24a25246e)" = "<none>"
 "checksum autocfg 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a6d640bee2da49f60a4068a7fae53acde8982514ab7bae8b8cea9e88cbcfd799"
+"checksum azul 0.1.0 (git+https://github.com/kurtlawrence/azul.git)" = "<none>"
+"checksum azul-css 0.1.0 (git+https://github.com/kurtlawrence/azul.git)" = "<none>"
+"checksum azul-css-parser 0.1.0 (git+https://github.com/kurtlawrence/azul.git)" = "<none>"
 "checksum azul-dependencies 0.1.0 (git+https://github.com/maps4print/azul-dependencies?rev=c1548977fb62399f39aa642d2e7e24a24a25246e)" = "<none>"
+"checksum azul-native-style 0.1.0 (git+https://github.com/kurtlawrence/azul.git)" = "<none>"
 "checksum backtrace 0.3.12 (git+https://github.com/maps4print/azul-dependencies?rev=c1548977fb62399f39aa642d2e7e24a24a25246e)" = "<none>"
 "checksum backtrace 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)" = "cd5a90e2b463010cd0e0ce9a11d4a9d5d58d9f41d4a6ba3dcaf9e68b466e88b4"
 "checksum backtrace-sys 0.1.24 (git+https://github.com/maps4print/azul-dependencies?rev=c1548977fb62399f39aa642d2e7e24a24a25246e)" = "<none>"
