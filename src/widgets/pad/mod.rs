@@ -19,7 +19,7 @@ pub struct PadState<Data> {
 
 impl<Data: 'static> PadState<Data> {
     pub fn new(repl: Repl<repl::Read, MemoryTerminal, Data>, data: Arc<Mutex<Data>>) -> Self {
-        let term = repl.terminal_inner().clone();
+        let term = repl.terminal().clone();
         Self {
             repl: EvalState::new(repl),
             terminal: term,

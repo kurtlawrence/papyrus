@@ -155,9 +155,7 @@ fn check_evaluating_done<D, T: BorrowMut<PadState<D>>>(
         Some(eval) => {
             if eval.completed() {
                 pad.repl.put_read(
-                    eval.wait()
-                        .expect("got an eval signal, which I have not handled yet")
-                        .print(),
+                    eval.wait().repl.print(),
                 );
                 (Redraw, TerminateTimer::Terminate) // turn off daemon now
             } else {
