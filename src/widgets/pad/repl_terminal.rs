@@ -24,9 +24,6 @@ impl<D: 'static + Send> PadState<D> {
                 .current_char?,
         );
 
-        dbg!(&update_screen);
-        dbg!(&kickoff);
-
         if kickoff {
             kickoff_daemon(app_state, self.eval_daemon_id);
         }
@@ -63,8 +60,6 @@ impl<D: 'static + Send> PadState<D> {
                         self.repl.put_eval(r.eval_async(&self.data));
                     }
                 }
-                dbg!("pushed input, telling to redraw");
-                dbg!(create_terminal_string(&self.terminal));
                 (Redraw, kickoff)
             }
             None => (DontRedraw, kickoff),
@@ -201,25 +196,3 @@ fn colour_slice<T: Layout>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
         )
 }
 
-pub const PAD_CSS: &'static str = r##"
-.repl-terminal {
-	background-color: black;
-	padding: 5px;
-}
-
-.repl-terminal-line {
-	flex-direction: row;
-}
-
-.repl-terminal-text {
-	color: [[ ansi_esc_color | white ]];
-	text-align: left;
-	line-height: 135%;
-	font-size: 1em;
-	font-family: Lucida Console,Lucida Sans Typewriter,monaco,Bitstream Vera Sans Mono,monospace;
-}
-
-.repl-terminal-text:hover {
-	border: 1px solid #9b9b9b;
-}
-"##;
