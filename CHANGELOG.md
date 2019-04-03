@@ -2,7 +2,8 @@
 
 ## 0.8.1
 
-- Re-export `azul` crate
+- Re-export `azul` crate in `prelude`.
+- Re-export `linefeed::memory::MemoryTerminal` struct in `prelude`.
 
 ## 0.8.0
 

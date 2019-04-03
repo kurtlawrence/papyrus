@@ -26,12 +26,13 @@ pub mod repl;
 pub mod widgets;
 
 // re-exports
-#[cfg(feature = "azul-widgets")]
-pub use azul;
 pub use cmdtree::{BuildError, Builder, BuilderChain};
 
 /// Re-exports of most common types and modules.
 pub mod prelude {
 	pub use crate::pfh::linking;
 	pub use crate::repl::{self, Repl, ReplData};
+	#[cfg(feature = "azul-widgets")]
+	pub use azul;
+	pub use linefeed::memory::MemoryTerminal;
 }
