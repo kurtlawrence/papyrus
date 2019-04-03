@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1
+
+- Re-export `azul` crate
+
 ## 0.8.0
 
 - The macros have been changed. Now `repl!` and `repl_with_term!` are used to create a `Repl` instance, with access to the public `.data` field to customise the repl data.
