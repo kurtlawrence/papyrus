@@ -78,6 +78,8 @@ mod print;
 mod read;
 mod writer;
 
+pub use cmdtree::Builder as CommandBuilder;
+
 use crate::input::{InputReader, InputResult};
 use crate::pfh::{linking::LinkingConfiguration, SourceFile};
 use cmdtree::*;
