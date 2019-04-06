@@ -125,6 +125,7 @@ impl ReplData {
 					action(self);
 					("executed action on repl data", false)
 				}
+				CommandResult::Empty => ("", false),
 			},
 			_ => ("", false),
 		};

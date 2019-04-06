@@ -49,7 +49,7 @@ impl ReplData {
 	) -> Result<Self, BuildError> {
 		let cmdr = builder
 			.root()
-			.add_action("mut", "Begin a mutable block of code", |_| {
+			.add_action("mut", "Begin a mutable block of code", |_, _| {
 				CommandResult::BeginMutBlock
 			})
 			.into_commander()?;

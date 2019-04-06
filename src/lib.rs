@@ -36,3 +36,7 @@ pub mod prelude {
 	pub use azul;
 	pub use linefeed::memory::MemoryTerminal;
 }
+
+// TODO
+// - Change builder pattern of Self to &mut self in ReplData
+// - Add cancel or c back into Builder if they don't exist (user can remove these, not good!)

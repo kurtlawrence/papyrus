@@ -347,7 +347,7 @@ dependencies = [
 
 [[package]]
 name = "cmdtree"
-version = "0.4.1"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "colored 1.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1353,7 +1353,7 @@ version = "0.8.0"
 dependencies = [
  "azul 0.1.0 (git+https://github.com/kurtlawrence/azul.git)",
  "cansi 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "cmdtree 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cmdtree 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "colored 1.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cratesiover 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2637,7 +2637,7 @@ source = "git+https://github.com/maps4print/azul-dependencies?rev=ed2ad88d47eda2
 "checksum clipboard2 0.1.1 (git+https://github.com/maps4print/azul-dependencies?rev=ed2ad88d47eda260f7e3b3d387c412801ae03c1b)" = "<none>"
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
 "checksum cmake 0.1.35 (git+https://github.com/maps4print/azul-dependencies?rev=ed2ad88d47eda260f7e3b3d387c412801ae03c1b)" = "<none>"
-"checksum cmdtree 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "7768484172bc84f6c34bf109cb07540786a08e3288ca86e35be7e4c23f2fe337"
+"checksum cmdtree 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4ad5a920625e18d26b036c5a46acbfd0ca984f523ab6eb732bd8275286a299b5"
 "checksum cocoa 0.18.4 (git+https://github.com/maps4print/azul-dependencies?rev=ed2ad88d47eda260f7e3b3d387c412801ae03c1b)" = "<none>"
 "checksum colored 1.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6e9a455e156a4271e12fd0246238c380b1e223e3736663c7a18ed8b6362028a9"
 "checksum constant_time_eq 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "8ff012e225ce166d4422e0e78419d901719760f62ae2b7969ca6b564d1b54a9e"

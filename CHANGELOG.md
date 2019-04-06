@@ -4,6 +4,8 @@
 
 - Re-export `azul` crate in `prelude`.
 - Re-export `linefeed::memory::MemoryTerminal` struct in `prelude`.
+- Added `CommandResult::Empty`
+- Updated `cmdtree` to `v0.5` so users can output to a writer.
 
 ## 0.8.0
 
