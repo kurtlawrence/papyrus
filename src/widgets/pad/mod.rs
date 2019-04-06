@@ -9,18 +9,18 @@ use crate::prelude::*;
 use azul::prelude::*;
 use eval_state::EvalState;
 use linefeed::memory::MemoryTerminal;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 pub struct PadState<Data> {
     repl: EvalState<Data>,
     terminal: MemoryTerminal,
     last_terminal_string: String,
     eval_daemon_id: TimerId,
-    data: Arc<Mutex<Data>>,
+    data: Arc<RwLock<Data>>,
 }
 
 impl<Data: 'static> PadState<Data> {
-    pub fn new(repl: Repl<repl::Read, MemoryTerminal, Data>, data: Arc<Mutex<Data>>) -> Self {
+    pub fn new(repl: Repl<repl::Read, MemoryTerminal, Data>, data: Arc<RwLock<Data>>) -> Self {
         let term = repl.terminal().clone();
         Self {
             repl: EvalState::new(repl),

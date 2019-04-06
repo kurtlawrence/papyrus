@@ -4,7 +4,7 @@ extern crate papyrus;
 use azul::prelude::*;
 use linefeed::memory::MemoryTerminal;
 use papyrus::widgets::pad::*;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 type TypedPadState = PadState<String>;
 
@@ -38,7 +38,7 @@ fn main() {
 
     let mut app = App::new(
         MyApp {
-            repl_term: PadState::new(repl, Arc::new(Mutex::new(12345.to_string()))),
+            repl_term: PadState::new(repl, Arc::new(RwLock::new(12345.to_string()))),
         },
         AppConfig {
             enable_logging: Some(LevelFilter::Error),

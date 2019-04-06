@@ -8,6 +8,7 @@
 - Updated `cmdtree` to `v0.5` so users can output to a writer.
 - Added `CommandResult::ActionOnAppData` so user can take actions on app data
 - `CommandResult` actions pass through writer.
+- async repls require `RwLock` rather than `Mutex`.
 
 ## 0.8.0
 

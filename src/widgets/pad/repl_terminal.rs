@@ -12,7 +12,7 @@ use std::marker::PhantomData;
 type KickOffEvalDaemon = bool;
 type HandleCb = (UpdateScreen, KickOffEvalDaemon);
 
-impl<D: 'static + Send> PadState<D> {
+impl<D: 'static + Send + Sync> PadState<D> {
     pub fn update_state_on_text_input<T: Layout + BorrowMut<PadState<D>>>(
         &mut self,
         app_state: &mut AppStateNoData<T>,
@@ -83,7 +83,7 @@ pub struct ReplTerminal<T: Layout, D> {
     mrkr_data: PhantomData<D>,
 }
 
-impl<D: 'static + Send, T: Layout + BorrowMut<PadState<D>>> ReplTerminal<T, D> {
+impl<D: 'static + Send + Sync, T: Layout + BorrowMut<PadState<D>>> ReplTerminal<T, D> {
     pub fn new(
         window: &mut FakeWindow<T>,
         state_to_bind: &PadState<D>,

@@ -1,8 +1,10 @@
 use super::*;
 use crate::pfh::{self, Input};
 use linefeed::terminal::Terminal;
+use std::borrow::{Borrow, BorrowMut};
+use std::ops::{Deref, DerefMut};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 /// Represents a type of `(to_print, as_out)`.
 /// `as_out` flags to output `out#`.
@@ -12,25 +14,53 @@ impl<Term: Terminal, Data> Repl<Evaluate, Term, Data> {
 	/// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
 	/// This result gets passed back as a print ready repl.
 	pub fn eval(self, app_data: &mut Data) -> EvalResult<Term, Data> {
-		map_variants(self, app_data)
+		use std::cell::Cell;
+		use std::rc::Rc;
+
+		let ptr = Rc::into_raw(Rc::new(app_data));
+
+		// as I am playing around with pointers here, I am going to do assertions in the rebuilding
+		// if from_raw is called more than once, it is memory unsafe, so count the calls and assert it is only 1
+		let rebuilds: Rc<Cell<u32>> = Rc::new(Cell::new(0));
+
+		let func = || {
+			let b = Rc::clone(&rebuilds);
+
+			let n = b.get();
+
+			assert_eq!(n, 0, "unsafe memory operation, can only rebuild Rc once.");
+
+			b.set(n + 1);
+
+			let c = unsafe { Rc::from_raw(ptr) };
+
+			Rc::try_unwrap(c)
+				.map_err(|_| "there should only be one strong reference")
+				.unwrap()
+		};
+
+		map_variants(self, func, func)
 	}
 }
 
-impl<Term: Terminal + 'static, Data: 'static + Send> Repl<Evaluate, Term, Data> {
+impl<Term: Terminal + 'static, Data: 'static + Send + Sync> Repl<Evaluate, Term, Data> {
 	/// Same as `eval` but will evaluate on another thread, not blocking this one.
-	/// An `Arc::clone` will be taken of `app_data`, and the `Mutex` will be locked immediately,
-	/// and remain locked until the end of the evaluation.
-	pub fn eval_async(self, app_data: &Arc<Mutex<Data>>) -> Evaluating<Term, Data> {
-		use std::borrow::BorrowMut;
-
+	/// An `Arc::clone` will be taken of `app_data`. `RwLock` generally takes a read lock, making it possible to take more read locks
+	/// in another thread. A write lock will be taken when required, currently when in a mutating block or a command action is invoked.
+	/// > Be careful of blocking a program by taking a read lock and calling this function when a write lock is required.
+	pub fn eval_async(self, app_data: &Arc<RwLock<Data>>) -> Evaluating<Term, Data> {
 		let (tx, rx) = crossbeam::channel::bounded(1);
 
 		let clone = Arc::clone(app_data);
 
 		std::thread::spawn(move || {
-			let mut lock = clone.lock().expect("failed getting lock of data");
-			let app_data: &mut Data = lock.borrow_mut();
-			tx.send(self.eval(app_data)).unwrap();
+			let eval = map_variants(
+				self,
+				|| clone.write().expect("failed getting write lock of data"),
+				|| clone.read().expect("failed getting read lock of data"),
+			);
+
+			tx.send(eval).unwrap();
 		});
 
 		Evaluating { jh: rx }
@@ -52,7 +82,18 @@ impl<Term: Terminal, Data> Evaluating<Term, Data> {
 	}
 }
 
-fn map_variants<T: Terminal, D>(repl: Repl<Evaluate, T, D>, app_data: &mut D) -> EvalResult<T, D> {
+fn map_variants<T, D, Fmut, Fbrw, Rmut, Rbrw>(
+	repl: Repl<Evaluate, T, D>,
+	obtain_mut_data: Fmut,
+	obtain_brw_data: Fbrw,
+) -> EvalResult<T, D>
+where
+	T: Terminal,
+	Fmut: FnOnce() -> Rmut,
+	Rmut: DerefMut<Target = D>,
+	Fbrw: FnOnce() -> Rbrw,
+	Rbrw: Deref<Target = D>,
+{
 	let Repl {
 		state,
 		terminal,
@@ -67,11 +108,13 @@ fn map_variants<T: Terminal, D>(repl: Repl<Evaluate, T, D>, app_data: &mut D) ->
 	// map variants into Result<HandleInputResult, EvalSignal>
 	let mapped = match state.result {
 		InputResult::Command(cmds) => {
-			let r = data.handle_command(&cmds, &terminal.terminal, app_data);
+			let r = data.handle_command(&cmds, &terminal.terminal, obtain_mut_data);
 			keep_mutating = data.linking.mutable; // a command can alter the mutating state, needs to persist
 			r
 		}
-		InputResult::Program(input) => Ok(data.handle_program(input, &terminal.terminal, app_data)),
+		InputResult::Program(input) => {
+			Ok(data.handle_program(input, &terminal.terminal, obtain_mut_data, obtain_brw_data))
+		}
 		InputResult::InputError(err) => Ok((Cow::Owned(err), false)),
 		InputResult::Eof => Err(Signal::Exit),
 		_ => Ok((Cow::Borrowed(""), false)),
@@ -99,12 +142,17 @@ fn map_variants<T: Terminal, D>(repl: Repl<Evaluate, T, D>, app_data: &mut D) ->
 }
 
 impl<Data> ReplData<Data> {
-	fn handle_command<T: Terminal>(
+	fn handle_command<T, F, R>(
 		&mut self,
 		cmds: &str,
 		terminal: &Arc<T>,
-		app_data: &mut Data,
-	) -> Result<HandleInputResult, Signal> {
+		obtain_app_data: F,
+	) -> Result<HandleInputResult, Signal>
+	where
+		T: Terminal,
+		F: FnOnce() -> R,
+		R: DerefMut<Target = Data>,
+	{
 		use cmdtree::LineResult as lr;
 
 		// this will write to Writer(terminal)
@@ -127,6 +175,8 @@ impl<Data> ReplData<Data> {
 					("executed action on repl data", false)
 				}
 				CommandResult::ActionOnAppData(action) => {
+					let mut r = obtain_app_data();
+					let app_data: &mut Data = r.borrow_mut();
 					action(app_data, Box::new(Writer(terminal.as_ref())));
 					("executed action on repl data", false)
 				}
@@ -140,12 +190,20 @@ impl<Data> ReplData<Data> {
 		Ok(tuple)
 	}
 
-	fn handle_program<T: Terminal>(
+	fn handle_program<T, Fmut, Fbrw, Rmut, Rbrw>(
 		&mut self,
 		input: Input,
 		terminal: &Arc<T>,
-		app_data: &mut Data,
-	) -> HandleInputResult {
+		obtain_mut_data: Fmut,
+		obtain_brw_data: Fbrw,
+	) -> HandleInputResult
+	where
+		T: Terminal,
+		Fmut: FnOnce() -> Rmut,
+		Rmut: DerefMut<Target = Data>,
+		Fbrw: FnOnce() -> Rbrw,
+		Rbrw: Deref<Target = Data>,
+	{
 		let pop_input = |repl_data: &mut ReplData<Data>| {
 			repl_data.get_current_file_mut().contents.pop();
 		};
@@ -218,9 +276,13 @@ impl<Data> ReplData<Data> {
 				let fn_name = pfh::eval_fn_name(&self.get_current_file_mut().mod_path);
 
 				if self.linking.mutable {
+					let mut r = obtain_mut_data();
+					let app_data: &mut Data = r.borrow_mut();
 					pfh::compile::exec(&lib_file, &fn_name, app_data, redirect_wtr)
 				} else {
-					pfh::compile::exec(&lib_file, &fn_name, app_data as &Data, redirect_wtr)
+					let r = obtain_brw_data();
+					let app_data: &Data = r.borrow();
+					pfh::compile::exec(&lib_file, &fn_name, app_data, redirect_wtr)
 				}
 			};
 			match exec_res {
