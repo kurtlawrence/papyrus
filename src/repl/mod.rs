@@ -97,7 +97,7 @@ use std::{fmt, fs, io};
 /// A repl has different available methods depending on its state.
 pub struct Repl<S, Term: Terminal, Data> {
 	/// The inner repl configuration data.
-	pub data: ReplData,
+	pub data: ReplData<Data>,
 	state: S,
 	terminal: ReplTerminal<Term>,
 	/// A persistent flag for the prompt to change for more input.
@@ -129,9 +129,9 @@ impl<S: fmt::Debug, T: Terminal, D> fmt::Debug for Repl<S, T, D> {
 }
 
 /// The inner configuration data of the repl.
-pub struct ReplData {
+pub struct ReplData<Data> {
 	/// The REPL commands as a `cmdtree::Commander`.
-	pub cmdtree: Commander<'static, CommandResult>,
+	pub cmdtree: Commander<'static, CommandResult<Data>>,
 	/// The file map of relative paths.
 	file_map: HashMap<PathBuf, SourceFile>,
 	/// The current editing and executing file.
@@ -182,17 +182,22 @@ pub struct Print {
 
 /// The result of a [`cmdtree action`](https://docs.rs/cmdtree/builder/trait.BuilderChain.html#tymethod.add_action).
 /// This result is handed in the repl's evaluating stage, and can alter `ReplData`.
-pub enum CommandResult {
+pub enum CommandResult<Data> {
 	/// Flag to begin a mutating block.
 	BeginMutBlock,
 	/// Take an action on the `ReplData`.
-	ActionOnReplData(ReplDataAction),
+	ActionOnReplData(ReplDataAction<Data>),
+	/// Take an action on `Data`.
+	ActionOnAppData(AppDataAction<Data>),
 	/// A blank variant with no action.
 	Empty,
 }
 
 /// The action to take. Passes through a mutable reference to the `ReplData`.
-pub type ReplDataAction = fn(repl_data: &mut ReplData);
+pub type ReplDataAction<D> = for<'w> fn(repl_data: &mut ReplData<D>, writer: Box<Write + 'w>);
+
+/// The action to take. Passes through a mutable reference to the `Data`.
+pub type AppDataAction<D> = for<'w> fn(data: &mut D, writer: Box<Write + 'w>);
 
 /// Represents an evaluating result. Signal should be checked and handled.
 pub struct EvalResult<Term: Terminal, Data> {

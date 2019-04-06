@@ -1,6 +1,6 @@
 use super::*;
 
-impl Default for ReplData {
+impl<Data> Default for ReplData<Data> {
 	fn default() -> Self {
 		let lib = SourceFile::lib();
 		let lib_path = lib.path.clone();
@@ -25,7 +25,7 @@ impl Default for ReplData {
 	}
 }
 
-impl ReplData {
+impl<Data> ReplData<Data> {
 	/// Set the compilation directory. The default is set to `$HOME/.papyrus`.
 	/// If the directory will be different from the default and you want to link an
 	/// external crate, be sure to call this before linking the crate, as the library is
@@ -45,7 +45,7 @@ impl ReplData {
 	/// returned if the command already exists.
 	pub fn with_cmdtree_builder(
 		mut self,
-		builder: Builder<'static, CommandResult>,
+		builder: Builder<'static, CommandResult<Data>>,
 	) -> Result<Self, BuildError> {
 		let cmdr = builder
 			.root()

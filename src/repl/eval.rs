@@ -67,7 +67,7 @@ fn map_variants<T: Terminal, D>(repl: Repl<Evaluate, T, D>, app_data: &mut D) ->
 	// map variants into Result<HandleInputResult, EvalSignal>
 	let mapped = match state.result {
 		InputResult::Command(cmds) => {
-			let r = data.handle_command(&cmds, &terminal.terminal);
+			let r = data.handle_command(&cmds, &terminal.terminal, app_data);
 			keep_mutating = data.linking.mutable; // a command can alter the mutating state, needs to persist
 			r
 		}
@@ -98,11 +98,12 @@ fn map_variants<T: Terminal, D>(repl: Repl<Evaluate, T, D>, app_data: &mut D) ->
 	}
 }
 
-impl ReplData {
+impl<Data> ReplData<Data> {
 	fn handle_command<T: Terminal>(
 		&mut self,
 		cmds: &str,
 		terminal: &Arc<T>,
+		app_data: &mut Data,
 	) -> Result<HandleInputResult, Signal> {
 		use cmdtree::LineResult as lr;
 
@@ -122,7 +123,11 @@ impl ReplData {
 					("beginning mut block", false)
 				}
 				CommandResult::ActionOnReplData(action) => {
-					action(self);
+					action(self, Box::new(Writer(terminal.as_ref())));
+					("executed action on repl data", false)
+				}
+				CommandResult::ActionOnAppData(action) => {
+					action(app_data, Box::new(Writer(terminal.as_ref())));
 					("executed action on repl data", false)
 				}
 				CommandResult::Empty => ("", false),
@@ -135,13 +140,13 @@ impl ReplData {
 		Ok(tuple)
 	}
 
-	fn handle_program<T: Terminal, Data>(
+	fn handle_program<T: Terminal>(
 		&mut self,
 		input: Input,
 		terminal: &Arc<T>,
 		app_data: &mut Data,
 	) -> HandleInputResult {
-		let pop_input = |repl_data: &mut ReplData| {
+		let pop_input = |repl_data: &mut ReplData<Data>| {
 			repl_data.get_current_file_mut().contents.pop();
 		};
 
