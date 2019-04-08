@@ -195,11 +195,18 @@ pub enum CommandResult<Data> {
 	Empty,
 }
 
+impl<D> CommandResult<D> {
+	pub fn app_data_fn<F: for<'w> Fn(&mut D, Box<Write + 'w>) + 'static>(func: F) -> Self {
+		CommandResult::ActionOnAppData(Box::new(func))
+	}
+}
+
 /// The action to take. Passes through a mutable reference to the `ReplData`.
 pub type ReplDataAction<D> = for<'w> fn(repl_data: &mut ReplData<D>, writer: Box<Write + 'w>);
 
 /// The action to take. Passes through a mutable reference to the `Data`.
-pub type AppDataAction<D> = for<'w> fn(data: &mut D, writer: Box<Write + 'w>);
+// pub type AppDataAction<D> = for<'w> fn(data: &mut D, writer: Box<Write + 'w>);
+pub type AppDataAction<D> = Box<for<'w> Fn(&mut D, Box<Write + 'w>)>;
 
 /// Represents an evaluating result. Signal should be checked and handled.
 pub struct EvalResult<Term: Terminal, Data> {

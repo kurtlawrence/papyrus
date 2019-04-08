@@ -4,6 +4,7 @@
 
 - Re-export `azul` crate in `prelude`.
 - Re-export `linefeed::memory::MemoryTerminal` struct in `prelude`.
+- Re-export `cmdtree` items into the `prelude`.
 - Added `CommandResult::Empty`
 - Updated `cmdtree` to `v0.5` so users can output to a writer.
 - Added `CommandResult::ActionOnAppData` so user can take actions on app data
