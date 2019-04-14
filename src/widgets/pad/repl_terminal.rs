@@ -13,7 +13,7 @@ type KickOffEvalDaemon = bool;
 type HandleCb = (UpdateScreen, KickOffEvalDaemon);
 
 impl<D: 'static + Send + Sync> PadState<D> {
-    pub fn update_state_on_text_input<T: Layout + BorrowMut<PadState<D>>>(
+    pub fn update_state_on_text_input<T: Layout + BorrowMut<AppValue<PadState<D>>>>(
         &mut self,
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
@@ -31,7 +31,7 @@ impl<D: 'static + Send + Sync> PadState<D> {
         update_screen
     }
 
-    pub fn update_state_on_vk_down<T: Layout + BorrowMut<PadState<D>>>(
+    pub fn update_state_on_vk_down<T: Layout + BorrowMut<AppValue<PadState<D>>>>(
         &mut self,
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
@@ -83,17 +83,17 @@ pub struct ReplTerminal<T: Layout, D> {
     mrkr_data: PhantomData<D>,
 }
 
-impl<D: 'static + Send + Sync, T: Layout + BorrowMut<PadState<D>>> ReplTerminal<T, D> {
+impl<D: 'static + Send + Sync, T: Layout + BorrowMut<AppValue<PadState<D>>>> ReplTerminal<T, D> {
     pub fn new(
         window: &mut FakeWindow<T>,
-        state_to_bind: &PadState<D>,
+        state_to_bind: &AppValue<PadState<D>>,
         full_data_model: &T,
     ) -> Self {
         let ptr = StackCheckedPointer::new(full_data_model, state_to_bind).unwrap();
         let text_input_cb_id =
-            window.add_callback(ptr, DefaultCallback(Self::update_state_on_text_input));
+            window.add_callback(ptr.clone(), DefaultCallback(Self::update_state_on_text_input));
         let vk_down_cb_id =
-            window.add_callback(ptr, DefaultCallback(Self::update_state_on_vk_down));
+            window.add_callback(ptr.clone(), DefaultCallback(Self::update_state_on_vk_down));
 
         Self {
             text_input_cb_id,
@@ -131,7 +131,7 @@ impl<D: 'static + Send + Sync, T: Layout + BorrowMut<PadState<D>>> ReplTerminal<
     cb!(PadState, update_state_on_vk_down);
 }
 
-fn kickoff_daemon<D, T: Layout + BorrowMut<PadState<D>>>(
+fn kickoff_daemon<D, T: Layout + BorrowMut<AppValue<PadState<D>>>>(
     app_state: &mut AppStateNoData<T>,
     daemon_id: TimerId,
 ) {
@@ -140,11 +140,11 @@ fn kickoff_daemon<D, T: Layout + BorrowMut<PadState<D>>>(
     app_state.add_timer(daemon_id, daemon);
 }
 
-fn check_evaluating_done<D, T: BorrowMut<PadState<D>>>(
+fn check_evaluating_done<D, T: BorrowMut<AppValue<PadState<D>>>>(
     app: &mut T,
     _: &mut AppResources,
 ) -> (UpdateScreen, TerminateTimer) {
-    let pad: &mut PadState<D> = app.borrow_mut();
+    let pad: &mut PadState<D> = &mut app.borrow_mut().borrow_mut();
 
     match pad.repl.take_eval() {
         Some(eval) => {

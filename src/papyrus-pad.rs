@@ -9,17 +9,17 @@ use std::sync::{Arc, RwLock};
 type TypedPadState = PadState<String>;
 
 struct MyApp {
-    repl_term: TypedPadState,
+    repl_term: AppValue<TypedPadState>,
 }
 
-impl std::borrow::BorrowMut<TypedPadState> for MyApp {
-    fn borrow_mut(&mut self) -> &mut TypedPadState {
+impl std::borrow::BorrowMut<AppValue<TypedPadState>> for MyApp {
+    fn borrow_mut(&mut self) -> &mut AppValue<TypedPadState> {
         &mut self.repl_term
     }
 }
 
-impl std::borrow::Borrow<TypedPadState> for MyApp {
-    fn borrow(&self) -> &TypedPadState {
+impl std::borrow::Borrow<AppValue<TypedPadState>> for MyApp {
+    fn borrow(&self) -> &AppValue<TypedPadState> {
         &self.repl_term
     }
 }
@@ -27,7 +27,7 @@ impl std::borrow::Borrow<TypedPadState> for MyApp {
 impl Layout for MyApp {
     fn layout(&self, info: LayoutInfo<Self>) -> Dom<Self> {
         Dom::div()
-            .with_child(ReplTerminal::new(info.window, &self.repl_term, &self).dom(&self.repl_term))
+            .with_child(ReplTerminal::new(info.window, &self.repl_term, &self).dom(&self.repl_term.brw_ref()))
     }
 }
 
@@ -38,7 +38,7 @@ fn main() {
 
     let mut app = App::new(
         MyApp {
-            repl_term: PadState::new(repl, Arc::new(RwLock::new(12345.to_string()))),
+            repl_term: AppValue::new(PadState::new(repl, Arc::new(RwLock::new(12345.to_string())))),
         },
         AppConfig {
             enable_logging: Some(LevelFilter::Error),
