@@ -87,9 +87,8 @@ impl<D: 'static + Send + Sync, T: Layout + BorrowMut<AppValue<PadState<D>>>> Rep
     pub fn new(
         window: &mut FakeWindow<T>,
         state_to_bind: &AppValue<PadState<D>>,
-        full_data_model: &T,
     ) -> Self {
-        let ptr = StackCheckedPointer::new(full_data_model, state_to_bind).unwrap();
+        let ptr = StackCheckedPointer::new(state_to_bind);
         let text_input_cb_id =
             window.add_callback(ptr.clone(), DefaultCallback(Self::update_state_on_text_input));
         let vk_down_cb_id =
