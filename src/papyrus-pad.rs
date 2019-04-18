@@ -27,7 +27,7 @@ impl std::borrow::Borrow<AppValue<TypedPadState>> for MyApp {
 impl Layout for MyApp {
     fn layout(&self, info: LayoutInfo<Self>) -> Dom<Self> {
         Dom::div()
-            .with_child(ReplTerminal::new(info.window, &self.repl_term, &self).dom(&self.repl_term.brw_ref()))
+            .with_child(ReplTerminal::new(info.window, &self.repl_term).dom(&self.repl_term))
     }
 }
 
