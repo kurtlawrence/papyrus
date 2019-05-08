@@ -33,7 +33,7 @@ impl<T, Data: 'static> PadState<T, Data> {
         }
     }
 
-    pub fn with_after_eval_fn(&mut self, func: fn(&mut T, &mut AppResources)) -> &mut Self {
+    pub fn with_after_eval_fn(mut self, func: fn(&mut T, &mut AppResources)) -> Self {
         self.after_eval_fn = func;
         self
     }
