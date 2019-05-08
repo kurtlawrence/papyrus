@@ -1,4 +1,3 @@
-
 /// CSS for all pad items.
 pub const PAD_CSS: &'static str = r##"
 .repl-terminal {

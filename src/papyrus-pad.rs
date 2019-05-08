@@ -6,7 +6,7 @@ use linefeed::memory::MemoryTerminal;
 use papyrus::widgets::pad::*;
 use std::sync::{Arc, RwLock};
 
-type TypedPadState = PadState<String>;
+type TypedPadState = PadState<MyApp, String>;
 
 struct MyApp {
     repl_term: AppValue<TypedPadState>,
@@ -26,8 +26,7 @@ impl std::borrow::Borrow<AppValue<TypedPadState>> for MyApp {
 
 impl Layout for MyApp {
     fn layout(&self, info: LayoutInfo<Self>) -> Dom<Self> {
-        Dom::div()
-            .with_child(ReplTerminal::new(info.window, &self.repl_term).dom(&self.repl_term))
+        Dom::div().with_child(ReplTerminal::dom(&self.repl_term, info.window))
     }
 }
 
@@ -38,7 +37,10 @@ fn main() {
 
     let mut app = App::new(
         MyApp {
-            repl_term: AppValue::new(PadState::new(repl, Arc::new(RwLock::new(12345.to_string())))),
+            repl_term: AppValue::new(PadState::new(
+                repl,
+                Arc::new(RwLock::new(12345.to_string())),
+            )),
         },
         AppConfig {
             enable_logging: Some(LevelFilter::Error),

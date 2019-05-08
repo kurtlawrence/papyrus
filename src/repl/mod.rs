@@ -98,66 +98,66 @@ use std::{fmt, fs, io};
 ///
 /// A repl has different available methods depending on its state.
 pub struct Repl<S, Term: Terminal, Data> {
-	/// The inner repl configuration data.
-	pub data: ReplData<Data>,
-	state: S,
-	terminal: ReplTerminal<Term>,
-	/// A persistent flag for the prompt to change for more input.
-	more: bool,
-	data_mrker: PhantomData<Data>,
+    /// The inner repl configuration data.
+    pub data: ReplData<Data>,
+    state: S,
+    terminal: ReplTerminal<Term>,
+    /// A persistent flag for the prompt to change for more input.
+    more: bool,
+    data_mrker: PhantomData<Data>,
 }
 
 impl<S, T: Terminal, D> Repl<S, T, D> {
-	/// The terminal that the repl reads from and writes to.
-	pub fn terminal(&self) -> &T {
-		self.terminal.terminal.as_ref()
-	}
+    /// The terminal that the repl reads from and writes to.
+    pub fn terminal(&self) -> &T {
+        self.terminal.terminal.as_ref()
+    }
 
-	fn move_state<N>(self, state: N) -> Repl<N, T, D> {
-		Repl {
-			state: state,
-			terminal: self.terminal,
-			data: self.data,
-			more: self.more,
-			data_mrker: self.data_mrker,
-		}
-	}
+    fn move_state<N>(self, state: N) -> Repl<N, T, D> {
+        Repl {
+            state: state,
+            terminal: self.terminal,
+            data: self.data,
+            more: self.more,
+            data_mrker: self.data_mrker,
+        }
+    }
 }
 
 impl<S: fmt::Debug, T: Terminal, D> fmt::Debug for Repl<S, T, D> {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "Repl in <{:?}> state instance", self.state)
-	}
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Repl in <{:?}> state instance", self.state)
+    }
 }
 
 /// The inner configuration data of the repl.
 pub struct ReplData<Data> {
-	/// The REPL commands as a `cmdtree::Commander`.
-	pub cmdtree: Commander<'static, CommandResult<Data>>,
-	/// The file map of relative paths.
-	file_map: HashMap<PathBuf, SourceFile>,
-	/// The current editing and executing file.
-	current_file: PathBuf,
-	/// The colour of the prompt region. ie `papyrus`.
-	pub prompt_colour: Color,
-	/// The colour of the out component. ie `[out0]`.
-	pub out_colour: Color,
-	/// The directory for which compilation is done within.
-	/// Defaults to `$HOME/.papyrus/`.
-	compilation_dir: PathBuf,
-	/// The external crate linking configuration,
-	linking: LinkingConfiguration,
-	/// Flag if output is to be redirected. Generally redirection is needed, `DefaultTerminal` however will not require it (fucks linux).
-	redirect_on_execution: bool,
+    /// The REPL commands as a `cmdtree::Commander`.
+    pub cmdtree: Commander<'static, CommandResult<Data>>,
+    /// The file map of relative paths.
+    file_map: HashMap<PathBuf, SourceFile>,
+    /// The current editing and executing file.
+    current_file: PathBuf,
+    /// The colour of the prompt region. ie `papyrus`.
+    pub prompt_colour: Color,
+    /// The colour of the out component. ie `[out0]`.
+    pub out_colour: Color,
+    /// The directory for which compilation is done within.
+    /// Defaults to `$HOME/.papyrus/`.
+    compilation_dir: PathBuf,
+    /// The external crate linking configuration,
+    linking: LinkingConfiguration,
+    /// Flag if output is to be redirected. Generally redirection is needed, `DefaultTerminal` however will not require it (fucks linux).
+    redirect_on_execution: bool,
 }
 
 struct ReplTerminal<Term: Terminal> {
-	/// The underlying terminal of `input_rdr`, used to directly control terminal
-	/// Kept as a `Arc` such that multiple references to the terminal can be shared across threads.
-	/// Lucky for us that `Terminal` implements an atomic locking interface.
-	terminal: Arc<Term>,
-	/// The persistent input reader.
-	input_rdr: InputReader<Term>,
+    /// The underlying terminal of `input_rdr`, used to directly control terminal
+    /// Kept as a `Arc` such that multiple references to the terminal can be shared across threads.
+    /// Lucky for us that `Terminal` implements an atomic locking interface.
+    terminal: Arc<Term>,
+    /// The persistent input reader.
+    input_rdr: InputReader<Term>,
 }
 
 struct Writer<'a, T: Terminal>(&'a T);
@@ -169,36 +169,36 @@ struct OwnedWriter<T: Terminal>(Arc<T>);
 pub struct Read;
 /// Repl evaluate state.
 pub struct Evaluate {
-	result: InputResult,
+    result: InputResult,
 }
 /// Repl evaluating state. This can be constructed via a `eval_async` call.
 pub struct Evaluating<Term: Terminal, Data> {
-	jh: Receiver<EvalResult<Term, Data>>,
+    jh: Receiver<EvalResult<Term, Data>>,
 }
 /// Repl print state.
 pub struct Print {
-	to_print: Cow<'static, str>,
-	/// Specifies whether to print the `[out#]`
-	as_out: bool,
+    to_print: Cow<'static, str>,
+    /// Specifies whether to print the `[out#]`
+    as_out: bool,
 }
 
 /// The result of a [`cmdtree action`](https://docs.rs/cmdtree/builder/trait.BuilderChain.html#tymethod.add_action).
 /// This result is handed in the repl's evaluating stage, and can alter `ReplData`.
 pub enum CommandResult<Data> {
-	/// Flag to begin a mutating block.
-	BeginMutBlock,
-	/// Take an action on the `ReplData`.
-	ActionOnReplData(ReplDataAction<Data>),
-	/// Take an action on `Data`.
-	ActionOnAppData(AppDataAction<Data>),
-	/// A blank variant with no action.
-	Empty,
+    /// Flag to begin a mutating block.
+    BeginMutBlock,
+    /// Take an action on the `ReplData`.
+    ActionOnReplData(ReplDataAction<Data>),
+    /// Take an action on `Data`.
+    ActionOnAppData(AppDataAction<Data>),
+    /// A blank variant with no action.
+    Empty,
 }
 
 impl<D> CommandResult<D> {
-	pub fn app_data_fn<F: for<'w> Fn(&mut D, Box<Write + 'w>) + 'static>(func: F) -> Self {
-		CommandResult::ActionOnAppData(Box::new(func))
-	}
+    pub fn app_data_fn<F: for<'w> Fn(&mut D, Box<Write + 'w>) + 'static>(func: F) -> Self {
+        CommandResult::ActionOnAppData(Box::new(func))
+    }
 }
 
 /// The action to take. Passes through a mutable reference to the `ReplData`.
@@ -210,10 +210,10 @@ pub type AppDataAction<D> = Box<for<'w> Fn(&mut D, Box<Write + 'w>)>;
 
 /// Represents an evaluating result. Signal should be checked and handled.
 pub struct EvalResult<Term: Terminal, Data> {
-	/// The repl, in print ready state.
-	pub repl: Repl<Print, Term, Data>,
-	/// The signal, if any.
-	signal: Signal,
+    /// The repl, in print ready state.
+    pub repl: Repl<Print, Term, Data>,
+    /// The signal, if any.
+    signal: Signal,
 }
 
 /// Return signals from evaluating.
@@ -221,34 +221,34 @@ pub struct EvalResult<Term: Terminal, Data> {
 /// such as the signal to exit the repl. These signals are enumerated here.
 #[derive(Debug)]
 pub enum Signal {
-	/// No signal was sent.
-	None,
-	/// A signal to exit the repl has been sent.
-	Exit,
+    /// No signal was sent.
+    None,
+    /// A signal to exit the repl has been sent.
+    Exit,
 }
 
 /// The resulting state after pushing some input into the repl.
 /// Take a look at the [github examples](https://github.com/kurtlawrence/papyrus/tree/master/examples) for pushing input.
 pub enum PushResult<Term: Terminal, Data> {
-	/// The repl is still in a read state.
-	Read(Repl<Read, Term, Data>),
-	/// The repl is in an eval state.
-	Eval(Repl<Evaluate, Term, Data>),
+    /// The repl is still in a read state.
+    Read(Repl<Read, Term, Data>),
+    /// The repl is in an eval state.
+    Eval(Repl<Evaluate, Term, Data>),
 }
 
 /// `$HOME/.papyrus`
 fn default_compile_dir() -> PathBuf {
-	dirs::home_dir().unwrap_or(PathBuf::new()).join(".papyrus/")
+    dirs::home_dir().unwrap_or(PathBuf::new()).join(".papyrus/")
 }
 
 #[test]
 fn test_default_compile_dir() {
-	let dir = default_compile_dir();
-	println!("{}", dir.display());
-	assert!(dir.ends_with(".papyrus/"));
-	if cfg!(windows) {
-		assert!(dir.starts_with("C:\\Users\\"));
-	} else {
-		assert!(dir.starts_with("/home/"));
-	}
+    let dir = default_compile_dir();
+    println!("{}", dir.display());
+    assert!(dir.ends_with(".papyrus/"));
+    if cfg!(windows) {
+        assert!(dir.starts_with("C:\\Users\\"));
+    } else {
+        assert!(dir.starts_with("/home/"));
+    }
 }
