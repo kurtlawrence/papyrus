@@ -3,7 +3,7 @@ mod eval_state;
 mod repl_terminal;
 
 pub use self::css::PAD_CSS;
-pub use self::repl_terminal::ReplTerminal;
+pub use self::repl_terminal::{create_terminal_string, ReplTerminal};
 
 use crate::prelude::*;
 use azul::prelude::*;

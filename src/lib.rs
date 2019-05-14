@@ -32,7 +32,7 @@ pub mod prelude {
     #[cfg(feature = "azul-widgets")]
     pub use azul;
     pub use cmdtree::{BuildError, BuilderChain};
-    pub use linefeed::memory::MemoryTerminal;
+    pub use linefeed::{memory::MemoryTerminal, terminal::Size};
 }
 
 // TODO

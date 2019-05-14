@@ -186,7 +186,7 @@ fn redraw_on_term_chg<T, D>(pad: &mut PadState<T, D>) -> UpdateScreen {
     }
 }
 
-fn create_terminal_string(term: &MemoryTerminal) -> String {
+pub fn create_terminal_string(term: &MemoryTerminal) -> String {
     let mut string = String::new();
     let mut lines = term.lines();
     while let Some(chars) = lines.next() {
