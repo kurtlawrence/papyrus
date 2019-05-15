@@ -1,12 +1,12 @@
 #[macro_use]
 extern crate papyrus;
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 fn main() {
     let mut repl = repl!(String);
 
-    let mut v = Arc::new(Mutex::new(String::new()));
+    let mut v = Arc::new(RwLock::new(String::new()));
 
     // notice the .mut\n putting into mutating state
     let line =
@@ -25,6 +25,6 @@ fn main() {
         repl = eval.wait().repl.print();
     }
 
-    let v_lock = v.lock().unwrap();
+    let v_lock = v.read().unwrap();
     assert_eq!(&v_lock.to_string(), "Hello, world!");
 }

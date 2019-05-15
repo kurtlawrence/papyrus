@@ -113,7 +113,7 @@ where
         container.add_default_callback_id(On::TextInput, text_input_cb_id);
         container.add_default_callback_id(On::VirtualKeyDown, vk_down_cb_id);
 
-        add_terminal_text(container, &state.last_terminal_string)
+        add_terminal_text(container, &state.terminal)
     }
 
     cb!(PadState, update_state_on_text_input);
@@ -200,7 +200,8 @@ fn colour_slice<T>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
         )
 }
 
-pub fn add_terminal_text<T>(mut container: Dom<T>, text: &str) -> Dom<T> {
+pub fn add_terminal_text<T>(mut container: Dom<T>, term: &MemoryTerminal) -> Dom<T> {
+	let text = create_terminal_string(term);
     let categorised = cansi::categorise_text(&text);
 
     for line in cansi::line_iter(&categorised) {

@@ -42,9 +42,8 @@ fn bench_dom_creation(c: &mut Criterion) {
     let text = cstr();
     let term = MemoryTerminal::default();
     term.write(&text);
-    let text = create_terminal_string(&term);
     c.bench_function("add_terminal_text dom default", move |b| {
-        b.iter(|| add_terminal_text::<Mock>(Dom::div(), &text))
+        b.iter(|| add_terminal_text::<Mock>(Dom::div(), &term))
     });
 
     let text = cstr();
@@ -53,9 +52,8 @@ fn bench_dom_creation(c: &mut Criterion) {
         columns: 300,
     });
     term.write(&text);
-    let text = create_terminal_string(&term);
     c.bench_function("add_terminal_text dom large", move |b| {
-        b.iter(|| add_terminal_text::<Mock>(Dom::div(), &text))
+        b.iter(|| add_terminal_text::<Mock>(Dom::div(), &term))
     });
 }
 
