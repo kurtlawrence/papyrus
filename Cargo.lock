@@ -269,12 +269,8 @@ dependencies = [
 
 [[package]]
 name = "cansi"
-version = "1.1.1"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "colored 1.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parse-ansi 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
-]
 
 [[package]]
 name = "cast"
@@ -1157,7 +1153,7 @@ dependencies = [
 [[package]]
 name = "linefeed"
 version = "0.5.4"
-source = "git+https://github.com/kurtlawrence/linefeed?rev=e66e1ea0477fc2d298a4cca5f84800da858d3e14#e66e1ea0477fc2d298a4cca5f84800da858d3e14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "dirs 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "mortal 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1166,11 +1162,11 @@ dependencies = [
 
 [[package]]
 name = "linefeed"
-version = "0.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+version = "0.6.0"
+source = "git+https://github.com/kurtlawrence/linefeed#89221cd997d64eba27853b133aba0e201797d3d6"
 dependencies = [
  "dirs 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "mortal 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mortal 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -1322,6 +1318,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "mortal"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.51 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nix 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "smallstr 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "terminfo 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unicode-normalization 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unicode-width 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "native-tls"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1371,6 +1382,18 @@ dependencies = [
  "cfg-if 0.1.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
  "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
  "void 1.0.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "nix"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cc 1.0.35 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cfg-if 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.51 (registry+https://github.com/rust-lang/crates.io-index)",
+ "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1516,7 +1539,7 @@ name = "papyrus"
 version = "0.8.0"
 dependencies = [
  "azul 0.1.0",
- "cansi 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cansi 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cmdtree 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "colored 1.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cratesiover 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1524,7 +1547,7 @@ dependencies = [
  "crossbeam 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "dirs 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "libloading 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "linefeed 0.5.4 (git+https://github.com/kurtlawrence/linefeed?rev=e66e1ea0477fc2d298a4cca5f84800da858d3e14)",
+ "linefeed 0.6.0 (git+https://github.com/kurtlawrence/linefeed)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "reqwest 0.9.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "shh 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1552,15 +1575,6 @@ dependencies = [
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "smallvec 0.6.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "parse-ansi"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "regex 1.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2906,7 +2920,7 @@ source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b72
 "checksum byteorder 1.2.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum byteorder 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "a019b10a2a7cdeb292db131fc8113e57ea2a908f6e7894b0c3c671893b65dbeb"
 "checksum bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)" = "206fdffcfa2df7cbe15601ef46c813fce0965eb3286db6b56c583b814b51c81c"
-"checksum cansi 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "453e33d91408526a68307d0ec2ac452b281475b76067c2d5b6d715a6aab0f654"
+"checksum cansi 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "55e8d6c549d4f8e933087c8aee3153fba7227af3fc0a176d4133fb1da3df2a95"
 "checksum cast 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "926013f2860c46252efceabb19f4a6b308197505082c609025aa6706c011d427"
 "checksum cc 1.0.26 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum cc 1.0.35 (registry+https://github.com/rust-lang/crates.io-index)" = "5e5f3fee5eeb60324c2781f1e41286bdee933850fff9b3c672587fed5ec58c83"
@@ -3005,8 +3019,8 @@ source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b72
 "checksum libloading 0.5.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum libloading 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9c3ad660d7cb8c5822cd83d10897b0f1f1526792737a179e73896152f85b88c2"
 "checksum line_drawing 0.7.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
-"checksum linefeed 0.5.4 (git+https://github.com/kurtlawrence/linefeed?rev=e66e1ea0477fc2d298a4cca5f84800da858d3e14)" = "<none>"
 "checksum linefeed 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)" = "5c2abb5810ef55bb5f5f33b010cc280b3ab877764c902681efc7c8c95628004c"
+"checksum linefeed 0.6.0 (git+https://github.com/kurtlawrence/linefeed)" = "<none>"
 "checksum lock_api 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "62ebf1391f6acad60e5c8b43706dde4582df75c06698ab44511d15016bc2442c"
 "checksum log 0.4.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)" = "c84ec4b527950aa83a329754b01dbe3f58361d1c5efacd1f6d68c494d08a17c6"
@@ -3023,9 +3037,11 @@ source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b72
 "checksum mio 0.6.16 (registry+https://github.com/rust-lang/crates.io-index)" = "71646331f2619b1026cc302f87a2b8b648d5c6dd6937846a16cc8ce0f347f432"
 "checksum miow 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "8c1f2f3b1cf331de6896aabf6e9d55dca90356cc9960cca7eaaf408a355ae919"
 "checksum mortal 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "26153280e6a955881f761354b130aa7838f9983836f3de438ac0a8f22cfab1ff"
+"checksum mortal 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5b4fc78ee0ff9757c7d510f7fa68d66ec0133aa0b07493252a3c13c00facf023"
 "checksum native-tls 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "ff8e08de0070bbf4c31f452ea2a70db092f36f6f2e4d897adf5674477d488fb2"
 "checksum net2 0.2.33 (registry+https://github.com/rust-lang/crates.io-index)" = "42550d9fb7b6684a6d404d9fa7250c2eb2646df731d1c06afc06dcee9e1bcf88"
 "checksum nix 0.12.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum nix 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)" = "46f0f3210768d796e8fa79ec70ee6af172dacbe7147f5e69be5240a47778302b"
 "checksum nix 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a0d95c5fa8b641c10ad0b8887454ebaafa3c92b5cd5350f8fc693adafd178e7b"
 "checksum nodrop 0.1.13 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum nodrop 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)" = "2f9667ddcc6cc8a43afc9b7917599d7216aa09c463919ea32c59ed6cac8bc945"
@@ -3047,7 +3063,6 @@ source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b72
 "checksum owning_ref 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "49a4b8ea2179e6a2e27411d3bca09ca6dd630821cf6894c6c7c8467a8ee7ef13"
 "checksum parking_lot 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ab41b4aed082705d1056416ae4468b6ea99d52599ecf3169b00088d43113e337"
 "checksum parking_lot_core 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "94c8c7923936b28d546dfd14d4472eaf34c99b14e1c973a32b3e6d4eb04298c9"
-"checksum parse-ansi 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "50c48b4d524f8a10bf6ab37dc0b7583f17c8ec88b617b364ddfc3baee4dcf878"
 "checksum percent-encoding 1.0.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum percent-encoding 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "31010dd2e1ac33d5b46a5b413495239882813e0369f8ed8a5e266f173602f831"
 "checksum phf 0.7.24 (registry+https://github.com/rust-lang/crates.io-index)" = "b3da44b85f8e8dfaec21adae67f95d93244b2ecf6ad2a692320598dcc8e6dd18"

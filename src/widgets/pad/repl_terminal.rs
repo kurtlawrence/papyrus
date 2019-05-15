@@ -187,7 +187,10 @@ fn redraw_on_term_chg<T, D>(pad: &mut PadState<T, D>) -> UpdateScreen {
 }
 
 pub fn create_terminal_string(term: &MemoryTerminal) -> String {
-    let mut string = String::new();
+    // weirdly this is the fastest implementation I could come up with =/
+
+    let mut string = String::with_capacity(term.size().area() * 2);
+
     let mut lines = term.lines();
     while let Some(chars) = lines.next() {
         for ch in chars {
@@ -195,12 +198,13 @@ pub fn create_terminal_string(term: &MemoryTerminal) -> String {
         }
         string.push('\n');
     }
+
     string
 }
 
 fn colour_slice<T>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
     const PROPERTY_STR: &str = "ansi_esc_color";
-    let s = String::from_utf8_lossy(cat_slice.text_as_bytes).to_string();
+    let s = cat_slice.text.to_string();
 
     Dom::label(s)
         .with_class("repl-terminal-text")

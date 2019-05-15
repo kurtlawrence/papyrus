@@ -9,7 +9,7 @@ use papyrus::widgets::pad::create_terminal_string;
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("create_terminal_string default", |b| {
         let term = MemoryTerminal::default();
-        term.push_input(LOREM_IPSUM);
+        term.write(LOREM_IPSUM);
         b.iter(|| create_terminal_string(&term))
     });
 
@@ -18,7 +18,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             lines: 100,
             columns: 300,
         });
-        term.push_input(LOREM_IPSUM);
+        term.write(LOREM_IPSUM);
         b.iter(|| create_terminal_string(&term))
     });
 
@@ -27,7 +27,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             lines: 1000,
             columns: 300,
         });
-        term.push_input(LOREM_IPSUM);
+        term.write(LOREM_IPSUM);
         b.iter(|| create_terminal_string(&term))
     });
 }
