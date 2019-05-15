@@ -1,12 +1,16 @@
 #[macro_use]
 extern crate criterion;
 
+use colored::Colorize;
+
 use criterion::Criterion;
 
-use papyrus::prelude::{MemoryTerminal, Size};
-use papyrus::widgets::pad::create_terminal_string;
+use azul::prelude::*;
+use papyrus::prelude::*;
 
-fn criterion_benchmark(c: &mut Criterion) {
+use papyrus::widgets::pad::{add_terminal_text, create_terminal_string};
+
+fn create_terminal_string_fn(c: &mut Criterion) {
     c.bench_function("create_terminal_string default", |b| {
         let term = MemoryTerminal::default();
         term.write(LOREM_IPSUM);
@@ -32,8 +36,48 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, criterion_benchmark);
+fn bench_dom_creation(c: &mut Criterion) {
+    struct Mock;
+
+    let text = cstr();
+    let term = MemoryTerminal::default();
+    term.write(&text);
+    let text = create_terminal_string(&term);
+    c.bench_function("add_terminal_text dom default", move |b| {
+        b.iter(|| add_terminal_text::<Mock>(Dom::div(), &text))
+    });
+
+    let text = cstr();
+    let term = MemoryTerminal::with_size(Size {
+        lines: 100,
+        columns: 300,
+    });
+    term.write(&text);
+    let text = create_terminal_string(&term);
+    c.bench_function("add_terminal_text dom large", move |b| {
+        b.iter(|| add_terminal_text::<Mock>(Dom::div(), &text))
+    });
+}
+
+criterion_group!(benches, create_terminal_string_fn, bench_dom_creation);
 criterion_main!(benches);
+
+fn cstr() -> String {
+    format!(
+        "{}{}{}{}{}{}{}{}{}{}{}",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.".red(),
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.".blue(),
+        "Donec vel metus nec nisl ultrices cursus.".green(),
+        "In in enim eget felis elementum consectetur et nec nisi.".purple(),
+        "Morbi vel sapien consectetur, tristique sem id, facilisis purus.".yellow(),
+        "Vivamus bibendum nisi ac lacus euismod hendrerit vel ac lacus.".red(),
+        " Nulla scelerisque ipsum eu lacus dignissim, a tempus arcu egestas.".white(),
+        "Nulla scelerisque ipsum eu lacus dignissim, a tempus arcu egestas.".bright_red(),
+        "Praesent lobortis quam sed erat egestas, et tincidunt erat rutrum.".bright_white(),
+        "Nullam maximus mauris a ultricies blandit.".bright_green(),
+        "Morbi eget neque eget neque viverra mollis in id lacus.".bright_purple(),
+    )
+}
 
 const LOREM_IPSUM: &str = r#"
     Lorem ipsum dolor sit amet, consectetur adipiscing elit.

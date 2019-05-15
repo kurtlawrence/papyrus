@@ -107,27 +107,13 @@ where
         let vk_down_cb_id =
             window.add_callback(ptr.clone(), DefaultCallback(Self::update_state_on_vk_down));
 
-        let term_str = create_terminal_string(&state.terminal);
-
-        let categorised = cansi::categorise_text(&term_str);
-
         let mut container = Dom::div()
             .with_class("repl-terminal")
             .with_tab_index(TabIndex::Auto); // make focusable
         container.add_default_callback_id(On::TextInput, text_input_cb_id);
         container.add_default_callback_id(On::VirtualKeyDown, vk_down_cb_id);
 
-        for line in cansi::line_iter(&categorised) {
-            let mut line_div = Dom::div().with_class("repl-terminal-line");
-            for cat in line {
-                line_div.add_child(colour_slice(&cat));
-            }
-            container.add_child(line_div);
-        }
-
-        //container.debug_dump();	// debug layout
-
-        container
+        add_terminal_text(container, &state.last_terminal_string)
     }
 
     cb!(PadState, update_state_on_text_input);
@@ -212,4 +198,18 @@ fn colour_slice<T>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
             PROPERTY_STR,
             StyleTextColor(widgets::colour::map(&cat_slice.fg_colour)).into(),
         )
+}
+
+pub fn add_terminal_text<T>(mut container: Dom<T>, text: &str) -> Dom<T> {
+    let categorised = cansi::categorise_text(&text);
+
+    for line in cansi::line_iter(&categorised) {
+        let mut line_div = Dom::div().with_class("repl-terminal-line");
+        for cat in line {
+            line_div.add_child(colour_slice(&cat));
+        }
+        container.add_child(line_div);
+    }
+
+    container
 }
