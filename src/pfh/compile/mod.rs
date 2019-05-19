@@ -12,7 +12,7 @@ pub use self::execute::exec;
 mod tests {
     use super::*;
     use crate::pfh::*;
-    use linking::LinkingConfiguration;
+    use linking::{Extern, LinkingConfiguration};
     use std::fs;
 
     #[test]
@@ -46,13 +46,11 @@ mod tests {
     fn brw_data_build_fmt_compile_eval_test() {
         let compile_dir = "test/brw_data_build_fmt_compile_eval_test";
         let files = vec![pass_compile_eval_file()];
-        let linking_config = LinkingConfiguration::default()
-            .link_external_crate(
-                &compile_dir,
-                "papyrus_extern_test",
-                Some("test-resources/external_crate/target/debug/libexternal_crate.rlib"),
-            )
-            .unwrap();
+        let mut linking_config = LinkingConfiguration::default();
+        linking_config.external_libs.insert(
+            Extern::new("test-resources/external_crate/target/debug/libexternal_crate.rlib")
+                .unwrap(),
+        );
 
         // build
         build_compile_dir(&compile_dir, files.iter(), &linking_config).unwrap();
@@ -79,13 +77,11 @@ mod tests {
     fn mut_brw_data_build_fmt_compile_eval_test() {
         let compile_dir = "test/mut_brw_data_build_fmt_compile_eval_test";
         let files = vec![pass_compile_eval_file()];
-        let linking_config = LinkingConfiguration::default()
-            .link_external_crate(
-                &compile_dir,
-                "papyrus_extern_test",
-                Some("test-resources/external_crate/target/debug/libexternal_crate.rlib"),
-            )
-            .unwrap();
+        let mut linking_config = LinkingConfiguration::default();
+        linking_config.external_libs.insert(
+            Extern::new("test-resources/external_crate/target/debug/libexternal_crate.rlib")
+                .unwrap(),
+        );
 
         // build
         build_compile_dir(&compile_dir, files.iter(), &linking_config).unwrap();
@@ -112,13 +108,11 @@ mod tests {
     fn exec_and_redirect_test() {
         let compile_dir = "test/exec_and_redirect_test";
         let files = vec![pass_compile_eval_file()];
-        let linking_config = LinkingConfiguration::default()
-            .link_external_crate(
-                &compile_dir,
-                "papyrus_extern_test",
-                Some("test-resources/external_crate/target/debug/libexternal_crate.rlib"),
-            )
-            .unwrap();
+        let mut linking_config = LinkingConfiguration::default();
+        linking_config.external_libs.insert(
+            Extern::new("test-resources/external_crate/target/debug/libexternal_crate.rlib")
+                .unwrap(),
+        );
 
         // build
         build_compile_dir(&compile_dir, files.iter(), &linking_config).unwrap();

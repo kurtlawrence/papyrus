@@ -305,7 +305,7 @@ impl Extern {
             ))?;
 
         let path = get_rlib_path(name)?;
-		
+
         Self::new(path)
     }
 
@@ -415,31 +415,4 @@ fn get_rlib_path_test() {
     let e = r.unwrap_err();
     assert_eq!(e.kind(), io::ErrorKind::NotFound);
     assert_eq!(e.description(), "did not find file: 'libsome_crate.rlib'");
-}
-
-#[test]
-fn linking_config_test() {
-    let dir = PathBuf::from("test/linking_config_test/");
-    fs::create_dir_all(&dir).unwrap();
-    let lc = LinkingConfiguration::default().link_external_crate(&dir, "some_crate", None);
-    assert!(lc.is_err());
-    fs::write(dir.join("asdf.txt"), "").unwrap();
-    let lc = LinkingConfiguration::default()
-        .link_external_crate(
-            &dir,
-            "some_crate",
-            Some("test/linking_config_test/asdf.txt"),
-        )
-        .unwrap();
-    assert_eq!(lc.crate_name, Some("some_crate"));
-    assert_eq!(lc.data_type, None);
-
-    // test no data type fn args
-    assert_eq!(lc.construct_fn_args(), String::new());
-
-    let lc = lc.with_data("String");
-    assert_eq!(lc.data_type, Some("String".to_string()));
-
-    // test data type fn args
-    assert_eq!(&lc.construct_fn_args(), "app_data: &String");
 }

@@ -289,7 +289,6 @@ format!("{:?}", out0)
 
     // alter the linking config
     let linking_config = LinkingConfiguration {
-        crate_name: Some("a_crate"),
         data_type: Some("String".to_string()),
         ..Default::default()
     };

@@ -1,4 +1,4 @@
 cd test-resources/external_crate
 cargo build
 cd ../..
-cargo test -- --test-threads=1
+cargo test --all-features -- --test-threads=1

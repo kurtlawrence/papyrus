@@ -27,7 +27,11 @@ where
         args.push("-L".to_owned());
         args.push(format!("dependency={}", external.deps_path().display()));
         args.push("--extern".to_owned());
-        args.push(external.lib_path().display().to_string());
+        args.push(format!(
+            "{}={}",
+            external.lib_name(),
+            external.lib_path().display().to_string()
+        ));
     }
 
     let mut child = Command::new("cargo")
