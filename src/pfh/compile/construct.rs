@@ -24,11 +24,20 @@ where
     for file in files {
         // add linked crate if there is one to lib file
         let mut contents = String::new();
-        if let Some(cname) = linking_config.crate_name {
-            if file.path == Path::new("lib.rs") {
-                contents.push_str(&format!("extern crate {};\n", cname));
+        if file.path == Path::new("lib.rs") {
+            for external in linking_config.external_libs.iter() {
+                if let Some(alias) = external.alias() {
+                    contents.push_str(&format!(
+                        "extern crate {} as {};\n",
+                        external.lib_name(),
+                        alias
+                    ));
+                } else {
+                    contents.push_str(&format!("extern crate {};\n", external.lib_name()));
+                }
             }
         }
+
         contents.push_str(&file::code::construct(
             &file.contents,
             &file.mod_path,

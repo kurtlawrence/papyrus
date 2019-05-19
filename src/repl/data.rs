@@ -1,4 +1,5 @@
 use super::*;
+use crate::pfh::linking;
 
 impl<Data> Default for ReplData<Data> {
     fn default() -> Self {
@@ -27,9 +28,6 @@ impl<Data> Default for ReplData<Data> {
 
 impl<Data> ReplData<Data> {
     /// Set the compilation directory. The default is set to `$HOME/.papyrus`.
-    /// If the directory will be different from the default and you want to link an
-    /// external crate, be sure to call this before linking the crate, as the library is
-    /// copied into whichever compilation directory is active at the time.
     pub fn with_compilation_dir<P: AsRef<Path>>(mut self, dir: P) -> io::Result<Self> {
         let dir = dir.as_ref();
         if !dir.exists() {
@@ -41,6 +39,7 @@ impl<Data> ReplData<Data> {
     }
 
     /// Uses the given `Builder` as the root of the command tree.
+    ///
     /// The builder is amended with the `esc` command at the root, an error will be
     /// returned if the command already exists.
     pub fn with_cmdtree_builder(
@@ -58,19 +57,17 @@ impl<Data> ReplData<Data> {
         Ok(self)
     }
 
-    /// Specify that the repl will link an external crate reference.
-    /// Overwrites previously specified crate name.
-    /// Uses `ReplData.compilation_dir` to copy `rlib` file into.
+    /// Link an external library.
     ///
-    /// [See documentation.](https://kurtlawrence.github.io/papyrus/repl/linking.html)
-    pub fn with_extern_crate(
-        mut self,
-        crate_name: &'static str,
-        rlib_path: Option<&str>,
-    ) -> io::Result<Self> {
-        self.linking = std::mem::replace(&mut self.linking, LinkingConfiguration::default())
-            .link_external_crate(&self.compilation_dir, crate_name, rlib_path)?;
-        Ok(self)
+    /// This is primarily used for linking the calling library, and there
+    /// is a function on `Extern` to work this path out. It is better to
+    /// use `crates.io` than linking libraries, but this method allows for
+    /// linking libraries not on `crates.io`.
+    ///
+    /// [See _linking_ module](../pfh/linking.html)
+    pub fn with_external_lib(mut self, lib: linking::Extern) -> Self {
+        self.linking.external_libs.insert(lib);
+        self
     }
 
     /// The current linking configuration.
@@ -81,7 +78,7 @@ impl<Data> ReplData<Data> {
 
     /// Not meant to used by developer. Use the macros instead.
     /// [See _linking_ module](../pfh/linking.html)
-    pub fn set_data_type(mut self, data_type: &str) -> Self {
+    pub unsafe fn set_data_type(mut self, data_type: &str) -> Self {
         self.linking = self.linking.with_data(data_type);
         self
     }

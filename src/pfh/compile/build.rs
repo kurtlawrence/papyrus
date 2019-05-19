@@ -21,12 +21,13 @@ where
         lib_file.join(format!("lib{}.so", LIBRARY_NAME))
     };
 
-    let mut _s_tmp = String::new();
-    let mut args = vec!["rustc", "--", "-Awarnings"];
-    if let Some(crate_name) = linking_config.crate_name {
-        args.push("--extern");
-        _s_tmp = format!("{0}=lib{0}.rlib", crate_name);
-        args.push(&_s_tmp);
+    let mut args = vec!["rustc".to_owned(), "--".to_owned(), "-Awarnings".to_owned()];
+
+    for external in linking_config.external_libs.iter() {
+        args.push("-L".to_owned());
+        args.push(format!("dependency={}", external.deps_path().display()));
+        args.push("--extern".to_owned());
+        args.push(external.lib_path().display().to_string());
     }
 
     let mut child = Command::new("cargo")
