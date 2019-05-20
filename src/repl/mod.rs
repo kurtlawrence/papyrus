@@ -196,6 +196,7 @@ pub enum CommandResult<Data> {
 }
 
 impl<D> CommandResult<D> {
+    /// Convenience function boxing an action on app data.
     pub fn app_data_fn<F: for<'w> Fn(&mut D, Box<Write + 'w>) + 'static>(func: F) -> Self {
         CommandResult::ActionOnAppData(Box::new(func))
     }

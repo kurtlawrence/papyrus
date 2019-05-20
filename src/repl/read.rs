@@ -128,7 +128,9 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
     }
 
     fn prompt(&self) -> String {
-        let path = self.data.cmdtree.path().color(self.data.prompt_colour);
+        let mod_path =
+            format!("[{}]", self.data.current_file.display()).color(self.data.prompt_colour);
+        let cmdtree_path = self.data.cmdtree.path().color(self.data.prompt_colour);
         let m = if self.data.linking.mutable {
             "-mut"
         } else {
@@ -136,9 +138,9 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
         }
         .bright_red();
         if self.more {
-            format!("{}{}.> ", path, m)
+            format!("{} {}{}.> ", mod_path, cmdtree_path, m)
         } else {
-            format!("{}{}=> ", path, m)
+            format!("{} {}{}=> ", mod_path, cmdtree_path, m)
         }
     }
 

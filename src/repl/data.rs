@@ -8,7 +8,7 @@ impl<Data> Default for ReplData<Data> {
         let mut map = HashMap::new();
         map.insert(lib_path.clone(), lib);
 
-        let r = ReplData {
+        let mut r = ReplData {
             cmdtree: Builder::new("papyrus")
                 .into_commander()
                 .expect("empty should pass"),
@@ -22,13 +22,15 @@ impl<Data> Default for ReplData<Data> {
         };
 
         r.with_cmdtree_builder(Builder::new("papyrus"))
-            .expect("should build fine")
+            .expect("should build fine");
+
+        r
     }
 }
 
 impl<Data> ReplData<Data> {
     /// Set the compilation directory. The default is set to `$HOME/.papyrus`.
-    pub fn with_compilation_dir<P: AsRef<Path>>(mut self, dir: P) -> io::Result<Self> {
+    pub fn with_compilation_dir<P: AsRef<Path>>(&mut self, dir: P) -> io::Result<&mut Self> {
         let dir = dir.as_ref();
         if !dir.exists() {
             fs::create_dir_all(dir)?;
@@ -40,17 +42,23 @@ impl<Data> ReplData<Data> {
 
     /// Uses the given `Builder` as the root of the command tree.
     ///
-    /// The builder is amended with the `esc` command at the root, an error will be
-    /// returned if the command already exists.
+    /// An error will be returned if any command already exists.
     pub fn with_cmdtree_builder(
-        mut self,
+        &mut self,
         builder: Builder<'static, CommandResult<Data>>,
-    ) -> Result<Self, BuildError> {
+    ) -> Result<&mut Self, BuildError> {
         let cmdr = builder
             .root()
             .add_action("mut", "Begin a mutable block of code", |_, _| {
                 CommandResult::BeginMutBlock
             })
+            .begin_class("mod", "Handle modules")
+            .add_action(
+                "switch",
+                "Switch to a module, creating one if necessary. switch <mod_name>",
+                |_, _| CommandResult::Empty,
+            )
+            .end_class()
             .into_commander()?;
 
         self.cmdtree = cmdr;
@@ -65,7 +73,7 @@ impl<Data> ReplData<Data> {
     /// linking libraries not on `crates.io`.
     ///
     /// [See _linking_ module](../pfh/linking.html)
-    pub fn with_external_lib(mut self, lib: linking::Extern) -> Self {
+    pub fn with_external_lib(&mut self, lib: linking::Extern) -> &mut Self {
         self.linking.external_libs.insert(lib);
         self
     }

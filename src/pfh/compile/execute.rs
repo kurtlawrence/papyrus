@@ -85,11 +85,8 @@ fn get_lib<P: AsRef<Path>>(path: P) -> Result<Library, &'static str> {
     // 	libloading::os::unix::Library::open(Some(library_file.as_ref()), 0x2 | 0x1000)
     // 		.unwrap()
     // 		.into();
-    dbg!(path.as_ref().display());
-    dbg!(path.as_ref().canonicalize().unwrap().display());
-    dbg!(path.as_ref().exists());
-    Library::new(path.as_ref()).map_err(|_e| {
-        dbg!(_e);
+    Library::new(path.as_ref()).map_err(|e| {
+        error!("failed to load library file: {}", e);
         "failed to load library file"
     })
 }
