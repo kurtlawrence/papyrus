@@ -10,6 +10,7 @@
 - Added `CommandResult::ActionOnAppData` so user can take actions on app data
 - `CommandResult` actions pass through writer.
 - async repls require `RwLock` rather than `Mutex`.
+- Added module support
 
 ## 0.8.0
 

@@ -1,4 +1,4 @@
-//! Pertains to every required for a source file contents.
+//! Pertains to everything required for a source file contents.
 
 use crate::pfh::linking;
 
