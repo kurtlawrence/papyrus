@@ -1,8 +1,7 @@
 use crate::pfh::*;
-use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
 /// Constructs the compile directory.
@@ -10,57 +9,21 @@ use std::process::Command;
 /// Builds `Cargo.toml` using crates found in `SourceFile`.
 pub fn build_compile_dir<P: AsRef<Path>>(
     compile_dir: P,
-    file_map: &HashMap<PathBuf, SourceCode>,
+    file_map: &FileMap,
     linking_config: &linking::LinkingConfiguration,
 ) -> io::Result<()> {
     let compile_dir = compile_dir.as_ref();
 
-    let mut crates = Vec::new();
-
-    // write source files
-    for kvp in file_map {
-        let (file, src_code) = kvp;
-
-        // add linked crate if there is one to lib file
-        let mut contents = String::new();
-
-        if file == Path::new("lib.rs") {
-            // add in external crates
-            for external in linking_config.external_libs.iter() {
-                if let Some(alias) = external.alias() {
-                    contents.push_str(&format!(
-                        "extern crate {} as {};\n",
-                        external.lib_name(),
-                        alias
-                    ));
-                } else {
-                    contents.push_str(&format!("extern crate {};\n", external.lib_name()));
-                }
-            }
-        }
-
-        // add in child mods
-        for child_mod in find_direct_children(file_map, file) {
-            contents.push_str("mod ");
-            contents.push_str(child_mod);
-            contents.push_str(";\n");
-        }
-
-        contents.push_str(&code::construct(
-            src_code,
-            &into_mod_path_vec(file),
-            linking_config,
-        ));
-
-        create_file_and_dir(compile_dir.join("src/").join(file))?.write_all(contents.as_bytes())?;
-        for c in src_code.iter().flat_map(|x| &x.crates) {
-            crates.push(c);
-        }
-    }
+    let crates = file_map
+        .iter()
+        .flat_map(|kvp| kvp.1.iter().flat_map(|x| &x.crates));
 
     // write cargo toml contents
     create_file_and_dir(compile_dir.join("Cargo.toml"))?
-        .write_all(cargotoml_contents(LIBRARY_NAME, crates.into_iter()).as_bytes())?;
+        .write_all(cargotoml_contents(LIBRARY_NAME, crates).as_bytes())?;
+
+    create_file_and_dir(compile_dir.join("src/lib.rs"))?
+        .write_all(code::construct_source_code(file_map, linking_config).as_bytes())?;
 
     Ok(())
 }
@@ -88,28 +51,6 @@ fn create_file_and_dir<P: AsRef<Path>>(file: P) -> io::Result<fs::File> {
         fs::create_dir_all(parent)?;
     }
     fs::File::create(file)
-}
-
-fn find_direct_children<'a>(file_map: &'a FileMap, path: &Path) -> Vec<&'a str> {
-    let path = if path == Path::new("lib.rs") {
-        Path::new("")
-    } else {
-        path.parent()
-            .expect("there should always be a parent as there is always a /mod.rs")
-    };
-
-    file_map
-        .keys()
-        .filter_map(|key| {
-            key.strip_prefix(path).ok().and_then(|p| {
-                if p.components().count() == 2 {
-                    p.components().nth(1).and_then(|x| x.as_os_str().to_str())
-                } else {
-                    None
-                }
-            })
-        })
-        .collect()
 }
 
 #[test]

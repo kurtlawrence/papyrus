@@ -57,6 +57,17 @@ fn bench_dom_creation(c: &mut Criterion) {
     });
 }
 
+fn pfh_compile_construct(c: &mut Criterion) {
+    use papyrus::pfh::compile::construct_source_code;
+
+    let linking = papyrus::prelude::linking::LinkingConfiguration::default();
+    let map = vec![].into_iter().collect();
+
+    c.bench_function("construct_source_code", move |b| {
+        b.iter(|| construct_source_code(&map, &linking))
+    });
+}
+
 criterion_group!(benches, create_terminal_string_fn, bench_dom_creation);
 criterion_main!(benches);
 

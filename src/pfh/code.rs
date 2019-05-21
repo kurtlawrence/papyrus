@@ -1,6 +1,8 @@
 //! Pertains to everything required for a source file contents.
-
+use super::*;
 use crate::pfh::linking;
+use linking::LinkingConfiguration;
+use std::path::Path;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Input {
@@ -37,6 +39,82 @@ impl Input {
 }
 
 pub type SourceCode = Vec<Input>;
+
+pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfiguration) -> String {
+    // assumed to be sorted, FileMap is BTreeMap
+
+    let mut contents = String::new();
+
+    // add in external crates
+    for external in linking_config.external_libs.iter() {
+        if let Some(alias) = external.alias() {
+            contents.push_str(&format!(
+                "extern crate {} as {};\n",
+                external.lib_name(),
+                alias
+            ));
+        } else {
+            contents.push_str(&format!("extern crate {};\n", external.lib_name()));
+        }
+    }
+
+    // do the lib first
+    if let Some(lib) = file_map.get(Path::new("lib")) {
+        contents.push_str(&code::construct(
+            lib,
+            &into_mod_path_vec(Path::new("lib")), // lib is  empty
+            linking_config,
+        ));
+    }
+
+    let mut lvl = 0;
+    for (file, src_code) in file_map.iter() {
+        if file == Path::new("lib") {
+            continue;
+        }
+
+        use std::cmp::Ordering;
+
+        let new_lvl = file.components().count();
+
+        match new_lvl.cmp(&lvl) {
+            Ordering::Equal | Ordering::Less => {
+                // need to close off the open modules
+                let diff = lvl - new_lvl; // should always be >= 0
+                for _ in 0..=diff {
+                    contents.push('}');
+                }
+                contents.push('\n');
+            }
+            _ => (),
+        }
+
+        lvl = new_lvl;
+
+        contents.push_str("mod ");
+        contents.push_str(
+            file.components()
+                .last()
+                .unwrap()
+                .as_os_str()
+                .to_str()
+                .unwrap(),
+        );
+        contents.push_str(" {\n");
+        contents.push_str(&code::construct(
+            src_code,
+            &into_mod_path_vec(file),
+            linking_config,
+        ));
+    }
+
+    // close off any outstanding modules
+    for _ in 0..lvl {
+        contents.push('}');
+    }
+
+    contents
+}
 
 /// Build the source code as a `String`.
 ///
@@ -378,5 +456,65 @@ format!("{:?}", out1)
 fn a() {}
 fn b() {}
 "##
+    );
+}
+
+#[test]
+fn construct_src_test() {
+    // purely tests module adding
+    let v = vec![Input {
+        crates: vec![],
+        stmts: vec![],
+        items: vec![],
+    }];
+
+    let linking = LinkingConfiguration::default();
+    let map = vec![
+        ("lib".into(), v.clone()),
+        ("test".into(), v.clone()),
+        ("foo/bar".into(), v.clone()),
+        ("test/inner".into(), v.clone()),
+        ("foo".into(), v.clone()),
+        ("test/inner2".into(), v.clone()),
+    ]
+    .into_iter()
+    .collect();
+
+    let s = construct_source_code(&map, &linking);
+
+    assert_eq!(
+        &s,
+        r##"#[no_mangle]
+pub extern "C" fn _lib_intern_eval() -> String {
+String::from("no statements")
+}
+mod foo {
+#[no_mangle]
+pub extern "C" fn _foo_intern_eval() -> String {
+String::from("no statements")
+}
+mod bar {
+#[no_mangle]
+pub extern "C" fn _foo_bar_intern_eval() -> String {
+String::from("no statements")
+}
+}}
+mod test {
+#[no_mangle]
+pub extern "C" fn _test_intern_eval() -> String {
+String::from("no statements")
+}
+mod inner {
+#[no_mangle]
+pub extern "C" fn _test_inner_intern_eval() -> String {
+String::from("no statements")
+}
+}
+mod inner2 {
+#[no_mangle]
+pub extern "C" fn _test_inner2_intern_eval() -> String {
+String::from("no statements")
+}
+}}"##
     );
 }

@@ -5,12 +5,12 @@ pub mod code;
 pub mod compile;
 pub mod linking;
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 pub use code::{CrateType, Input, SourceCode, Statement};
 
-pub type FileMap = HashMap<PathBuf, SourceCode>;
+pub type FileMap = BTreeMap<PathBuf, SourceCode>;
 
 pub const LIBRARY_NAME: &str = "papyrus_mem_code";
 
@@ -20,13 +20,11 @@ pub fn eval_fn_name(mod_path: &[String]) -> String {
 }
 
 pub fn into_mod_path_vec(path: &Path) -> Vec<String> {
-    let mut mod_path: Vec<String> = path
-        .components()
+    // TODO make this &str rather than String
+    path.components()
         .filter_map(|x| x.as_os_str().to_str())
         .map(|x| x.to_string())
-        .collect();
-    mod_path.pop(); // pops the last, which is mod.rs
-    mod_path
+        .collect()
 }
 
 #[test]
@@ -43,12 +41,20 @@ fn eval_fn_name_test() {
 fn into_mod_path_test() {
     assert_eq!(
         into_mod_path_vec(Path::new("test/mod")),
-        vec!["test".to_string()]
-    );
-    assert_eq!(into_mod_path_vec(Path::new("test")), Vec::<String>::new());
-    assert_eq!(
-        into_mod_path_vec(Path::new("test/mod/something")),
         vec!["test".to_string(), "mod".to_owned()]
     );
+    assert_eq!(
+        into_mod_path_vec(Path::new("test")),
+        vec!["test".to_owned()]
+    );
+    assert_eq!(
+        into_mod_path_vec(Path::new("test/mod/something")),
+        vec!["test".to_string(), "mod".to_owned(), "something".to_owned()]
+    );
     assert_eq!(into_mod_path_vec(Path::new("")), Vec::<String>::new());
+
+    assert_eq!(
+        into_mod_path_vec(Path::new("test/inner2")),
+        vec!["test".to_owned(), "inner2".to_owned()]
+    );
 }

@@ -27,14 +27,10 @@ pub mod widgets;
 
 /// Re-exports of most common types and modules.
 pub mod prelude {
-    pub use crate::pfh::linking;
+    pub use crate::pfh::{code, linking};
     pub use crate::repl::{self, Repl, ReplData};
     #[cfg(feature = "azul-widgets")]
     pub use azul;
     pub use cmdtree::{BuildError, BuilderChain};
     pub use linefeed::{memory::MemoryTerminal, terminal::Size};
 }
-
-// TODO
-// - Change builder pattern of Self to &mut self in ReplData
-// - Add cancel or c back into Builder if they don't exist (user can remove these, not good!)

@@ -88,7 +88,6 @@ use colored::*;
 use crossbeam::channel::Receiver;
 use linefeed::terminal::Terminal;
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

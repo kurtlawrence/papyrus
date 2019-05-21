@@ -34,7 +34,7 @@ fn switch_module<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
                 let path = &path;
 
                 let mut all = make_all_parents(path);
-                all.push(path.clone());
+                all.push(path.to_path_buf());
 
                 for x in all {
                     if !repl_data.file_map.contains_key(&x) {
@@ -42,7 +42,7 @@ fn switch_module<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
                     }
                 }
 
-                repl_data.current_file = path.clone();
+                repl_data.current_file = path.to_path_buf();
             })
         } else {
             writeln!(wtr, "failed to parse {} into a valid module path", path).unwrap();
@@ -57,25 +57,20 @@ fn switch_module<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
 fn make_all_parents(path: &Path) -> Vec<PathBuf> {
     let components: Vec<_> = path.components().collect();
 
-    (1..components.len().saturating_sub(1))
+    (1..components.len())
         .into_iter()
-        .map(|idx| {
-            components[0..idx]
-                .iter()
-                .collect::<PathBuf>()
-                .join("mod.rs")
-        })
+        .map(|idx| components[0..idx].iter().collect::<PathBuf>())
         .collect()
 }
 
 fn make_path(path: &str) -> Option<PathBuf> {
     let path = path.trim();
 
-    if path == "lib" || path == "lib.rs" {
-        return Some(PathBuf::from("lib.rs"));
-    }
-
     let path = path.replace(".rs", "").replace("mod", "").replace("-", "_");
+
+    if path == "lib" {
+        return Some(PathBuf::from("lib"));
+    }
 
     let x: &[_] = &['/', '\\'];
     let path = path.trim_matches(x); // remove starting or trailing slashes
@@ -84,29 +79,23 @@ fn make_path(path: &str) -> Option<PathBuf> {
         return None;
     }
 
-    Some(Path::new(&path).join("mod.rs"))
+    Some(PathBuf::from(path))
 }
 
 #[test]
 fn make_path_test() {
     assert_eq!(make_path("   "), None);
 
-    assert_eq!(make_path("lib"), Some(PathBuf::from("lib.rs")));
-    assert_eq!(make_path("lib.rs"), Some(PathBuf::from("lib.rs")));
+    assert_eq!(make_path("lib"), Some(PathBuf::from("lib")));
+    assert_eq!(make_path("lib.rs"), Some(PathBuf::from("lib")));
 
-    assert_eq!(make_path("test"), Some(PathBuf::from("test/mod.rs")));
-    assert_eq!(
-        make_path("test/inner"),
-        Some(PathBuf::from("test/inner/mod.rs"))
-    );
-    assert_eq!(
-        make_path("inner/test"),
-        Some(PathBuf::from("inner/test/mod.rs"))
-    );
+    assert_eq!(make_path("test"), Some(PathBuf::from("test")));
+    assert_eq!(make_path("test/inner"), Some(PathBuf::from("test/inner")));
+    assert_eq!(make_path("inner/test"), Some(PathBuf::from("inner/test")));
 
     assert_eq!(make_path("//"), None);
 
-    assert_eq!(make_path("\\hello\\"), Some(PathBuf::from("hello/mod.rs")));
+    assert_eq!(make_path("\\hello\\"), Some(PathBuf::from("hello")));
 }
 
 #[test]
@@ -114,20 +103,13 @@ fn make_all_parents_test() {
     // only handle parents
     assert_eq!(make_all_parents(Path::new("")), Vec::<PathBuf>::new());
     assert_eq!(make_all_parents(Path::new("test")), Vec::<PathBuf>::new());
-    assert_eq!(
-        make_all_parents(Path::new("test/mod.rs")),
-        Vec::<PathBuf>::new()
-    );
 
     assert_eq!(
-        make_all_parents(Path::new("test/inner/mod.rs")),
-        vec![PathBuf::from("test/mod.rs")]
+        make_all_parents(Path::new("test/inner")),
+        vec![PathBuf::from("test")]
     );
     assert_eq!(
-        make_all_parents(Path::new("test/inner/deep/mod.rs")),
-        vec![
-            PathBuf::from("test/mod.rs"),
-            PathBuf::from("test/inner/mod.rs")
-        ]
+        make_all_parents(Path::new("test/inner/deep")),
+        vec![PathBuf::from("test"), PathBuf::from("test/inner")]
     );
 }

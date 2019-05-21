@@ -38,7 +38,7 @@ mod tests {
         let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
 
         // eval
-        let r = exec::<_, _, std::io::Sink>(path, "__intern_eval", &(), None).unwrap(); // execute library fn
+        let r = exec::<_, _, std::io::Sink>(path, "_lib_intern_eval", &(), None).unwrap(); // execute library fn
 
         assert_eq!(&r, "4");
     }
@@ -69,7 +69,7 @@ mod tests {
         let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
 
         // eval
-        let r = exec::<_, _, std::io::Sink>(path, "__intern_eval", &(), None).unwrap(); // execute library fn
+        let r = exec::<_, _, std::io::Sink>(path, "_lib_intern_eval", &(), None).unwrap(); // execute library fn
 
         assert_eq!(&r, "4");
     }
@@ -100,7 +100,7 @@ mod tests {
         let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
 
         // eval
-        let r = exec::<_, _, std::io::Sink>(path, "__intern_eval", &(), None).unwrap(); // execute library fn
+        let r = exec::<_, _, std::io::Sink>(path, "_lib_intern_eval", &(), None).unwrap(); // execute library fn
 
         assert_eq!(&r, "4");
     }
@@ -131,7 +131,7 @@ mod tests {
         let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
 
         // eval
-        let r = exec(path, "__intern_eval", &(), Some(std::io::sink())).unwrap(); // execute library fn
+        let r = exec(path, "_lib_intern_eval", &(), Some(std::io::sink())).unwrap(); // execute library fn
 
         assert_eq!(&r, "4");
     }
@@ -174,14 +174,13 @@ mod tests {
     //     let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
 
     //     // eval
-    //     let r = exec::<_, _, std::io::Sink>(&path, "__intern_eval", &(), None); // execute library fn
+    //     let r = exec::<_, _, std::io::Sink>(&path, "_lib_intern_eval", &(), None); // execute library fn
     //     assert!(r.is_err());
     //     assert_eq!(r, Err("a panic occured with evaluation"));
     // }
 
-    fn pass_compile_eval_file() -> (PathBuf, SourceFile) {
-        let mut file = SourceFile::lib();
-        file.contents = vec![Input {
+    fn pass_compile_eval_file() -> (PathBuf, SourceCode) {
+        let code = vec![Input {
             items: vec![],
             stmts: vec![Statement {
                 expr: "2+2".to_string(),
@@ -189,12 +188,11 @@ mod tests {
             }],
             crates: vec![],
         }];
-        (file.path.clone(), file)
+        ("lib".into(), code)
     }
 
-    fn fail_compile_file() -> (PathBuf, SourceFile) {
-        let mut file = SourceFile::lib();
-        file.contents = vec![Input {
+    fn fail_compile_file() -> (PathBuf, SourceCode) {
+        let code = vec![Input {
             items: vec![],
             stmts: vec![Statement {
                 expr: "2+".to_string(),
@@ -202,11 +200,10 @@ mod tests {
             }],
             crates: vec![],
         }];
-        (file.path.clone(), file)
+        ("lib".into(), code)
     }
-    fn fail_eval_file() -> (PathBuf, SourceFile) {
-        let mut file = SourceFile::lib();
-        file.contents = vec![Input {
+    fn fail_eval_file() -> (PathBuf, SourceCode) {
+        let code = vec![Input {
             items: vec![],
             stmts: vec![Statement {
                 expr: "panic!(\"eval panic\")".to_string(),
@@ -214,6 +211,6 @@ mod tests {
             }],
             crates: vec![],
         }];
-        (file.path.clone(), file)
+        ("lib".into(), code)
     }
 }
