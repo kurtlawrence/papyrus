@@ -72,6 +72,7 @@
 //! ```
 //!
 //! Please help if the Repl cannot parse your statements, or help with documentation! [https://github.com/kurtlawrence/papyrus](https://github.com/kurtlawrence/papyrus).
+mod cmds;
 mod data;
 mod eval;
 mod print;
@@ -200,10 +201,17 @@ impl<D> CommandResult<D> {
     pub fn app_data_fn<F: for<'w> Fn(&mut D, Box<Write + 'w>) + 'static>(func: F) -> Self {
         CommandResult::ActionOnAppData(Box::new(func))
     }
+
+    /// Convenience function boxing an action on repl data.
+    pub fn repl_data_fn<F: for<'w> Fn(&mut ReplData<D>, Box<Write + 'w>) + 'static>(
+        func: F,
+    ) -> Self {
+        CommandResult::ActionOnReplData(Box::new(func))
+    }
 }
 
 /// The action to take. Passes through a mutable reference to the `ReplData`.
-pub type ReplDataAction<D> = for<'w> fn(repl_data: &mut ReplData<D>, writer: Box<Write + 'w>);
+pub type ReplDataAction<D> = Box<for<'w> Fn(&mut ReplData<D>, Box<Write + 'w>)>;
 
 /// The action to take. Passes through a mutable reference to the `Data`.
 // pub type AppDataAction<D> = for<'w> fn(data: &mut D, writer: Box<Write + 'w>);

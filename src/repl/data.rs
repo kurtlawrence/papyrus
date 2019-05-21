@@ -40,31 +40,6 @@ impl<Data> ReplData<Data> {
         Ok(self)
     }
 
-    /// Uses the given `Builder` as the root of the command tree.
-    ///
-    /// An error will be returned if any command already exists.
-    pub fn with_cmdtree_builder(
-        &mut self,
-        builder: Builder<'static, CommandResult<Data>>,
-    ) -> Result<&mut Self, BuildError> {
-        let cmdr = builder
-            .root()
-            .add_action("mut", "Begin a mutable block of code", |_, _| {
-                CommandResult::BeginMutBlock
-            })
-            .begin_class("mod", "Handle modules")
-            .add_action(
-                "switch",
-                "Switch to a module, creating one if necessary. switch <mod_name>",
-                |_, _| CommandResult::Empty,
-            )
-            .end_class()
-            .into_commander()?;
-
-        self.cmdtree = cmdr;
-        Ok(self)
-    }
-
     /// Link an external library.
     ///
     /// This is primarily used for linking the calling library, and there

@@ -73,22 +73,26 @@ pub fn construct(
     ));
     code.push('\n');
     // add stmts
-    let idx = src_code
-        .iter()
-        .filter(|x| x.stmts.len() > 0)
-        .count()
-        .saturating_sub(1);
-    code.push_str(
-        &src_code
-            .iter()
-            .filter(|x| x.stmts.len() > 0)
-            .enumerate()
-            .map(|(i, x)| x.assign_let_binding(i))
-            .collect::<Vec<String>>()
-            .join("\n"),
-    );
-    code.push('\n');
-    code.push_str(&format!("format!(\"{{:?}}\", out{})\n", idx));
+    let c = src_code.iter().filter(|x| x.stmts.len() > 0).count();
+    if c >= 1 {
+        // only add statements if more than zero!
+        code.push_str(
+            &src_code
+                .iter()
+                .filter(|x| x.stmts.len() > 0)
+                .enumerate()
+                .map(|(i, x)| x.assign_let_binding(i))
+                .collect::<Vec<String>>()
+                .join("\n"),
+        );
+        code.push('\n');
+        code.push_str(&format!(
+            "format!(\"{{:?}}\", out{})\n",
+            c.saturating_sub(1)
+        ));
+    } else {
+        code.push_str("String::from(\"no statements\")\n");
+    }
     code.push_str("}\n");
 
     // add items
@@ -256,8 +260,7 @@ fn construct_test() {
         &s,
         r##"#[no_mangle]
 pub extern "C" fn __intern_eval() -> String {
-
-format!("{:?}", out0)
+String::from("no statements")
 }
 "##
     );
@@ -270,8 +273,7 @@ format!("{:?}", out0)
         &s,
         r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval() -> String {
-
-format!("{:?}", out0)
+String::from("no statements")
 }
 "##
     );
@@ -281,8 +283,7 @@ format!("{:?}", out0)
         &s,
         r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval() -> String {
-
-format!("{:?}", out0)
+String::from("no statements")
 }
 "##
     );
@@ -298,8 +299,7 @@ format!("{:?}", out0)
         &s,
         r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
-
-format!("{:?}", out0)
+String::from("no statements")
 }
 "##
     );
@@ -317,8 +317,7 @@ format!("{:?}", out0)
         &s,
         r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
-
-format!("{:?}", out0)
+String::from("no statements")
 }
 fn a() {}
 fn b() {}

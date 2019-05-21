@@ -20,8 +20,8 @@
 //! ### File Setup
 //!
 //! ***main.rs***:
-//!
-//! ```rust, no_run
+//! TODO: Fix when linking docs updated.
+//! ```rust, ignore
 //! #[macro_use]
 //! extern crate papyrus;
 //!

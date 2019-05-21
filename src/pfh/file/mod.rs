@@ -24,7 +24,7 @@ impl SourceFile {
         SourceFile {
             contents: Vec::new(),
             path: PathBuf::from("lib.rs"),
-            mod_path: vec!["".to_string()],
+            mod_path: vec![],
         }
     }
 }
@@ -36,5 +36,5 @@ fn lib_ctor_test() {
     let src = SourceFile::lib();
     assert_eq!(src.contents, Vec::new());
     assert_eq!(&src.path, Path::new("lib.rs"));
-    assert_eq!(src.mod_path, vec![String::new()]);
+    assert_eq!(src.mod_path, Vec::<String>::new());
 }

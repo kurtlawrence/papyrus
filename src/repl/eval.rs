@@ -216,11 +216,8 @@ impl<Data> ReplData<Data> {
         }
 
         // build directory
-        let res = pfh::compile::build_compile_dir(
-            &self.compilation_dir,
-            self.file_map.values(),
-            &self.linking,
-        );
+        let res =
+            pfh::compile::build_compile_dir(&self.compilation_dir, &self.file_map, &self.linking);
         if let Err(e) = res {
             pop_input(self); // failed so don't save
             return (
