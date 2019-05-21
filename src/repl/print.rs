@@ -14,7 +14,6 @@ impl<Term: Terminal, Data> Repl<Print, Term, Data> {
                     .file_map
                     .get(&self.data.current_file)
                     .expect("file map does not contain key")
-                    .contents
                     .iter()
                     .filter(|x| x.stmts.len() > 0)
                     .count()

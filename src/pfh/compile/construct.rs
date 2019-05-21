@@ -10,7 +10,7 @@ use std::process::Command;
 /// Builds `Cargo.toml` using crates found in `SourceFile`.
 pub fn build_compile_dir<P: AsRef<Path>>(
     compile_dir: P,
-    file_map: &HashMap<PathBuf, SourceFile>,
+    file_map: &HashMap<PathBuf, SourceCode>,
     linking_config: &linking::LinkingConfiguration,
 ) -> io::Result<()> {
     let compile_dir = compile_dir.as_ref();
@@ -18,10 +18,13 @@ pub fn build_compile_dir<P: AsRef<Path>>(
     let mut crates = Vec::new();
 
     // write source files
-    for file in file_map.values() {
+    for kvp in file_map {
+        let (file, src_code) = kvp;
+
         // add linked crate if there is one to lib file
         let mut contents = String::new();
-        if file.path == Path::new("lib.rs") {
+
+        if file == Path::new("lib.rs") {
             // add in external crates
             for external in linking_config.external_libs.iter() {
                 if let Some(alias) = external.alias() {
@@ -37,21 +40,20 @@ pub fn build_compile_dir<P: AsRef<Path>>(
         }
 
         // add in child mods
-        for child_mod in find_direct_children(file_map, &file.path) {
+        for child_mod in find_direct_children(file_map, file) {
             contents.push_str("mod ");
             contents.push_str(child_mod);
             contents.push_str(";\n");
         }
 
-        contents.push_str(&file::code::construct(
-            &file.contents,
-            &file.mod_path,
+        contents.push_str(&code::construct(
+            src_code,
+            &into_mod_path_vec(file),
             linking_config,
         ));
 
-        create_file_and_dir(compile_dir.join("src/").join(&file.path))?
-            .write_all(contents.as_bytes())?;
-        for c in file.contents.iter().flat_map(|x| &x.crates) {
+        create_file_and_dir(compile_dir.join("src/").join(file))?.write_all(contents.as_bytes())?;
+        for c in src_code.iter().flat_map(|x| &x.crates) {
             crates.push(c);
         }
     }
@@ -88,10 +90,7 @@ fn create_file_and_dir<P: AsRef<Path>>(file: P) -> io::Result<fs::File> {
     fs::File::create(file)
 }
 
-fn find_direct_children<'a>(
-    file_map: &'a HashMap<PathBuf, SourceFile>,
-    path: &Path,
-) -> Vec<&'a str> {
+fn find_direct_children<'a>(file_map: &'a FileMap, path: &Path) -> Vec<&'a str> {
     let path = if path == Path::new("lib.rs") {
         Path::new("")
     } else {
@@ -100,11 +99,11 @@ fn find_direct_children<'a>(
     };
 
     file_map
-        .iter()
-        .filter_map(|kvp| {
-            kvp.0.strip_prefix(path).ok().and_then(|p| {
+        .keys()
+        .filter_map(|key| {
+            key.strip_prefix(path).ok().and_then(|p| {
                 if p.components().count() == 2 {
-                    kvp.1.mod_path.last().map(|x| x.as_str())
+                    p.components().nth(1).and_then(|x| x.as_os_str().to_str())
                 } else {
                     None
                 }

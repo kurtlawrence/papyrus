@@ -38,14 +38,7 @@ fn switch_module<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
 
                 for x in all {
                     if !repl_data.file_map.contains_key(&x) {
-                        let mod_path = into_mod_path_vec(&x);
-                        let file = SourceFile {
-                            contents: Vec::new(),
-                            path: x.clone(),
-                            mod_path,
-                        };
-
-                        repl_data.file_map.insert(x, file);
+                        repl_data.file_map.insert(x, pfh::SourceCode::new());
                     }
                 }
 
@@ -94,16 +87,6 @@ fn make_path(path: &str) -> Option<PathBuf> {
     Some(Path::new(&path).join("mod.rs"))
 }
 
-fn into_mod_path_vec(path: &Path) -> Vec<String> {
-    let mut mod_path: Vec<String> = path
-        .components()
-        .filter_map(|x| x.as_os_str().to_str())
-        .map(|x| x.to_string())
-        .collect();
-    mod_path.pop(); // pops the last, which is mod.rs
-    mod_path
-}
-
 #[test]
 fn make_path_test() {
     assert_eq!(make_path("   "), None);
@@ -124,20 +107,6 @@ fn make_path_test() {
     assert_eq!(make_path("//"), None);
 
     assert_eq!(make_path("\\hello\\"), Some(PathBuf::from("hello/mod.rs")));
-}
-
-#[test]
-fn into_mod_path_test() {
-    assert_eq!(
-        into_mod_path_vec(Path::new("test/mod")),
-        vec!["test".to_string()]
-    );
-    assert_eq!(into_mod_path_vec(Path::new("test")), Vec::<String>::new());
-    assert_eq!(
-        into_mod_path_vec(Path::new("test/mod/something")),
-        vec!["test".to_string(), "mod".to_owned()]
-    );
-    assert_eq!(into_mod_path_vec(Path::new("")), Vec::<String>::new());
 }
 
 #[test]

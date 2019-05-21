@@ -1,12 +1,11 @@
 use super::*;
-use crate::pfh::linking;
+use crate::pfh::{self, linking};
 
 impl<Data> Default for ReplData<Data> {
     fn default() -> Self {
-        let lib = SourceFile::lib();
-        let lib_path = lib.path.clone();
-        let mut map = HashMap::new();
-        map.insert(lib_path.clone(), lib);
+        let lib_path = PathBuf::from("lib");
+        let mut map = pfh::FileMap::new();
+        map.insert(lib_path.clone(), pfh::SourceCode::new());
 
         let mut r = ReplData {
             cmdtree: Builder::new("papyrus")

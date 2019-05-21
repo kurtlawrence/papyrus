@@ -205,14 +205,14 @@ impl<Data> ReplData<Data> {
         Rbrw: Deref<Target = Data>,
     {
         let pop_input = |repl_data: &mut ReplData<Data>| {
-            repl_data.get_current_file_mut().contents.pop();
+            repl_data.get_current_file_mut().pop();
         };
 
         let has_stmts = input.stmts.len() > 0;
 
         // add input file
         {
-            self.get_current_file_mut().contents.push(input);
+            self.get_current_file_mut().push(input);
         }
 
         // build directory
@@ -270,7 +270,7 @@ impl<Data> ReplData<Data> {
                     None
                 };
 
-                let fn_name = pfh::eval_fn_name(&self.get_current_file_mut().mod_path);
+                let fn_name = pfh::eval_fn_name(&pfh::into_mod_path_vec(&self.current_file));
 
                 if self.linking.mutable {
                     let mut r = obtain_mut_data();
@@ -302,7 +302,7 @@ impl<Data> ReplData<Data> {
         }
     }
 
-    fn get_current_file_mut(&mut self) -> &mut SourceFile {
+    fn get_current_file_mut(&mut self) -> &mut pfh::SourceCode {
         self.file_map.get_mut(&self.current_file).expect(&format!(
             "file map does not have key: {}",
             self.current_file.display()

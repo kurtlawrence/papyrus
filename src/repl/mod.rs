@@ -82,7 +82,7 @@ mod writer;
 pub use cmdtree::Builder as CommandBuilder;
 
 use crate::input::{InputReader, InputResult};
-use crate::pfh::{linking::LinkingConfiguration, SourceFile};
+use crate::pfh::{self, linking::LinkingConfiguration};
 use cmdtree::*;
 use colored::*;
 use crossbeam::channel::Receiver;
@@ -136,7 +136,7 @@ pub struct ReplData<Data> {
     /// The REPL commands as a `cmdtree::Commander`.
     pub cmdtree: Commander<'static, CommandResult<Data>>,
     /// The file map of relative paths.
-    file_map: HashMap<PathBuf, SourceFile>,
+    file_map: pfh::FileMap,
     /// The current editing and executing file.
     current_file: PathBuf,
     /// The colour of the prompt region. ie `papyrus`.
