@@ -22,7 +22,7 @@ pub fn eval_fn_name(mod_path: &[String], buf: &mut String) {
         buf.push_str(&p);
         buf.push('_');
     }
-    buf.push_str("intern_eval");	// 11 len
+    buf.push_str("intern_eval"); // 11 len
 }
 
 pub fn into_mod_path_vec(path: &Path) -> Vec<String> {

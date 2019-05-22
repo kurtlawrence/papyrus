@@ -11,28 +11,31 @@ use papyrus::prelude::*;
 use papyrus::widgets::pad::{add_terminal_text, create_terminal_string};
 
 fn create_terminal_string_fn(c: &mut Criterion) {
-    c.bench_function("create_terminal_string default", |b| {
-        let term = MemoryTerminal::default();
-        term.write(LOREM_IPSUM);
-        b.iter(|| create_terminal_string(&term))
+    let term = MemoryTerminal::default();
+    term.write(LOREM_IPSUM);
+    let mut s = String::new();
+    c.bench_function("create_terminal_string default", move |b| {
+        b.iter(|| create_terminal_string(&term, &mut s))
     });
 
-    c.bench_function("create_terminal_string large", |b| {
-        let term = MemoryTerminal::with_size(Size {
-            lines: 100,
-            columns: 300,
-        });
-        term.write(LOREM_IPSUM);
-        b.iter(|| create_terminal_string(&term))
+    let term = MemoryTerminal::with_size(Size {
+        lines: 100,
+        columns: 300,
+    });
+    term.write(LOREM_IPSUM);
+    let mut s = String::new();
+    c.bench_function("create_terminal_string large", move |b| {
+        b.iter(|| create_terminal_string(&term, &mut s))
     });
 
-    c.bench_function("create_terminal_string huge", |b| {
-        let term = MemoryTerminal::with_size(Size {
-            lines: 1000,
-            columns: 300,
-        });
-        term.write(LOREM_IPSUM);
-        b.iter(|| create_terminal_string(&term))
+    let term = MemoryTerminal::with_size(Size {
+        lines: 1000,
+        columns: 300,
+    });
+    term.write(LOREM_IPSUM);
+    let mut s = String::new();
+    c.bench_function("create_terminal_string huge", move |b| {
+        b.iter(|| create_terminal_string(&term, &mut s))
     });
 }
 
@@ -42,8 +45,12 @@ fn bench_dom_creation(c: &mut Criterion) {
     let text = cstr();
     let term = MemoryTerminal::default();
     term.write(&text);
+    let mut s = String::new();
     c.bench_function("add_terminal_text dom default", move |b| {
-        b.iter(|| add_terminal_text::<Mock>(Dom::div(), &term))
+        b.iter(|| {
+            create_terminal_string(&term, &mut s);
+            add_terminal_text::<Mock>(Dom::div(), &s)
+        })
     });
 
     let text = cstr();
@@ -52,8 +59,12 @@ fn bench_dom_creation(c: &mut Criterion) {
         columns: 300,
     });
     term.write(&text);
+    let mut s = String::new();
     c.bench_function("add_terminal_text dom large", move |b| {
-        b.iter(|| add_terminal_text::<Mock>(Dom::div(), &term))
+        b.iter(|| {
+            create_terminal_string(&term, &mut s);
+            add_terminal_text::<Mock>(Dom::div(), &s)
+        })
     });
 }
 

@@ -113,7 +113,9 @@ where
         container.add_default_callback_id(On::TextInput, text_input_cb_id);
         container.add_default_callback_id(On::VirtualKeyDown, vk_down_cb_id);
 
-        add_terminal_text(container, &state.terminal)
+        let mut text = String::with_capacity(state.last_terminal_string.len());
+        create_terminal_string(&state.terminal, &mut text);
+        add_terminal_text(container, &text)
     }
 
     cb!(PadState, update_state_on_text_input);
@@ -163,7 +165,8 @@ where
 }
 
 fn redraw_on_term_chg<T, D>(pad: &mut PadState<T, D>) -> UpdateScreen {
-    let new_str = create_terminal_string(&pad.terminal);
+    let mut new_str = String::with_capacity(pad.last_terminal_string.len());
+    create_terminal_string(&pad.terminal, &mut new_str);
     if new_str != pad.last_terminal_string {
         pad.last_terminal_string = new_str;
         Redraw
@@ -172,20 +175,17 @@ fn redraw_on_term_chg<T, D>(pad: &mut PadState<T, D>) -> UpdateScreen {
     }
 }
 
-pub fn create_terminal_string(term: &MemoryTerminal) -> String {
-    // weirdly this is the fastest implementation I could come up with =/
-
-    let mut string = String::with_capacity(term.size().area() * 2);
+/// Fills the buffer with the terminal contents. Clears buffer before writing.
+pub fn create_terminal_string(term: &MemoryTerminal, buf: &mut String) {
+    buf.clear();
 
     let mut lines = term.lines();
     while let Some(chars) = lines.next() {
         for ch in chars {
-            string.push(*ch);
+            buf.push(*ch);
         }
-        string.push('\n');
+        buf.push('\n');
     }
-
-    string
 }
 
 fn colour_slice<T>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
@@ -200,9 +200,8 @@ fn colour_slice<T>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
         )
 }
 
-pub fn add_terminal_text<T>(mut container: Dom<T>, term: &MemoryTerminal) -> Dom<T> {
-    let text = create_terminal_string(term);
-    let categorised = cansi::categorise_text(&text);
+pub fn add_terminal_text<T>(mut container: Dom<T>, text: &str) -> Dom<T> {
+    let categorised = cansi::categorise_text(text);
 
     for line in cansi::line_iter(&categorised) {
         let mut line_div = Dom::div().with_class("repl-terminal-line");

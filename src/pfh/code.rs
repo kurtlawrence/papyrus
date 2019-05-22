@@ -116,14 +116,17 @@ pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfigu
 }
 
 fn calc_cap(file_map: &FileMap, linking_config: &LinkingConfiguration) -> usize {
-	let mut size = 0;
+    let mut size = 0;
 
-	// add in external crates
-	size += linking_config.external_libs.iter().map(|x| x.calc_code_str_len()).sum::<usize>();
+    // add in external crates
+    size += linking_config
+        .external_libs
+        .iter()
+        .map(|x| x.calc_code_str_len())
+        .sum::<usize>();
 
-	size
+    size
 }
-
 
 /// Build the buffer with the stringified contents of SourceCode
 ///
@@ -147,7 +150,7 @@ pub fn append_buffer(
     eval_fn_name(mod_path, buf);
     buf.push('(');
     linking_config.construct_fn_args(buf);
-    buf.push_str(") -> String {\n");	// 14 len
+    buf.push_str(") -> String {\n"); // 14 len
 
     // add stmts
     let c = src_code.iter().filter(|x| x.stmts.len() > 0).count();

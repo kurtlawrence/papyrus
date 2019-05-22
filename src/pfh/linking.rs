@@ -234,7 +234,7 @@ impl LinkingConfiguration {
     /// Appends result to buffer.
     pub fn construct_fn_args(&self, buf: &mut String) {
         self.data_type.as_ref().map(|d| {
-            buf.push_str("app_data: &");	// 11 len
+            buf.push_str("app_data: &"); // 11 len
             if self.mutable {
                 buf.push_str("mut ");
             }
