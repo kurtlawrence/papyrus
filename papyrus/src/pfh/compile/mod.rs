@@ -18,7 +18,7 @@ mod tests {
 
     #[test]
     fn nodata_build_fmt_compile_eval_test() {
-        let compile_dir = "test/nodata_build_fmt_compile_eval_test";
+        let compile_dir = "target/testing/nodata_build_fmt_compile_eval_test";
         let files = vec![pass_compile_eval_file()].into_iter().collect();
         let linking_config = LinkingConfiguration::default();
 
@@ -45,11 +45,11 @@ mod tests {
 
     #[test]
     fn brw_data_build_fmt_compile_eval_test() {
-        let compile_dir = "test/brw_data_build_fmt_compile_eval_test";
+        let compile_dir = "target/testing/brw_data_build_fmt_compile_eval_test";
         let files = vec![pass_compile_eval_file()].into_iter().collect();
         let mut linking_config = LinkingConfiguration::default();
         linking_config.external_libs.insert(
-            Extern::new("test-resources/external_crate/target/debug/libexternal_crate.rlib")
+            Extern::new("../test-resources/external_crate/target/debug/libexternal_crate.rlib")
                 .unwrap(),
         );
 
@@ -76,11 +76,11 @@ mod tests {
 
     #[test]
     fn mut_brw_data_build_fmt_compile_eval_test() {
-        let compile_dir = "test/mut_brw_data_build_fmt_compile_eval_test";
+        let compile_dir = "target/testing/mut_brw_data_build_fmt_compile_eval_test";
         let files = vec![pass_compile_eval_file()].into_iter().collect();
         let mut linking_config = LinkingConfiguration::default();
         linking_config.external_libs.insert(
-            Extern::new("test-resources/external_crate/target/debug/libexternal_crate.rlib")
+            Extern::new("../test-resources/external_crate/target/debug/libexternal_crate.rlib")
                 .unwrap(),
         );
 
@@ -107,11 +107,11 @@ mod tests {
 
     #[test]
     fn exec_and_redirect_test() {
-        let compile_dir = "test/exec_and_redirect_test";
+        let compile_dir = "target/testing/exec_and_redirect_test";
         let files = vec![pass_compile_eval_file()].into_iter().collect();
         let mut linking_config = LinkingConfiguration::default();
         linking_config.external_libs.insert(
-            Extern::new("test-resources/external_crate/target/debug/libexternal_crate.rlib")
+            Extern::new("../test-resources/external_crate/target/debug/libexternal_crate.rlib")
                 .unwrap(),
         );
 
@@ -138,7 +138,7 @@ mod tests {
 
     #[test]
     fn fail_compile_test() {
-        let compile_dir = "test/fail_compile";
+        let compile_dir = "target/testing/fail_compile";
         let files = vec![fail_compile_file()].into_iter().collect();
         let linking_config = LinkingConfiguration::default();
 
@@ -160,7 +160,7 @@ mod tests {
     // TODO enable when not on nightly
     // #[test]
     // fn fail_eval_test() {
-    //     let compile_dir = "test/fail_eval_test";
+    //     let compile_dir = "target/testing/fail_eval_test";
     //     let files = vec![fail_eval_file()];
     //     let linking_config = LinkingConfiguration::default();
 

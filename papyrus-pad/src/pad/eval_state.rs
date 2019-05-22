@@ -1,5 +1,4 @@
-use crate::prelude::*;
-use linefeed::memory::MemoryTerminal;
+use papyrus::prelude::*;
 
 type Read<D> = Repl<repl::Read, MemoryTerminal, D>;
 type Eval<D> = repl::Evaluating<MemoryTerminal, D>;

@@ -13,22 +13,13 @@
 //! papyrus=> 2+2
 //! papyrus [out0]: 4
 //! ```
-extern crate colored;
-extern crate papyrus;
-extern crate simplelog;
 
 use papyrus::*;
 
 fn main() {
-    // turn on for logging
-    // simplelog::TermLogger::init(simplelog::LevelFilter::Trace, simplelog::Config::default())
-    // 	.unwrap();
-
-    if cfg!(target_os = "windows") && !cfg!(debug_assertions) {
-        // TODO fix this once colored crate is updated
-        // disable colored text output on Windows as the Windows terminals do not support it yet
-        colored::control::set_override(false);
-    }
+    colored::control::set_virtual_terminal(true)
+        .map_err(|e| eprintln!("failed setting virtual terminal: {}", e))
+        .ok();
     let repl = repl!();
     repl.run(&mut ());
     println!("Thanks for using papyrus!");

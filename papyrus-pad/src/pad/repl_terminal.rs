@@ -1,11 +1,9 @@
 use super::*;
-use crate::prelude::*;
-use crate::widgets;
+use papyrus::prelude::*;
 use azul::app::AppStateNoData;
 use azul::callbacks::{DefaultCallback, DefaultCallbackId};
 use azul::prelude::*;
 use azul::window::FakeWindow;
-use linefeed::memory::MemoryTerminal;
 use std::borrow::BorrowMut;
 use std::marker::PhantomData;
 
@@ -196,7 +194,7 @@ fn colour_slice<T>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
         .with_class("repl-terminal-text")
         .with_css_override(
             PROPERTY_STR,
-            StyleTextColor(widgets::colour::map(&cat_slice.fg_colour)).into(),
+            StyleTextColor(crate::colour::map(&cat_slice.fg_colour)).into(),
         )
 }
 

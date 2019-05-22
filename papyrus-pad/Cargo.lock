@@ -14,9 +14,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "andrew"
+version = "0.2.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "bitflags 1.0.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "line_drawing 0.7.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "rusttype 0.7.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "walkdir 2.2.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "xdg 2.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "xml-rs 0.8.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "android_glue"
+version = "0.2.3"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "app_units"
+version = "0.7.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "num-traits 0.2.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "serde 1.0.80 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "approx"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "approx"
+version = "0.3.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "num-traits 0.2.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
 
 [[package]]
 name = "argon2rs"
@@ -25,6 +60,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
  "scoped_threadpool 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "arrayvec"
+version = "0.4.8"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "nodrop 0.1.13 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
 ]
 
 [[package]]
@@ -40,7 +83,7 @@ name = "atty"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "termion 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -51,15 +94,89 @@ version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "azul"
+version = "0.1.0"
+dependencies = [
+ "azul-css 0.1.0",
+ "azul-css-parser 0.1.0",
+ "azul-dependencies 0.1.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "azul-native-style 0.1.0",
+]
+
+[[package]]
+name = "azul-css"
+version = "0.1.0"
+
+[[package]]
+name = "azul-css-parser"
+version = "0.1.0"
+dependencies = [
+ "azul-css 0.1.0",
+ "simplecss 0.1.0 (git+https://github.com/fschutt/simplecss.git?rev=0bf3b7800f49a4524b889687d7761b163e8b4101)",
+]
+
+[[package]]
+name = "azul-dependencies"
+version = "0.1.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "app_units 0.7.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "backtrace 0.3.12 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "clipboard2 0.1.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "euclid 0.19.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "fern 0.5.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "font-loader 0.8.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "gleam 0.6.8 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "glium 0.22.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "harfbuzz-sys 0.3.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "lazy_static 1.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "log 0.4.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "rusttype 0.7.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "tinyfiledialogs 3.3.5 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "unicode-normalization 0.1.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "webrender 0.57.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "xmlparser 0.6.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "azul-native-style"
+version = "0.1.0"
+dependencies = [
+ "azul-css 0.1.0",
+ "azul-css-parser 0.1.0",
+]
+
+[[package]]
 name = "backtrace"
-version = "0.3.16"
+version = "0.3.12"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "backtrace-sys 0.1.24 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "cfg-if 0.1.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "rustc-demangle 0.1.9 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "winapi 0.3.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "backtrace"
+version = "0.3.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "autocfg 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "backtrace-sys 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
  "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-demangle 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "backtrace-sys"
+version = "0.1.24"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "cc 1.0.26 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
 ]
 
 [[package]]
@@ -68,7 +185,7 @@ version = "0.1.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cc 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -80,9 +197,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "binary-space-partition"
+version = "0.1.2"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "bincode"
+version = "1.0.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "byteorder 1.2.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "serde 1.0.80 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "bitflags"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "bitflags"
+version = "1.0.4"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
 
 [[package]]
 name = "bitflags"
@@ -99,9 +235,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "block"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "build_const"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "byteorder"
+version = "1.2.7"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
 
 [[package]]
 name = "byteorder"
@@ -114,8 +260,14 @@ version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "either 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "iovec 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "cansi"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "cast"
@@ -124,13 +276,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "cc"
+version = "1.0.26"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "cc"
 version = "1.0.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "cfg-if"
+version = "0.1.6"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "cfg-if"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "cgl"
+version = "0.2.3"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "gleam 0.6.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "cgmath"
@@ -153,11 +324,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "clipboard-win"
+version = "2.1.2"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "winapi 0.3.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "clipboard2"
+version = "0.1.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "clipboard-win 2.1.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "objc 0.2.5 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "objc-foundation 0.1.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "objc_id 0.1.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "x11-clipboard 0.3.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "cloudabi"
 version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "cmake"
+version = "0.1.35"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "cc 1.0.26 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
 ]
 
 [[package]]
@@ -167,6 +366,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "colored 1.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "linefeed 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "cocoa"
+version = "0.18.4"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "block 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "core-foundation 0.6.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "core-graphics 0.17.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "foreign-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
+ "objc 0.2.5 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
 ]
 
 [[package]]
@@ -185,7 +398,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "cookie"
-version = "0.11.1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "time 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -194,17 +407,15 @@ dependencies = [
 
 [[package]]
 name = "cookie_store"
-version = "0.5.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "cookie 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cookie 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "idna 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "publicsuffix 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
  "try_from 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -213,11 +424,20 @@ dependencies = [
 
 [[package]]
 name = "core-foundation"
+version = "0.6.3"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "core-foundation-sys 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "core-foundation"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "core-foundation-sys 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -226,13 +446,35 @@ version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "core-graphics"
+version = "0.17.3"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "core-foundation 0.6.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "foreign-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "core-text"
+version = "13.1.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "core-foundation 0.6.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "core-graphics 0.17.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "foreign-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "cratesiover"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "colored 1.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "linefeed 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "reqwest 0.9.16 (registry+https://github.com/rust-lang/crates.io-index)",
+ "reqwest 0.9.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -264,8 +506,8 @@ dependencies = [
  "csv 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "itertools 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_core 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_os 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_xoshiro 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -274,7 +516,7 @@ dependencies = [
  "serde 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)",
- "tinytemplate 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tinytemplate 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "walkdir 2.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -313,6 +555,15 @@ dependencies = [
 [[package]]
 name = "crossbeam-deque"
 version = "0.2.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "crossbeam-epoch 0.3.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "crossbeam-utils 0.2.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "crossbeam-deque"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "crossbeam-epoch 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -326,6 +577,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "crossbeam-epoch 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-utils 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "crossbeam-epoch"
+version = "0.3.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "arrayvec 0.4.8 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "cfg-if 0.1.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "crossbeam-utils 0.2.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "lazy_static 1.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "memoffset 0.2.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "nodrop 0.1.13 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "scopeguard 0.3.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
 ]
 
 [[package]]
@@ -361,6 +626,14 @@ version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "crossbeam-utils 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "crossbeam-utils"
+version = "0.2.2"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "cfg-if 0.1.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
 ]
 
 [[package]]
@@ -404,15 +677,45 @@ name = "dirs"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "redox_users 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
+name = "dlib"
+version = "0.4.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "libloading 0.5.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "downcast-rs"
+version = "1.0.3"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
 name = "dtoa"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "dwrote"
+version = "0.6.3"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "lazy_static 1.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "serde 1.0.80 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "serde_derive 1.0.80 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "winapi 0.3.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "either"
+version = "1.5.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
 
 [[package]]
 name = "either"
@@ -432,8 +735,26 @@ name = "error-chain"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "backtrace 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
+ "backtrace 0.3.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "version_check 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "euclid"
+version = "0.19.4"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "num-traits 0.2.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "serde 1.0.80 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "expat-sys"
+version = "2.1.6"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "cmake 0.1.35 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "pkg-config 0.3.14 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
 ]
 
 [[package]]
@@ -441,7 +762,7 @@ name = "failure"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "backtrace 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
+ "backtrace 0.3.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -457,19 +778,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "fern"
+version = "0.5.7"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "log 0.4.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "flate2"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "crc32fast 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "miniz_oxide_c_api 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "fnv"
 version = "1.0.6"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "fnv"
+version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "font-loader"
+version = "0.8.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "core-foundation 0.6.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "core-text 13.1.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "servo-fontconfig 0.4.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "winapi 0.3.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
 
 [[package]]
 name = "foreign-types"
@@ -483,6 +829,15 @@ dependencies = [
 name = "foreign-types-shared"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "freetype"
+version = "0.4.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "servo-freetype-sys 4.0.5 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
 
 [[package]]
 name = "fuchsia-cprng"
@@ -518,8 +873,87 @@ dependencies = [
 ]
 
 [[package]]
+name = "fxhash"
+version = "0.2.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "byteorder 1.2.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "gl_generator"
+version = "0.10.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "khronos_api 3.0.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "log 0.4.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "xml-rs 0.8.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "gl_generator"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "khronos_api 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "xml-rs 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "gleam"
+version = "0.6.8"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "gl_generator 0.10.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "gleam"
+version = "0.6.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "gl_generator 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "glium"
+version = "0.22.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "fnv 1.0.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "gl_generator 0.10.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "glutin 0.19.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "lazy_static 1.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "smallvec 0.6.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "glutin"
+version = "0.19.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "android_glue 0.2.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "cgl 0.2.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "cocoa 0.18.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "core-foundation 0.6.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "core-graphics 0.17.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "gl_generator 0.10.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "lazy_static 1.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "libloading 0.5.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "objc 0.2.5 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "osmesa-sys 0.1.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "shared_library 0.1.9 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "wayland-client 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "winapi 0.3.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "winit 0.18.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "x11-dl 2.18.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "h2"
-version = "0.1.18"
+version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -535,6 +969,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "harfbuzz-sys"
+version = "0.3.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "cmake 0.1.35 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "freetype 0.4.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "pkg-config 0.3.14 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "http"
 version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -545,20 +989,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "http-body"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
+ "http 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-buf 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "httparse"
 version = "1.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "hyper"
-version = "0.12.28"
+version = "0.12.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-cpupool 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "h2 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)",
+ "h2 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "http 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "http-body 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "httparse 1.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "iovec 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "itoa 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -567,6 +1023,7 @@ dependencies = [
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-buf 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-executor 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-io 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-reactor 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -583,7 +1040,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
- "hyper 0.12.28 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hyper 0.12.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "native-tls 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-io 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -608,7 +1065,7 @@ name = "iovec"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -635,19 +1092,43 @@ dependencies = [
 ]
 
 [[package]]
+name = "khronos_api"
+version = "3.0.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "khronos_api"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "lazy_static"
+version = "1.2.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
 name = "lazy_static"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "lazycell"
-version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+name = "libc"
+version = "0.2.45"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
 
 [[package]]
 name = "libc"
-version = "0.2.54"
+version = "0.2.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "libloading"
+version = "0.5.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "cc 1.0.26 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "winapi 0.3.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
 
 [[package]]
 name = "libloading"
@@ -656,6 +1137,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cc 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "line_drawing"
+version = "0.7.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "num-traits 0.2.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
 ]
 
 [[package]]
@@ -690,9 +1179,25 @@ dependencies = [
 [[package]]
 name = "log"
 version = "0.4.6"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "cfg-if 0.1.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "log"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "malloc_buf"
+version = "0.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -705,8 +1210,22 @@ name = "memchr"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "memmap"
+version = "0.7.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "winapi 0.3.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "memoffset"
+version = "0.2.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
 
 [[package]]
 name = "memoffset"
@@ -747,21 +1266,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cc 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
  "crc 1.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "miniz_oxide 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "mio"
-version = "0.6.16"
+version = "0.6.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "fuchsia-zircon 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "fuchsia-zircon-sys 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "iovec 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazycell 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "miow 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "net2 0.2.33 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -786,7 +1304,7 @@ version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "nix 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "smallstr 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "terminfo 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -801,7 +1319,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "nix 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "smallstr 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "terminfo 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -816,15 +1334,15 @@ version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "openssl 0.10.22 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl 0.10.23 (registry+https://github.com/rust-lang/crates.io-index)",
  "openssl-probe 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "openssl-sys 0.9.46 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl-sys 0.9.47 (registry+https://github.com/rust-lang/crates.io-index)",
  "schannel 0.1.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "security-framework 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "security-framework-sys 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "tempfile 3.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tempfile 3.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -833,7 +1351,7 @@ version = "0.2.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -844,10 +1362,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bitflags 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc_version 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "semver 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "nix"
+version = "0.12.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "bitflags 1.0.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "cc 1.0.26 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "cfg-if 0.1.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "void 1.0.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
 ]
 
 [[package]]
@@ -858,9 +1388,14 @@ dependencies = [
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "cc 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
  "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "nodrop"
+version = "0.1.13"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
 
 [[package]]
 name = "nodrop"
@@ -881,20 +1416,36 @@ name = "num-traits"
 version = "0.1.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "num-traits 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "num-traits"
 version = "0.2.6"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "num-traits"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "autocfg 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "num_cpus"
+version = "1.9.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
 
 [[package]]
 name = "num_cpus"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -903,16 +1454,42 @@ version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "objc"
+version = "0.2.5"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "malloc_buf 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "objc-foundation"
+version = "0.1.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "block 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "objc 0.2.5 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "objc_id 0.1.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "objc_id"
+version = "0.1.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "objc 0.2.5 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "openssl"
-version = "0.10.22"
+version = "0.10.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "foreign-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
- "openssl-sys 0.9.46 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openssl-sys 0.9.47 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -922,14 +1499,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "openssl-sys"
-version = "0.9.46"
+version = "0.9.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "autocfg 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "cc 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "pkg-config 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "vcpkg 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "ordered-float"
+version = "1.0.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "num-traits 0.2.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "osmesa-sys"
+version = "0.1.2"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "shared_library 0.1.9 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
 ]
 
 [[package]]
@@ -947,16 +1540,25 @@ dependencies = [
  "cmdtree 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "colored 1.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cratesiover 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "criterion 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "dirs 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "libloading 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "linefeed 0.6.0 (git+https://github.com/kurtlawrence/linefeed)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "reqwest 0.9.16 (registry+https://github.com/rust-lang/crates.io-index)",
+ "reqwest 0.9.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "shh 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.15.34 (registry+https://github.com/rust-lang/crates.io-index)",
  "term_cursor 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "papyrus-pad"
+version = "0.0.1"
+dependencies = [
+ "azul 0.1.0",
+ "cansi 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "criterion 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "papyrus 0.8.0",
 ]
 
 [[package]]
@@ -973,12 +1575,17 @@ name = "parking_lot_core"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "smallvec 0.6.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "percent-encoding"
+version = "1.0.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
 
 [[package]]
 name = "percent-encoding"
@@ -1023,7 +1630,31 @@ dependencies = [
 [[package]]
 name = "pkg-config"
 version = "0.3.14"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "pkg-config"
+version = "0.3.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "plane-split"
+version = "0.13.3"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "binary-space-partition 0.1.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "euclid 0.19.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "log 0.4.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "num-traits 0.2.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "proc-macro2"
+version = "0.4.24"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "unicode-xid 0.1.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
 
 [[package]]
 name = "proc-macro2"
@@ -1047,6 +1678,14 @@ dependencies = [
 
 [[package]]
 name = "quote"
+version = "0.6.10"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "proc-macro2 0.4.24 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "quote"
 version = "0.6.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
@@ -1059,7 +1698,7 @@ version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "fuchsia-cprng 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_core 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rdrand 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1071,7 +1710,7 @@ version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "autocfg 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_chacha 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_core 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_hc 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1126,7 +1765,7 @@ name = "rand_jitter"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_core 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1138,7 +1777,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "fuchsia-cprng 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_core 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rdrand 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1173,6 +1812,16 @@ dependencies = [
 [[package]]
 name = "rayon"
 version = "1.0.3"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "crossbeam-deque 0.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "either 1.5.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "rayon-core 1.4.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "rayon"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "crossbeam-deque 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1183,11 +1832,22 @@ dependencies = [
 [[package]]
 name = "rayon-core"
 version = "1.4.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "crossbeam-deque 0.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "lazy_static 1.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "num_cpus 1.9.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "rayon-core"
+version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "crossbeam-deque 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 1.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -1253,18 +1913,18 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.9.16"
+version = "0.9.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "cookie 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "cookie_store 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cookie 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cookie_store 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "encoding_rs 0.8.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "flate2 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "http 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
- "hyper 0.12.28 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hyper 0.12.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper-tls 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "mime 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1290,6 +1950,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rustc-demangle"
+version = "0.1.9"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "rustc-demangle"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
@@ -1310,9 +1975,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "rusttype"
+version = "0.7.3"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "approx 0.3.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "arrayvec 0.4.8 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "ordered-float 1.0.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "stb_truetype 0.2.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "ryu"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "same-file"
+version = "1.0.4"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "winapi-util 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "same-file"
@@ -1339,6 +2023,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "scopeguard"
 version = "0.3.3"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "scopeguard"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -1348,7 +2037,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "core-foundation 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "core-foundation-sys 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "security-framework-sys 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -1380,8 +2069,37 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "serde"
+version = "1.0.80"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "serde_derive 1.0.80 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "serde"
 version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "serde_derive 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "serde_bytes"
+version = "0.10.4"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "serde 1.0.80 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "serde_derive"
+version = "1.0.80"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "proc-macro2 0.4.24 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "quote 0.6.10 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "syn 0.15.22 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
 
 [[package]]
 name = "serde_derive"
@@ -1415,13 +2133,55 @@ dependencies = [
 ]
 
 [[package]]
+name = "servo-fontconfig"
+version = "0.4.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "servo-fontconfig-sys 4.0.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "servo-fontconfig-sys"
+version = "4.0.7"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "expat-sys 2.1.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "pkg-config 0.3.14 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "servo-freetype-sys 4.0.5 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "servo-freetype-sys"
+version = "4.0.5"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "cmake 0.1.35 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "pkg-config 0.3.14 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "shared_library"
+version = "0.1.9"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "lazy_static 1.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "shh"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "simplecss"
+version = "0.1.0"
+source = "git+https://github.com/fschutt/simplecss.git?rev=0bf3b7800f49a4524b889687d7761b163e8b4101#0bf3b7800f49a4524b889687d7761b163e8b4101"
 
 [[package]]
 name = "siphasher"
@@ -1443,8 +2203,31 @@ dependencies = [
 
 [[package]]
 name = "smallvec"
+version = "0.6.7"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "unreachable 1.0.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "smallvec"
 version = "0.6.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "smithay-client-toolkit"
+version = "0.6.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "andrew 0.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "bitflags 1.0.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "dlib 0.4.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "lazy_static 1.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "memmap 0.7.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "nix 0.12.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "wayland-client 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "wayland-protocols 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
 
 [[package]]
 name = "stable_deref_trait"
@@ -1452,9 +2235,27 @@ version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "stb_truetype"
+version = "0.2.2"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "byteorder 1.2.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "string"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "syn"
+version = "0.15.22"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "proc-macro2 0.4.24 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "quote 0.6.10 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "unicode-xid 0.1.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
 
 [[package]]
 name = "syn"
@@ -1479,11 +2280,11 @@ dependencies = [
 
 [[package]]
 name = "tempfile"
-version = "3.0.7"
+version = "3.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "redox_syscall 0.1.54 (registry+https://github.com/rust-lang/crates.io-index)",
  "remove_dir_all 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1515,7 +2316,7 @@ name = "termion"
 version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "numtoa 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "redox_syscall 0.1.54 (registry+https://github.com/rust-lang/crates.io-index)",
  "redox_termios 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1526,7 +2327,7 @@ name = "termios"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1546,18 +2347,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "thread_profiler"
+version = "0.1.3"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "time"
+version = "0.1.40"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "winapi 0.3.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "time"
 version = "0.1.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)",
  "redox_syscall 0.1.54 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
+name = "tinyfiledialogs"
+version = "3.3.5"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "cc 1.0.26 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "tinytemplate"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "serde 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1571,7 +2395,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
- "mio 0.6.16 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mio 0.6.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 1.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-current-thread 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-executor 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1581,6 +2405,16 @@ dependencies = [
  "tokio-threadpool 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-timer 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-trace-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "tokio-buf"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "either 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1620,7 +2454,7 @@ dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "mio 0.6.16 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mio 0.6.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 1.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "slab 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1646,7 +2480,7 @@ dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "iovec 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "mio 0.6.16 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mio 0.6.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-io 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-reactor 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1730,6 +2564,11 @@ dependencies = [
 
 [[package]]
 name = "unicode-normalization"
+version = "0.1.7"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "unicode-normalization"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
@@ -1744,7 +2583,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "unicode-xid"
 version = "0.1.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "unicode-xid"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "unreachable"
+version = "1.0.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "void 1.0.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
 
 [[package]]
 name = "url"
@@ -1782,7 +2634,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "void"
 version = "1.0.2"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "void"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "walkdir"
+version = "2.2.7"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "same-file 1.0.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "winapi 0.3.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "winapi-util 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "walkdir"
@@ -1805,9 +2672,118 @@ dependencies = [
 ]
 
 [[package]]
+name = "wayland-client"
+version = "0.23.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "bitflags 1.0.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "downcast-rs 1.0.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "nix 0.12.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "wayland-commons 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "wayland-scanner 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "wayland-sys 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "wayland-commons"
+version = "0.23.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "nix 0.12.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "wayland-sys 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "wayland-protocols"
+version = "0.23.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "bitflags 1.0.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "wayland-client 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "wayland-commons 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "wayland-scanner 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "wayland-scanner"
+version = "0.23.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "proc-macro2 0.4.24 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "quote 0.6.10 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "xml-rs 0.8.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "wayland-sys"
+version = "0.23.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "dlib 0.4.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "lazy_static 1.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "webrender"
+version = "0.57.2"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "app_units 0.7.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "bincode 1.0.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "bitflags 1.0.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "byteorder 1.2.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "cfg-if 0.1.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "core-foundation 0.6.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "core-graphics 0.17.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "core-text 13.1.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "dwrote 0.6.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "freetype 0.4.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "fxhash 0.2.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "gleam 0.6.8 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "lazy_static 1.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "log 0.4.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "num-traits 0.2.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "plane-split 0.13.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "rayon 1.0.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "smallvec 0.6.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "thread_profiler 0.1.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "time 0.1.40 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "webrender_api 0.57.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "webrender_api"
+version = "0.57.2"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "app_units 0.7.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "bincode 1.0.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "bitflags 1.0.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "byteorder 1.2.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "core-foundation 0.6.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "core-graphics 0.17.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "dwrote 0.6.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "euclid 0.19.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "serde 1.0.80 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "serde_bytes 0.10.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "serde_derive 1.0.80 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "time 0.1.40 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "winapi"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "winapi"
+version = "0.3.6"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "winapi-i686-pc-windows-gnu 0.4.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "winapi-x86_64-pc-windows-gnu 0.4.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
 
 [[package]]
 name = "winapi"
@@ -1826,6 +2802,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "winapi-i686-pc-windows-gnu"
 version = "0.4.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "winapi-i686-pc-windows-gnu"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -1835,6 +2816,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "winapi-x86_64-pc-windows-gnu"
+version = "0.4.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
 
 [[package]]
 name = "winapi-x86_64-pc-windows-gnu"
@@ -1853,6 +2839,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "winit"
+version = "0.18.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "android_glue 0.2.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "cocoa 0.18.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "core-foundation 0.6.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "core-graphics 0.17.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "lazy_static 1.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "log 0.4.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "objc 0.2.5 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "percent-encoding 1.0.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "smithay-client-toolkit 0.6.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "wayland-client 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "winapi 0.3.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "x11-dl 2.18.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
 name = "ws2_32-sys"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1861,36 +2867,107 @@ dependencies = [
  "winapi-build 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
+[[package]]
+name = "x11-clipboard"
+version = "0.3.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "xcb 0.8.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "x11-dl"
+version = "2.18.3"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "lazy_static 1.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "pkg-config 0.3.14 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "xcb"
+version = "0.8.2"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+dependencies = [
+ "libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+ "log 0.4.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)",
+]
+
+[[package]]
+name = "xdg"
+version = "2.2.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "xml-rs"
+version = "0.8.0"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
+[[package]]
+name = "xml-rs"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "xmlparser"
+version = "0.6.1"
+source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7#380b7e7cba8b728a3fc89fe28952e3b07aa624e7"
+
 [metadata]
 "checksum adler32 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "7e522997b529f05601e05166c07ed17789691f562762c7f3b987263d2dedee5c"
 "checksum aho-corasick 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)" = "e6f484ae0c99fec2e858eb6134949117399f222608d84cadb3f58c1f97c2364c"
+"checksum andrew 0.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum android_glue 0.2.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum app_units 0.7.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum approx 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "08abcc3b4e9339e33a3d0a5ed15d84a687350c05689d825e0f6655eef9e76a94"
+"checksum approx 0.3.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum argon2rs 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)" = "3f67b0b6a86dae6e67ff4ca2b6201396074996379fba2b92ff649126f37cb392"
 "checksum arrayvec 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)" = "92c7fb76bc8826a8b33b4ee5bb07a247a81e76764ab4d55e8f73e3a4d8808c71"
+"checksum arrayvec 0.4.8 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum atty 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)" = "9a7d5b8723950951411ee34d271d99dddcc2035a16ab25310ea2c8cfd4369652"
 "checksum autocfg 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a6d640bee2da49f60a4068a7fae53acde8982514ab7bae8b8cea9e88cbcfd799"
-"checksum backtrace 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)" = "56acb7e9c23cb8c3a1f51713695c552a81ee667d9fd060d1ef407908480b7174"
+"checksum azul-dependencies 0.1.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum backtrace 0.3.12 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum backtrace 0.3.20 (registry+https://github.com/rust-lang/crates.io-index)" = "45934a579eff9fd0ff637ac376a4bd134f47f8fc603f0b211d696b54d61e35f1"
+"checksum backtrace-sys 0.1.24 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum backtrace-sys 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)" = "797c830ac25ccc92a7f8a7b9862bde440715531514594a6154e3d4a54dd769b6"
 "checksum base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)" = "0b25d992356d2eb0ed82172f5248873db5560c4721f564b13cb5193bda5e668e"
+"checksum binary-space-partition 0.1.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum bincode 1.0.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum bitflags 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8dead7461c1127cf637931a1e50934eb6eee8bff2f74433ac7909e9afcee04a3"
+"checksum bitflags 1.0.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum bitflags 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "228047a76f468627ca71776ecdebd732a3423081fcf5125585bcd7c49886ce12"
 "checksum blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)" = "5d6d530bdd2d52966a6d03b7a964add7ae1a288d25214066fd4b600f0f796400"
+"checksum block 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
 "checksum build_const 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "39092a32794787acd8525ee150305ff051b0aa6cc2abaf193924f5ab05425f39"
+"checksum byteorder 1.2.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum byteorder 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "a019b10a2a7cdeb292db131fc8113e57ea2a908f6e7894b0c3c671893b65dbeb"
 "checksum bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)" = "206fdffcfa2df7cbe15601ef46c813fce0965eb3286db6b56c583b814b51c81c"
+"checksum cansi 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "55e8d6c549d4f8e933087c8aee3153fba7227af3fc0a176d4133fb1da3df2a95"
 "checksum cast 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "926013f2860c46252efceabb19f4a6b308197505082c609025aa6706c011d427"
+"checksum cc 1.0.26 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum cc 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)" = "39f75544d7bbaf57560d2168f28fd649ff9c76153874db88bdbdfd839b1a7e7d"
+"checksum cfg-if 0.1.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)" = "b486ce3ccf7ffd79fdeb678eac06a9e6c09fc88d33836340becb8fffe87c5e33"
+"checksum cgl 0.2.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum cgmath 0.16.1 (registry+https://github.com/rust-lang/crates.io-index)" = "64a4b57c8f4e3a2e9ac07e0f6abc9c24b6fc9e1b54c3478cfb598f3d0023e51c"
 "checksum clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5067f5bb2d80ef5d68b4c87db81601f0b75bca627bc2ef76b141d7b846a3c6d9"
+"checksum clipboard-win 2.1.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum clipboard2 0.1.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
+"checksum cmake 0.1.35 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum cmdtree 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4ad5a920625e18d26b036c5a46acbfd0ca984f523ab6eb732bd8275286a299b5"
+"checksum cocoa 0.18.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum colored 1.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6cdb90b60f2927f8d76139c72dbde7e10c3a2bc47c8594c9c7a66529f2687c03"
 "checksum constant_time_eq 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "8ff012e225ce166d4422e0e78419d901719760f62ae2b7969ca6b564d1b54a9e"
-"checksum cookie 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)" = "99be24cfcf40d56ed37fd11c2123be833959bbc5bddecb46e1c2e442e15fa3e0"
-"checksum cookie_store 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b0d2f2ecb21dce00e2453268370312978af9b8024020c7a37ae2cc6dbbe64685"
+"checksum cookie 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)" = "888604f00b3db336d2af898ec3c1d5d0ddf5e6d462220f2ededc33a87ac4bbd5"
+"checksum cookie_store 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "46750b3f362965f197996c4448e4a0935e791bf7d6631bfce9ee0af3d24c919c"
+"checksum core-foundation 0.6.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum core-foundation 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)" = "25b9e03f145fd4f2bf705e07b900cd41fc636598fe5dc452fd0db1441c3f496d"
 "checksum core-foundation-sys 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "e7ca8a5221364ef15ce201e8ed2f609fc312682a8f4e0e3d4aa5879764e0fa3b"
+"checksum core-graphics 0.17.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum core-text 13.1.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum cratesiover 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "46d0300f518cb596aac1b47f55369a3c508c2658269b31b5b2aa42ea71abf21b"
 "checksum crc 1.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d663548de7f5cca343f1e0a48d14dcfb0e9eb4e079ec58883b7251539fa10aeb"
 "checksum crc32fast 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ba125de2af0df55319f41944744ad91c71113bf74a4646efff39afe1f6842db1"
@@ -1898,35 +2975,57 @@ dependencies = [
 "checksum criterion-plot 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "76f9212ddf2f4a9eb2d401635190600656a1f88a932ef53d06e7fa4c7e02fb8e"
 "checksum crossbeam 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b14492071ca110999a20bf90e3833406d5d66bfd93b4e52ec9539025ff43fe0d"
 "checksum crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)" = "0f0ed1a4de2235cabda8558ff5840bffb97fcb64c97827f354a451307df5f72b"
+"checksum crossbeam-deque 0.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum crossbeam-deque 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f739f8c5363aca78cfb059edf753d8f0d36908c348f3d8d1503f03d8b75d9cf3"
 "checksum crossbeam-deque 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b18cd2e169ad86297e6bc0ad9aa679aee9daa4f19e8163860faf7c164e4f5a71"
+"checksum crossbeam-epoch 0.3.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum crossbeam-epoch 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "927121f5407de9956180ff5e936fe3cf4324279280001cd56b669d28ee7e9150"
 "checksum crossbeam-epoch 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "04c9e3102cc2d69cd681412141b390abd55a362afc1540965dad0ad4d34280b4"
 "checksum crossbeam-queue 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7c979cd6cfe72335896575c6b5688da489e420d36a27a0b9eb0c73db574b4a4b"
+"checksum crossbeam-utils 0.2.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum crossbeam-utils 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "2760899e32a1d58d5abb31129f8fae5de75220bc2176e77ff7c627ae45c918d9"
 "checksum crossbeam-utils 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)" = "f8306fcef4a7b563b76b7dd949ca48f52bc1141aa067d2ea09565f3e2652aa5c"
 "checksum csv 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)" = "9044e25afb0924b5a5fc5511689b0918629e85d68ea591e5e87fbf1e85ea1b3b"
 "checksum csv-core 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "fa5cdef62f37e6ffe7d1f07a381bc0db32b7a3ff1cac0de56cb0d81e71f53d65"
 "checksum dirs 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)" = "3fd78930633bd1c6e35c4b42b1df7b0cbc6bc191146e512bb3bedf243fcc3901"
+"checksum dlib 0.4.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum downcast-rs 1.0.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum dtoa 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "ea57b42383d091c85abcc2706240b94ab2a8fa1fc81c10ff23c4de06e2a90b5e"
+"checksum dwrote 0.6.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum either 1.5.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum either 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "5527cfe0d098f36e3f8839852688e63c8fff1c90b2b405aef730615f9a7bcf7b"
 "checksum encoding_rs 0.8.17 (registry+https://github.com/rust-lang/crates.io-index)" = "4155785c79f2f6701f185eb2e6b4caf0555ec03477cb4c70db67b465311620ed"
 "checksum error-chain 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)" = "3ab49e9dcb602294bc42f9a7dfc9bc6e936fca4418ea300dbfb84fe16de0b7d9"
+"checksum euclid 0.19.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum expat-sys 2.1.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "795bd83d3abeb9220f257e597aa0080a508b27533824adf336529648f6abf7e2"
 "checksum failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "ea1063915fd7ef4309e222a5a07cf9c319fb9c7836b1f89b85458672dbb127e1"
+"checksum fern 0.5.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum flate2 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)" = "f87e68aa82b2de08a6e037f1385455759df6e445a8df5e005b4297191dbf18aa"
+"checksum fnv 1.0.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "2fad85553e09a6f881f739c29f0b00b0f01357c743266d478b68951ce23285f3"
+"checksum font-loader 0.8.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum foreign-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "f6f339eb8adc052cd2ca78910fda869aefa38d22d5cb648e6485e4d3fc06f3b1"
 "checksum foreign-types-shared 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
+"checksum freetype 0.4.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum fuchsia-cprng 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "a06f77d526c1a601b7c4cdd98f54b5eaabffc14d5f2f0296febdc7f357c6d3ba"
 "checksum fuchsia-zircon 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2e9763c69ebaae630ba35f74888db465e49e259ba1bc0eda7d06f4a067615d82"
 "checksum fuchsia-zircon-sys 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "3dcaa9ae7725d12cdb85b3ad99a434db70b468c09ded17e012d86b5c1010f7a7"
 "checksum futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)" = "a2037ec1c6c1c4f79557762eab1f7eae1f64f6cb418ace90fae88f0942b60139"
 "checksum futures-cpupool 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)" = "ab90cde24b3319636588d0c35fe03b1333857621051837ed769faefb4c2162e4"
-"checksum h2 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)" = "85ab6286db06040ddefb71641b50017c06874614001a134b423783e2db2920bd"
+"checksum fxhash 0.2.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum gl_generator 0.10.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum gl_generator 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "39a23d5e872a275135d66895d954269cf5e8661d234eb1c2480f4ce0d586acbd"
+"checksum gleam 0.6.17 (registry+https://github.com/rust-lang/crates.io-index)" = "7f46fd8874e043ffac0d638ed1567a2584f7814f6d72b4db37ab1689004a26c4"
+"checksum gleam 0.6.8 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum glium 0.22.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum glutin 0.19.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum h2 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)" = "2b53def7bb0253af7718036fe9338c15defd209136819464384f3a553e07481b"
+"checksum harfbuzz-sys 0.3.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum http 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)" = "eed324f0f0daf6ec10c474f150505af2c143f251722bf9dbd1261bd1f2ee2c1a"
+"checksum http-body 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6741c859c1b2463a423a1dbce98d418e6c3c3fc720fb0d45528657320920292d"
 "checksum httparse 1.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "e8734b0cfd3bc3e101ec59100e101c2eecd19282202e87808b3037b442777a83"
-"checksum hyper 0.12.28 (registry+https://github.com/rust-lang/crates.io-index)" = "e8e4606fed1c162e3a63d408c07584429f49a4f34c7176cb6cbee60e78f2372c"
+"checksum hyper 0.12.29 (registry+https://github.com/rust-lang/crates.io-index)" = "e2cd6adf83b3347d36e271f030621a8cf95fd1fd0760546b9fc5a24a0f1447c7"
 "checksum hyper-tls 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "3a800d6aa50af4b5850b2b0f659625ce9504df908e9733b635720483be26174f"
 "checksum idna 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "38f09e0f0b1fb55fdee1f17470ad800da77af5186a1a76c026b679358b7e844e"
 "checksum indexmap 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7e81a7c05f79578dbc15793d8b619db9ba32b4577003ef3af1a91c416798c58d"
@@ -1934,49 +3033,72 @@ dependencies = [
 "checksum itertools 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5b8467d9c1cebe26feb08c640139247fac215782d35371ade9a2136ed6085358"
 "checksum itoa 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "501266b7edd0174f8530248f87f99c88fbe60ca4ef3dd486835b8d8d53136f7f"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
+"checksum khronos_api 3.0.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum khronos_api 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
+"checksum lazy_static 1.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bc5729f27f159ddd61f4df6228e827e86643d4d3e7c32183cb30a1c08f604a14"
-"checksum lazycell 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b294d6fa9ee409a054354afc4352b0b9ef7ca222c69b8812cbea9e7d2bf3783f"
-"checksum libc 0.2.54 (registry+https://github.com/rust-lang/crates.io-index)" = "c6785aa7dd976f5fbf3b71cfd9cd49d7f783c1ff565a858d71031c6c313aa5c6"
+"checksum libc 0.2.45 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum libc 0.2.55 (registry+https://github.com/rust-lang/crates.io-index)" = "42914d39aad277d9e176efbdad68acb1d5443ab65afe0e0e4f0d49352a950880"
+"checksum libloading 0.5.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum libloading 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9c3ad660d7cb8c5822cd83d10897b0f1f1526792737a179e73896152f85b88c2"
+"checksum line_drawing 0.7.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum linefeed 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)" = "5c2abb5810ef55bb5f5f33b010cc280b3ab877764c902681efc7c8c95628004c"
 "checksum linefeed 0.6.0 (git+https://github.com/kurtlawrence/linefeed)" = "<none>"
 "checksum lock_api 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "62ebf1391f6acad60e5c8b43706dde4582df75c06698ab44511d15016bc2442c"
+"checksum log 0.4.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)" = "c84ec4b527950aa83a329754b01dbe3f58361d1c5efacd1f6d68c494d08a17c6"
+"checksum malloc_buf 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "62bb907fe88d54d8d9ce32a3cceab4218ed2f6b7d35617cafe9adf84e43919cb"
 "checksum matches 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)" = "7ffc5c5338469d4d3ea17d269fa8ea3512ad247247c30bd2df69e68309ed0a08"
 "checksum memchr 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2efc7bc57c883d4a4d6e3246905283d8dae951bb3bd32f49d6ef297f546e1c39"
+"checksum memmap 0.7.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum memoffset 0.2.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum memoffset 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "0f9dc261e2b62d7a622bf416ea3c5245cdd5d9a7fcc428c0d06804dfce1775b3"
 "checksum mime 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)" = "3e27ca21f40a310bd06d9031785f4801710d566c184a6e15bad4f1d9b65f9425"
 "checksum mime_guess 2.0.0-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)" = "30de2e4613efcba1ec63d8133f344076952090c122992a903359be5a4f99c3ed"
 "checksum miniz_oxide 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "c468f2369f07d651a5d0bb2c9079f8488a66d5466efe42d0c5c6466edcb7f71e"
 "checksum miniz_oxide_c_api 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b7fe927a42e3807ef71defb191dc87d4e24479b221e67015fe38ae2b7b447bab"
-"checksum mio 0.6.16 (registry+https://github.com/rust-lang/crates.io-index)" = "71646331f2619b1026cc302f87a2b8b648d5c6dd6937846a16cc8ce0f347f432"
+"checksum mio 0.6.17 (registry+https://github.com/rust-lang/crates.io-index)" = "049ba5ca2b63e837adeee724aa9e36b408ed593529dcc802aa96ca14bd329bdf"
 "checksum miow 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "8c1f2f3b1cf331de6896aabf6e9d55dca90356cc9960cca7eaaf408a355ae919"
 "checksum mortal 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "26153280e6a955881f761354b130aa7838f9983836f3de438ac0a8f22cfab1ff"
 "checksum mortal 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5b4fc78ee0ff9757c7d510f7fa68d66ec0133aa0b07493252a3c13c00facf023"
 "checksum native-tls 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "4b2df1a4c22fd44a62147fd8f13dd0f95c9d8ca7b2610299b2a2f9cf8964274e"
 "checksum net2 0.2.33 (registry+https://github.com/rust-lang/crates.io-index)" = "42550d9fb7b6684a6d404d9fa7250c2eb2646df731d1c06afc06dcee9e1bcf88"
+"checksum nix 0.12.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum nix 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)" = "46f0f3210768d796e8fa79ec70ee6af172dacbe7147f5e69be5240a47778302b"
 "checksum nix 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a0d95c5fa8b641c10ad0b8887454ebaafa3c92b5cd5350f8fc693adafd178e7b"
+"checksum nodrop 0.1.13 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum nodrop 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)" = "2f9667ddcc6cc8a43afc9b7917599d7216aa09c463919ea32c59ed6cac8bc945"
 "checksum nom 4.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2ad2a91a8e869eeb30b9cb3119ae87773a8f4ae617f41b1eb9c154b2905f7bd6"
 "checksum num-traits 0.1.43 (registry+https://github.com/rust-lang/crates.io-index)" = "92e5113e9fd4cc14ded8e499429f396a20f98c772a47cc8622a736e1ec843c31"
-"checksum num-traits 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "0b3a5d7cc97d6d30d8b9bc8fa19bf45349ffe46241e8816f50f62f6d6aaabee1"
+"checksum num-traits 0.2.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum num-traits 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)" = "d9c79c952a4a139f44a0fe205c4ee66ce239c0e6ce72cd935f5f7e2f717549dd"
 "checksum num_cpus 1.10.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1a23f0ed30a54abaa0c7e83b1d2d87ada7c3c23078d1d87815af3e3b6385fbba"
+"checksum num_cpus 1.9.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum numtoa 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b8f8bdf33df195859076e54ab11ee78a1b208382d3a26ec40d142ffc1ecc49ef"
-"checksum openssl 0.10.22 (registry+https://github.com/rust-lang/crates.io-index)" = "a51f452b82d622fc8dd973d7266e9055ac64af25b957d9ced3989142dc61cb6b"
+"checksum objc 0.2.5 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum objc-foundation 0.1.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum objc_id 0.1.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum openssl 0.10.23 (registry+https://github.com/rust-lang/crates.io-index)" = "97c140cbb82f3b3468193dd14c1b88def39f341f68257f8a7fe8ed9ed3f628a5"
 "checksum openssl-probe 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "77af24da69f9d9341038eba93a073b1fdaaa1b788221b00a69bce9e762cb32de"
-"checksum openssl-sys 0.9.46 (registry+https://github.com/rust-lang/crates.io-index)" = "05636e06b4f8762d4b81d24a351f3966f38bd25ccbcfd235606c91fdb82cc60f"
+"checksum openssl-sys 0.9.47 (registry+https://github.com/rust-lang/crates.io-index)" = "75bdd6dbbb4958d38e47a1d2348847ad1eb4dc205dc5d37473ae504391865acc"
+"checksum ordered-float 1.0.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum osmesa-sys 0.1.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum owning_ref 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "49a4b8ea2179e6a2e27411d3bca09ca6dd630821cf6894c6c7c8467a8ee7ef13"
 "checksum parking_lot 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ab41b4aed082705d1056416ae4468b6ea99d52599ecf3169b00088d43113e337"
 "checksum parking_lot_core 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "94c8c7923936b28d546dfd14d4472eaf34c99b14e1c973a32b3e6d4eb04298c9"
+"checksum percent-encoding 1.0.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum percent-encoding 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "31010dd2e1ac33d5b46a5b413495239882813e0369f8ed8a5e266f173602f831"
 "checksum phf 0.7.24 (registry+https://github.com/rust-lang/crates.io-index)" = "b3da44b85f8e8dfaec21adae67f95d93244b2ecf6ad2a692320598dcc8e6dd18"
 "checksum phf_codegen 0.7.24 (registry+https://github.com/rust-lang/crates.io-index)" = "b03e85129e324ad4166b06b2c7491ae27fe3ec353af72e72cd1654c7225d517e"
 "checksum phf_generator 0.7.24 (registry+https://github.com/rust-lang/crates.io-index)" = "09364cc93c159b8b06b1f4dd8a4398984503483891b0c26b867cf431fb132662"
 "checksum phf_shared 0.7.24 (registry+https://github.com/rust-lang/crates.io-index)" = "234f71a15de2288bcb7e3b6515828d22af7ec8598ee6d24c3b526fa0a80b67a0"
+"checksum pkg-config 0.3.14 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum pkg-config 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)" = "676e8eb2b1b4c9043511a9b7bea0915320d7e502b0a079fb03f9635a5252b18c"
+"checksum plane-split 0.13.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum proc-macro2 0.4.24 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)" = "cf3d2011ab5c909338f7887f4fc896d35932e29146c12c8d01da6b22a80ba759"
 "checksum publicsuffix 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "5afecba86dcf1e4fd610246f89899d1924fe12e1e89f555eb7c7f710f3c5ad1d"
+"checksum quote 0.6.10 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum quote 0.6.12 (registry+https://github.com/rust-lang/crates.io-index)" = "faf4799c5d274f3868a4aae320a0a182cbd2baee377b378f080e16a23e9d80db"
 "checksum rand 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)" = "552840b97013b1a26992c11eac34bdd778e464601a4c2054b5f0bff7c6761293"
 "checksum rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)" = "6d71dacdc3c88c1fde3885a3be3fbab9f35724e6ce99467f7d9c5026132184ca"
@@ -1990,7 +3112,9 @@ dependencies = [
 "checksum rand_pcg 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "abf9b09b01790cfe0364f52bf32995ea3c39f4d2dd011eac241d2914146d0b44"
 "checksum rand_xorshift 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "cbf7e9e623549b0e21f6e97cf8ecf247c1a8fd2e8a992ae265314300b2455d5c"
 "checksum rand_xoshiro 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "03b418169fb9c46533f326efd6eed2576699c44ca92d3052a066214a8d828929"
+"checksum rayon 1.0.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum rayon 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "373814f27745b2686b350dd261bfd24576a6fb0e2c5919b3a2b6005f820b0473"
+"checksum rayon-core 1.4.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum rayon-core 1.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b055d1e92aba6877574d8fe604a63c8b5df60f60e5982bf7ccbb1338ea527356"
 "checksum rdrand 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "678054eb77286b51581ba43620cc911abf02758c91f93f479767aed0f90458b2"
 "checksum redox_syscall 0.1.54 (registry+https://github.com/rust-lang/crates.io-index)" = "12229c14a0f65c4f1cb046a3b52047cdd9da1f4b30f8a39c5063c8bae515e252"
@@ -1999,44 +3123,64 @@ dependencies = [
 "checksum regex 1.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "8f0a0bcab2fd7d1d7c54fa9eae6f43eddeb9ce2e7352f8518a814a4f65d60c58"
 "checksum regex-syntax 0.6.6 (registry+https://github.com/rust-lang/crates.io-index)" = "dcfd8681eebe297b81d98498869d4aae052137651ad7b96822f09ceb690d0a96"
 "checksum remove_dir_all 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "3488ba1b9a2084d38645c4c08276a1752dcbf2c7130d74f1569681ad5d2799c5"
-"checksum reqwest 0.9.16 (registry+https://github.com/rust-lang/crates.io-index)" = "ddcfd2c13c6af0f9c45a1086be3b9c68af79e4430b42790759e2d34cce2a6c60"
+"checksum reqwest 0.9.17 (registry+https://github.com/rust-lang/crates.io-index)" = "e57803405f8ea0eb041c1567dac36127e0c8caa1251c843cb03d43fd767b3d50"
 "checksum rgb 0.8.13 (registry+https://github.com/rust-lang/crates.io-index)" = "4f089652ca87f5a82a62935ec6172a534066c7b97be003cc8f702ee9a7a59c92"
 "checksum rustc-demangle 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)" = "ccc78bfd5acd7bf3e89cffcf899e5cb1a52d6fafa8dec2739ad70c9577a57288"
+"checksum rustc-demangle 0.1.9 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum rustc_version 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "c5f5376ea5e30ce23c03eb77cbe4962b988deead10910c372b226388b594c084"
 "checksum rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
+"checksum rusttype 0.7.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum ryu 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)" = "b96a9549dc8d48f2c283938303c4b5a77aa29bfbc5b54b084fb1630408899a8f"
+"checksum same-file 1.0.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum same-file 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "8f20c4be53a8a1ff4c1f1b2bd14570d2f634628709752f0702ecdd2b3f9a5267"
 "checksum schannel 0.1.15 (registry+https://github.com/rust-lang/crates.io-index)" = "f2f6abf258d99c3c1c5c2131d99d064e94b7b3dd5f416483057f308fea253339"
 "checksum scoped_threadpool 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)" = "1d51f5df5af43ab3f1360b429fa5e0152ac5ce8c0bd6485cae490332e96846a8"
+"checksum scopeguard 0.3.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum scopeguard 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "94258f53601af11e6a49f722422f6e3425c52b06245a5cf9bc09908b174f5e27"
 "checksum security-framework 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "eee63d0f4a9ec776eeb30e220f0bc1e092c3ad744b2a379e3993070364d3adc2"
 "checksum security-framework-sys 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "9636f8989cbf61385ae4824b98c1aaa54c994d7d8b41f11c601ed799f0549a56"
 "checksum semver 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)" = "d4f410fedcf71af0345d7607d246e7ad15faaadd49d240ee3b24e5dc21a820ac"
 "checksum semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
 "checksum semver-parser 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
+"checksum serde 1.0.80 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum serde 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)" = "a72e9b96fa45ce22a4bc23da3858dfccfd60acd28a25bcd328a98fdd6bea43fd"
+"checksum serde_bytes 0.10.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum serde_derive 1.0.80 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum serde_derive 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)" = "101b495b109a3e3ca8c4cbe44cf62391527cdfb6ba15821c5ce80bcd5ea23f9f"
 "checksum serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)" = "5a23aa71d4a4d43fdbfaac00eff68ba8a06a51759a89ac3304323e800c4dd40d"
 "checksum serde_urlencoded 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)" = "642dd69105886af2efd227f75a520ec9b44a820d65bc133a9131f7d229fd165a"
+"checksum servo-fontconfig 0.4.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum servo-fontconfig-sys 4.0.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum servo-freetype-sys 4.0.5 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum shared_library 0.1.9 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum shh 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9cff8b151d3d290604d9c93f0400bd4d98e2837a5461532bc6c95d0129ea0964"
+"checksum simplecss 0.1.0 (git+https://github.com/fschutt/simplecss.git?rev=0bf3b7800f49a4524b889687d7761b163e8b4101)" = "<none>"
 "checksum siphasher 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "0b8de496cf83d4ed58b6be86c3a275b8602f6ffe98d3024a869e124147a9a3ac"
 "checksum slab 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "c111b5bd5695e56cffe5129854aa230b39c93a305372fdbb2668ca2394eea9f8"
 "checksum smallstr 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6aa65bb4d5b2bbc90d36af64e29802f788aa614783fa1d0df011800ddcec6e8e"
+"checksum smallvec 0.6.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum smallvec 0.6.9 (registry+https://github.com/rust-lang/crates.io-index)" = "c4488ae950c49d403731982257768f48fada354a5203fe81f9bb6f43ca9002be"
+"checksum smithay-client-toolkit 0.6.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum stable_deref_trait 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "dba1a27d3efae4351c8051072d619e3ade2820635c3958d826bfea39d59b54c8"
+"checksum stb_truetype 0.2.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum string 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "b639411d0b9c738748b5397d5ceba08e648f4f1992231aa859af1a017f31f60b"
+"checksum syn 0.15.22 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum syn 0.15.34 (registry+https://github.com/rust-lang/crates.io-index)" = "a1393e4a97a19c01e900df2aec855a29f71cf02c402e2f443b8d2747c25c5dbe"
 "checksum synstructure 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)" = "02353edf96d6e4dc81aea2d8490a7e9db177bf8acb0e951c24940bf866cb313f"
-"checksum tempfile 3.0.7 (registry+https://github.com/rust-lang/crates.io-index)" = "b86c784c88d98c801132806dadd3819ed29d8600836c4088e855cdf3e178ed8a"
+"checksum tempfile 3.0.8 (registry+https://github.com/rust-lang/crates.io-index)" = "7dc4738f2e68ed2855de5ac9cdbe05c9216773ecde4739b2f095002ab03a13ef"
 "checksum term_cursor 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "e225e1afb8bf56aa077366fced39df360db6ec09af1d9fb0b0591843e8482629"
 "checksum terminfo 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)" = "8e51065bafd2abe106b6036483b69d1741f4a1ec56ce8a2378de341637de689e"
 "checksum termion 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "dde0593aeb8d47accea5392b39350015b5eccb12c0d98044d856983d89548dea"
 "checksum termios 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "72b620c5ea021d75a735c943269bb07d30c9b77d6ac6b236bc8b5c496ef05625"
 "checksum textwrap 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 "checksum thread_local 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)" = "c6b53e329000edc2b34dbe8545fd20e55a333362d0a321909685a19bd28c3f1b"
+"checksum thread_profiler 0.1.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum time 0.1.40 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum time 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)" = "db8dcfca086c1143c9270ac42a2bbd8a7ee477b78ac8e45b19abfb0cbede4b6f"
-"checksum tinytemplate 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "7655088894274afb52b807bd3c87072daa1fedd155068b8705cabfd628956115"
+"checksum tinyfiledialogs 3.3.5 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum tinytemplate 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "4574b75faccaacddb9b284faecdf0b544b80b6b294f3d062d325c5726a209c20"
 "checksum tokio 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)" = "94a1f9396aec29d31bb16c24d155cfa144d1af91c40740125db3131bdaf76da8"
+"checksum tokio-buf 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "8fb220f46c53859a4b7ec083e41dec9778ff0b1851c0942b211edb89e0ccdc46"
 "checksum tokio-current-thread 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "d16217cad7f1b840c5a97dfb3c43b0c871fef423a6e8d2118c604e843662a443"
 "checksum tokio-executor 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "83ea44c6c0773cc034771693711c35c677b4b5a4b21b9e7071704c54de7d555e"
 "checksum tokio-io 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)" = "5090db468dad16e1a7a54c8c67280c5e4b544f3d3e018f0b913b400261f85926"
@@ -2052,22 +3196,45 @@ dependencies = [
 "checksum unicase 1.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7f4765f83163b74f957c797ad9253caf97f103fb064d3999aea9568d09fc8a33"
 "checksum unicase 2.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a84e5511b2a947f3ae965dcb29b13b7b1691b6e7332cf5dbc1744138d5acb7f6"
 "checksum unicode-bidi 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)" = "49f2bd0c6468a8230e1db229cff8029217cf623c767ea5d60bfbd42729ea54d5"
+"checksum unicode-normalization 0.1.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum unicode-normalization 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)" = "141339a08b982d942be2ca06ff8b076563cbe223d1befd5450716790d44e2426"
 "checksum unicode-width 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "882386231c45df4700b275c7ff55b6f3698780a650026380e72dabe76fa46526"
+"checksum unicode-xid 0.1.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "fc72304796d0818e357ead4e000d19c9c174ab23dc11093ac919054d20a6a7fc"
+"checksum unreachable 1.0.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum url 1.7.2 (registry+https://github.com/rust-lang/crates.io-index)" = "dd4e7c0d531266369519a4aa4f399d748bd37043b00bde1e4ff1f60a120b355a"
 "checksum utf8-ranges 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "796f7e48bef87609f7ade7e06495a87d5cd06c7866e6a5cbfceffc558a243737"
 "checksum uuid 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)" = "90dbc611eb48397705a6b0f6e917da23ae517e4d127123d2cf7674206627d32a"
 "checksum vcpkg 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "def296d3eb3b12371b2c7d0e83bfe1403e4db2d7a0bba324a12b21c4ee13143d"
 "checksum version_check 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "914b1a6776c4c929a602fafd8bc742e06365d4bcbe48c30f9cca5824f70dc9dd"
+"checksum void 1.0.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
+"checksum walkdir 2.2.7 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum walkdir 2.2.7 (registry+https://github.com/rust-lang/crates.io-index)" = "9d9d7ed3431229a144296213105a390676cc49c9b6a72bd19f3176c98e129fa1"
 "checksum want 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "797464475f30ddb8830cc529aaaae648d581f99e2036a928877dfde027ddf6b3"
+"checksum wayland-client 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum wayland-commons 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum wayland-protocols 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum wayland-scanner 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum wayland-sys 0.23.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum webrender 0.57.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum webrender_api 0.57.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)" = "167dc9d6949a9b857f3451275e911c3f44255842c1f7a76f33c55103a909087a"
+"checksum winapi 0.3.6 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)" = "f10e386af2b13e47c89e7236a7a14a086791a2b88ebad6df9bf42040195cf770"
 "checksum winapi-build 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "2d315eee3b34aca4797b2da6b13ed88266e6d612562a0c46390af8299fc699bc"
+"checksum winapi-i686-pc-windows-gnu 0.4.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum winapi-i686-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
 "checksum winapi-util 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7168bab6e1daee33b4557efd0e95d5ca70a03706d39fa5f3fe7a236f584b03c9"
+"checksum winapi-x86_64-pc-windows-gnu 0.4.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum winapi-x86_64-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 "checksum winconsole 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3ef84b96d10db72dd980056666d7f1e7663ce93d82fa33b63e71c966f4cf5032"
+"checksum winit 0.18.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum ws2_32-sys 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d59cefebd0c892fa2dd6de581e937301d8552cb44489cdff035c6187cb63fa5e"
+"checksum x11-clipboard 0.3.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum x11-dl 2.18.3 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum xcb 0.8.2 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum xdg 2.2.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum xml-rs 0.8.0 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
+"checksum xml-rs 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "541b12c998c5b56aa2b4e6f18f03664eef9a4fd0a246a55594efae6cc2d964b5"
+"checksum xmlparser 0.6.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"

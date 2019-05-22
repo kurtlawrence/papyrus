@@ -1,6 +1,5 @@
 **/target
 **/*.rs.bk
-/test
 /.vscode
 /docs
 ROADMAP.md

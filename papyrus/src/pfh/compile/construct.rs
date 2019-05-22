@@ -64,7 +64,7 @@ fn create_file_and_dir_test() {
     fs::remove_file(p).unwrap();
     assert!(!p.exists());
 
-    let p = Path::new("test/foo");
+    let p = Path::new("target/testing/foo");
     assert!(!p.exists());
     create_file_and_dir(&p).unwrap();
     assert!(p.exists());
