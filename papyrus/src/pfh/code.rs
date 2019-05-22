@@ -213,7 +213,7 @@ pub struct CrateType {
 }
 
 impl CrateType {
-	/// Parses a string to return the `CrateType`.
+    /// Parses a string to return the `CrateType`.
     pub fn parse_str(string: &str) -> Result<Self, &'static str> {
         let line = string
             .replace(";", "")

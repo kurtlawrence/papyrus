@@ -17,23 +17,6 @@ pub struct InputReader<Term: Terminal> {
     pub interface: Interface<Term>,
 }
 
-/// Possible results from reading input from `InputReader`
-#[derive(Debug, PartialEq)]
-pub enum InputResult {
-    /// Command or commands in a line.
-    Command(String),
-    /// Code as input
-    Program(Input),
-    /// An empty line
-    Empty,
-    /// Needs more input; i.e. there is an unclosed delimiter.
-    More,
-    /// End of file reached.
-    Eof,
-    /// Error while parsing input.
-    InputError(String),
-}
-
 impl<Term: Terminal> InputReader<Term> {
     /// Creates an `InputReader` with the specified terminal.
     pub fn with_term(app_name: &'static str, term: Term) -> Result<Self, String> {
@@ -69,6 +52,8 @@ impl<Term: Terminal> InputReader<Term> {
         self.handle_input(r, treat_as_cmd)
     }
 
+    /// Push input onto the reader. If results in a read line then will evaluate
+    /// to InputResult, or return None if more input may be required.
     pub fn push_input(
         &mut self,
         prompt: &str,
@@ -78,7 +63,12 @@ impl<Term: Terminal> InputReader<Term> {
         self.interface
             .set_prompt(prompt)
             .expect("failed to set prompt");
-        self.interface.push_input(input_ch.to_string().as_bytes());
+
+        let mut buf = [0; 4];
+        let s = input_ch.encode_utf8(&mut buf);
+
+        self.interface.push_input(s.as_bytes());
+
         self.interface
             .read_line_step(None)
             .unwrap_or(Some(ReadResult::Eof))
@@ -135,6 +125,23 @@ impl<Term: Terminal> InputReader<Term> {
 
         res
     }
+}
+
+/// Possible results from reading input from `InputReader`
+#[derive(Debug, PartialEq)]
+pub enum InputResult {
+    /// Command or commands in a line.
+    Command(String),
+    /// Code as input
+    Program(Input),
+    /// An empty line
+    Empty,
+    /// Needs more input; i.e. there is an unclosed delimiter.
+    More,
+    /// End of file reached.
+    Eof,
+    /// Error while parsing input.
+    InputError(String),
 }
 
 fn is_command(line: &str) -> bool {
