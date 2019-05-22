@@ -1,0 +1,9 @@
+[package]
+name = "papyrus-pad"
+version = "0.0.1"
+authors = ["kurt <kurtlawrence92@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+# papyrus -- for now just links the folder. Once stabilised can link the crates.io ver
+papyrus = { path = "../papyrus" }
