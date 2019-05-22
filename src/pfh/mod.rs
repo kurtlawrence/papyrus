@@ -15,9 +15,14 @@ pub type FileMap = BTreeMap<PathBuf, SourceCode>;
 pub const LIBRARY_NAME: &str = "papyrus_mem_code";
 
 /// Constructs the evaluation function name given the mod sequence path.
-pub fn eval_fn_name(mod_path: &[String]) -> String {
-    // TODO maybe just added to buffer??
-    format!("_{}_intern_eval", mod_path.join("_"))
+/// Appends to the buffer.
+pub fn eval_fn_name(mod_path: &[String], buf: &mut String) {
+    buf.push('_');
+    for p in mod_path {
+        buf.push_str(&p);
+        buf.push('_');
+    }
+    buf.push_str("intern_eval");
 }
 
 pub fn into_mod_path_vec(path: &Path) -> Vec<String> {
@@ -34,8 +39,12 @@ fn eval_fn_name_test() {
         .iter()
         .map(|x| x.to_string())
         .collect();
-    assert_eq!(&eval_fn_name(&path), "_some_lib_module_path_intern_eval");
-    assert_eq!(&eval_fn_name(&[]), "__intern_eval");
+	let mut s = String::new();
+	eval_fn_name(&path, &mut s);
+    assert_eq!(&s, "_some_lib_module_path_intern_eval");
+	let mut s = String::new();
+	eval_fn_name(&[], &mut s);
+    assert_eq!(&s, "_intern_eval");
 }
 
 #[test]

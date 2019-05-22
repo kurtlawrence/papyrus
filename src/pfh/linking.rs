@@ -375,6 +375,16 @@ impl Extern {
     pub fn deps_path(&self) -> PathBuf {
         self.path.parent().unwrap().join("deps") // this has been validated already.
     }
+
+	pub fn construct_code_str(&self, buf: &mut String) {
+		buf.push_str("extern crate ");
+		buf.push_str(self.lib_name());
+		if let Some(alias) = self.alias {
+			buf.push_str(" as ");
+			buf.push_str(alias);
+        }
+		buf.push_str(";\n");
+	}
 }
 
 impl PartialEq for Extern {

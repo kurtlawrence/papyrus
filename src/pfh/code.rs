@@ -44,15 +44,7 @@ pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfigu
 
     // add in external crates
     for external in linking_config.external_libs.iter() {
-        if let Some(alias) = external.alias() {
-            contents.push_str(&format!(
-                "extern crate {} as {};\n",
-                external.lib_name(),
-                alias
-            ));
-        } else {
-            contents.push_str(&format!("extern crate {};\n", external.lib_name()));
-        }
+        external.construct_code_str(&mut contents);
     }
 
     // do the lib first
@@ -134,7 +126,7 @@ pub fn append_buffer(
 ) {
     // wrap stmts
     buf.push_str("#[no_mangle]\npub extern \"C\" fn ");
-    buf.push_str(&eval_fn_name(mod_path));
+	eval_fn_name(mod_path, buf);
     buf.push('(');
     linking_config.construct_fn_args(buf);
     buf.push_str(") -> String {\n");
@@ -327,7 +319,7 @@ fn construct_test() {
     assert_eq!(
         &s,
         r##"#[no_mangle]
-pub extern "C" fn __intern_eval() -> String {
+pub extern "C" fn _intern_eval() -> String {
 String::from("no statements")
 }
 "##
