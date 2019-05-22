@@ -231,17 +231,15 @@ impl LinkingConfiguration {
     }
 
     /// Constructs the function arguments signature.
-    pub fn construct_fn_args(&self) -> String {
-        self.data_type
-            .as_ref()
-            .map(|d| {
-                if self.mutable {
-                    format!("app_data: &mut {}", d)
-                } else {
-                    format!("app_data: &{}", d)
-                }
-            }) // matches pfh::compile::execute::DataFunc definition.
-            .unwrap_or(String::new())
+    /// Appends result to buffer.
+    pub fn construct_fn_args(&self, buf: &mut String) {
+        self.data_type.as_ref().map(|d| {
+            buf.push_str("app_data: &");
+            if self.mutable {
+                buf.push_str("mut ");
+            }
+            buf.push_str(d);
+        }); // matches pfh::compile::execute::DataFunc definition.
     }
 }
 

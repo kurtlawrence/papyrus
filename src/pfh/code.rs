@@ -60,11 +60,12 @@ pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfigu
 
     // do the lib first
     if let Some(lib) = file_map.get(Path::new("lib")) {
-        contents.push_str(&code::construct(
+        code::append_buffer(
             lib,
             &into_mod_path_vec(Path::new("lib")), // lib is  empty
             linking_config,
-        ));
+            &mut contents,
+        );
     }
 
     let mut lvl = 0;
@@ -101,11 +102,12 @@ pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfigu
                 .unwrap(),
         );
         contents.push_str(" {\n");
-        contents.push_str(&code::construct(
+        code::append_buffer(
             src_code,
             &into_mod_path_vec(file),
             linking_config,
-        ));
+            &mut contents,
+        );
     }
 
     // close off any outstanding modules
@@ -116,12 +118,10 @@ pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfigu
     contents
 }
 
-/// Build the source code as a `String`.
+/// Build the buffer with the stringified contents of SourceCode
 ///
 /// The structure of the file follows:
 /// ```txt
-/// {crates}
-///
 /// ##INTERNAL_EVALUATION_FN({stmts})
 ///
 /// {items}
@@ -129,32 +129,24 @@ pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfigu
 ///
 /// A module _will_ contain **one** evaluation function, qualified with the module path.
 /// This evaulation function is what contains the statements.
-pub fn construct(
+pub fn append_buffer(
     src_code: &SourceCode,
     mod_path: &[String],
     linking_config: &linking::LinkingConfiguration,
-) -> String {
-    let mut code = String::new();
-
-    // add crates
-    for c in src_code.iter().flat_map(|x| &x.crates) {
-        code.push_str(&c.src_line);
-        code.push('\n');
-    }
-
+    buf: &mut String,
+) {
     // wrap stmts
-    code.push_str("#[no_mangle]\n");
-    code.push_str(&format!(
-        r#"pub extern "C" fn {}({}) -> String {{"#,
-        crate::pfh::eval_fn_name(mod_path),
-        linking_config.construct_fn_args()
-    ));
-    code.push('\n');
+    buf.push_str("#[no_mangle]\npub extern \"C\" fn ");
+    buf.push_str(&eval_fn_name(mod_path));
+    buf.push('(');
+    linking_config.construct_fn_args(buf);
+    buf.push_str(") -> String {\n");
+
     // add stmts
     let c = src_code.iter().filter(|x| x.stmts.len() > 0).count();
     if c >= 1 {
         // only add statements if more than zero!
-        code.push_str(
+        buf.push_str(
             &src_code
                 .iter()
                 .filter(|x| x.stmts.len() > 0)
@@ -163,23 +155,21 @@ pub fn construct(
                 .collect::<Vec<String>>()
                 .join("\n"),
         );
-        code.push('\n');
-        code.push_str(&format!(
+        buf.push('\n');
+        buf.push_str(&format!(
             "format!(\"{{:?}}\", out{})\n",
             c.saturating_sub(1)
         ));
     } else {
-        code.push_str("String::from(\"no statements\")\n");
+        buf.push_str("String::from(\"no statements\")\n");
     }
-    code.push_str("}\n");
+    buf.push_str("}\n");
 
     // add items
     for item in src_code.iter().flat_map(|x| &x.items) {
-        code.push_str(&item);
-        code.push('\n');
+        buf.push_str(&item);
+        buf.push('\n');
     }
-
-    code
 }
 
 pub type Item = String;
@@ -333,7 +323,8 @@ fn construct_test() {
     let mod_path = [];
     let linking_config = LinkingConfiguration::default();
 
-    let s = construct(&src_code, &mod_path, &linking_config);
+    let mut s = String::new();
+    append_buffer(&src_code, &mod_path, &linking_config, &mut s);
     assert_eq!(
         &s,
         r##"#[no_mangle]
@@ -346,7 +337,8 @@ String::from("no statements")
     // alter mod path
     let mod_path = ["some".to_string(), "path".to_string()];
 
-    let s = construct(&src_code, &mod_path, &linking_config);
+    let mut s = String::new();
+    append_buffer(&src_code, &mod_path, &linking_config, &mut s);
     assert_eq!(
         &s,
         r##"#[no_mangle]
@@ -356,7 +348,8 @@ String::from("no statements")
 "##
     );
 
-    let s = construct(&src_code, &mod_path, &linking_config);
+    let mut s = String::new();
+    append_buffer(&src_code, &mod_path, &linking_config, &mut s);
     assert_eq!(
         &s,
         r##"#[no_mangle]
@@ -372,7 +365,8 @@ String::from("no statements")
         ..Default::default()
     };
 
-    let s = construct(&src_code, &mod_path, &linking_config);
+    let mut s = String::new();
+    append_buffer(&src_code, &mod_path, &linking_config, &mut s);
     assert_eq!(
         &s,
         r##"#[no_mangle]
@@ -390,7 +384,8 @@ String::from("no statements")
         crates: vec![],
     });
 
-    let s = construct(&src_code, &mod_path, &linking_config);
+    let mut s = String::new();
+    append_buffer(&src_code, &mod_path, &linking_config, &mut s);
     assert_eq!(
         &s,
         r##"#[no_mangle]
@@ -420,32 +415,11 @@ fn b() {}
         semi: false,
     });
 
-    let s = construct(&src_code, &mod_path, &linking_config);
+    let mut s = String::new();
+    append_buffer(&src_code, &mod_path, &linking_config, &mut s);
     assert_eq!(
         &s,
         r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
-let a = 1;
-let out0 = b;
-let c = 2;
-let out1 = d;
-format!("{:?}", out1)
-}
-fn a() {}
-fn b() {}
-"##
-    );
-
-    // add crate
-    src_code[0]
-        .crates
-        .push(CrateType::parse_str("extern crate some_crate as some;").unwrap());
-
-    let s = construct(&src_code, &mod_path, &linking_config);
-    assert_eq!(
-        &s,
-        r##"extern crate some_crate as some;
-#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
 let a = 1;
 let out0 = b;

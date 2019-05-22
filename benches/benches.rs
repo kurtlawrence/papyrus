@@ -6,8 +6,8 @@ use colored::Colorize;
 use criterion::Criterion;
 
 use azul::prelude::*;
+use papyrus::prelude::code::{Input, Statement};
 use papyrus::prelude::*;
-
 use papyrus::widgets::pad::{add_terminal_text, create_terminal_string};
 
 fn create_terminal_string_fn(c: &mut Criterion) {
@@ -58,17 +58,29 @@ fn bench_dom_creation(c: &mut Criterion) {
 }
 
 fn pfh_compile_construct(c: &mut Criterion) {
-    use papyrus::pfh::compile::construct_source_code;
+    use papyrus::prelude::code::construct_source_code;
 
     let linking = papyrus::prelude::linking::LinkingConfiguration::default();
-    let map = vec![].into_iter().collect();
+    let map = vec![
+        ("lib".into(), vec![stmt(), stmt_semi()]),
+        ("test".into(), vec![stmt_semi(), stmt()]),
+        ("test/inner".into(), vec![stmt(), stmt_semi(), stmt()]),
+        ("test/inner/deep".into(), vec![stmt(), stmt_semi(), stmt()]),
+    ]
+    .into_iter()
+    .collect();
 
     c.bench_function("construct_source_code", move |b| {
         b.iter(|| construct_source_code(&map, &linking))
     });
 }
 
-criterion_group!(benches, create_terminal_string_fn, bench_dom_creation);
+criterion_group!(
+    benches,
+    create_terminal_string_fn,
+    bench_dom_creation,
+    pfh_compile_construct
+);
 criterion_main!(benches);
 
 fn cstr() -> String {
@@ -86,6 +98,28 @@ fn cstr() -> String {
         "Nullam maximus mauris a ultricies blandit.".bright_green(),
         "Morbi eget neque eget neque viverra mollis in id lacus.".bright_purple(),
     )
+}
+
+fn stmt() -> Input {
+    Input {
+        crates: Vec::new(),
+        stmts: vec![Statement {
+            expr: LOREM_IPSUM.to_string(),
+            semi: false,
+        }],
+        items: vec![],
+    }
+}
+
+fn stmt_semi() -> Input {
+    Input {
+        crates: Vec::new(),
+        stmts: vec![Statement {
+            expr: LOREM_IPSUM.to_string(),
+            semi: true,
+        }],
+        items: vec![],
+    }
 }
 
 const LOREM_IPSUM: &str = r#"

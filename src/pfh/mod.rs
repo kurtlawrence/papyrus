@@ -16,6 +16,7 @@ pub const LIBRARY_NAME: &str = "papyrus_mem_code";
 
 /// Constructs the evaluation function name given the mod sequence path.
 pub fn eval_fn_name(mod_path: &[String]) -> String {
+    // TODO maybe just added to buffer??
     format!("_{}_intern_eval", mod_path.join("_"))
 }
 
