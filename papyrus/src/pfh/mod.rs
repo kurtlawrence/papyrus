@@ -8,7 +8,7 @@ pub mod linking;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-pub use code::{CrateType, Input, SourceCode, Statement};
+pub use code::{CrateType, Input, SourceCode, Statement, StmtGrp};
 
 pub type FileMap = BTreeMap<PathBuf, SourceCode>;
 

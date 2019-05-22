@@ -26,10 +26,7 @@ fn pfh_compile_construct(c: &mut Criterion) {
     });
 }
 
-criterion_group!(
-    benches,
-    pfh_compile_construct
-);
+criterion_group!(benches, pfh_compile_construct);
 criterion_main!(benches);
 
 fn cstr() -> String {

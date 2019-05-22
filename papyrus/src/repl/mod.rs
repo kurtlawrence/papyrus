@@ -197,12 +197,14 @@ pub enum CommandResult<Data> {
 
 impl<D> CommandResult<D> {
     /// Convenience function boxing an action on app data.
-    pub fn app_data_fn<F:'static + for<'w> Fn(&mut D, Box<Write + 'w>) -> String>(func: F) -> Self {
+    pub fn app_data_fn<F: 'static + for<'w> Fn(&mut D, Box<Write + 'w>) -> String>(
+        func: F,
+    ) -> Self {
         CommandResult::ActionOnAppData(Box::new(func))
     }
 
     /// Convenience function boxing an action on repl data.
-    pub fn repl_data_fn<F:'static + for<'w> Fn(&mut ReplData<D>, Box<Write + 'w>) -> String>(
+    pub fn repl_data_fn<F: 'static + for<'w> Fn(&mut ReplData<D>, Box<Write + 'w>) -> String>(
         func: F,
     ) -> Self {
         CommandResult::ActionOnReplData(Box::new(func))

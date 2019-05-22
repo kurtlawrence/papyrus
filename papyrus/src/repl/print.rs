@@ -14,9 +14,8 @@ impl<Term: Terminal, Data> Repl<Print, Term, Data> {
                     .file_map
                     .get(&self.data.current_file)
                     .expect("file map does not contain key")
-                    .iter()
-                    .filter(|x| x.stmts.len() > 0)
-                    .count()
+                    .stmts
+                    .len()
                     .saturating_sub(1);
                 let out_stmt = format!("[out{}]", num);
                 writeln!(

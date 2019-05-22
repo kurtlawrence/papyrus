@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.0
+
+- mod paths now complete
+
 ## 0.8.1
 
 - Re-export `azul` crate in `prelude`.

@@ -180,37 +180,28 @@ mod tests {
     // }
 
     fn pass_compile_eval_file() -> (PathBuf, SourceCode) {
-        let code = vec![Input {
-            items: vec![],
-            stmts: vec![Statement {
-                expr: "2+2".to_string(),
-                semi: false,
-            }],
-            crates: vec![],
-        }];
+        let mut code = SourceCode::new();
+        code.stmts.push(StmtGrp(vec![Statement {
+            expr: "2+2".to_string(),
+            semi: false,
+        }]));
         ("lib".into(), code)
     }
 
     fn fail_compile_file() -> (PathBuf, SourceCode) {
-        let code = vec![Input {
-            items: vec![],
-            stmts: vec![Statement {
-                expr: "2+".to_string(),
-                semi: false,
-            }],
-            crates: vec![],
-        }];
+        let mut code = SourceCode::new();
+        code.stmts.push(StmtGrp(vec![Statement {
+            expr: "2+".to_string(),
+            semi: false,
+        }]));
         ("lib".into(), code)
     }
     fn fail_eval_file() -> (PathBuf, SourceCode) {
-        let code = vec![Input {
-            items: vec![],
-            stmts: vec![Statement {
-                expr: "panic!(\"eval panic\")".to_string(),
-                semi: false,
-            }],
-            crates: vec![],
-        }];
+        let mut code = SourceCode::new();
+        code.stmts.push(StmtGrp(vec![Statement {
+            expr: "panic!(\"eval panic\")".to_string(),
+            semi: false,
+        }]));
         ("lib".into(), code)
     }
 }

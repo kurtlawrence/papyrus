@@ -376,6 +376,7 @@ impl Extern {
         self.path.parent().unwrap().join("deps") // this has been validated already.
     }
 
+    /// Append the buffer with the code representation.
     pub fn construct_code_str(&self, buf: &mut String) {
         buf.push_str("extern crate ");
         buf.push_str(self.lib_name());
@@ -384,15 +385,6 @@ impl Extern {
             buf.push_str(alias);
         }
         buf.push_str(";\n");
-    }
-
-    pub fn calc_code_str_len(&self) -> usize {
-        15 + self.lib_name().len()
-            + if let Some(alias) = self.alias {
-                4 + alias.len()
-            } else {
-                0
-            }
     }
 }
 

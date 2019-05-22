@@ -14,9 +14,7 @@ pub fn build_compile_dir<P: AsRef<Path>>(
 ) -> io::Result<()> {
     let compile_dir = compile_dir.as_ref();
 
-    let crates = file_map
-        .iter()
-        .flat_map(|kvp| kvp.1.iter().flat_map(|x| &x.crates));
+    let crates = file_map.iter().flat_map(|kvp| kvp.1.crates.iter());
 
     // write cargo toml contents
     create_file_and_dir(compile_dir.join("Cargo.toml"))?

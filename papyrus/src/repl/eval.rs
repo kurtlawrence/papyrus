@@ -1,5 +1,5 @@
 use super::*;
-use crate::pfh::{self, Input};
+use crate::pfh::{self, Input, StmtGrp};
 use linefeed::terminal::Terminal;
 use std::borrow::{Borrow, BorrowMut};
 use std::ops::{Deref, DerefMut};
@@ -202,15 +202,34 @@ impl<Data> ReplData<Data> {
         Fbrw: FnOnce() -> Rbrw,
         Rbrw: Deref<Target = Data>,
     {
-        let pop_input = |repl_data: &mut ReplData<Data>| {
-            repl_data.get_current_file_mut().pop();
-        };
+        let (nitems, ncrates) = (input.items.len(), input.crates.len());
 
         let has_stmts = input.stmts.len() > 0;
 
+        let pop_input = |repl_data: &mut ReplData<Data>| {
+            let src = repl_data.get_current_file_mut();
+            src.items.truncate(src.items.len() - nitems);
+            src.crates.truncate(src.crates.len() - ncrates);
+            if has_stmts {
+                src.stmts.pop();
+            }
+        };
+
         // add input file
         {
-            self.get_current_file_mut().push(input);
+            let Input {
+                items,
+                crates,
+                stmts,
+            } = input;
+
+            let src = self.get_current_file_mut();
+
+            src.items.extend(items);
+            src.crates.extend(crates);
+            if has_stmts {
+                src.stmts.push(StmtGrp(stmts))
+            }
         }
 
         // build directory

@@ -4,6 +4,7 @@ use crate::pfh::linking;
 use linking::LinkingConfiguration;
 use std::path::Path;
 
+/// An input collection
 #[derive(Debug, PartialEq, Clone)]
 pub struct Input {
     /// Module-level items (`fn`, `enum`, `type`, `struct`, etc.)
@@ -14,10 +15,39 @@ pub struct Input {
     pub crates: Vec<CrateType>,
 }
 
-impl Input {
+/// The flattened representation of source code.
+/// Statements are grouped based on the the 'out' number.
+#[derive(Clone)]
+pub struct SourceCode {
+    /// Module-level items (`fn`, `enum`, `type`, `struct`, etc.)
+    pub items: Vec<Item>,
+    /// Inner statements and declarations.
+    pub stmts: Vec<StmtGrp>,
+    /// The referenced crates.
+    pub crates: Vec<CrateType>,
+}
+
+impl SourceCode {
+    /// Construct new `SourceCode`.
+    pub fn new() -> Self {
+        Self {
+            items: Vec::new(),
+            stmts: Vec::new(),
+            crates: Vec::new(),
+        }
+    }
+}
+
+/// Group of statements that result in an expression to evaulate.
+#[derive(Clone)]
+pub struct StmtGrp(pub Vec<Statement>);
+
+impl StmtGrp {
     /// Stringfy's the statements and assigns trailing expressions with `let out# = expr;`.
     fn assign_let_binding(&self, input_num: usize, buf: &mut String) {
-        for stmt in &self.stmts[0..self.stmts.len().saturating_sub(1)] {
+        let stmts = &self.0;
+
+        for stmt in &stmts[0..stmts.len().saturating_sub(1)] {
             buf.push_str(&stmt.expr);
             if stmt.semi {
                 buf.push(';');
@@ -25,24 +55,20 @@ impl Input {
             buf.push('\n');
         }
 
-        if self.stmts.len() > 0 {
+        if stmts.len() > 0 {
             buf.push_str("let out");
             buf.push_str(&input_num.to_string());
             buf.push_str(" = ");
-            buf.push_str(&self.stmts[self.stmts.len() - 1].expr);
+            buf.push_str(&stmts[stmts.len() - 1].expr);
             buf.push(';');
         }
     }
 }
 
-pub type SourceCode = Vec<Input>;
-
 pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfiguration) -> String {
     // assumed to be sorted, FileMap is BTreeMap
 
-    let cap = calc_cap(file_map, linking_config);
-
-    let mut contents = String::with_capacity(cap);
+    let mut contents = String::new();
 
     // add in external crates
     for external in linking_config.external_libs.iter() {
@@ -115,19 +141,6 @@ pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfigu
     contents
 }
 
-fn calc_cap(file_map: &FileMap, linking_config: &LinkingConfiguration) -> usize {
-    let mut size = 0;
-
-    // add in external crates
-    size += linking_config
-        .external_libs
-        .iter()
-        .map(|x| x.calc_code_str_len())
-        .sum::<usize>();
-
-    size
-}
-
 /// Build the buffer with the stringified contents of SourceCode
 ///
 /// The structure of the file follows:
@@ -153,17 +166,13 @@ pub fn append_buffer(
     buf.push_str(") -> String {\n"); // 14 len
 
     // add stmts
-    let c = src_code.iter().filter(|x| x.stmts.len() > 0).count();
+    let c = src_code.stmts.len();
     if c >= 1 {
         // only add statements if more than zero!
-        src_code
-            .iter()
-            .filter(|x| x.stmts.len() > 0)
-            .enumerate()
-            .for_each(|(i, x)| {
-                x.assign_let_binding(i, buf);
-                buf.push('\n');
-            });
+        src_code.stmts.iter().enumerate().for_each(|(i, x)| {
+            x.assign_let_binding(i, buf);
+            buf.push('\n');
+        });
         buf.push_str("format!(\"{:?}\", out");
         buf.push_str(&c.saturating_sub(1).to_string());
         buf.push_str(")\n");
@@ -173,12 +182,13 @@ pub fn append_buffer(
     buf.push_str("}\n");
 
     // add items
-    for item in src_code.iter().flat_map(|x| &x.items) {
-        buf.push_str(&item);
+    for item in src_code.items.iter() {
+        buf.push_str(item.as_str());
         buf.push('\n');
     }
 }
 
+/// A single item.
 pub type Item = String;
 
 /// Represents an inner statement.
@@ -281,45 +291,32 @@ fn test_parse_crate() {
 
 #[test]
 fn assign_let_binding_test() {
-    let mut input = Input {
-        items: vec![],
-        stmts: vec![],
-        crates: vec![],
-    };
+    let mut grp = StmtGrp(vec![]);
 
     let mut s = String::new();
-    input.assign_let_binding(0, &mut s);
+    grp.assign_let_binding(0, &mut s);
     assert_eq!(&s, "");
 
-    input.items.push("asdf".to_string());
-    input
-        .crates
-        .push(CrateType::parse_str("extern crate rand;").unwrap());
-
-    let mut s = String::new();
-    input.assign_let_binding(0, &mut s);
-    assert_eq!(&s, ""); // should still be nothing, done on statements
-
-    input.stmts.push(Statement {
+    grp.0.push(Statement {
         expr: "a".to_string(),
         semi: false,
     });
 
     let mut s = String::new();
-    input.assign_let_binding(0, &mut s);
+    grp.assign_let_binding(0, &mut s);
     assert_eq!(&s, "let out0 = a;");
 
-    input.stmts.push(Statement {
+    grp.0.push(Statement {
         expr: "b".to_string(),
         semi: false,
     });
 
     let mut s = String::new();
-    input.assign_let_binding(0, &mut s);
+    grp.assign_let_binding(0, &mut s);
     assert_eq!(&s, "a\nlet out0 = b;");
 
     let mut s = String::new();
-    input.assign_let_binding(100, &mut s);
+    grp.assign_let_binding(100, &mut s);
     assert_eq!(&s, "a\nlet out100 = b;");
 }
 
@@ -327,11 +324,7 @@ fn assign_let_binding_test() {
 fn construct_test() {
     use linking::LinkingConfiguration;
 
-    let mut src_code = vec![Input {
-        items: vec![],
-        stmts: vec![],
-        crates: vec![],
-    }];
+    let mut src_code = SourceCode::new();
     let mod_path = [];
     let linking_config = LinkingConfiguration::default();
 
@@ -389,12 +382,8 @@ String::from("no statements")
     );
 
     // add an item and new input
-    src_code[0].items.push("fn a() {}".to_string());
-    src_code.push(Input {
-        items: vec!["fn b() {}".to_string()],
-        stmts: vec![],
-        crates: vec![],
-    });
+    src_code.items.push("fn a() {}".to_string());
+    src_code.items.push("fn b() {}".to_string());
 
     let mut s = String::new();
     append_buffer(&src_code, &mod_path, &linking_config, &mut s);
@@ -410,22 +399,26 @@ fn b() {}
     );
 
     // add stmts
-    src_code[0].stmts.push(Statement {
-        expr: "let a = 1".to_string(),
-        semi: true,
-    });
-    src_code[0].stmts.push(Statement {
-        expr: "b".to_string(),
-        semi: false,
-    });
-    src_code[1].stmts.push(Statement {
-        expr: "let c = 2".to_string(),
-        semi: true,
-    });
-    src_code[1].stmts.push(Statement {
-        expr: "d".to_string(),
-        semi: false,
-    });
+    src_code.stmts.push(StmtGrp(vec![
+        Statement {
+            expr: "let a = 1".to_string(),
+            semi: true,
+        },
+        Statement {
+            expr: "b".to_string(),
+            semi: false,
+        },
+    ]));
+    src_code.stmts.push(StmtGrp(vec![
+        Statement {
+            expr: "let c = 2".to_string(),
+            semi: true,
+        },
+        Statement {
+            expr: "d".to_string(),
+            semi: false,
+        },
+    ]));
 
     let mut s = String::new();
     append_buffer(&src_code, &mod_path, &linking_config, &mut s);
@@ -448,11 +441,7 @@ fn b() {}
 #[test]
 fn construct_src_test() {
     // purely tests module adding
-    let v = vec![Input {
-        crates: vec![],
-        stmts: vec![],
-        items: vec![],
-    }];
+    let v = SourceCode::new();
 
     let linking = LinkingConfiguration::default();
     let map = vec![
