@@ -65,6 +65,7 @@ impl StmtGrp {
     }
 }
 
+/// Construct a single string containing all the source code in file_map.
 pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfiguration) -> String {
     // assumed to be sorted, FileMap is BTreeMap
 
@@ -212,6 +213,7 @@ pub struct CrateType {
 }
 
 impl CrateType {
+	/// Parses a string to return the `CrateType`.
     pub fn parse_str(string: &str) -> Result<Self, &'static str> {
         let line = string
             .replace(";", "")
