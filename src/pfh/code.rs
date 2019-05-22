@@ -16,25 +16,22 @@ pub struct Input {
 
 impl Input {
     /// Stringfy's the statements and assigns trailing expressions with `let out# = expr;`.
-    fn assign_let_binding(&self, input_num: usize) -> String {
-        let mut s = String::new();
+    fn assign_let_binding(&self, input_num: usize, buf: &mut String) {
         for stmt in &self.stmts[0..self.stmts.len().saturating_sub(1)] {
-            s.push_str(&stmt.expr);
+            buf.push_str(&stmt.expr);
             if stmt.semi {
-                s.push(';');
+                buf.push(';');
             }
-            s.push('\n');
+            buf.push('\n');
         }
 
         if self.stmts.len() > 0 {
-            s.push_str(&format!(
-                "let out{} = {};",
-                input_num,
-                self.stmts[self.stmts.len() - 1].expr
-            ));
+            buf.push_str("let out");
+            buf.push_str(&input_num.to_string());
+            buf.push_str(" = ");
+            buf.push_str(&self.stmts[self.stmts.len() - 1].expr);
+            buf.push(';');
         }
-
-        s
     }
 }
 
@@ -146,20 +143,17 @@ pub fn append_buffer(
     let c = src_code.iter().filter(|x| x.stmts.len() > 0).count();
     if c >= 1 {
         // only add statements if more than zero!
-        buf.push_str(
-            &src_code
-                .iter()
-                .filter(|x| x.stmts.len() > 0)
-                .enumerate()
-                .map(|(i, x)| x.assign_let_binding(i))
-                .collect::<Vec<String>>()
-                .join("\n"),
-        );
-        buf.push('\n');
-        buf.push_str(&format!(
-            "format!(\"{{:?}}\", out{})\n",
-            c.saturating_sub(1)
-        ));
+        src_code
+            .iter()
+            .filter(|x| x.stmts.len() > 0)
+            .enumerate()
+            .for_each(|(i, x)| {
+                x.assign_let_binding(i, buf);
+                buf.push('\n');
+            });
+        buf.push_str("format!(\"{:?}\", out");
+        buf.push_str(&c.saturating_sub(1).to_string());
+        buf.push_str(")\n");
     } else {
         buf.push_str("String::from(\"no statements\")\n");
     }
@@ -280,7 +274,8 @@ fn assign_let_binding_test() {
         crates: vec![],
     };
 
-    let s = input.assign_let_binding(0);
+    let mut s = String::new();
+    input.assign_let_binding(0, &mut s);
     assert_eq!(&s, "");
 
     input.items.push("asdf".to_string());
@@ -288,7 +283,8 @@ fn assign_let_binding_test() {
         .crates
         .push(CrateType::parse_str("extern crate rand;").unwrap());
 
-    let s = input.assign_let_binding(0);
+    let mut s = String::new();
+    input.assign_let_binding(0, &mut s);
     assert_eq!(&s, ""); // should still be nothing, done on statements
 
     input.stmts.push(Statement {
@@ -296,7 +292,8 @@ fn assign_let_binding_test() {
         semi: false,
     });
 
-    let s = input.assign_let_binding(0);
+    let mut s = String::new();
+    input.assign_let_binding(0, &mut s);
     assert_eq!(&s, "let out0 = a;");
 
     input.stmts.push(Statement {
@@ -304,10 +301,12 @@ fn assign_let_binding_test() {
         semi: false,
     });
 
-    let s = input.assign_let_binding(0);
+    let mut s = String::new();
+    input.assign_let_binding(0, &mut s);
     assert_eq!(&s, "a\nlet out0 = b;");
 
-    let s = input.assign_let_binding(100);
+    let mut s = String::new();
+    input.assign_let_binding(100, &mut s);
     assert_eq!(&s, "a\nlet out100 = b;");
 }
 
