@@ -1,6 +1,7 @@
 **/target
 **/*.rs.bk
-/.vscode
+.vscode
+*.code-workspace
 /docs
 ROADMAP.md
 PUSHING_PROCEDURE.md

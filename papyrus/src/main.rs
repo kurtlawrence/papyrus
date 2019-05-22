@@ -17,9 +17,11 @@
 use papyrus::*;
 
 fn main() {
+	if cfg!(windows) {
     colored::control::set_virtual_terminal(true)
         .map_err(|e| eprintln!("failed setting virtual terminal: {}", e))
         .ok();
+	}
     let repl = repl!();
     repl.run(&mut ());
     println!("Thanks for using papyrus!");

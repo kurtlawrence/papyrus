@@ -197,12 +197,12 @@ pub enum CommandResult<Data> {
 
 impl<D> CommandResult<D> {
     /// Convenience function boxing an action on app data.
-    pub fn app_data_fn<F: for<'w> Fn(&mut D, Box<Write + 'w>) + 'static>(func: F) -> Self {
+    pub fn app_data_fn<F:'static + for<'w> Fn(&mut D, Box<Write + 'w>) -> String>(func: F) -> Self {
         CommandResult::ActionOnAppData(Box::new(func))
     }
 
     /// Convenience function boxing an action on repl data.
-    pub fn repl_data_fn<F: for<'w> Fn(&mut ReplData<D>, Box<Write + 'w>) + 'static>(
+    pub fn repl_data_fn<F:'static + for<'w> Fn(&mut ReplData<D>, Box<Write + 'w>) -> String>(
         func: F,
     ) -> Self {
         CommandResult::ActionOnReplData(Box::new(func))
@@ -210,11 +210,10 @@ impl<D> CommandResult<D> {
 }
 
 /// The action to take. Passes through a mutable reference to the `ReplData`.
-pub type ReplDataAction<D> = Box<for<'w> Fn(&mut ReplData<D>, Box<Write + 'w>)>;
+pub type ReplDataAction<D> = Box<for<'w> Fn(&mut ReplData<D>, Box<Write + 'w>) -> String>;
 
 /// The action to take. Passes through a mutable reference to the `Data`.
-// pub type AppDataAction<D> = for<'w> fn(data: &mut D, writer: Box<Write + 'w>);
-pub type AppDataAction<D> = Box<for<'w> Fn(&mut D, Box<Write + 'w>)>;
+pub type AppDataAction<D> = Box<for<'w> Fn(&mut D, Box<Write + 'w>) -> String>;
 
 /// Represents an evaluating result. Signal should be checked and handled.
 pub struct EvalResult<Term: Terminal, Data> {

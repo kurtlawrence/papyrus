@@ -43,6 +43,8 @@ fn switch_module<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
                 }
 
                 repl_data.current_file = path.to_path_buf();
+
+				String::new()
             })
         } else {
             writeln!(wtr, "failed to parse {} into a valid module path", path).unwrap();

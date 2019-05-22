@@ -163,29 +163,27 @@ impl<Data> ReplData<Data> {
             lr::Exit => return Err(Signal::Exit),
             lr::Cancel => {
                 self.linking.mutable = false; // reset the mutating on cancel
-                ("cancelled input and returned to root", false)
+                (Cow::Borrowed("cancelled input and returned to root"), false)
             }
             lr::Action(res) => match res {
                 CommandResult::BeginMutBlock => {
                     self.linking.mutable = true;
-                    ("beginning mut block", false)
+                    (Cow::Borrowed("beginning mut block"), false)
                 }
                 CommandResult::ActionOnReplData(action) => {
-                    action(self, Box::new(Writer(terminal.as_ref())));
-                    ("executed action on repl data", false)
+                    let s = action(self, Box::new(Writer(terminal.as_ref())));
+                    (Cow::Owned(s), false)
                 }
                 CommandResult::ActionOnAppData(action) => {
                     let mut r = obtain_app_data();
                     let app_data: &mut Data = r.borrow_mut();
-                    action(app_data, Box::new(Writer(terminal.as_ref())));
-                    ("executed action on repl data", false)
+                    let s = action(app_data, Box::new(Writer(terminal.as_ref())));
+                    (Cow::Owned(s), false)
                 }
-                CommandResult::Empty => ("", false),
+                CommandResult::Empty => (Cow::Borrowed(""), false),
             },
-            _ => ("", false),
+            _ => (Cow::Borrowed(""), false),
         };
-
-        let tuple = (Cow::Borrowed(tuple.0), tuple.1);
 
         Ok(tuple)
     }
