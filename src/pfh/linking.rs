@@ -234,7 +234,7 @@ impl LinkingConfiguration {
     /// Appends result to buffer.
     pub fn construct_fn_args(&self, buf: &mut String) {
         self.data_type.as_ref().map(|d| {
-            buf.push_str("app_data: &");
+            buf.push_str("app_data: &");	// 11 len
             if self.mutable {
                 buf.push_str("mut ");
             }
@@ -376,15 +376,24 @@ impl Extern {
         self.path.parent().unwrap().join("deps") // this has been validated already.
     }
 
-	pub fn construct_code_str(&self, buf: &mut String) {
-		buf.push_str("extern crate ");
-		buf.push_str(self.lib_name());
-		if let Some(alias) = self.alias {
-			buf.push_str(" as ");
-			buf.push_str(alias);
+    pub fn construct_code_str(&self, buf: &mut String) {
+        buf.push_str("extern crate ");
+        buf.push_str(self.lib_name());
+        if let Some(alias) = self.alias {
+            buf.push_str(" as ");
+            buf.push_str(alias);
         }
-		buf.push_str(";\n");
-	}
+        buf.push_str(";\n");
+    }
+
+    pub fn calc_code_str_len(&self) -> usize {
+        15 + self.lib_name().len()
+            + if let Some(alias) = self.alias {
+                4 + alias.len()
+            } else {
+                0
+            }
+    }
 }
 
 impl PartialEq for Extern {

@@ -22,7 +22,7 @@ pub fn eval_fn_name(mod_path: &[String], buf: &mut String) {
         buf.push_str(&p);
         buf.push('_');
     }
-    buf.push_str("intern_eval");
+    buf.push_str("intern_eval");	// 11 len
 }
 
 pub fn into_mod_path_vec(path: &Path) -> Vec<String> {
@@ -39,11 +39,11 @@ fn eval_fn_name_test() {
         .iter()
         .map(|x| x.to_string())
         .collect();
-	let mut s = String::new();
-	eval_fn_name(&path, &mut s);
+    let mut s = String::new();
+    eval_fn_name(&path, &mut s);
     assert_eq!(&s, "_some_lib_module_path_intern_eval");
-	let mut s = String::new();
-	eval_fn_name(&[], &mut s);
+    let mut s = String::new();
+    eval_fn_name(&[], &mut s);
     assert_eq!(&s, "_intern_eval");
 }
 

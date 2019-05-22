@@ -271,7 +271,7 @@ impl<Data> ReplData<Data> {
                 };
 
                 let mut fn_name = String::new();
-				pfh::eval_fn_name(&pfh::into_mod_path_vec(&self.current_file), &mut fn_name);
+                pfh::eval_fn_name(&pfh::into_mod_path_vec(&self.current_file), &mut fn_name);
 
                 if self.linking.mutable {
                     let mut r = obtain_mut_data();

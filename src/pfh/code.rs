@@ -40,7 +40,9 @@ pub type SourceCode = Vec<Input>;
 pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfiguration) -> String {
     // assumed to be sorted, FileMap is BTreeMap
 
-    let mut contents = String::new();
+    let cap = calc_cap(file_map, linking_config);
+
+    let mut contents = String::with_capacity(cap);
 
     // add in external crates
     for external in linking_config.external_libs.iter() {
@@ -104,8 +106,24 @@ pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfigu
         contents.push('}');
     }
 
+    // debug_assert_eq!(
+    //     cap,
+    //     contents.len(),
+    //     "failed at calculating the correct capacity"
+    // );
+
     contents
 }
+
+fn calc_cap(file_map: &FileMap, linking_config: &LinkingConfiguration) -> usize {
+	let mut size = 0;
+
+	// add in external crates
+	size += linking_config.external_libs.iter().map(|x| x.calc_code_str_len()).sum::<usize>();
+
+	size
+}
+
 
 /// Build the buffer with the stringified contents of SourceCode
 ///
@@ -125,11 +143,11 @@ pub fn append_buffer(
     buf: &mut String,
 ) {
     // wrap stmts
-    buf.push_str("#[no_mangle]\npub extern \"C\" fn ");
-	eval_fn_name(mod_path, buf);
+    buf.push_str("#[no_mangle]\npub extern \"C\" fn "); // 31 len
+    eval_fn_name(mod_path, buf);
     buf.push('(');
     linking_config.construct_fn_args(buf);
-    buf.push_str(") -> String {\n");
+    buf.push_str(") -> String {\n");	// 14 len
 
     // add stmts
     let c = src_code.iter().filter(|x| x.stmts.len() > 0).count();
