@@ -19,6 +19,7 @@
 #[macro_use]
 extern crate log;
 
+pub mod complete;
 mod input;
 mod pfh;
 pub mod repl;

@@ -23,6 +23,7 @@ impl<Data> ReplData<Data> {
             .into_commander()?;
 
         self.cmdtree = cmdr;
+
         Ok(self)
     }
 }

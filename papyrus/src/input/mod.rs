@@ -24,6 +24,7 @@ impl<Term: Terminal> InputReader<Term> {
             Ok(r) => r,
             Err(e) => return Err(format!("failed to initialise interface: {}", e)),
         };
+
         Ok(InputReader {
             buffer: String::new(),
             interface: r,
@@ -32,6 +33,10 @@ impl<Term: Terminal> InputReader<Term> {
 
     pub fn set_prompt(&self, prompt: &str) -> io::Result<()> {
         self.interface.set_prompt(prompt)
+    }
+
+    pub fn set_completer(&mut self, completer: std::sync::Arc<linefeed::Completer<Term>>) {
+        self.interface.set_completer(completer);
     }
 
     /// Reads a single command, item, or statement from `stdin`.

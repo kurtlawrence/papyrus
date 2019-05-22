@@ -113,6 +113,15 @@ impl<S, T: Terminal, D> Repl<S, T, D> {
         self.terminal.terminal.as_ref()
     }
 
+    pub fn set_completion(&mut self) {
+        use crate::complete::*;
+        self.terminal
+            .input_rdr
+            .set_completer(std::sync::Arc::new(CombinedCompleter {
+                cmd_tree_completer: CmdTreeCompleter::build(&self.data.cmdtree, ".".into()),
+            }));
+    }
+
     fn move_state<N>(self, state: N) -> Repl<N, T, D> {
         Repl {
             state: state,

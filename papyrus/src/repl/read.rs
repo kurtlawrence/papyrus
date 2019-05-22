@@ -164,6 +164,9 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
         output_ver(self.terminal.terminal.as_ref());
 
         let mut read = self;
+
+        read.set_completion();
+
         loop {
             let result = read.read().eval(app_data);
             match result.signal {
