@@ -22,15 +22,11 @@ extern crate log;
 mod input;
 mod pfh;
 pub mod repl;
-#[cfg(feature = "azul-widgets")]
-pub mod widgets;
 
 /// Re-exports of most common types and modules.
 pub mod prelude {
     pub use crate::pfh::{code, linking};
     pub use crate::repl::{self, Repl, ReplData};
-    #[cfg(feature = "azul-widgets")]
-    pub use azul;
     pub use cmdtree::{BuildError, BuilderChain};
     pub use linefeed::{memory::MemoryTerminal, terminal::Size};
 }

@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 # papyrus -- for now just links the folder. Once stabilised can link the crates.io ver
 papyrus = { path = "../papyrus" }
+cansi = "2.0"
