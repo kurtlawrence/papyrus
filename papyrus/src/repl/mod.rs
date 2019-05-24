@@ -127,21 +127,12 @@ impl<S, T: Terminal, D> Repl<S, T, D> {
 
 impl<S, T: Terminal + 'static, D> Repl<S, T, D> {
     pub fn set_completion(&mut self) {
-        let mod_files = self
-            .data
-            .file_map
-            .iter()
-            .map(|x| x.0.clone())
-            .collect::<Vec<PathBuf>>();
-
         let combined = CombinedCompleter {
             completers: vec![
                 Box::new(CmdTreeCompleter::build(&self.data.cmdtree)),
-                Box::new(CmdTreeActionCompleter::build(
+                Box::new(ModulesCompleter::build(
                     &self.data.cmdtree,
-                    move |qual_path, word, line, word_start| {
-                        complete_action_args(qual_path, word, line, word_start, &mod_files)
-                    },
+                    &self.data.file_map,
                 )),
             ],
         };
@@ -149,59 +140,6 @@ impl<S, T: Terminal + 'static, D> Repl<S, T, D> {
         self.terminal
             .input_rdr
             .set_completer(std::sync::Arc::new(combined));
-    }
-}
-
-fn complete_action_args(
-    qualified_path: &str,
-    word: &str,
-    line: &str,
-    word_start: usize,
-    mods: &Vec<PathBuf>,
-) -> Option<Vec<Completion>> {
-    let v: Vec<_> = mods
-        .iter()
-        .filter(|x| mod_starts_with(x, line))
-        .map(|x| Completion::simple(x.display().to_string()))
-        .collect();
-
-    if v.len() > 0 {
-        Some(v)
-    } else {
-        None
-    }
-}
-
-fn mod_starts_with(path: &Path, line: &str) -> bool {
-    if line == " " || line == "" {
-        return true;
-    }
-
-    let line = Path::new(line);
-
-    // can only compare up to line's parent if starts with
-    // if line does not have parent then just compare the component idx
-    let starts_with = if let Some(parent) = line.parent() {
-        path.starts_with(parent)
-    } else {
-        true
-    };
-
-    if starts_with {
-        let i = line.iter().count();
-        if i >= 1 {
-            let i = i - 1;
-            let line_c = line.iter().nth(i).unwrap().to_string_lossy(); // should exist
-            path.iter()
-                .nth(i)
-                .and_then(|path_c| path_c.to_str())
-                .map(|path_c| path_c.starts_with(&*line_c))
-                .unwrap_or(false)
-        } else {
-            true
-        }
-    } else {
-        false
     }
 }
 

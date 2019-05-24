@@ -56,24 +56,12 @@ impl<T: Terminal> Completer<T> for CmdTreeCompleter {
     }
 }
 
-pub type ActionCompletion =
-    fn(qualified_path: &str, word: &str, line: &str, word_start: usize) -> Option<Vec<Completion>>;
-
-pub type QualifiedPath = str;
-pub type Word = str;
-pub type Line = str;
-pub type WordStart = usize;
-
-pub struct CmdTreeActionCompleter<A> {
+pub struct CmdTreeActionCompleter {
     action_elements: Vec<ActionMatch>,
-    completion_fn: A,
 }
 
-impl<A> CmdTreeActionCompleter<A>
-where
-    A: for<'a> Fn(&'a QualifiedPath, &'a Word, &'a Line, WordStart) -> Option<Vec<Completion>>,
-{
-    pub fn build<T>(cmdr: &Commander<T>, completion_fn: A) -> Self {
+impl CmdTreeActionCompleter {
+    pub fn build<T>(cmdr: &Commander<T>) -> Self {
         let root_name = cmdr.root_name();
 
         let cpath = cmdr.path();
@@ -105,51 +93,49 @@ where
             })
             .collect();
 
-        Self {
-            action_elements,
-            completion_fn,
-        }
+        Self { action_elements }
     }
-}
 
-impl<T, A> Completer<T> for CmdTreeActionCompleter<A>
-where
-    T: Terminal,
-    A: for<'a> Fn(&'a QualifiedPath, &'a Word, &'a Line, WordStart) -> Option<Vec<Completion>>
-        + Send
-        + Sync,
-{
-    fn complete(
-        &self,
-        word: &str,
-        prompter: &Prompter<T>,
+    pub fn candidates<'a>(
+        &'a self,
+        word: &'a str,
+        line: &'a str,
         start: usize,
-        end: usize,
-    ) -> Option<Vec<Completion>> {
-        let line = &prompter.buffer();
+    ) -> impl Iterator<Item = Candidate<'a>> {
+        // action match should be unique, such that it is delimited by a space.
+        // so if you had myownaction and myotheraction, you won't get a
+        // match until 'myownaction ' or 'myotheraction ' is written.
+        // this goes for actions with similar prefixes, ie my and myfunc,
+        // this would have to match 'my ' and 'myfunc ', which are unique.
+        // hence just do a first match and only return _one_ result!
 
         let candidates = self
             .action_elements
             .iter()
-            .filter(|x| line.starts_with(&x.match_str));
-
-        let v: Vec<_> = candidates
-            .filter_map(|ac| {
+            .filter(move |x| line.starts_with(&x.match_str))
+            .map(move |ac| {
                 let s = std::cmp::min(ac.match_str.len() + 1, line.len() - 1);
-                (self.completion_fn)(&ac.qualified_path, word, &line[s..], start)
-            })
-            .flatten()
-            .collect();
 
-        if v.len() > 0 {
-            Some(v)
-        } else {
-            None
-        }
+                Candidate {
+                    qualified_path: &ac.qualified_path,
+                    word,
+                    line: &line[s..],
+                    word_start: start,
+                }
+            });
+
+        candidates
     }
 }
 
 struct ActionMatch {
     match_str: String,
     qualified_path: String,
+}
+
+pub struct Candidate<'a> {
+    pub qualified_path: &'a str,
+    pub word: &'a str,
+    pub line: &'a str,
+    pub word_start: usize,
 }
