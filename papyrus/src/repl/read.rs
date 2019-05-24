@@ -144,7 +144,7 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
         }
     }
 
-    /// Immediately draw the prompt by doing a immediate read step.
+    /// Immediately draw the prompt by doing an immediate read step.
     pub(crate) fn draw_prompt(&self) -> io::Result<()> {
         self.terminal.input_rdr.set_prompt(&self.prompt())?;
         self.terminal
@@ -155,7 +155,7 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
     }
 }
 
-impl<Term: Terminal, Data> Repl<Read, Term, Data> {
+impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
     /// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
     ///
     /// # Panics
@@ -165,14 +165,16 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
 
         let mut read = self;
 
-        read.set_completion();
-
         loop {
+            read.set_completion();
+
             let result = read.read().eval(app_data);
+
             match result.signal {
                 Signal::None => (),
                 Signal::Exit => break,
             }
+
             read = result.repl.print();
         }
     }

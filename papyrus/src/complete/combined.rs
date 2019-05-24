@@ -1,10 +1,13 @@
 use super::*;
 
-pub struct CombinedCompleter {
-    pub cmd_tree_completer: cmdr::CmdTreeCompleter,
+pub struct CombinedCompleter<'a, T: 'a> {
+    pub completers: Vec<Box<dyn Completer<T> + 'a>>,
 }
 
-impl<T: Terminal> Completer<T> for CombinedCompleter {
+impl<'a, T> Completer<T> for CombinedCompleter<'a, T>
+where
+    T: 'a + Terminal,
+{
     fn complete(
         &self,
         word: &str,
@@ -12,6 +15,18 @@ impl<T: Terminal> Completer<T> for CombinedCompleter {
         start: usize,
         end: usize,
     ) -> Option<Vec<Completion>> {
-        self.cmd_tree_completer.complete(word, prompter, start, end)
+        let mut v = Vec::new();
+
+        for completer in self.completers.iter() {
+            if let Some(vec) = completer.complete(word, prompter, start, end) {
+                v.extend(vec)
+            };
+        }
+
+        if v.len() > 0 {
+            Some(v)
+        } else {
+            None
+        }
     }
 }
