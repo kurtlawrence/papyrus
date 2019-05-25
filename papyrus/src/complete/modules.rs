@@ -3,6 +3,7 @@
 use super::*;
 use crate::pfh::FileMap;
 use std::path::{Path, PathBuf};
+use cmdr::ActionArgComplete;
 
 /// A completer that completes paths to modules, such as the `mod switch` action.
 ///
@@ -11,7 +12,7 @@ use std::path::{Path, PathBuf};
 ///
 /// [`complete_path`]: modules::complete_path
 pub struct ModulesCompleter {
-    inner: CmdTreeActionCompleter,
+    inner: ActionArgComplete,
     mods: Vec<PathBuf>,
 }
 
@@ -23,7 +24,7 @@ impl ModulesCompleter {
             .map(|x| x.0.clone())
             .collect::<Vec<PathBuf>>();
 
-        let inner = CmdTreeActionCompleter::build(&cmdr);
+        let inner = ActionArgComplete::build(&cmdr);
 
         Self { inner, mods }
     }
@@ -37,23 +38,14 @@ impl<T: Terminal> Completer<T> for ModulesCompleter {
         start: usize,
         _end: usize,
     ) -> Option<Vec<Completion>> {
+
+
         let actions = ["mod..switch"];
 
         let line = prompter.buffer();
 
-        let candidates = self.inner.candidates(word, line, start);
+		self.inner.find(line, &actions).and_then(|x| complete_path(x.line, self.mods.iter()))
 
-        let v: Vec<_> = candidates
-            .filter(|can| actions.contains(&can.qualified_path))
-            .filter_map(|can| complete_path(can.line, self.mods.iter()))
-            .flatten()
-            .collect();
-
-        if v.len() > 0 {
-            Some(v)
-        } else {
-            None
-        }
     }
 }
 
