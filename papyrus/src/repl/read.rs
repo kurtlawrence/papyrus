@@ -166,7 +166,17 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
         let mut read = self;
 
         loop {
-            read.set_completion();
+            let combined = CombinedCompleter {
+                completers: vec![
+                    Box::new(cmdr::TreeCompleter::build(&read.data.cmdtree)),
+                    Box::new(modules::ModulesCompleter::build(
+                        &read.data.cmdtree,
+                        &read.data.file_map,
+                    )),
+                ],
+            };
+
+            read.set_completion(combined);
 
             let result = read.read().eval(app_data);
 

@@ -1,9 +1,8 @@
+//! Completion components and api for aspects of papyrus.
+
 pub mod cmdr;
 mod combined;
 pub mod modules;
 
-use linefeed::{Completer, Terminal};
-
 pub use combined::CombinedCompleter;
-pub use linefeed::{Completion, Prompter};
-pub use modules::ModulesCompleter;
+pub use linefeed::{Completer, Completion, Prompter, Terminal};

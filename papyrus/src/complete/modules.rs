@@ -33,9 +33,9 @@ impl ModulesCompleter {
 impl<T: Terminal> Completer<T> for ModulesCompleter {
     fn complete(
         &self,
-        word: &str,
+        _word: &str,
         prompter: &Prompter<T>,
-        start: usize,
+        _start: usize,
         _end: usize,
     ) -> Option<Vec<Completion>> {
         let actions = ["mod..switch"];

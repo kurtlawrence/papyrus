@@ -1,3 +1,7 @@
+//! [`cmdtree`] tree and action completions.
+//!
+//! [`cmdtree`]: cmdtree
+
 use super::*;
 use cmdtree::Commander;
 

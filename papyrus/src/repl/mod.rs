@@ -128,18 +128,8 @@ impl<S, T: Terminal, D> Repl<S, T, D> {
     }
 }
 
-impl<S, T: Terminal + 'static, D> Repl<S, T, D> {
-    pub fn set_completion(&mut self) {
-        let combined = CombinedCompleter {
-            completers: vec![
-                Box::new(cmdr::TreeCompleter::build(&self.data.cmdtree)),
-                Box::new(ModulesCompleter::build(
-                    &self.data.cmdtree,
-                    &self.data.file_map,
-                )),
-            ],
-        };
-
+impl<S, T: Terminal, D> Repl<S, T, D> {
+    pub fn set_completion(&mut self, combined: crate::complete::CombinedCompleter<'static, T>) {
         self.terminal
             .input_rdr
             .set_completer(std::sync::Arc::new(combined));
