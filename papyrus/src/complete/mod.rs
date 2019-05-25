@@ -4,7 +4,7 @@ pub mod modules;
 
 use linefeed::{Completer, Terminal};
 
-pub use cmdr::{CmdTreeActionCompleter, CmdTreeCompleter};
+pub use cmdr::{CmdTreeActionCompleter, TreeCompleter};
 pub use combined::CombinedCompleter;
 pub use linefeed::{Completion, Prompter};
 pub use modules::ModulesCompleter;

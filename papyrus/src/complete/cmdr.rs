@@ -1,11 +1,11 @@
 use super::*;
 use cmdtree::Commander;
 
-pub struct CmdTreeCompleter {
+pub struct TreeCompleter {
     items: Vec<String>,
 }
 
-impl CmdTreeCompleter {
+impl TreeCompleter {
     pub fn build<T>(cmdr: &Commander<T>) -> Self {
         let prefix = if cmdr.at_root() { "." } else { "" };
 
@@ -21,13 +21,13 @@ impl CmdTreeCompleter {
     }
 }
 
-impl<T: Terminal> Completer<T> for CmdTreeCompleter {
+impl<T: Terminal> Completer<T> for TreeCompleter {
     fn complete(
         &self,
-        word: &str,
+        _word: &str,
         prompter: &Prompter<T>,
-        start: usize,
-        end: usize,
+        _start: usize,
+        _end: usize,
     ) -> Option<Vec<Completion>> {
         let line = prompter.buffer();
 

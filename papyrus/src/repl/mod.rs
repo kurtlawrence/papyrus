@@ -132,7 +132,7 @@ impl<S, T: Terminal + 'static, D> Repl<S, T, D> {
     pub fn set_completion(&mut self) {
         let combined = CombinedCompleter {
             completers: vec![
-                Box::new(CmdTreeCompleter::build(&self.data.cmdtree)),
+                Box::new(TreeCompleter::build(&self.data.cmdtree)),
                 Box::new(ModulesCompleter::build(
                     &self.data.cmdtree,
                     &self.data.file_map,
