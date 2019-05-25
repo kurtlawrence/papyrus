@@ -175,7 +175,7 @@ dependencies = [
 
 [[package]]
 name = "cmdtree"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "colored 1.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "linefeed 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1028,7 +1028,7 @@ dependencies = [
 name = "papyrus"
 version = "0.8.0"
 dependencies = [
- "cmdtree 0.6.1",
+ "cmdtree 0.7.0",
  "colored 1.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cratesiover 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "criterion 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",

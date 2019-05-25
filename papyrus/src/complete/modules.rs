@@ -2,8 +2,8 @@
 
 use super::*;
 use crate::pfh::FileMap;
-use std::path::{Path, PathBuf};
 use cmdr::ActionArgComplete;
+use std::path::{Path, PathBuf};
 
 /// A completer that completes paths to modules, such as the `mod switch` action.
 ///
@@ -38,14 +38,13 @@ impl<T: Terminal> Completer<T> for ModulesCompleter {
         start: usize,
         _end: usize,
     ) -> Option<Vec<Completion>> {
-
-
         let actions = ["mod..switch"];
 
         let line = prompter.buffer();
 
-		self.inner.find(line, &actions).and_then(|x| complete_path(x.line, self.mods.iter()))
-
+        self.inner
+            .find(line, &actions)
+            .and_then(|x| complete_path(x.line, self.mods.iter()))
     }
 }
 
@@ -154,36 +153,36 @@ mod tests {
         .collect();
 
         assert_eq!(
-            cmpr(&complete_path("o", &mods)),
+            cmpr(&complete_path("o", mods.iter())),
             Some(vec!["one", "one/two", "one/two/three", "own", "own/stuff"])
         );
 
         assert_eq!(
-            cmpr(&complete_path("ow", &mods)),
+            cmpr(&complete_path("ow", mods.iter())),
             Some(vec!["own", "own/stuff"])
         );
 
         assert_eq!(
-            cmpr(&complete_path("on", &mods)),
+            cmpr(&complete_path("on", mods.iter())),
             Some(vec!["one", "one/two", "one/two/three"])
         );
 
         assert_eq!(
-            cmpr(&complete_path("one/", &mods)),
+            cmpr(&complete_path("one/", mods.iter())),
             Some(vec!["one/two", "one/two/three"])
         );
 
         assert_eq!(
-            cmpr(&complete_path("test/", &mods)),
+            cmpr(&complete_path("test/", mods.iter())),
             Some(vec!["test/inner", "test/inner/deep", "test/inner/deep2"])
         );
 
         assert_eq!(
-            cmpr(&complete_path("test\\inner/", &mods)),
+            cmpr(&complete_path("test\\inner/", mods.iter())),
             Some(vec!["test/inner/deep", "test/inner/deep2"])
         );
 
-        assert_eq!(cmpr(&complete_path("test/one", &mods)), None,);
+        assert_eq!(cmpr(&complete_path("test/one", mods.iter())), None,);
     }
 
     fn cmpr(v: &Option<Vec<Completion>>) -> Option<Vec<&str>> {
