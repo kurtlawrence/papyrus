@@ -2,35 +2,22 @@ use super::*;
 use cmdtree::Commander;
 
 pub struct CmdTreeCompleter {
-    space_separated_elements: Vec<String>,
+    items: Vec<String>,
 }
 
 impl CmdTreeCompleter {
     pub fn build<T>(cmdr: &Commander<T>) -> Self {
-        let cpath = cmdr.path();
-
         let prefix = if cmdr.at_root() { "." } else { "" };
 
-        let space_separated_elements = cmdr
-            .structure()
-            .into_iter()
-            .map(|x| {
-                x[cpath.len()..].split('.').filter(|x| !x.is_empty()).fold(
-                    String::from(prefix),
-                    |mut s, x| {
-                        if s.len() != prefix.len() {
-                            s.push(' ');
-                        }
-                        s.push_str(x);
-                        s
-                    },
-                )
-            })
-            .collect();
+        let mut items = cmdtree::completion::create_tree_completion_items(&cmdr);
 
-        Self {
-            space_separated_elements,
-        }
+        items.iter_mut().for_each(|x| {
+            if cmdr.at_root() {
+                x.insert(0, '.');
+            }
+        });
+
+        Self { items }
     }
 }
 
@@ -42,17 +29,17 @@ impl<T: Terminal> Completer<T> for CmdTreeCompleter {
         start: usize,
         end: usize,
     ) -> Option<Vec<Completion>> {
-        let line = &prompter.buffer();
+        let line = prompter.buffer();
 
-        // start is the index in the line
-        // need to return just the _word_ portion
-        Some(
-            self.space_separated_elements
-                .iter()
-                .filter(|x| x.starts_with(line))
-                .map(|x| Completion::simple(x[start..].to_string()))
-                .collect(),
-        )
+        let v: Vec<_> = cmdtree::completion::tree_completions(line, self.items.iter())
+            .map(|x| Completion::simple(x.to_string()))
+            .collect();
+
+        if v.len() > 0 {
+            Some(v)
+        } else {
+            None
+        }
     }
 }
 

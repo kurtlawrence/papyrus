@@ -18,7 +18,8 @@ travis-ci = { repository = "kurtlawrence/papyrus" }
 # My crates
 linefeed = { git = "https://github.com/kurtlawrence/linefeed" }
 cratesiover = "2.2"
-cmdtree = "0.6"
+# cmdtree = "0.6"
+cmdtree = { path = "/cmdtree" }
 shh = "1.0"
 
 # crates.io

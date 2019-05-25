@@ -1,4 +1,5 @@
 use super::*;
+use std::io::Write;
 
 impl<Data> ReplData<Data> {
     /// Uses the given `Builder` as the root of the command tree.

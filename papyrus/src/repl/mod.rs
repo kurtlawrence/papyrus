@@ -92,7 +92,10 @@ use std::borrow::Cow;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::{fmt, fs, io};
+use std::{
+    fmt, fs,
+    io::{self, Write},
+};
 
 /// The repl structure. Stored as a state machine.
 /// See the [module level documentation] for more information.
@@ -231,6 +234,8 @@ impl<D> CommandResult<D> {
 }
 
 /// The action to take. Passes through a mutable reference to the `ReplData`.
+/// TODO could this not just be W: Write rather than box? Or rather just &Write
+/// Can't be W as it would add another generic argument.
 pub type ReplDataAction<D> = Box<for<'w> Fn(&mut ReplData<D>, Box<Write + 'w>) -> String>;
 
 /// The action to take. Passes through a mutable reference to the `Data`.
