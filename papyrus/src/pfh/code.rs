@@ -5,6 +5,8 @@ use linking::LinkingConfiguration;
 use std::cmp::Ordering;
 use std::path::Path;
 
+type ReturnRange = std::ops::Range<usize>;
+
 /// An input collection
 #[derive(Debug, PartialEq, Clone)]
 pub struct Input {
@@ -181,7 +183,9 @@ fn calc_capacity(file_map: &FileMap, linking_config: &LinkingConfiguration) -> u
 
     // do the lib first
     if let Some(lib) = file_map.get(Path::new("lib")) {
-        cap += append_buffer_length(lib, &into_mod_path_vec(Path::new("lib")), linking_config);
+        let (src_code_len, src_code_return) =
+            append_buffer_length(lib, &into_mod_path_vec(Path::new("lib")), linking_config);
+        cap += src_code_len;
     }
 
     for (prev_lvl, new_lvl, file, src_code) in file_map_with_lvls(file_map) {
@@ -200,7 +204,10 @@ fn calc_capacity(file_map: &FileMap, linking_config: &LinkingConfiguration) -> u
             .map(|x| x.len())
             .unwrap_or(0);
         cap += 3; // }\n
-        cap += code::append_buffer_length(src_code, &into_mod_path_vec(file), linking_config);
+
+        let (src_code_len, src_code_return) =
+            append_buffer_length(src_code, &into_mod_path_vec(file), linking_config);
+        cap += src_code_len;
     }
 
     // close off any outstanding modules
@@ -254,34 +261,40 @@ fn append_buffer_length<S: AsRef<str>>(
     src_code: &SourceCode,
     mod_path: &[S],
     linking_config: &linking::LinkingConfiguration,
-) -> usize {
+) -> (usize, ReturnRange) {
     // wrap stmts
     let mut cap =
         31 + eval_fn_name_length(mod_path) + 1 + linking_config.construct_fn_args_length() + 14;
 
     // add stmts
     let c = src_code.stmts.len();
-    cap += if c >= 1 {
-        src_code
+    let (add, rng) = if c >= 1 {
+        let stmts = src_code
             .stmts
             .iter()
             .enumerate()
             .map(|(i, x)| x.assign_let_binding_length(i) + 1)
-            .sum::<usize>()
-            + 19 // format!("{:?}", out
+            .sum::<usize>();
+        let return_str = 19 // format!("{:?}", out
             + c.saturating_sub(1).to_string().len()
-            + 2 // )\n
+            + 2; // )\n
+
+        (
+            stmts + return_str,
+            cap + stmts..cap + stmts + return_str - 1,
+        )
     } else {
-        30 // String::from("no statements")
+        // String::from("no statements")
+        (30, cap..cap + 29)
     };
-    cap += 2; // }\n
+    cap += add + 2; // }\n
 
     // add items
     for item in src_code.items.iter() {
         cap += item.len() + 1;
     }
 
-    cap
+    (cap, rng)
 }
 
 /// A single item.
@@ -463,6 +476,7 @@ mod tests {
 
         let mut s = String::new();
         append_buffer(&src_code, &mod_path, &linking_config, &mut s);
+        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _intern_eval() -> String {
@@ -470,16 +484,16 @@ String::from("no statements")
 }
 "##;
         assert_eq!(&s, ans);
-        assert_eq!(
-            append_buffer_length(&src_code, &mod_path, &linking_config),
-            ans.len()
-        );
+        assert_eq!(len, ans.len());
+        assert_eq!(rng, 58..87);
+        assert_eq!(&ans[rng], "String::from(\"no statements\")");
 
         // alter mod path
         let mod_path = ["some".to_string(), "path".to_string()];
 
         let mut s = String::new();
         append_buffer(&src_code, &mod_path, &linking_config, &mut s);
+        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval() -> String {
@@ -487,24 +501,9 @@ String::from("no statements")
 }
 "##;
         assert_eq!(&s, ans);
-        assert_eq!(
-            append_buffer_length(&src_code, &mod_path, &linking_config),
-            ans.len()
-        );
-
-        let mut s = String::new();
-        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-
-        let ans = r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval() -> String {
-String::from("no statements")
-}
-"##;
-        assert_eq!(&s, ans);
-        assert_eq!(
-            append_buffer_length(&src_code, &mod_path, &linking_config),
-            ans.len()
-        );
+        assert_eq!(len, ans.len());
+        assert_eq!(rng, 68..97);
+        assert_eq!(&ans[rng], "String::from(\"no statements\")");
 
         // alter the linking config
         let linking_config = LinkingConfiguration {
@@ -514,6 +513,7 @@ String::from("no statements")
 
         let mut s = String::new();
         append_buffer(&src_code, &mod_path, &linking_config, &mut s);
+        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
@@ -521,10 +521,9 @@ String::from("no statements")
 }
 "##;
         assert_eq!(&s, ans);
-        assert_eq!(
-            append_buffer_length(&src_code, &mod_path, &linking_config),
-            ans.len()
-        );
+        assert_eq!(len, ans.len());
+        assert_eq!(rng, 85..114);
+        assert_eq!(&ans[rng], "String::from(\"no statements\")");
 
         // add an item and new input
         src_code.items.push("fn a() {}".to_string());
@@ -532,6 +531,7 @@ String::from("no statements")
 
         let mut s = String::new();
         append_buffer(&src_code, &mod_path, &linking_config, &mut s);
+        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
@@ -541,10 +541,9 @@ fn a() {}
 fn b() {}
 "##;
         assert_eq!(&s, ans);
-        assert_eq!(
-            append_buffer_length(&src_code, &mod_path, &linking_config),
-            ans.len()
-        );
+        assert_eq!(len, ans.len());
+        assert_eq!(rng, 85..114);
+        assert_eq!(&ans[rng], "String::from(\"no statements\")");
 
         // add stmts
         src_code.stmts.push(StmtGrp(vec![
@@ -570,6 +569,7 @@ fn b() {}
 
         let mut s = String::new();
         append_buffer(&src_code, &mod_path, &linking_config, &mut s);
+        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
@@ -583,10 +583,9 @@ fn a() {}
 fn b() {}
 "##;
         assert_eq!(&s, ans);
-        assert_eq!(
-            append_buffer_length(&src_code, &mod_path, &linking_config),
-            ans.len()
-        );
+        assert_eq!(len, ans.len());
+        assert_eq!(rng, 135..156);
+        assert_eq!(&ans[rng], "format!(\"{:?}\", out1)");
     }
 
     #[test]
