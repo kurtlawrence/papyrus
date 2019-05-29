@@ -52,6 +52,11 @@ impl<Data> ReplData<Data> {
         self
     }
 
+    /// The current file/mod that is being repl'd on.
+    pub fn current_file(&self) -> &Path {
+        self.current_file.as_path()
+    }
+
     /// The current file map, mappings of modules to source code.
     pub fn file_map(&self) -> &pfh::FileMap {
         &self.file_map
