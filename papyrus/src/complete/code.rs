@@ -1,5 +1,6 @@
 use super::*;
 
+use linefeed::Suffix;
 use racer::{BytePos, FileCache, Location, Match, Session};
 
 const LIBRS: &str = "lib.rs";
@@ -57,7 +58,11 @@ impl<T: Terminal> Completer<T> for CodeCompletion {
         let v: Vec<_> = self
             .complete(prompter.buffer())
             .into_iter()
-            .map(|x| Completion::simple(x.matchstr))
+            .map(|x| Completion {
+                completion: x.matchstr,
+                display: None,
+                suffix: Suffix::None,
+            })
             .collect();
 
         if v.len() > 0 {
