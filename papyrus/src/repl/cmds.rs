@@ -59,7 +59,7 @@ fn switch_module<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
 }
 
 fn make_all_parents(path: &Path) -> Vec<PathBuf> {
-    let components: Vec<_> = path.components().collect();
+    let components: Vec<_> = path.iter().collect();
 
     (1..components.len())
         .into_iter()

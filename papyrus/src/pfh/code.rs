@@ -214,19 +214,9 @@ fn calc_capacity(file_map: &FileMap, linking_config: &LinkingConfiguration) -> u
 }
 
 /// Build the buffer with the stringified contents of SourceCode
-///
-/// The structure of the file follows:
-/// ```txt
-/// ##INTERNAL_EVALUATION_FN({stmts})
-///
-/// {items}
-/// ```
-///
-/// A module _will_ contain **one** evaluation function, qualified with the module path.
-/// This evaulation function is what contains the statements.
-pub fn append_buffer(
+fn append_buffer<S: AsRef<str>>(
     src_code: &SourceCode,
-    mod_path: &[String],
+    mod_path: &[S],
     linking_config: &linking::LinkingConfiguration,
     buf: &mut String,
 ) {
@@ -260,9 +250,9 @@ pub fn append_buffer(
     }
 }
 
-fn append_buffer_length(
+fn append_buffer_length<S: AsRef<str>>(
     src_code: &SourceCode,
-    mod_path: &[String],
+    mod_path: &[S],
     linking_config: &linking::LinkingConfiguration,
 ) -> usize {
     // wrap stmts
@@ -468,7 +458,7 @@ mod tests {
         use linking::LinkingConfiguration;
 
         let mut src_code = SourceCode::new();
-        let mod_path = [];
+        let mod_path: &[&str] = &[];
         let linking_config = LinkingConfiguration::default();
 
         let mut s = String::new();

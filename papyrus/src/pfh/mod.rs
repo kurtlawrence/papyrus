@@ -16,25 +16,21 @@ pub const LIBRARY_NAME: &str = "papyrus_mem_code";
 
 /// Constructs the evaluation function name given the mod sequence path.
 /// Appends to the buffer.
-pub fn eval_fn_name(mod_path: &[String], buf: &mut String) {
+pub fn eval_fn_name<S: AsRef<str>>(mod_path: &[S], buf: &mut String) {
     buf.push('_');
     for p in mod_path {
-        buf.push_str(&p);
+        buf.push_str(p.as_ref());
         buf.push('_');
     }
     buf.push_str("intern_eval"); // 11 len
 }
 
-pub fn eval_fn_name_length(mod_path: &[String]) -> usize {
-    12 + mod_path.iter().map(|x| x.len() + 1).sum::<usize>()
+pub fn eval_fn_name_length<S: AsRef<str>>(mod_path: &[S]) -> usize {
+    12 + mod_path.iter().map(|x| x.as_ref().len() + 1).sum::<usize>()
 }
 
-pub fn into_mod_path_vec(path: &Path) -> Vec<String> {
-    // TODO make this &str rather than String
-    path.components()
-        .filter_map(|x| x.as_os_str().to_str())
-        .map(|x| x.to_string())
-        .collect()
+pub fn into_mod_path_vec(path: &Path) -> Vec<&str> {
+    path.iter().filter_map(|x| x.to_str()).collect()
 }
 
 #[test]
@@ -51,11 +47,11 @@ fn eval_fn_name_test() {
     assert_eq!(eval_fn_name_length(&path), ans.len());
 
     let mut s = String::new();
-    eval_fn_name(&[], &mut s);
+    eval_fn_name::<&str>(&[], &mut s);
 
     let ans = "_intern_eval";
     assert_eq!(&s, ans);
-    assert_eq!(eval_fn_name_length(&[]), ans.len());
+    assert_eq!(eval_fn_name_length::<&str>(&[]), ans.len());
 }
 
 #[test]
