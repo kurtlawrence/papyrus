@@ -2,7 +2,7 @@ use super::*;
 
 /// A collection of completers to be used with the repl.
 pub struct CombinedCompleter<'a, T: 'a> {
-	/// The completers.
+    /// The completers.
     pub completers: Vec<Box<dyn Completer<T> + 'a>>,
 }
 

@@ -242,9 +242,9 @@ impl LinkingConfiguration {
         }); // matches pfh::compile::execute::DataFunc definition.
     }
 
-	/// Calculates the length of the function arguments signature.
-	/// 
-	/// This is used to precalculate buffer sizes. 
+    /// Calculates the length of the function arguments signature.
+    ///
+    /// This is used to precalculate buffer sizes.
     pub fn construct_fn_args_length(&self) -> usize {
         self.data_type
             .as_ref()

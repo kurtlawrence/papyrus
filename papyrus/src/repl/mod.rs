@@ -129,7 +129,7 @@ impl<S, T: Terminal, D> Repl<S, T, D> {
 }
 
 impl<S, T: Terminal, D> Repl<S, T, D> {
-	/// Set completion on the terminal.
+    /// Set completion on the terminal.
     pub fn set_completion(&mut self, combined: crate::complete::CombinedCompleter<'static, T>) {
         self.terminal
             .input_rdr
@@ -216,27 +216,22 @@ pub enum CommandResult<Data> {
 
 impl<D> CommandResult<D> {
     /// Convenience function boxing an action on app data.
-    pub fn app_data_fn<F: 'static + for<'w> Fn(&mut D, Box<Write + 'w>) -> String>(
-        func: F,
-    ) -> Self {
+    pub fn app_data_fn<F: 'static + Fn(&mut D, &mut Write) -> String>(func: F) -> Self {
         CommandResult::ActionOnAppData(Box::new(func))
     }
 
     /// Convenience function boxing an action on repl data.
-    pub fn repl_data_fn<F: 'static + for<'w> Fn(&mut ReplData<D>, Box<Write + 'w>) -> String>(
-        func: F,
-    ) -> Self {
+    pub fn repl_data_fn<F: 'static + Fn(&mut ReplData<D>, &mut Write) -> String>(func: F) -> Self {
         CommandResult::ActionOnReplData(Box::new(func))
     }
 }
 
 /// The action to take. Passes through a mutable reference to the `ReplData`.
-/// TODO could this not just be W: Write rather than box? Or rather just &Write
 /// Can't be W as it would add another generic argument.
-pub type ReplDataAction<D> = Box<for<'w> Fn(&mut ReplData<D>, Box<Write + 'w>) -> String>;
+pub type ReplDataAction<D> = Box<Fn(&mut ReplData<D>, &mut Write) -> String>;
 
 /// The action to take. Passes through a mutable reference to the `Data`.
-pub type AppDataAction<D> = Box<for<'w> Fn(&mut D, Box<Write + 'w>) -> String>;
+pub type AppDataAction<D> = Box<Fn(&mut D, &mut Write) -> String>;
 
 /// Represents an evaluating result. Signal should be checked and handled.
 pub struct EvalResult<Term: Terminal, Data> {
