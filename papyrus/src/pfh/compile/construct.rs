@@ -20,8 +20,9 @@ pub fn build_compile_dir<P: AsRef<Path>>(
     create_file_and_dir(compile_dir.join("Cargo.toml"))?
         .write_all(cargotoml_contents(LIBRARY_NAME, crates).as_bytes())?;
 
-    create_file_and_dir(compile_dir.join("src/lib.rs"))?
-        .write_all(code::construct_source_code(file_map, linking_config).as_bytes())?;
+    let (src_code, _map) = code::construct_source_code(file_map, linking_config);
+
+    create_file_and_dir(compile_dir.join("src/lib.rs"))?.write_all(src_code.as_bytes())?;
 
     Ok(())
 }

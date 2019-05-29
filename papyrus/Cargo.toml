@@ -33,6 +33,7 @@ libloading = "0.5"
 crossbeam = "0.7"
 sublime_fuzzy = "0.6"
 racer = "2.1"
+fxhash = "0.2"
 
 [dev-dependencies]
 criterion = "0.2"

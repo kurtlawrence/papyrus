@@ -11,7 +11,7 @@ pub struct CodeCompletion {
 
 impl CodeCompletion {
     pub fn build<T>(repl_data: &crate::repl::ReplData<T>) -> Self {
-        let last_code =
+        let (last_code, map) =
             crate::pfh::code::construct_source_code(repl_data.file_map(), repl_data.linking());
 
         let split = 0..1;

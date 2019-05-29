@@ -3,9 +3,11 @@ use super::*;
 use crate::pfh::linking;
 use linking::LinkingConfiguration;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::path::Path;
 
 type ReturnRange = std::ops::Range<usize>;
+type ReturnRangeMap<'a> = fxhash::FxHashMap<&'a Path, ReturnRange>;
 
 /// An input collection
 #[derive(Debug, PartialEq, Clone)]
@@ -89,10 +91,13 @@ impl StmtGrp {
 }
 
 /// Construct a single string containing all the source code in file_map.
-pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfiguration) -> String {
+pub fn construct_source_code<'a>(
+    file_map: &'a FileMap,
+    linking_config: &LinkingConfiguration,
+) -> (String, ReturnRangeMap<'a>) {
     // assumed to be sorted, FileMap is BTreeMap
 
-    let cap = calc_capacity(file_map, linking_config);
+    let (cap, map) = calc_capacity(file_map, linking_config);
 
     let mut contents = String::with_capacity(cap);
 
@@ -155,7 +160,7 @@ pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfigu
         "failed at calculating the correct capacity"
     );
 
-    contents
+    (contents, map)
 }
 
 /// **Skips lib**
@@ -174,8 +179,20 @@ fn file_map_with_lvls(
         })
 }
 
-fn calc_capacity(file_map: &FileMap, linking_config: &LinkingConfiguration) -> usize {
+fn calc_capacity<'a>(
+    file_map: &'a FileMap,
+    linking_config: &LinkingConfiguration,
+) -> (usize, ReturnRangeMap<'a>) {
+    fn mv_rng(mut rng: ReturnRange, by: usize) -> ReturnRange {
+        rng.start += by;
+        rng.end += by;
+        rng
+    }
+
     let mut cap = 0;
+
+    let mut map =
+        HashMap::with_capacity_and_hasher(file_map.len(), fxhash::FxBuildHasher::default());
 
     for external in linking_config.external_libs.iter() {
         cap += external.construct_code_str_length();
@@ -185,6 +202,9 @@ fn calc_capacity(file_map: &FileMap, linking_config: &LinkingConfiguration) -> u
     if let Some(lib) = file_map.get(Path::new("lib")) {
         let (src_code_len, src_code_return) =
             append_buffer_length(lib, &into_mod_path_vec(Path::new("lib")), linking_config);
+
+        map.insert(Path::new("lib"), mv_rng(src_code_return, cap));
+
         cap += src_code_len;
     }
 
@@ -207,6 +227,9 @@ fn calc_capacity(file_map: &FileMap, linking_config: &LinkingConfiguration) -> u
 
         let (src_code_len, src_code_return) =
             append_buffer_length(src_code, &into_mod_path_vec(file), linking_config);
+
+        map.insert(file, mv_rng(src_code_return, cap));
+
         cap += src_code_len;
     }
 
@@ -217,7 +240,7 @@ fn calc_capacity(file_map: &FileMap, linking_config: &LinkingConfiguration) -> u
         .unwrap_or(0);
     cap += lvl;
 
-    cap
+    (cap, map)
 }
 
 /// Build the buffer with the stringified contents of SourceCode
@@ -605,11 +628,9 @@ fn b() {}
         .into_iter()
         .collect();
 
-        let s = construct_source_code(&map, &linking);
+        let (s, map) = construct_source_code(&map, &linking);
 
-        assert_eq!(
-            &s,
-            r##"#[no_mangle]
+        let ans = r##"#[no_mangle]
 pub extern "C" fn _lib_intern_eval() -> String {
 String::from("no statements")
 }
@@ -640,7 +661,33 @@ mod inner2 {
 pub extern "C" fn _test_inner2_intern_eval() -> String {
 String::from("no statements")
 }
-}}"##
+}}"##;
+
+        let return_stmt = "String::from(\"no statements\")";
+        assert_eq!(&s, ans);
+        assert_eq!(
+            &ans[map.get(Path::new("lib")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("foo")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("foo/bar")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("test")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("test/inner")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("test/inner2")).unwrap().clone()],
+            return_stmt
         );
     }
 
