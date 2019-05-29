@@ -91,7 +91,7 @@ use linefeed::terminal::Terminal;
 use std::borrow::Cow;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::{
     fmt, fs,
     io::{self, Write},
@@ -146,20 +146,26 @@ impl<S: fmt::Debug, T: Terminal, D> fmt::Debug for Repl<S, T, D> {
 pub struct ReplData<Data> {
     /// The REPL commands as a `cmdtree::Commander`.
     pub cmdtree: Commander<'static, CommandResult<Data>>,
+
     /// The file map of relative paths.
     file_map: pfh::FileMap,
     /// The current editing and executing file.
     current_file: PathBuf,
+
     /// The colour of the prompt region. ie `papyrus`.
     pub prompt_colour: Color,
     /// The colour of the out component. ie `[out0]`.
     pub out_colour: Color,
+
     /// The directory for which compilation is done within.
     /// Defaults to `$HOME/.papyrus/`.
     compilation_dir: PathBuf,
+
     /// The external crate linking configuration,
     linking: LinkingConfiguration,
-    /// Flag if output is to be redirected. Generally redirection is needed, `DefaultTerminal` however will not require it (fucks linux).
+
+    /// Flag if output is to be redirected. Generally redirection is needed,
+    /// `DefaultTerminal` however will not require it (fucks linux).
     redirect_on_execution: bool,
 }
 

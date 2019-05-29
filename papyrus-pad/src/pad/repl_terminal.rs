@@ -1,9 +1,9 @@
 use super::*;
-use papyrus::prelude::*;
 use azul::app::AppStateNoData;
 use azul::callbacks::{DefaultCallback, DefaultCallbackId};
 use azul::prelude::*;
 use azul::window::FakeWindow;
+use papyrus::prelude::*;
 use std::borrow::BorrowMut;
 use std::marker::PhantomData;
 

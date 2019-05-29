@@ -5,9 +5,9 @@ mod repl_terminal;
 pub use self::css::PAD_CSS;
 pub use self::repl_terminal::{add_terminal_text, create_terminal_string, ReplTerminal};
 
-use papyrus::prelude::*;
 use azul::prelude::*;
 use eval_state::EvalState;
+use papyrus::prelude::*;
 use std::sync::{Arc, RwLock};
 
 pub struct PadState<T, Data> {

@@ -2,9 +2,9 @@
 extern crate papyrus;
 
 use azul::prelude::*;
+use papyrus::prelude::MemoryTerminal;
 use papyrus_pad::pad::*;
 use std::sync::{Arc, RwLock};
-use papyrus::prelude::MemoryTerminal;
 
 type TypedPadState = PadState<MyApp, String>;
 

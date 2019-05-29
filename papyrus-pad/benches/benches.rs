@@ -67,7 +67,6 @@ fn bench_dom_creation(c: &mut Criterion) {
     });
 }
 
-
 criterion_group!(
     benches,
     create_terminal_string_fn,
@@ -92,7 +91,6 @@ fn cstr() -> String {
         "Morbi eget neque eget neque viverra mollis in id lacus.".bright_purple(),
     )
 }
-
 
 const LOREM_IPSUM: &str = r#"
     Lorem ipsum dolor sit amet, consectetur adipiscing elit.
