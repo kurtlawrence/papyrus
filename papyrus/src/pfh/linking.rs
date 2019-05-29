@@ -241,6 +241,13 @@ impl LinkingConfiguration {
             buf.push_str(d);
         }); // matches pfh::compile::execute::DataFunc definition.
     }
+
+    pub fn construct_fn_args_length(&self) -> usize {
+        self.data_type
+            .as_ref()
+            .map(|d| 11 + d.len() + if self.mutable { 4 } else { 0 })
+            .unwrap_or(0)
+    }
 }
 
 /// Represents an externally linked library.
@@ -378,13 +385,24 @@ impl Extern {
 
     /// Append the buffer with the code representation.
     pub fn construct_code_str(&self, buf: &mut String) {
-        buf.push_str("extern crate ");
+        buf.push_str("extern crate "); // 13
         buf.push_str(self.lib_name());
         if let Some(alias) = self.alias {
             buf.push_str(" as ");
             buf.push_str(alias);
         }
-        buf.push_str(";\n");
+        buf.push_str(";\n"); // 2
+    }
+
+    /// Returns the size in bytes that the code representation will require.
+    pub fn construct_code_str_length(&self) -> usize {
+        13 + self.lib_name().len()
+            + if let Some(alias) = self.alias {
+                4 + alias.len()
+            } else {
+                0
+            }
+            + 2
     }
 }
 
@@ -416,12 +434,41 @@ fn get_rlib_path(crate_name: &str) -> io::Result<PathBuf> {
         ))
 }
 
-#[test]
-fn get_rlib_path_test() {
-    use std::error::Error;
-    let r = get_rlib_path("some_crate");
-    assert!(r.is_err());
-    let e = r.unwrap_err();
-    assert_eq!(e.kind(), io::ErrorKind::NotFound);
-    assert_eq!(e.description(), "did not find file: 'libsome_crate.rlib'");
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_rlib_path_test() {
+        use std::error::Error;
+        let r = get_rlib_path("some_crate");
+        assert!(r.is_err());
+        let e = r.unwrap_err();
+        assert_eq!(e.kind(), io::ErrorKind::NotFound);
+        assert_eq!(e.description(), "did not find file: 'libsome_crate.rlib'");
+    }
+
+    #[test]
+    fn construct_code_str_test() {
+        let mut e = Extern {
+            path: PathBuf::from("libsome_lib.rlib"),
+            alias: None,
+        };
+
+        let mut s = String::new();
+        e.construct_code_str(&mut s);
+
+        let ans = "extern crate some_lib;\n";
+        assert_eq!(&s, ans);
+        assert_eq!(e.construct_code_str_length(), ans.len());
+
+        e.alias = Some("alias");
+
+        let mut s = String::new();
+        e.construct_code_str(&mut s);
+
+        let ans = "extern crate some_lib as alias;\n";
+        assert_eq!(&s, ans);
+        assert_eq!(e.construct_code_str_length(), ans.len());
+    }
 }

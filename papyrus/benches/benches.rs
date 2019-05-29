@@ -5,7 +5,7 @@ use colored::Colorize;
 
 use criterion::Criterion;
 
-use papyrus::prelude::code::{Input, Statement};
+use papyrus::prelude::code::{Input, SourceCode, Statement, StmtGrp};
 use papyrus::prelude::*;
 
 fn pfh_compile_construct(c: &mut Criterion) {
@@ -13,10 +13,10 @@ fn pfh_compile_construct(c: &mut Criterion) {
 
     let linking = papyrus::prelude::linking::LinkingConfiguration::default();
     let map = vec![
-        ("lib".into(), vec![stmt(), stmt_semi()]),
-        ("test".into(), vec![stmt_semi(), stmt()]),
-        ("test/inner".into(), vec![stmt(), stmt_semi(), stmt()]),
-        ("test/inner/deep".into(), vec![stmt(), stmt_semi(), stmt()]),
+        ("lib".into(), src_code()),
+        ("test".into(), src_code()),
+        ("test/inner".into(), src_code()),
+        ("test/inner/deep".into(), src_code()),
     ]
     .into_iter()
     .collect();
@@ -46,25 +46,24 @@ fn cstr() -> String {
     )
 }
 
-fn stmt() -> Input {
-    Input {
-        crates: Vec::new(),
-        stmts: vec![Statement {
-            expr: LOREM_IPSUM.to_string(),
-            semi: false,
-        }],
+fn src_code() -> SourceCode {
+    SourceCode {
         items: vec![],
-    }
-}
-
-fn stmt_semi() -> Input {
-    Input {
-        crates: Vec::new(),
-        stmts: vec![Statement {
-            expr: LOREM_IPSUM.to_string(),
-            semi: true,
-        }],
-        items: vec![],
+        crates: vec![],
+        stmts: vec![
+            StmtGrp(vec![Statement {
+                expr: LOREM_IPSUM.to_string(),
+                semi: false,
+            }]),
+            StmtGrp(vec![Statement {
+                expr: LOREM_IPSUM.to_string(),
+                semi: true,
+            }]),
+            StmtGrp(vec![Statement {
+                expr: LOREM_IPSUM.to_string(),
+                semi: false,
+            }]),
+        ],
     }
 }
 

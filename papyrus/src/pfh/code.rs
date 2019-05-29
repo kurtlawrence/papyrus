@@ -2,6 +2,7 @@
 use super::*;
 use crate::pfh::linking;
 use linking::LinkingConfiguration;
+use std::cmp::Ordering;
 use std::path::Path;
 
 /// An input collection
@@ -63,13 +64,35 @@ impl StmtGrp {
             buf.push(';');
         }
     }
+
+    fn assign_let_binding_length(&self, input_num: usize) -> usize {
+        let stmts = &self.0;
+        let mut cap = 0;
+
+        for stmt in &stmts[0..stmts.len().saturating_sub(1)] {
+            cap += 1 + stmt.expr.len();
+            if stmt.semi {
+                cap += 1;
+            }
+        }
+
+        cap += if stmts.len() > 0 {
+            7 + input_num.to_string().len() + 3 + stmts[stmts.len() - 1].expr.len() + 1
+        } else {
+            0
+        };
+
+        cap
+    }
 }
 
 /// Construct a single string containing all the source code in file_map.
 pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfiguration) -> String {
     // assumed to be sorted, FileMap is BTreeMap
 
-    let mut contents = String::new();
+    let cap = calc_capacity(file_map, linking_config);
+
+    let mut contents = String::with_capacity(cap);
 
     // add in external crates
     for external in linking_config.external_libs.iter() {
@@ -86,20 +109,11 @@ pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfigu
         );
     }
 
-    let mut lvl = 0;
-    for (file, src_code) in file_map.iter() {
-        if file == Path::new("lib") {
-            continue;
-        }
-
-        use std::cmp::Ordering;
-
-        let new_lvl = file.components().count();
-
-        match new_lvl.cmp(&lvl) {
+    for (prev_lvl, new_lvl, file, src_code) in file_map_with_lvls(file_map) {
+        match new_lvl.cmp(&prev_lvl) {
             Ordering::Equal | Ordering::Less => {
                 // need to close off the open modules
-                let diff = lvl - new_lvl; // should always be >= 0
+                let diff = prev_lvl - new_lvl; // should always be >= 0
                 for _ in 0..=diff {
                     contents.push('}');
                 }
@@ -108,16 +122,12 @@ pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfigu
             _ => (),
         }
 
-        lvl = new_lvl;
-
         contents.push_str("mod ");
         contents.push_str(
-            file.components()
+            file.iter()
                 .last()
-                .unwrap()
-                .as_os_str()
-                .to_str()
-                .unwrap(),
+                .and_then(|x| x.to_str())
+                .expect("should convert fine"),
         );
         contents.push_str(" {\n");
         code::append_buffer(
@@ -129,17 +139,78 @@ pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfigu
     }
 
     // close off any outstanding modules
+    let lvl = file_map_with_lvls(file_map)
+        .last()
+        .map(|x| x.1)
+        .unwrap_or(0);
     for _ in 0..lvl {
         contents.push('}');
     }
 
-    // debug_assert_eq!(
-    //     cap,
-    //     contents.len(),
-    //     "failed at calculating the correct capacity"
-    // );
+    debug_assert_eq!(
+        cap,
+        contents.len(),
+        "failed at calculating the correct capacity"
+    );
 
     contents
+}
+
+/// **Skips lib**
+fn file_map_with_lvls(
+    file_map: &FileMap,
+) -> impl Iterator<Item = (usize, usize, &Path, &SourceCode)> {
+    let mut prev = 0;
+    file_map
+        .iter()
+        .filter(|x| x.0 != Path::new("lib"))
+        .map(move |x| {
+            let c = x.0.iter().count();
+            let r = (prev, c, x.0.as_path(), x.1);
+            prev = c;
+            r
+        })
+}
+
+fn calc_capacity(file_map: &FileMap, linking_config: &LinkingConfiguration) -> usize {
+    let mut cap = 0;
+
+    for external in linking_config.external_libs.iter() {
+        cap += external.construct_code_str_length();
+    }
+
+    // do the lib first
+    if let Some(lib) = file_map.get(Path::new("lib")) {
+        cap += append_buffer_length(lib, &into_mod_path_vec(Path::new("lib")), linking_config);
+    }
+
+    for (prev_lvl, new_lvl, file, src_code) in file_map_with_lvls(file_map) {
+        match new_lvl.cmp(&prev_lvl) {
+            Ordering::Equal | Ordering::Less => {
+                cap += prev_lvl - new_lvl + 2;
+            }
+            _ => (),
+        }
+
+        cap += 4; // mod
+        cap += file
+            .iter()
+            .last()
+            .and_then(|x| x.to_str())
+            .map(|x| x.len())
+            .unwrap_or(0);
+        cap += 3; // }\n
+        cap += code::append_buffer_length(src_code, &into_mod_path_vec(file), linking_config);
+    }
+
+    // close off any outstanding modules
+    let lvl = file_map_with_lvls(file_map)
+        .last()
+        .map(|x| x.1)
+        .unwrap_or(0);
+    cap += lvl;
+
+    cap
 }
 
 /// Build the buffer with the stringified contents of SourceCode
@@ -187,6 +258,40 @@ pub fn append_buffer(
         buf.push_str(item.as_str());
         buf.push('\n');
     }
+}
+
+fn append_buffer_length(
+    src_code: &SourceCode,
+    mod_path: &[String],
+    linking_config: &linking::LinkingConfiguration,
+) -> usize {
+    // wrap stmts
+    let mut cap =
+        31 + eval_fn_name_length(mod_path) + 1 + linking_config.construct_fn_args_length() + 14;
+
+    // add stmts
+    let c = src_code.stmts.len();
+    cap += if c >= 1 {
+        src_code
+            .stmts
+            .iter()
+            .enumerate()
+            .map(|(i, x)| x.assign_let_binding_length(i) + 1)
+            .sum::<usize>()
+            + 19 // format!("{:?}", out
+            + c.saturating_sub(1).to_string().len()
+            + 2 // )\n
+    } else {
+        30 // String::from("no statements")
+    };
+    cap += 2; // }\n
+
+    // add items
+    for item in src_code.items.iter() {
+        cap += item.len() + 1;
+    }
+
+    cap
 }
 
 /// A single item.
@@ -238,195 +343,245 @@ impl CrateType {
     }
 }
 
-#[test]
-fn test_parse_crate() {
-    let err = Err("line needs `extern crate NAME;`");
-    let c = CrateType::parse_str("extern crat name;");
-    assert_eq!(c, err);
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    let c = CrateType::parse_str("extern crate  ");
-    assert_eq!(c, err);
+    #[test]
+    fn file_map_with_lvls_test() {
+        let map = vec![
+            ("one".into(), SourceCode::new()),
+            ("one/two".into(), SourceCode::new()),
+            ("one/two/three".into(), SourceCode::new()),
+            ("lib".into(), SourceCode::new()),
+            ("two".into(), SourceCode::new()),
+        ]
+        .into_iter()
+        .collect();
+        let mut i = file_map_with_lvls(&map).map(|x| (x.0, x.1));
 
-    let c = CrateType::parse_str("extern crate ;");
-    assert_eq!(c, err);
+        assert_eq!(i.next(), Some((0, 1)));
+        assert_eq!(i.next(), Some((1, 2)));
+        assert_eq!(i.next(), Some((2, 3)));
+        assert_eq!(i.next(), Some((3, 1)));
+        assert_eq!(i.next(), None);
+    }
 
-    let s = String::from("extern crate somelib;");
-    let c = CrateType::parse_str(&s);
-    assert_eq!(
-        c,
-        Ok(CrateType {
-            src_line: s,
-            cargo_name: String::from("somelib"),
-        })
-    );
+    #[test]
+    fn test_parse_crate() {
+        let err = Err("line needs `extern crate NAME;`");
+        let c = CrateType::parse_str("extern crat name;");
+        assert_eq!(c, err);
 
-    let s = String::from("extern crate some-lib;");
-    let c = CrateType::parse_str(&s);
-    assert_eq!(
-        c,
-        Ok(CrateType {
-            src_line: s,
-            cargo_name: String::from("some-lib"),
-        })
-    );
+        let c = CrateType::parse_str("extern crate  ");
+        assert_eq!(c, err);
 
-    let s = String::from("extern crate some lib;");
-    let c = CrateType::parse_str(&s);
-    assert_eq!(
-        c,
-        Ok(CrateType {
-            src_line: s,
-            cargo_name: String::from("some"),
-        })
-    );
+        let c = CrateType::parse_str("extern crate ;");
+        assert_eq!(c, err);
 
-    let s = String::from("extern crate some_lib;");
-    let c = CrateType::parse_str(&s);
-    assert_eq!(
-        c,
-        Ok(CrateType {
-            src_line: s,
-            cargo_name: String::from("some-lib"),
-        })
-    );
-}
+        let s = String::from("extern crate somelib;");
+        let c = CrateType::parse_str(&s);
+        assert_eq!(
+            c,
+            Ok(CrateType {
+                src_line: s,
+                cargo_name: String::from("somelib"),
+            })
+        );
 
-#[test]
-fn assign_let_binding_test() {
-    let mut grp = StmtGrp(vec![]);
+        let s = String::from("extern crate some-lib;");
+        let c = CrateType::parse_str(&s);
+        assert_eq!(
+            c,
+            Ok(CrateType {
+                src_line: s,
+                cargo_name: String::from("some-lib"),
+            })
+        );
 
-    let mut s = String::new();
-    grp.assign_let_binding(0, &mut s);
-    assert_eq!(&s, "");
+        let s = String::from("extern crate some lib;");
+        let c = CrateType::parse_str(&s);
+        assert_eq!(
+            c,
+            Ok(CrateType {
+                src_line: s,
+                cargo_name: String::from("some"),
+            })
+        );
 
-    grp.0.push(Statement {
-        expr: "a".to_string(),
-        semi: false,
-    });
+        let s = String::from("extern crate some_lib;");
+        let c = CrateType::parse_str(&s);
+        assert_eq!(
+            c,
+            Ok(CrateType {
+                src_line: s,
+                cargo_name: String::from("some-lib"),
+            })
+        );
+    }
 
-    let mut s = String::new();
-    grp.assign_let_binding(0, &mut s);
-    assert_eq!(&s, "let out0 = a;");
+    #[test]
+    fn assign_let_binding_test() {
+        let mut grp = StmtGrp(vec![]);
 
-    grp.0.push(Statement {
-        expr: "b".to_string(),
-        semi: false,
-    });
+        let mut s = String::new();
+        grp.assign_let_binding(0, &mut s);
 
-    let mut s = String::new();
-    grp.assign_let_binding(0, &mut s);
-    assert_eq!(&s, "a\nlet out0 = b;");
+        let ans = "";
+        assert_eq!(&s, ans);
+        assert_eq!(grp.assign_let_binding_length(0), ans.len());
 
-    let mut s = String::new();
-    grp.assign_let_binding(100, &mut s);
-    assert_eq!(&s, "a\nlet out100 = b;");
-}
+        grp.0.push(Statement {
+            expr: "a".to_string(),
+            semi: false,
+        });
 
-#[test]
-fn construct_test() {
-    use linking::LinkingConfiguration;
+        let mut s = String::new();
+        grp.assign_let_binding(0, &mut s);
 
-    let mut src_code = SourceCode::new();
-    let mod_path = [];
-    let linking_config = LinkingConfiguration::default();
+        let ans = "let out0 = a;";
+        assert_eq!(&s, ans);
+        assert_eq!(grp.assign_let_binding_length(0), ans.len());
 
-    let mut s = String::new();
-    append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-    assert_eq!(
-        &s,
-        r##"#[no_mangle]
+        grp.0.push(Statement {
+            expr: "b".to_string(),
+            semi: false,
+        });
+
+        let mut s = String::new();
+        grp.assign_let_binding(0, &mut s);
+
+        let ans = "a\nlet out0 = b;";
+        assert_eq!(&s, ans);
+        assert_eq!(grp.assign_let_binding_length(0), ans.len());
+
+        let mut s = String::new();
+        grp.assign_let_binding(100, &mut s);
+
+        let ans = "a\nlet out100 = b;";
+        assert_eq!(&s, ans);
+        assert_eq!(grp.assign_let_binding_length(100), ans.len());
+    }
+
+    #[test]
+    fn construct_test() {
+        use linking::LinkingConfiguration;
+
+        let mut src_code = SourceCode::new();
+        let mod_path = [];
+        let linking_config = LinkingConfiguration::default();
+
+        let mut s = String::new();
+        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
+
+        let ans = r##"#[no_mangle]
 pub extern "C" fn _intern_eval() -> String {
 String::from("no statements")
 }
-"##
-    );
+"##;
+        assert_eq!(&s, ans);
+        assert_eq!(
+            append_buffer_length(&src_code, &mod_path, &linking_config),
+            ans.len()
+        );
 
-    // alter mod path
-    let mod_path = ["some".to_string(), "path".to_string()];
+        // alter mod path
+        let mod_path = ["some".to_string(), "path".to_string()];
 
-    let mut s = String::new();
-    append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-    assert_eq!(
-        &s,
-        r##"#[no_mangle]
+        let mut s = String::new();
+        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
+
+        let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval() -> String {
 String::from("no statements")
 }
-"##
-    );
+"##;
+        assert_eq!(&s, ans);
+        assert_eq!(
+            append_buffer_length(&src_code, &mod_path, &linking_config),
+            ans.len()
+        );
 
-    let mut s = String::new();
-    append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-    assert_eq!(
-        &s,
-        r##"#[no_mangle]
+        let mut s = String::new();
+        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
+
+        let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval() -> String {
 String::from("no statements")
 }
-"##
-    );
+"##;
+        assert_eq!(&s, ans);
+        assert_eq!(
+            append_buffer_length(&src_code, &mod_path, &linking_config),
+            ans.len()
+        );
 
-    // alter the linking config
-    let linking_config = LinkingConfiguration {
-        data_type: Some("String".to_string()),
-        ..Default::default()
-    };
+        // alter the linking config
+        let linking_config = LinkingConfiguration {
+            data_type: Some("String".to_string()),
+            ..Default::default()
+        };
 
-    let mut s = String::new();
-    append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-    assert_eq!(
-        &s,
-        r##"#[no_mangle]
+        let mut s = String::new();
+        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
+
+        let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
 String::from("no statements")
 }
-"##
-    );
+"##;
+        assert_eq!(&s, ans);
+        assert_eq!(
+            append_buffer_length(&src_code, &mod_path, &linking_config),
+            ans.len()
+        );
 
-    // add an item and new input
-    src_code.items.push("fn a() {}".to_string());
-    src_code.items.push("fn b() {}".to_string());
+        // add an item and new input
+        src_code.items.push("fn a() {}".to_string());
+        src_code.items.push("fn b() {}".to_string());
 
-    let mut s = String::new();
-    append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-    assert_eq!(
-        &s,
-        r##"#[no_mangle]
+        let mut s = String::new();
+        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
+
+        let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
 String::from("no statements")
 }
 fn a() {}
 fn b() {}
-"##
-    );
+"##;
+        assert_eq!(&s, ans);
+        assert_eq!(
+            append_buffer_length(&src_code, &mod_path, &linking_config),
+            ans.len()
+        );
 
-    // add stmts
-    src_code.stmts.push(StmtGrp(vec![
-        Statement {
-            expr: "let a = 1".to_string(),
-            semi: true,
-        },
-        Statement {
-            expr: "b".to_string(),
-            semi: false,
-        },
-    ]));
-    src_code.stmts.push(StmtGrp(vec![
-        Statement {
-            expr: "let c = 2".to_string(),
-            semi: true,
-        },
-        Statement {
-            expr: "d".to_string(),
-            semi: false,
-        },
-    ]));
+        // add stmts
+        src_code.stmts.push(StmtGrp(vec![
+            Statement {
+                expr: "let a = 1".to_string(),
+                semi: true,
+            },
+            Statement {
+                expr: "b".to_string(),
+                semi: false,
+            },
+        ]));
+        src_code.stmts.push(StmtGrp(vec![
+            Statement {
+                expr: "let c = 2".to_string(),
+                semi: true,
+            },
+            Statement {
+                expr: "d".to_string(),
+                semi: false,
+            },
+        ]));
 
-    let mut s = String::new();
-    append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-    assert_eq!(
-        &s,
-        r##"#[no_mangle]
+        let mut s = String::new();
+        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
+
+        let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
 let a = 1;
 let out0 = b;
@@ -436,32 +591,36 @@ format!("{:?}", out1)
 }
 fn a() {}
 fn b() {}
-"##
-    );
-}
+"##;
+        assert_eq!(&s, ans);
+        assert_eq!(
+            append_buffer_length(&src_code, &mod_path, &linking_config),
+            ans.len()
+        );
+    }
 
-#[test]
-fn construct_src_test() {
-    // purely tests module adding
-    let v = SourceCode::new();
+    #[test]
+    fn construct_src_test() {
+        // purely tests module adding
+        let v = SourceCode::new();
 
-    let linking = LinkingConfiguration::default();
-    let map = vec![
-        ("lib".into(), v.clone()),
-        ("test".into(), v.clone()),
-        ("foo/bar".into(), v.clone()),
-        ("test/inner".into(), v.clone()),
-        ("foo".into(), v.clone()),
-        ("test/inner2".into(), v.clone()),
-    ]
-    .into_iter()
-    .collect();
+        let linking = LinkingConfiguration::default();
+        let map = vec![
+            ("lib".into(), v.clone()),
+            ("test".into(), v.clone()),
+            ("foo/bar".into(), v.clone()),
+            ("test/inner".into(), v.clone()),
+            ("foo".into(), v.clone()),
+            ("test/inner2".into(), v.clone()),
+        ]
+        .into_iter()
+        .collect();
 
-    let s = construct_source_code(&map, &linking);
+        let s = construct_source_code(&map, &linking);
 
-    assert_eq!(
-        &s,
-        r##"#[no_mangle]
+        assert_eq!(
+            &s,
+            r##"#[no_mangle]
 pub extern "C" fn _lib_intern_eval() -> String {
 String::from("no statements")
 }
@@ -493,5 +652,7 @@ pub extern "C" fn _test_inner2_intern_eval() -> String {
 String::from("no statements")
 }
 }}"##
-    );
+        );
+    }
+
 }

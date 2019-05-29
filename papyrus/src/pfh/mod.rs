@@ -25,6 +25,10 @@ pub fn eval_fn_name(mod_path: &[String], buf: &mut String) {
     buf.push_str("intern_eval"); // 11 len
 }
 
+pub fn eval_fn_name_length(mod_path: &[String]) -> usize {
+    12 + mod_path.iter().map(|x| x.len() + 1).sum::<usize>()
+}
+
 pub fn into_mod_path_vec(path: &Path) -> Vec<String> {
     // TODO make this &str rather than String
     path.components()
@@ -41,10 +45,17 @@ fn eval_fn_name_test() {
         .collect();
     let mut s = String::new();
     eval_fn_name(&path, &mut s);
-    assert_eq!(&s, "_some_lib_module_path_intern_eval");
+
+    let ans = "_some_lib_module_path_intern_eval";
+    assert_eq!(&s, ans);
+    assert_eq!(eval_fn_name_length(&path), ans.len());
+
     let mut s = String::new();
     eval_fn_name(&[], &mut s);
-    assert_eq!(&s, "_intern_eval");
+
+    let ans = "_intern_eval";
+    assert_eq!(&s, ans);
+    assert_eq!(eval_fn_name_length(&[]), ans.len());
 }
 
 #[test]
