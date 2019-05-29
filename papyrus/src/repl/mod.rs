@@ -91,7 +91,7 @@ use linefeed::terminal::Terminal;
 use std::borrow::Cow;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::{
     fmt, fs,
     io::{self, Write},

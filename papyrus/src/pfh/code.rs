@@ -80,7 +80,7 @@ pub fn construct_source_code(file_map: &FileMap, linking_config: &LinkingConfigu
     if let Some(lib) = file_map.get(Path::new("lib")) {
         code::append_buffer(
             lib,
-            &into_mod_path_vec(Path::new("lib")), // lib is  empty
+            &into_mod_path_vec(Path::new("lib")),
             linking_config,
             &mut contents,
         );
