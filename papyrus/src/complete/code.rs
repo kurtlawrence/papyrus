@@ -1,3 +1,6 @@
+//! Completion for rust source code using [`racer`].
+//! 
+//! [`racer`]: racer
 use super::*;
 
 use linefeed::Suffix;
@@ -5,12 +8,14 @@ use racer::{BytePos, FileCache, Location, Match, Session};
 
 const LIBRS: &str = "lib.rs";
 
+/// Completion used for rust code in the repl.
 pub struct CodeCompletion {
     last_code: String,
     split: std::ops::Range<usize>,
 }
 
 impl CodeCompletion {
+	/// Build the code completion state. Uses the current repl state.
     pub fn build<T>(repl_data: &crate::repl::ReplData<T>) -> Self {
         let (last_code, map) =
             crate::pfh::code::construct_source_code(repl_data.file_map(), repl_data.linking());
@@ -20,6 +25,7 @@ impl CodeCompletion {
         Self { last_code, split }
     }
 
+	/// Get completions that would match a string injected into the current repl state.
     pub fn complete(&self, injection: &str) -> Vec<Match> {
         let cache = FileCache::default();
         let session = Session::new(&cache);
@@ -31,6 +37,8 @@ impl CodeCompletion {
         racer::complete_from_file(LIBRS, Location::Point(pos), &session).collect()
     }
 
+	/// Inject code into the current source code and return the amended code,
+	/// along with the byte position to complete from.
     pub fn inject(&self, injection: &str) -> (String, BytePos) {
         let cap = self.last_code.len() + self.split.start - self.split.end + injection.len();
         let mut s = String::with_capacity(cap);

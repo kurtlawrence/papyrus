@@ -129,6 +129,7 @@ impl<S, T: Terminal, D> Repl<S, T, D> {
 }
 
 impl<S, T: Terminal, D> Repl<S, T, D> {
+	/// Set completion on the terminal.
     pub fn set_completion(&mut self, combined: crate::complete::CombinedCompleter<'static, T>) {
         self.terminal
             .input_rdr
