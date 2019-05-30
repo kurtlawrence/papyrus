@@ -173,7 +173,7 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
                         &read.data.cmdtree,
                         &read.data.file_map,
                     )),
-                    Box::new(code::CodeCompletion::build(&read.data)),
+                    Box::new(code::CodeCompleter::build(&read.data)),
                 ],
             };
 

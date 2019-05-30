@@ -9,12 +9,12 @@ use racer::{BytePos, FileCache, Location, Match, Session};
 const LIBRS: &str = "lib.rs";
 
 /// Completion used for rust code in the repl.
-pub struct CodeCompletion {
+pub struct CodeCompleter {
     last_code: String,
     split: std::ops::Range<usize>,
 }
 
-impl CodeCompletion {
+impl CodeCompleter {
     /// Build the code completion state. Uses the current repl state.
     pub fn build<T>(repl_data: &crate::repl::ReplData<T>) -> Self {
         let (last_code, map) =
@@ -22,7 +22,7 @@ impl CodeCompletion {
 
         let split = map.get(repl_data.current_file()).cloned().unwrap_or(0..0); // return an empty range if this fails
 
-        Self { last_code, split }
+        CodeCompleter { last_code, split }
     }
 
     /// Get completions that would match a string injected into the current repl state.
@@ -55,7 +55,7 @@ impl CodeCompletion {
     }
 }
 
-impl<T: Terminal> Completer<T> for CodeCompletion {
+impl<T: Terminal> Completer<T> for CodeCompleter {
     fn complete(
         &self,
         _word: &str,
@@ -87,7 +87,7 @@ mod tests {
 
     #[test]
     fn inject_test() {
-        let cc = CodeCompletion {
+        let cc = CodeCompleter {
             last_code: String::from("Hello morld"),
             split: 5..7, // cut out ' m' such that "Hello" and "orld" is it
         };
@@ -97,7 +97,7 @@ mod tests {
         assert_eq!(&s, "Hello, world");
         assert_eq!(pos, BytePos(8));
 
-        let cc = CodeCompletion {
+        let cc = CodeCompleter {
             last_code: String::from("Hello"),
             split: 5..5, // inject to end
         };
@@ -107,7 +107,7 @@ mod tests {
         assert_eq!(&s, "Hello, world");
         assert_eq!(pos, BytePos(12));
 
-        let cc = CodeCompletion {
+        let cc = CodeCompleter {
             last_code: String::from(", world"),
             split: 0..0, // inject at start
         };
@@ -117,7 +117,7 @@ mod tests {
         assert_eq!(&s, "Hello, world");
         assert_eq!(pos, BytePos(5));
 
-        let cc = CodeCompletion {
+        let cc = CodeCompleter {
             last_code: String::from("Hello, worm"),
             split: 10..11, // cut less than added
         };
@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn complete_test() {
-        let cc = CodeCompletion {
+        let cc = CodeCompleter {
             last_code: String::from("fn apple() {} \n\n fn main() {  }"),
             split: 29..29,
         };
