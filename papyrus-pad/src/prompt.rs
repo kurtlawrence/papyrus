@@ -6,6 +6,7 @@ use azul::window::FakeWindow;
 use papyrus::prelude::*;
 use std::borrow::BorrowMut;
 use std::marker::PhantomData;
+use papyrus::complete;
 
 type KickOffEvalDaemon = bool;
 type HandleCb = (UpdateScreen, KickOffEvalDaemon);
@@ -45,6 +46,31 @@ impl<T, D> PadState<T, D> {
 //     mrkr: PhantomData<T>,
 //     mrkr_data: PhantomData<D>,
 // }
+
+pub struct Completers {
+    pub cmds_tree: complete::cmdr::TreeCompleter,
+    pub mods: complete::modules::ModulesCompleter,
+    pub code: complete::code::CodeCompleter,
+}
+
+impl Completers {
+	pub fn build<D>(repl_data: &ReplData<D>) -> Self {
+    let cmds_tree = complete::cmdr::TreeCompleter::build(&repl_data.cmdtree);
+
+    let mods =
+        complete::modules::ModulesCompleter::build(&repl_data.cmdtree, &repl_data.file_map());
+
+    let code = complete::code::CodeCompleter::build(repl_data);
+
+    Self {
+        cmds_tree,
+        mods,
+        code,
+    }
+}
+}
+
+
 
 pub struct CompletionPrompt;
 

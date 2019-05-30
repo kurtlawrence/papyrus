@@ -12,5 +12,31 @@ macro_rules! cb {
     };
 }
 
+
+
 pub mod colour;
 pub mod pad;
+mod css;
+mod prompt;
+mod repl_terminal;
+mod eval_state;
+
+pub use self::css::PAD_CSS;
+pub use self::repl_terminal::{add_terminal_text, create_terminal_string, ReplTerminal};
+
+use eval_state::EvalState;
+use papyrus::prelude::MemoryTerminal;
+use std::sync::{Arc, RwLock};
+
+
+pub struct PadState<T, Data> {
+    repl: EvalState<Data>,
+    terminal: MemoryTerminal,
+    last_terminal_string: String,
+    eval_daemon_id: TimerId,
+    data: Arc<RwLock<Data>>,
+    after_eval_fn: fn(&mut T, &mut AppResources),
+    completers: prompt::Completers,
+}
+
+

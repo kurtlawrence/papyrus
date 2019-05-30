@@ -3,7 +3,7 @@ extern crate papyrus;
 
 use azul::prelude::*;
 use papyrus::prelude::MemoryTerminal;
-use papyrus_pad::pad::*;
+use papyrus_pad::*;
 use std::sync::{Arc, RwLock};
 
 type TypedPadState = PadState<MyApp, String>;
@@ -77,7 +77,7 @@ fn create_css() -> String {
 
     let mut css = String::new();
 
-    css.push_str(papyrus_pad::pad::PAD_CSS);
+    css.push_str(papyrus_pad::PAD_CSS);
 
     inject_theme(&css, &themes::dark_theme())
 }
