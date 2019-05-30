@@ -13,7 +13,11 @@ use std::io;
 
 /// Reads input from `stdin`.
 pub struct InputReader<Term: Terminal> {
+    /// Complete input buffer
+    input_buffer: String,
+    /// Previous line buffer
     buffer: String,
+
     pub interface: Interface<Term>,
 }
 
@@ -26,9 +30,14 @@ impl<Term: Terminal> InputReader<Term> {
         };
 
         Ok(InputReader {
+            input_buffer: String::new(),
             buffer: String::new(),
             interface: r,
         })
+    }
+
+    pub fn input_buffer(&self) -> &str {
+        self.input_buffer.as_str()
     }
 
     pub fn set_prompt(&self, prompt: &str) -> io::Result<()> {
@@ -73,6 +82,7 @@ impl<Term: Terminal> InputReader<Term> {
         let s = input_ch.encode_utf8(&mut buf);
 
         self.interface.push_input(s.as_bytes());
+        self.input_buffer.push(input_ch);
 
         self.interface
             .read_line_step(None)
@@ -100,11 +110,10 @@ impl<Term: Terminal> InputReader<Term> {
     }
 
     fn determine_result(&mut self, line: &str, treat_as_cmd: bool) -> InputResult {
-        debug!("input value: {}", line);
-
         self.buffer.push_str(&line);
+
         if self.buffer.is_empty() {
-            return InputResult::Empty;
+            return InputResult::Empty; // if line is empty this could result. do not remove
         }
 
         let res = if treat_as_cmd || is_command(&line) {
@@ -125,7 +134,10 @@ impl<Term: Terminal> InputReader<Term> {
 
         match res {
             InputResult::More => (),
-            _ => self.buffer.clear(),
+            _ => {
+                self.buffer.clear();
+                self.input_buffer.clear();
+            }
         };
 
         res

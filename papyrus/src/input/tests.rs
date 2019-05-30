@@ -217,6 +217,7 @@ fn test_exprs() {
 #[test]
 fn handle_input() {
     let mut reader = InputReader {
+        input_buffer: String::new(),
         buffer: String::new(),
         interface: Interface::with_term("some name", MemoryTerminal::new()).unwrap(),
     };
@@ -237,6 +238,7 @@ fn handle_input() {
 #[test]
 fn determine_result() {
     let mut reader = InputReader {
+        input_buffer: String::new(),
         buffer: String::new(),
         interface: Interface::with_term("some name", MemoryTerminal::new()).unwrap(),
     };

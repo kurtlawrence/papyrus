@@ -122,10 +122,10 @@ impl<S, T: Terminal, D> Repl<S, T, D> {
     ///
     /// repl = repl.push_input_str("let a =").unwrap_err();
     ///
-    /// assert_eq!(&repl.input(), "let a =");
+    /// assert_eq!(repl.input(), "let a =");
     /// ```
-    pub fn input(&self) -> String {
-        self.terminal.input_rdr.interface.buffer()
+    pub fn input(&self) -> &str {
+        self.terminal.input_rdr.input_buffer()
     }
 
     /// The terminal that the repl reads from and writes to.
