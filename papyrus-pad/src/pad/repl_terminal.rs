@@ -113,7 +113,17 @@ where
 
         let mut text = String::with_capacity(state.last_terminal_string.len());
         create_terminal_string(&state.terminal, &mut text);
-        add_terminal_text(container, &text)
+        let mut container = add_terminal_text(container, &text);
+
+        if let Some(repl) = state.repl.brw_repl() {
+            let completions = prompt::completions(&state.completers, &repl.input());
+
+            if !completions.is_empty() {
+                container.add_child(prompt::CompletionPrompt::dom(state, window, completions));
+            }
+        }
+
+        container
     }
 
     cb!(PadState, update_state_on_text_input);
@@ -145,7 +155,6 @@ where
         Some(eval) => {
             if eval.completed() {
                 pad.repl.put_read(eval.wait().repl.print());
-                // execute the after_eval_fn that is stored on pad
                 (Redraw, TerminateTimer::Terminate, true) // turn off daemon now
             } else {
                 pad.repl.put_eval(eval);
@@ -156,7 +165,11 @@ where
     };
 
     if finished {
-        (pad.after_eval_fn)(app, app_resources);
+        // execute eval_finished on PadState
+        pad.eval_finished();
+
+        // execute the after_eval_fn that is stored on pad
+        (pad.after_eval_fn)(app, app_resources) // run user defined after_eval_fn
     }
 
     (redraw, terminate)

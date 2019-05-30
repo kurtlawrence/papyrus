@@ -20,4 +20,8 @@ pub const PAD_CSS: &'static str = r##"
 .repl-terminal-text:hover {
 	border: 1px solid #9b9b9b;
 }
+
+#completion-prompt {
+	background-color: white;
+}
 "##;

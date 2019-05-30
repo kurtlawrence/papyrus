@@ -41,6 +41,17 @@ impl<D> EvalState<D> {
         }
     }
 
+    pub fn brw_repl(&self) -> Option<&Read<D>> {
+        if self.variant.is_none() {
+            panic!("found none variant, inidicating a broken state. has a take not been followed by put call?");
+        }
+
+        match self.variant.as_ref().expect("should be some") {
+            EvalStateVariant::Read(repl) => Some(repl),
+            EvalStateVariant::Eval(_) => None,
+        }
+    }
+
     pub fn take_read(&mut self) -> Option<Read<D>> {
         if self.variant.is_none() {
             panic!("found none variant, inidicating a broken state. has a take call been called twice?");

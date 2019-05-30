@@ -50,6 +50,8 @@ fn main() {
     )
     .unwrap();
 
+    let css = create_css();
+
     let window = if cfg!(debug_assertions) {
         // app.create_hot_reload_window(
         //     WindowCreateOptions::default(),
@@ -60,15 +62,22 @@ fn main() {
         // )
         // .unwrap()
 
-        app.create_window(
-            WindowCreateOptions::default(),
-            css::override_native(&std::fs::read_to_string("styles/test.css").unwrap()).unwrap(),
-        )
-        .unwrap()
+        app.create_window(WindowCreateOptions::default(), css::from_str(&css).unwrap())
+            .unwrap()
     } else {
-        app.create_window(WindowCreateOptions::default(), css::native())
+        app.create_window(WindowCreateOptions::default(), css::from_str(&css).unwrap())
             .unwrap()
     };
 
     app.run(window).unwrap();
+}
+
+fn create_css() -> String {
+    use azul_theming::*;
+
+    let mut css = String::new();
+
+    css.push_str(papyrus_pad::pad::PAD_CSS);
+
+    inject_theme(&css, &themes::dark_theme())
 }

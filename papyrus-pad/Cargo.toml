@@ -8,6 +8,7 @@ edition = "2018"
 # papyrus -- for now just links the folder. Once stabilised can link the crates.io ver
 papyrus = { path = "../papyrus" }
 azul = { path = "/azul/azul" }
+azul-theming = { path = "/azul-theming" }
 cansi = "2.0"
 
 [dev-dependencies]
