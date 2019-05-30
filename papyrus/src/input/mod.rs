@@ -11,6 +11,8 @@ pub use self::parse::parse_command;
 pub use self::parse::parse_program;
 use std::io;
 
+const BACKSPACE: char = '\x08';
+
 /// Reads input from `stdin`.
 pub struct InputReader<Term: Terminal> {
     /// Complete input buffer
@@ -82,7 +84,11 @@ impl<Term: Terminal> InputReader<Term> {
         let s = input_ch.encode_utf8(&mut buf);
 
         self.interface.push_input(s.as_bytes());
-        self.input_buffer.push(input_ch);
+        if input_ch == BACKSPACE {
+            self.input_buffer.pop();
+        } else {
+            self.input_buffer.push(input_ch);
+        }
 
         self.interface
             .read_line_step(None)

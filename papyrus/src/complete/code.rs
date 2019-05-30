@@ -26,7 +26,9 @@ impl CodeCompleter {
     }
 
     /// Get completions that would match a string injected into the current repl state.
-    pub fn complete(&self, injection: &str) -> Vec<Match> {
+    pub fn complete(&self, injection: &str, limit: Option<usize>) -> Vec<Match> {
+        let limit = limit.unwrap_or(std::usize::MAX);
+
         let cache = FileCache::default();
         let session = Session::new(&cache);
 
@@ -34,7 +36,9 @@ impl CodeCompleter {
 
         session.cache_file_contents(LIBRS, contents);
 
-        racer::complete_from_file(LIBRS, Location::Point(pos), &session).collect()
+        racer::complete_from_file(LIBRS, Location::Point(pos), &session)
+            .take(limit)
+            .collect()
     }
 
     /// Inject code into the current source code and return the amended code,
@@ -64,7 +68,7 @@ impl<T: Terminal> Completer<T> for CodeCompleter {
         _end: usize,
     ) -> Option<Vec<Completion>> {
         let v: Vec<_> = self
-            .complete(prompter.buffer())
+            .complete(prompter.buffer(), Some(10))
             .into_iter()
             .map(|x| Completion {
                 completion: x.matchstr,
@@ -139,7 +143,7 @@ mod tests {
 
         assert_eq!(&s, "fn apple() {} \n\n fn main() { ap }");
 
-        let matches = cc.complete("ap");
+        let matches = cc.complete("ap", None);
 
         assert_eq!(matches.get(0).map(|x| x.matchstr.as_str()), Some("apple"));
     }
