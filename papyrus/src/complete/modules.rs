@@ -28,6 +28,15 @@ impl ModulesCompleter {
 
         Self { inner, mods }
     }
+
+    /// Get the completions of an actions arguments if it matches the line.
+    pub fn complete<'a>(&'a self, line: &'a str) -> Option<impl Iterator<Item = String> + 'a> {
+        let actions = ["mod..switch"];
+
+        self.inner
+            .find(line, &actions)
+            .map(|x| complete_path(x.line, self.mods.iter()))
+    }
 }
 
 impl<T: Terminal> Completer<T> for ModulesCompleter {
@@ -38,33 +47,37 @@ impl<T: Terminal> Completer<T> for ModulesCompleter {
         _start: usize,
         _end: usize,
     ) -> Option<Vec<Completion>> {
-        let actions = ["mod..switch"];
-
         let line = prompter.buffer();
 
-        self.inner
-            .find(line, &actions)
-            .and_then(|x| complete_path(x.line, self.mods.iter()))
+        self.complete(line).and_then(|v| {
+            let v: Vec<_> = v.map(|x| Completion::simple(x)).collect();
+
+            if v.len() != 0 {
+                Some(v)
+            } else {
+                None
+            }
+        })
     }
 }
 
 /// Return a set of paths that can be completed using the starting `path`.
-pub fn complete_path<I: Iterator<Item = P>, P: AsRef<Path>>(
-    path: &str,
+fn complete_path<'a, I: 'a + Iterator<Item = P>, P: AsRef<Path>>(
+    path: &'a str,
     mods: I,
-) -> Option<Vec<Completion>> {
-    let path = path.as_ref();
-
-    let v: Vec<_> = mods
-        .filter(|x| mod_starts_with(x, path))
-        .map(|x| Completion::simple(x.as_ref().display().to_string().replace("\\", "/")))
-        .collect();
-
-    if v.len() > 0 {
-        Some(v)
-    } else {
-        None
-    }
+) -> impl Iterator<Item = String> + 'a {
+    mods.filter(move |x| mod_starts_with(x, path)).map(|x| {
+        x.as_ref()
+            .iter()
+            .map(|y| y.to_str().unwrap())
+            .fold(String::new(), |mut acc, x| {
+                if !acc.is_empty() {
+                    acc.push('/');
+                }
+                acc.push_str(x);
+                acc
+            })
+    })
 }
 
 fn mod_starts_with<P: AsRef<Path>>(path: P, line: &str) -> bool {
@@ -153,40 +166,46 @@ mod tests {
         .collect();
 
         assert_eq!(
-            cmpr(&complete_path("o", mods.iter())),
-            Some(vec!["one", "one/two", "one/two/three", "own", "own/stuff"])
+            cmpr(complete_path("o", mods.iter())),
+            cmpr2(vec!["one", "one/two", "one/two/three", "own", "own/stuff"])
         );
 
         assert_eq!(
-            cmpr(&complete_path("ow", mods.iter())),
-            Some(vec!["own", "own/stuff"])
+            cmpr(complete_path("ow", mods.iter())),
+            cmpr2(vec!["own", "own/stuff"])
         );
 
         assert_eq!(
-            cmpr(&complete_path("on", mods.iter())),
-            Some(vec!["one", "one/two", "one/two/three"])
+            cmpr(complete_path("on", mods.iter())),
+            cmpr2(vec!["one", "one/two", "one/two/three"])
         );
 
         assert_eq!(
-            cmpr(&complete_path("one/", mods.iter())),
-            Some(vec!["one/two", "one/two/three"])
+            cmpr(complete_path("one/", mods.iter())),
+            cmpr2(vec!["one/two", "one/two/three"])
         );
 
         assert_eq!(
-            cmpr(&complete_path("test/", mods.iter())),
-            Some(vec!["test/inner", "test/inner/deep", "test/inner/deep2"])
+            cmpr(complete_path("test/", mods.iter())),
+            cmpr2(vec!["test/inner", "test/inner/deep", "test/inner/deep2"])
         );
 
         assert_eq!(
-            cmpr(&complete_path("test\\inner/", mods.iter())),
-            Some(vec!["test/inner/deep", "test/inner/deep2"])
+            cmpr(complete_path("test\\inner/", mods.iter())),
+            cmpr2(vec!["test/inner/deep", "test/inner/deep2"])
         );
 
-        assert_eq!(cmpr(&complete_path("test/one", mods.iter())), None,);
+        assert_eq!(
+            cmpr(complete_path("test/one", mods.iter())),
+            Vec::<String>::new()
+        );
     }
 
-    fn cmpr(v: &Option<Vec<Completion>>) -> Option<Vec<&str>> {
-        v.as_ref()
-            .map(|x| x.iter().map(|x| x.completion.as_str()).collect())
+    fn cmpr<'a, I: 'a + Iterator<Item = String>>(v: I) -> Vec<String> {
+        v.collect()
+    }
+
+    fn cmpr2(v: Vec<&str>) -> Vec<String> {
+        v.iter().map(|x| x.to_string()).collect()
     }
 }

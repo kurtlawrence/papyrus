@@ -28,6 +28,11 @@ impl TreeCompleter {
 
         Self { items }
     }
+
+    /// Get the completions of the tree structure if it matches the line.
+    pub fn complete<'a>(&'a self, line: &'a str) -> impl Iterator<Item = &'a str> {
+        cmdtree::completion::tree_completions(line, self.items.iter())
+    }
 }
 
 impl<T: Terminal> Completer<T> for TreeCompleter {
@@ -40,7 +45,8 @@ impl<T: Terminal> Completer<T> for TreeCompleter {
     ) -> Option<Vec<Completion>> {
         let line = prompter.buffer();
 
-        let v: Vec<_> = cmdtree::completion::tree_completions(line, self.items.iter())
+        let v: Vec<_> = self
+            .complete(line)
             .map(|x| Completion::simple(x.to_string()))
             .collect();
 
