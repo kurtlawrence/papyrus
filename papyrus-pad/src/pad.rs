@@ -1,5 +1,3 @@
-
-
 use super::*;
 use azul::prelude::*;
 use eval_state::EvalState;
@@ -7,13 +5,11 @@ use papyrus::complete;
 use papyrus::prelude::*;
 use std::sync::{Arc, RwLock};
 
-
-
 impl<T, D> PadState<T, D> {
     pub fn new(repl: Repl<repl::Read, MemoryTerminal, D>, data: Arc<RwLock<D>>) -> Self {
         let term = repl.terminal().clone();
 
-        let completers = prompt::Completers::build(&repl.data);
+        let completion = completion::CompletionPromptState::new(&repl.data);
 
         Self {
             repl: EvalState::new(repl),
@@ -22,7 +18,7 @@ impl<T, D> PadState<T, D> {
             eval_daemon_id: TimerId::new(),
             data,
             after_eval_fn: none,
-            completers,
+            completion,
         }
     }
 
@@ -33,13 +29,10 @@ impl<T, D> PadState<T, D> {
 
     /// Functions to run after the evaluation phase finished.
     pub fn eval_finished(&mut self) {
-        if let Some(repl) = self.repl.brw_repl() {
-            self.completers = prompt::Completers::build(&repl.data);
-        }
+        // if let Some(repl) = self.repl.brw_repl() {
+        //     self.completers = completion::Completers::build(&repl.data);
+        // }
     }
 }
 
-
 fn none<T>(_: &mut T, _: &mut AppResources) {}
-
-

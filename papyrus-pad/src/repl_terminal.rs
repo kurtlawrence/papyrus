@@ -6,28 +6,35 @@ use azul::window::FakeWindow;
 use papyrus::prelude::*;
 use std::borrow::BorrowMut;
 use std::marker::PhantomData;
+use std::sync::Mutex;
 
 type KickOffEvalDaemon = bool;
-type HandleCb = (UpdateScreen, KickOffEvalDaemon);
+type KickOffCompletionTask = bool;
+type HandleCb = (UpdateScreen, KickOffEvalDaemon, KickOffCompletionTask);
 
 impl<T, D> PadState<T, D>
 where
     D: 'static + Send + Sync,
 {
     fn handle_input(&mut self, input: char) -> HandleCb {
-        let mut kickoff = false;
+        let mut kickoff_eval = false;
+        let mut kickoff_completion = false;
+
         match self.repl.take_read() {
             Some(repl) => {
                 match repl.push_input(input) {
-                    repl::PushResult::Read(r) => self.repl.put_read(r),
+                    repl::PushResult::Read(r) => {
+                        self.repl.put_read(r);
+                        kickoff_completion = true;
+                    }
                     repl::PushResult::Eval(r) => {
-                        kickoff = true;
+                        kickoff_eval = true;
                         self.repl.put_eval(r.eval_async(&self.data));
                     }
                 }
-                (Redraw, kickoff)
+                (Redraw, kickoff_eval, kickoff_completion)
             }
-            None => (DontRedraw, kickoff),
+            None => (DontRedraw, kickoff_eval, kickoff_completion),
         }
     }
 
@@ -36,7 +43,7 @@ where
             VirtualKeyCode::Back => self.handle_input('\x08'), // backspace character
             VirtualKeyCode::Tab => self.handle_input('\t'),
             VirtualKeyCode::Return => self.handle_input('\n'),
-            _ => (DontRedraw, false),
+            _ => (DontRedraw, false, false),
         }
     }
 }
@@ -51,14 +58,20 @@ where
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
     ) -> UpdateScreen {
-        let (update_screen, kickoff) = self.handle_input(
+        let (update_screen, kickoff_eval, kickoff_completion) = self.handle_input(
             app_state.windows[window_event.window_id]
                 .get_keyboard_state()
                 .current_char?,
         );
 
-        if kickoff {
+        if kickoff_eval {
             kickoff_daemon(app_state, self.eval_daemon_id);
+        }
+
+        if kickoff_completion {
+            if let Some(repl) = self.repl.brw_repl() {
+                app_state.add_task(self.completion.complete(repl.input().to_owned(), None));
+            }
         }
 
         update_screen
@@ -69,14 +82,20 @@ where
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
     ) -> UpdateScreen {
-        let (update_screen, kickoff) = self.handle_vk(
+        let (update_screen, kickoff_eval, kickoff_completion) = self.handle_vk(
             app_state.windows[window_event.window_id]
                 .get_keyboard_state()
                 .latest_virtual_keycode?,
         );
 
-        if kickoff {
+        if kickoff_eval {
             kickoff_daemon(app_state, self.eval_daemon_id);
+        }
+
+        if kickoff_completion {
+            if let Some(repl) = self.repl.brw_repl() {
+                app_state.add_task(self.completion.complete(repl.input().to_owned(), None));
+            }
         }
 
         update_screen
@@ -113,13 +132,18 @@ where
 
         let mut text = String::with_capacity(state.last_terminal_string.len());
         create_terminal_string(&state.terminal, &mut text);
-        let mut container = add_terminal_text(container, &text);
+        let term = add_terminal_text(container, &text);
 
-        if let Some(repl) = state.repl.brw_repl() {
-            let completions = prompt::completions(&state.completers, &repl.input());
+        let mut container = Dom::div().with_child(term);
 
+        if let Ok(lock) = state.completion.data.try_lock() {
+            let completions = &lock.completions;
             if !completions.is_empty() {
-                container.add_child(prompt::CompletionPrompt::dom(state, window, completions));
+                container.add_child(completion::CompletionPrompt::dom(
+                    state,
+                    window,
+                    completions.clone(),
+                ));
             }
         }
 

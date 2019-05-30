@@ -3,13 +3,60 @@ use azul::app::AppStateNoData;
 use azul::callbacks::{DefaultCallback, DefaultCallbackId};
 use azul::prelude::*;
 use azul::window::FakeWindow;
+use papyrus::complete;
 use papyrus::prelude::*;
 use std::borrow::BorrowMut;
 use std::marker::PhantomData;
-use papyrus::complete;
+use std::sync::{Arc, Mutex};
 
 type KickOffEvalDaemon = bool;
 type HandleCb = (UpdateScreen, KickOffEvalDaemon);
+
+pub struct CompletionPromptState {
+    pub data: Arc<Mutex<CompletionData>>,
+}
+
+impl CompletionPromptState {
+    pub fn new<D>(repl_data: &ReplData<D>) -> Self {
+        Self {
+            data: Arc::new(Mutex::new(CompletionData {
+                completers: Completers::build(repl_data),
+                line: String::new(),
+                limit: None,
+                completions: Vec::new(),
+            })),
+        }
+    }
+
+    /// Creates a completion task to be run on another thread.
+    pub fn complete<T>(&self, line: String, limit: Option<usize>) -> Task<T> {
+        {
+            let mut lock = self.data.lock().unwrap();
+
+            lock.line = line;
+            lock.limit = limit;
+        }
+
+        Task::new(&self.data, complete_task)
+    }
+}
+
+fn complete_task(data: Arc<Mutex<CompletionData>>, _: DropCheck) {
+    let mut lock = data.lock().unwrap();
+
+    let completions = completions(&lock.completers, &lock.line, lock.limit);
+
+    lock.completions = completions;
+}
+
+pub struct CompletionData {
+    pub completers: Completers,
+
+    pub line: String,
+    pub limit: Option<usize>,
+
+    pub completions: Vec<String>,
+}
 
 impl<T, D> PadState<T, D> {
     // fn handle_vk(&mut self, vk: VirtualKeyCode) -> HandleCb {
@@ -54,23 +101,21 @@ pub struct Completers {
 }
 
 impl Completers {
-	pub fn build<D>(repl_data: &ReplData<D>) -> Self {
-    let cmds_tree = complete::cmdr::TreeCompleter::build(&repl_data.cmdtree);
+    pub fn build<D>(repl_data: &ReplData<D>) -> Self {
+        let cmds_tree = complete::cmdr::TreeCompleter::build(&repl_data.cmdtree);
 
-    let mods =
-        complete::modules::ModulesCompleter::build(&repl_data.cmdtree, &repl_data.file_map());
+        let mods =
+            complete::modules::ModulesCompleter::build(&repl_data.cmdtree, &repl_data.file_map());
 
-    let code = complete::code::CodeCompleter::build(repl_data);
+        let code = complete::code::CodeCompleter::build(repl_data);
 
-    Self {
-        cmds_tree,
-        mods,
-        code,
+        Self {
+            cmds_tree,
+            mods,
+            code,
+        }
     }
 }
-}
-
-
 
 pub struct CompletionPrompt;
 
@@ -102,19 +147,27 @@ impl CompletionPrompt {
     // cb!(PadState, update_state_on_vk_down);
 }
 
-pub fn completions(completer: &Completers, line: &str) -> Vec<String> {
+pub fn completions(completer: &Completers, line: &str, limit: Option<usize>) -> Vec<String> {
+    let limit = limit.unwrap_or(std::usize::MAX);
+
     let mut v = Vec::<String>::new();
 
-    v.extend(completer.cmds_tree.complete(line).map(|x| x.to_string()));
+    v.extend(
+        completer
+            .cmds_tree
+            .complete(line)
+            .map(|x| x.to_string())
+            .take(limit),
+    );
 
     if let Some(i) = completer.mods.complete(line) {
-        v.extend(i);
+        v.extend(i.take(limit.saturating_sub(v.len())));
     }
 
     v.extend(
         completer
             .code
-            .complete(line)
+            .complete(line, Some(limit.saturating_sub(v.len())))
             .into_iter()
             .map(|x| x.matchstr),
     );
