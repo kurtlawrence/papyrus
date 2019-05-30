@@ -112,6 +112,22 @@ pub struct Repl<S, Term: Terminal, Data> {
 }
 
 impl<S, T: Terminal, D> Repl<S, T, D> {
+    /// The current input buffer.
+    ///
+    /// # Examples
+    /// ```rust
+    /// # use papyrus::*;
+    ///
+    /// let mut repl = repl_with_term!(papyrus::prelude::MemoryTerminal::new());
+    ///
+    /// repl = repl.push_input_str("let a =").unwrap_err();
+    ///
+    /// assert_eq!(&repl.input(), "let a =");
+    /// ```
+    pub fn input(&self) -> String {
+        self.terminal.input_rdr.interface.buffer()
+    }
+
     /// The terminal that the repl reads from and writes to.
     pub fn terminal(&self) -> &T {
         self.terminal.terminal.as_ref()
@@ -126,9 +142,7 @@ impl<S, T: Terminal, D> Repl<S, T, D> {
             data_mrker: self.data_mrker,
         }
     }
-}
 
-impl<S, T: Terminal, D> Repl<S, T, D> {
     /// Set completion on the terminal.
     pub fn set_completion(&mut self, combined: crate::complete::CombinedCompleter<'static, T>) {
         self.terminal
@@ -187,6 +201,7 @@ struct OwnedWriter<T: Terminal>(Arc<T>);
 #[derive(Debug)]
 pub struct Read;
 /// Repl evaluate state.
+#[derive(Debug)]
 pub struct Evaluate {
     result: InputResult,
 }
@@ -195,6 +210,7 @@ pub struct Evaluating<Term: Terminal, Data> {
     jh: Receiver<EvalResult<Term, Data>>,
 }
 /// Repl print state.
+#[derive(Debug)]
 pub struct Print {
     to_print: Cow<'static, str>,
     /// Specifies whether to print the `[out#]`

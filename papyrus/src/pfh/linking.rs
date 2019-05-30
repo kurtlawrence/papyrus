@@ -142,47 +142,6 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
-mod macros {
-    /// Build a repl instance with the default terminal.
-    /// If a type is specfied (ie `repl!(String)`) then the repl will be bounded to use
-    /// that data type. Otherwise the default `()` will be used.
-    #[macro_export]
-    macro_rules! repl {
-        // Default Term, with type
-        ($type:ty) => {{
-            use papyrus;
-            let mut r: papyrus::repl::Repl<_, _, $type> = papyrus::repl::Repl::default();
-            r.data = unsafe { r.data.set_data_type(&format!("{}", stringify!($type))) };
-            r
-        }};
-
-        // No data
-        () => {{
-            use papyrus;
-            let r: papyrus::repl::Repl<_, _, ()> = papyrus::repl::Repl::default();
-            r
-        }};
-    }
-
-    /// See `repl!()`.
-    #[macro_export]
-    macro_rules! repl_with_term {
-        // With Term and type
-        ($term:expr, $type:ty) => {{
-            use papyrus;
-            let mut r: papyrus::repl::Repl<_, _, $type> = papyrus::repl::Repl::with_term($term);
-            r.data = unsafe { r.data.set_data_type(&format!("{}", stringify!($type))) };
-            r
-        }};
-        // No data with term
-        ($term:expr) => {{
-            use papyrus;
-            let r: papyrus::repl::Repl<_, _, ()> = papyrus::repl::Repl::with_term($term);
-            r
-        }};
-    }
-}
-
 /// The external crate and data linking configuration.
 pub struct LinkingConfiguration {
     /// Linking data configuration.
