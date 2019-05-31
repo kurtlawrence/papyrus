@@ -76,7 +76,7 @@ where
 
         if kickoff_completion {
             if let Some(repl) = self.repl.brw_repl() {
-                app_state.add_task(self.completion.complete(repl.input().to_owned(), None));
+                app_state.add_task(self.completion.complete(repl.input(), None));
             }
         }
 
@@ -106,7 +106,7 @@ where
 
         if kickoff_completion {
             if let Some(repl) = self.repl.brw_repl() {
-                app_state.add_task(self.completion.complete(repl.input().to_owned(), None));
+                app_state.add_task(self.completion.complete(repl.input(), None));
             }
         }
 
@@ -229,6 +229,12 @@ where
         }
         None => (DontRedraw, TerminateTimer::Terminate, false), // if there is no eval, may as well stop checking
     };
+
+    if redraw.is_some() {
+        let mut buf = String::with_capacity(pad.last_terminal_string.len());
+        create_terminal_string(&pad.terminal, &mut buf);
+        pad.term_render.update_text(&buf, app_resources);
+    }
 
     if finished {
         // execute eval_finished on PadState

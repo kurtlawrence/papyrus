@@ -29,15 +29,51 @@ impl CompletionPromptState {
     }
 
     /// Creates a completion task to be run on another thread.
-    pub fn complete<T>(&self, line: String, limit: Option<usize>) -> Task<T> {
-        {
-            let mut lock = self.data.lock().unwrap();
+    pub fn complete<T>(&mut self, line: &str, limit: Option<usize>) -> Task<T> {
+        fn set(data: &mut CompletionData, line: &str, limit: Option<usize>) {
+            data.line.clear();
+            data.line.push_str(line);
+            data.limit = limit;
+        }
 
-            lock.line = line;
-            lock.limit = limit;
+        // try to avoid locking if possible
+        if let Some(m) = Arc::get_mut(&mut self.data) {
+            set(m.get_mut().unwrap(), line, limit);
+        } else {
+            set(&mut self.data.lock().unwrap(), line, limit);
         }
 
         Task::new(&self.data, complete_task)
+    }
+
+    // Should be prefaced with reset call
+    pub fn build_completers<D>(&mut self, repl_data: &ReplData<D>) {
+        fn build<D>(data: &mut CompletionData, repl_data: &ReplData<D>) {
+            data.completers = Completers::build(repl_data)
+        }
+
+        // try to avoid locking if possible
+        if let Some(m) = Arc::get_mut(&mut self.data) {
+            build(m.get_mut().unwrap(), repl_data);
+        } else {
+            build(&mut self.data.lock().unwrap(), repl_data);
+        }
+    }
+
+    // resets the internal completions state
+    pub fn reset(&mut self) {
+        fn clear(data: &mut CompletionData) {
+            data.line.clear();
+            data.limit = None;
+            data.completions.clear();
+        }
+
+        // try to avoid locking if possible
+        if let Some(m) = Arc::get_mut(&mut self.data) {
+            clear(m.get_mut().unwrap());
+        } else {
+            clear(&mut self.data.lock().unwrap());
+        }
     }
 }
 
