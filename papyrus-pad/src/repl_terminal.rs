@@ -14,6 +14,7 @@ type HandleCb = (UpdateScreen, KickOffEvalDaemon, KickOffCompletionTask);
 
 impl<T, D> PadState<T, D>
 where
+    T: 'static + BorrowMut<AppValue<PadState<T, D>>>,
     D: 'static + Send + Sync,
 {
     fn handle_input(&mut self, input: char) -> HandleCb {
@@ -38,31 +39,8 @@ where
         }
     }
 
-    fn handle_vk(&mut self, vk: VirtualKeyCode) -> HandleCb {
-        match vk {
-            VirtualKeyCode::Back => self.handle_input('\x08'), // backspace character
-            VirtualKeyCode::Tab => self.handle_input('\t'),
-            VirtualKeyCode::Return => self.handle_input('\n'),
-            _ => (DontRedraw, false, false),
-        }
-    }
-}
-
-impl<T, D> PadState<T, D>
-where
-    T: BorrowMut<AppValue<PadState<T, D>>>,
-    D: 'static + Send + Sync,
-{
-    fn update_state_on_text_input(
-        &mut self,
-        app_state: &mut AppStateNoData<T>,
-        window_event: &mut CallbackInfo<T>,
-    ) -> UpdateScreen {
-        let (update_screen, kickoff_eval, kickoff_completion) = self.handle_input(
-            app_state.windows[window_event.window_id]
-                .get_keyboard_state()
-                .current_char?,
-        );
+    fn update(&mut self, app_state: &mut AppStateNoData<T>, hcb: HandleCb) -> UpdateScreen {
+        let (update_screen, kickoff_eval, kickoff_completion) = hcb;
 
         if update_screen.is_some() {
             let mut buf = String::with_capacity(self.last_terminal_string.len());
@@ -71,7 +49,7 @@ where
         }
 
         if kickoff_eval {
-            kickoff_daemon(app_state, self.eval_daemon_id);
+            Self::kickoff_daemon(app_state, self.eval_daemon_id);
         }
 
         if kickoff_completion {
@@ -81,6 +59,76 @@ where
         }
 
         update_screen
+    }
+
+    fn kickoff_daemon(app_state: &mut AppStateNoData<T>, daemon_id: TimerId) {
+        let daemon = Timer::new(Self::check_evaluating_done)
+            .with_interval(std::time::Duration::from_millis(2));
+        app_state.add_timer(daemon_id, daemon);
+    }
+
+    fn check_evaluating_done(
+        app: &mut T,
+        app_resources: &mut AppResources,
+    ) -> (UpdateScreen, TerminateTimer) {
+        // FIXME need to bench this and redraw_on_term_chg to check that it runs quickly
+        // hopefully less than 1ms as it needs to be fast...
+
+        let pad: &mut PadState<T, D> = &mut app.borrow_mut();
+
+        let (redraw, terminate, finished) = match pad.repl.take_eval() {
+            Some(eval) => {
+                if eval.completed() {
+                    pad.repl.put_read(eval.wait().repl.print());
+                    (Redraw, TerminateTimer::Terminate, true) // turn off daemon now
+                } else {
+                    pad.repl.put_eval(eval);
+                    (pad.redraw_on_term_chg(), TerminateTimer::Continue, false) // continue to check later
+                }
+            }
+            None => (DontRedraw, TerminateTimer::Terminate, false), // if there is no eval, may as well stop checking
+        };
+
+        if redraw.is_some() {
+            let mut buf = String::with_capacity(pad.last_terminal_string.len());
+            create_terminal_string(&pad.terminal, &mut buf);
+            pad.term_render.update_text(&buf, app_resources);
+        }
+
+        if finished {
+            // execute eval_finished on PadState
+            pad.eval_finished();
+
+            // execute the after_eval_fn that is stored on pad
+            (pad.after_eval_fn)(app, app_resources) // run user defined after_eval_fn
+        }
+
+        (redraw, terminate)
+    }
+
+    fn redraw_on_term_chg(&mut self) -> UpdateScreen {
+        let mut new_str = String::with_capacity(self.last_terminal_string.len());
+        create_terminal_string(&self.terminal, &mut new_str);
+        if new_str != self.last_terminal_string {
+            self.last_terminal_string = new_str;
+            Redraw
+        } else {
+            DontRedraw
+        }
+    }
+
+    fn update_state_on_text_input(
+        &mut self,
+        app_state: &mut AppStateNoData<T>,
+        window_event: &mut CallbackInfo<T>,
+    ) -> UpdateScreen {
+        let hcb = self.handle_input(
+            app_state.windows[window_event.window_id]
+                .get_keyboard_state()
+                .current_char?,
+        );
+
+        self.update(app_state, hcb)
     }
 
     fn update_state_on_vk_down(
@@ -88,37 +136,19 @@ where
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
     ) -> UpdateScreen {
-        let (update_screen, kickoff_eval, kickoff_completion) = self.handle_vk(
-            app_state.windows[window_event.window_id]
-                .get_keyboard_state()
-                .latest_virtual_keycode?,
-        );
+        let hcb = match app_state.windows[window_event.window_id]
+            .get_keyboard_state()
+            .latest_virtual_keycode?
+        {
+            VirtualKeyCode::Back => self.handle_input('\x08'), // backspace character
+            VirtualKeyCode::Tab => self.handle_input('\t'),
+            VirtualKeyCode::Return => self.handle_input('\n'),
+            _ => (DontRedraw, false, false),
+        };
 
-        if update_screen.is_some() {
-            let mut buf = String::with_capacity(self.last_terminal_string.len());
-            create_terminal_string(&self.terminal, &mut buf);
-            self.term_render.update_text(&buf, app_state.resources);
-        }
-
-        if kickoff_eval {
-            kickoff_daemon(app_state, self.eval_daemon_id);
-        }
-
-        if kickoff_completion {
-            if let Some(repl) = self.repl.brw_repl() {
-                app_state.add_task(self.completion.complete(repl.input(), None));
-            }
-        }
-
-        update_screen
+        self.update(app_state, hcb)
     }
-}
 
-impl<T, D> PadState<T, D>
-where
-    T: 'static + BorrowMut<AppValue<PadState<T, D>>>,
-    D: 'static + Send + Sync,
-{
     fn priv_update_state_on_text_input(
         data: &StackCheckedPointer<T>,
         app_state_no_data: &mut AppStateNoData<T>,
@@ -193,68 +223,6 @@ impl ReplTerminal {
         }
 
         container
-    }
-}
-
-fn kickoff_daemon<T, D>(app_state: &mut AppStateNoData<T>, daemon_id: TimerId)
-where
-    T: BorrowMut<AppValue<PadState<T, D>>>,
-{
-    let daemon =
-        Timer::new(check_evaluating_done).with_interval(std::time::Duration::from_millis(2));
-    app_state.add_timer(daemon_id, daemon);
-}
-
-fn check_evaluating_done<T, D>(
-    app: &mut T,
-    app_resources: &mut AppResources,
-) -> (UpdateScreen, TerminateTimer)
-where
-    T: BorrowMut<AppValue<PadState<T, D>>>,
-{
-    // FIXME need to bench this and redraw_on_term_chg to check that it runs quickly
-    // hopefully less than 1ms as it needs to be fast...
-
-    let pad: &mut PadState<T, D> = &mut app.borrow_mut();
-
-    let (redraw, terminate, finished) = match pad.repl.take_eval() {
-        Some(eval) => {
-            if eval.completed() {
-                pad.repl.put_read(eval.wait().repl.print());
-                (Redraw, TerminateTimer::Terminate, true) // turn off daemon now
-            } else {
-                pad.repl.put_eval(eval);
-                (redraw_on_term_chg(pad), TerminateTimer::Continue, false) // continue to check later
-            }
-        }
-        None => (DontRedraw, TerminateTimer::Terminate, false), // if there is no eval, may as well stop checking
-    };
-
-    if redraw.is_some() {
-        let mut buf = String::with_capacity(pad.last_terminal_string.len());
-        create_terminal_string(&pad.terminal, &mut buf);
-        pad.term_render.update_text(&buf, app_resources);
-    }
-
-    if finished {
-        // execute eval_finished on PadState
-        pad.eval_finished();
-
-        // execute the after_eval_fn that is stored on pad
-        (pad.after_eval_fn)(app, app_resources) // run user defined after_eval_fn
-    }
-
-    (redraw, terminate)
-}
-
-fn redraw_on_term_chg<T, D>(pad: &mut PadState<T, D>) -> UpdateScreen {
-    let mut new_str = String::with_capacity(pad.last_terminal_string.len());
-    create_terminal_string(&pad.terminal, &mut new_str);
-    if new_str != pad.last_terminal_string {
-        pad.last_terminal_string = new_str;
-        Redraw
-    } else {
-        DontRedraw
     }
 }
 
