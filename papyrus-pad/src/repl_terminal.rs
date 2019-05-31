@@ -64,6 +64,12 @@ where
                 .current_char?,
         );
 
+        if update_screen.is_some() {
+            let mut buf = String::with_capacity(self.last_terminal_string.len());
+            create_terminal_string(&self.terminal, &mut buf);
+            self.term_render.update_text(&buf, app_state.resources);
+        }
+
         if kickoff_eval {
             kickoff_daemon(app_state, self.eval_daemon_id);
         }
@@ -88,6 +94,12 @@ where
                 .latest_virtual_keycode?,
         );
 
+        if update_screen.is_some() {
+            let mut buf = String::with_capacity(self.last_terminal_string.len());
+            create_terminal_string(&self.terminal, &mut buf);
+            self.term_render.update_text(&buf, app_state.resources);
+        }
+
         if kickoff_eval {
             kickoff_daemon(app_state, self.eval_daemon_id);
         }
@@ -102,39 +114,72 @@ where
     }
 }
 
-pub struct ReplTerminal<T, D> {
-    text_input_cb_id: DefaultCallbackId,
-    vk_down_cb_id: DefaultCallbackId,
-    mrkr: PhantomData<T>,
-    mrkr_data: PhantomData<D>,
-}
-
-impl<T, D> ReplTerminal<T, D>
+impl<T, D> PadState<T, D>
 where
     T: 'static + BorrowMut<AppValue<PadState<T, D>>>,
     D: 'static + Send + Sync,
 {
-    pub fn dom(state: &AppValue<PadState<T, D>>, window: &mut FakeWindow<T>) -> Dom<T> {
+    fn priv_update_state_on_text_input(
+        data: &StackCheckedPointer<T>,
+        app_state_no_data: &mut AppStateNoData<T>,
+        window_event: &mut CallbackInfo<T>,
+    ) -> UpdateScreen {
+        data.invoke_mut(
+            Self::update_state_on_text_input,
+            app_state_no_data,
+            window_event,
+        )
+    }
+
+    fn priv_update_state_on_vk_down(
+        data: &StackCheckedPointer<T>,
+        app_state_no_data: &mut AppStateNoData<T>,
+        window_event: &mut CallbackInfo<T>,
+    ) -> UpdateScreen {
+        data.invoke_mut(
+            Self::update_state_on_vk_down,
+            app_state_no_data,
+            window_event,
+        )
+    }
+}
+
+pub struct ReplTerminal;
+
+impl ReplTerminal {
+    pub fn dom<T, D>(state: &AppValue<PadState<T, D>>, window: &mut FakeWindow<T>) -> Dom<T>
+    where
+        T: 'static + BorrowMut<AppValue<PadState<T, D>>>,
+        D: 'static + Send + Sync,
+    {
         let ptr = StackCheckedPointer::new(state);
 
         let text_input_cb_id = window.add_callback(
             ptr.clone(),
-            DefaultCallback(Self::update_state_on_text_input),
+            DefaultCallback(PadState::priv_update_state_on_text_input),
         );
-        let vk_down_cb_id =
-            window.add_callback(ptr.clone(), DefaultCallback(Self::update_state_on_vk_down));
+        let vk_down_cb_id = window.add_callback(
+            ptr.clone(),
+            DefaultCallback(PadState::priv_update_state_on_vk_down),
+        );
 
         let mut container = Dom::div()
             .with_class("repl-terminal")
             .with_tab_index(TabIndex::Auto); // make focusable
         container.add_default_callback_id(On::TextInput, text_input_cb_id);
-        container.add_default_callback_id(On::VirtualKeyDown, vk_down_cb_id);
+        container.add_default_callback_id(
+            EventFilter::Focus(FocusEventFilter::VirtualKeyDown),
+            vk_down_cb_id,
+        );
 
-        let mut text = String::with_capacity(state.last_terminal_string.len());
-        create_terminal_string(&state.terminal, &mut text);
-        let term = add_terminal_text(container, &text);
+        // let mut text = String::with_capacity(state.last_terminal_string.len());
+        // create_terminal_string(&state.terminal, &mut text);
 
-        let mut container = Dom::div().with_child(term);
+        // let container = add_terminal_text(container, &text);
+
+        container.add_child(state.term_render.dom());
+
+        let mut container = Dom::div().with_child(container);
 
         if let Ok(lock) = state.completion.data.try_lock() {
             let completions = &lock.completions;
@@ -149,9 +194,6 @@ where
 
         container
     }
-
-    cb!(PadState, update_state_on_text_input);
-    cb!(PadState, update_state_on_vk_down);
 }
 
 fn kickoff_daemon<T, D>(app_state: &mut AppStateNoData<T>, daemon_id: TimerId)

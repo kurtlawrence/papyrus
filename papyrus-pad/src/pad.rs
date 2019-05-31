@@ -9,6 +9,8 @@ impl<T, D> PadState<T, D> {
     pub fn new(repl: Repl<repl::Read, MemoryTerminal, D>, data: Arc<RwLock<D>>) -> Self {
         let term = repl.terminal().clone();
 
+        let term_render = ansi_renderer::AnsiRenderer::new();
+
         let completion = completion::CompletionPromptState::new(&repl.data);
 
         Self {
@@ -18,6 +20,7 @@ impl<T, D> PadState<T, D> {
             eval_daemon_id: TimerId::new(),
             data,
             after_eval_fn: none,
+            term_render,
             completion,
         }
     }

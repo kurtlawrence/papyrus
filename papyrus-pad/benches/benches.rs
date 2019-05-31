@@ -1,78 +1,9 @@
 #[macro_use]
 extern crate criterion;
 
-use colored::Colorize;
-
 use criterion::Criterion;
 
-use azul::prelude::*;
-use papyrus::prelude::*;
-use papyrus::widgets::pad::{add_terminal_text, create_terminal_string};
-
-fn create_terminal_string_fn(c: &mut Criterion) {
-    let term = MemoryTerminal::default();
-    term.write(LOREM_IPSUM);
-    let mut s = String::new();
-    c.bench_function("create_terminal_string default", move |b| {
-        b.iter(|| create_terminal_string(&term, &mut s))
-    });
-
-    let term = MemoryTerminal::with_size(Size {
-        lines: 100,
-        columns: 300,
-    });
-    term.write(LOREM_IPSUM);
-    let mut s = String::new();
-    c.bench_function("create_terminal_string large", move |b| {
-        b.iter(|| create_terminal_string(&term, &mut s))
-    });
-
-    let term = MemoryTerminal::with_size(Size {
-        lines: 1000,
-        columns: 300,
-    });
-    term.write(LOREM_IPSUM);
-    let mut s = String::new();
-    c.bench_function("create_terminal_string huge", move |b| {
-        b.iter(|| create_terminal_string(&term, &mut s))
-    });
-}
-
-fn bench_dom_creation(c: &mut Criterion) {
-    struct Mock;
-
-    let text = cstr();
-    let term = MemoryTerminal::default();
-    term.write(&text);
-    let mut s = String::new();
-    c.bench_function("add_terminal_text dom default", move |b| {
-        b.iter(|| {
-            create_terminal_string(&term, &mut s);
-            add_terminal_text::<Mock>(Dom::div(), &s)
-        })
-    });
-
-    let text = cstr();
-    let term = MemoryTerminal::with_size(Size {
-        lines: 100,
-        columns: 300,
-    });
-    term.write(&text);
-    let mut s = String::new();
-    c.bench_function("add_terminal_text dom large", move |b| {
-        b.iter(|| {
-            create_terminal_string(&term, &mut s);
-            add_terminal_text::<Mock>(Dom::div(), &s)
-        })
-    });
-}
-
-criterion_group!(
-    benches,
-    create_terminal_string_fn,
-    bench_dom_creation,
-    pfh_compile_construct
-);
+criterion_group!(benches,);
 criterion_main!(benches);
 
 fn cstr() -> String {
