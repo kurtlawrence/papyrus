@@ -3,7 +3,7 @@ use azul::prelude::*;
 use eval_state::EvalState;
 use papyrus::complete;
 use papyrus::prelude::*;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 impl<T, D> PadState<T, D> {
     pub fn new(repl: Repl<repl::Read, MemoryTerminal, D>, data: Arc<RwLock<D>>) -> Self {
@@ -36,6 +36,26 @@ impl<T, D> PadState<T, D> {
         //     self.completers = completion::Completers::build(&repl.data);
         // }
     }
+
+    pub fn initialise_resources(
+        &mut self,
+        app_resources: &mut AppResources,
+    ) -> (UpdateScreen, TerminateTimer) {
+        let mut s = String::new();
+        create_terminal_string(&self.terminal, &mut s);
+
+        self.term_render.update_text(&s, app_resources);
+
+        self.last_terminal_string = s;
+
+        (Redraw, TerminateTimer::Terminate)
+    }
 }
 
 fn none<T>(_: &mut T, _: &mut AppResources) {}
+
+pub fn initialise_resources_task<T>(cb: azul::callbacks::TimerCallbackType<T>) -> Task<T> {
+    Task::new(&Arc::new(Mutex::new(())), initialise_resources_task_inner).then(Timer::new(cb))
+}
+
+fn initialise_resources_task_inner(_: Arc<Mutex<()>>, _: DropCheck) {}

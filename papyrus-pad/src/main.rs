@@ -50,6 +50,8 @@ fn main() {
     )
     .unwrap();
 
+    app.add_task(pad::initialise_resources_task(initialise_resources));
+
     let css = create_css();
 
     let window = if cfg!(debug_assertions) {
@@ -80,4 +82,11 @@ fn create_css() -> String {
     css.push_str(papyrus_pad::PAD_CSS);
 
     inject_theme(&css, &themes::dark_theme())
+}
+
+fn initialise_resources(
+    app: &mut MyApp,
+    app_resources: &mut AppResources,
+) -> (UpdateScreen, TerminateTimer) {
+    app.repl_term.initialise_resources(app_resources)
 }

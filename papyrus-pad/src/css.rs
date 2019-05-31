@@ -1,15 +1,10 @@
 /// CSS for all pad items.
 pub const PAD_CSS: &'static str = r##"
-.repl-terminal {
-	background-color: black;
-	padding: 5px;
-}
-
-.repl-terminal-line {
+.ansi-renderer-line {
 	flex-direction: row;
 }
 
-.repl-terminal-text {
+.ansi-renderer-text {
 	color: [[ ansi_esc_color | white ]];
 	text-align: left;
 	line-height: 135%;
@@ -17,8 +12,13 @@ pub const PAD_CSS: &'static str = r##"
 	font-family: Lucida Console,Lucida Sans Typewriter,monaco,Bitstream Vera Sans Mono,monospace;
 }
 
-.repl-terminal-text:hover {
+.ansi-renderer-text:hover {
 	border: 1px solid #9b9b9b;
+}
+
+.repl-terminal {
+	background-color: black;
+	padding: 5px;
 }
 
 #completion-prompt {

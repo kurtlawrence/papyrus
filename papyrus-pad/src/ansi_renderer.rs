@@ -56,12 +56,12 @@ impl AnsiRenderer {
         let mut start = 0;
 
         for &end in &self.lines {
-            let mut line_div = Dom::div().with_class("repl-terminal-line");
+            let mut line_div = Dom::div().with_class("ansi-renderer-line");
 
             for (id, prop) in &self.display[start..end] {
                 line_div.add_child(
                     Dom::text_id(*id)
-                        .with_class("repl-terminal-text")
+                        .with_class("ansi-renderer-text")
                         .with_css_override(PROPERTY_STR, prop.clone()),
                 );
             }
