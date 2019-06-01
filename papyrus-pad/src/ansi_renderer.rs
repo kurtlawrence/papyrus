@@ -24,19 +24,21 @@ impl AnsiRenderer {
     pub fn update_text(&mut self, text: &str, app_resources: &mut AppResources) {
         self.display.clear();
         self.lines.clear();
-        self.id_pool
-            .drain(..)
-            .for_each(|id| app_resources.delete_text(id));
-
+       
         let categorised = cansi::categorise_text(text);
 
         let mut idx = 0;
 
         for line in cansi::line_iter(&categorised) {
             for cat in line {
-                let id = app_resources.add_text(cat.text);
-
-                self.id_pool.push(id);
+				let id = if let Some(id) = self.id_pool.get(idx) {
+					app_resources.alter_text(id, cat.text);
+					*id
+				} else {
+                	let id = app_resources.add_text(cat.text);
+					self.id_pool.push(id);
+					id
+				};
 
                 let prop = StyleTextColor(crate::colour::map(&cat.fg_colour)).into();
 
