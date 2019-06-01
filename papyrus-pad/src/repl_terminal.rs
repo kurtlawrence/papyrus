@@ -17,7 +17,7 @@ where
     T: 'static + BorrowMut<AppValue<PadState<T, D>>>,
     D: 'static + Send + Sync,
 {
-    fn handle_input(&mut self, input: char) -> HandleCb {
+    pub fn handle_input(&mut self, input: char) -> HandleCb {
         let mut kickoff_eval = false;
         let mut kickoff_completion = false;
 
@@ -67,7 +67,7 @@ where
         app_state.add_timer(daemon_id, daemon);
     }
 
-    fn check_evaluating_done(
+    pub fn check_evaluating_done(
         app: &mut T,
         app_resources: &mut AppResources,
     ) -> (UpdateScreen, TerminateTimer) {

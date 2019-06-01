@@ -19,7 +19,7 @@ mod completion;
 mod css;
 mod eval_state;
 pub mod pad;
-mod repl_terminal;
+pub mod repl_terminal;
 
 pub use self::css::PAD_CSS;
 pub use self::repl_terminal::{add_terminal_text, create_terminal_string, ReplTerminal};

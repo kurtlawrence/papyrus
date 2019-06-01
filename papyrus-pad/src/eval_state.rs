@@ -1,5 +1,7 @@
 use papyrus::prelude::*;
 
+// TODO Get rid of Option wrapping and just make it a tri-variant with a None
+
 type Read<D> = Repl<repl::Read, MemoryTerminal, D>;
 type Eval<D> = repl::Evaluating<MemoryTerminal, D>;
 
