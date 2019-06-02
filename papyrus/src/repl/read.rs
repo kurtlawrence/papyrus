@@ -12,7 +12,9 @@ impl<Data> Default for Repl<Read, DefaultTerminal, Data> {
         let terminal2 =
             linefeed::terminal::DefaultTerminal::new().expect("failed to start default terminal");
         let r = Repl {
-            state: Read,
+            state: Read {
+                output: Output::default(),
+            },
             terminal: ReplTerminal {
                 terminal: Arc::new(terminal1),
                 input_rdr: InputReader::with_term("papyrus", terminal2)
@@ -34,7 +36,9 @@ impl<Term: Terminal + Clone, Data> Repl<Read, Term, Data> {
         let data = ReplData::default();
         let terminal2 = terminal.clone();
         let r = Repl {
-            state: Read,
+            state: Read {
+                output: Output::default(),
+            },
             terminal: ReplTerminal {
                 terminal: Arc::new(terminal),
                 input_rdr: InputReader::with_term("papyrus", terminal2)
@@ -66,7 +70,10 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
             };
 
             if !self.more {
-                return self.move_state(Evaluate { result });
+                return self.move_state(|s| Evaluate {
+                    output: s.output.to_write(),
+                    result,
+                });
             }
         }
     }
@@ -120,7 +127,10 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
                     PushResult::Read(self)
                 } else {
                     self.more = false;
-                    PushResult::Eval(self.move_state(Evaluate { result }))
+                    PushResult::Eval(self.move_state(|s| Evaluate {
+                        output: s.output.to_write(),
+                        result,
+                    }))
                 }
             }
             None => PushResult::Read(self),

@@ -63,6 +63,8 @@ pub mod compile;
 pub mod complete;
 /// Parsing of input.
 pub mod input;
+/// Reading and writing output.
+pub mod output;
 pub mod pfh;
 pub mod repl;
 

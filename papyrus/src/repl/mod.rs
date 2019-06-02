@@ -86,6 +86,7 @@ pub use cmdtree::Builder as CommandBuilder;
 use crate::{
     complete::*,
     input::{InputReader, InputResult},
+    output::{self, Output},
     pfh::{self, linking::LinkingConfiguration},
 };
 use cmdtree::*;
@@ -156,19 +157,26 @@ struct OwnedWriter<T: Terminal>(Arc<T>);
 
 /// Repl read state.
 #[derive(Debug)]
-pub struct Read;
+pub struct Read {
+    output: Output<output::Read>,
+}
+
 /// Repl evaluate state.
 #[derive(Debug)]
 pub struct Evaluate {
+    output: Output<output::Write>,
     result: InputResult,
 }
+
 /// Repl evaluating state. This can be constructed via a `eval_async` call.
 pub struct Evaluating<Term: Terminal, Data> {
     jh: Receiver<EvalResult<Term, Data>>,
 }
+
 /// Repl print state.
 #[derive(Debug)]
 pub struct Print {
+    output: Output<output::Write>,
     to_print: Cow<'static, str>,
     /// Specifies whether to print the `[out#]`
     as_out: bool,
@@ -179,7 +187,7 @@ pub struct EvalResult<Term: Terminal, Data> {
     /// The repl, in print ready state.
     pub repl: Repl<Print, Term, Data>,
     /// The signal, if any.
-    signal: Signal,
+    pub signal: Signal,
 }
 
 /// Return signals from evaluating.

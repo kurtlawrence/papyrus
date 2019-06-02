@@ -39,7 +39,9 @@ impl<Term: Terminal, Data> Repl<Print, Term, Data> {
             }
         }
 
-        let r = self.move_state(Read);
+        let r = self.move_state(|s| Read {
+            output: s.output.to_read(),
+        });
 
         r.draw_prompt().unwrap(); // prep for next read
 

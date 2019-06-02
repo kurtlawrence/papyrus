@@ -130,10 +130,16 @@ where
                                           // the alternative would be to keep alive on compilation failures, might not for now though.
                                           // this would have to be individually handled in each match arm and it, rather let the user
                                           // have to reinstate mutability if they fuck up input.
+    let output = state.output;
+
     EvalResult {
         signal: sig,
         repl: Repl {
-            state: Print { to_print, as_out },
+            state: Print {
+                output,
+                to_print,
+                as_out,
+            },
             terminal: terminal,
             data: data,
             more: more,

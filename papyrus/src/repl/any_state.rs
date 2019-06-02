@@ -22,13 +22,23 @@ impl<S, T: Terminal, D> Repl<S, T, D> {
         self.terminal.terminal.as_ref()
     }
 
-    pub(super) fn move_state<N>(self, state: N) -> Repl<N, T, D> {
+    pub(super) fn move_state<N, F: FnOnce(S) -> N>(self, state_chg: F) -> Repl<N, T, D> {
+        let Repl {
+            state,
+            terminal,
+            data,
+            more,
+            data_mrker,
+        } = self;
+
+        let state = state_chg(state);
+
         Repl {
-            state: state,
-            terminal: self.terminal,
-            data: self.data,
-            more: self.more,
-            data_mrker: self.data_mrker,
+            state,
+            terminal,
+            data,
+            more,
+            data_mrker,
         }
     }
 
