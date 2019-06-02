@@ -31,14 +31,8 @@ impl AnsiRenderer {
 
         for line in cansi::line_iter(&categorised) {
             for cat in line {
-				let id = if let Some(id) = self.id_pool.get(idx) {
-					app_resources.alter_text(id, cat.text);
-					*id
-				} else {
-                	let id = app_resources.add_text(cat.text);
-					self.id_pool.push(id);
-					id
-				};
+
+				let id = app_resources.add_text(cat.text);
 
                 let prop = StyleTextColor(crate::colour::map(&cat.fg_colour)).into();
 
