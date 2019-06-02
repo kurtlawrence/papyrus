@@ -20,6 +20,7 @@ pub struct InputReader<Term: Terminal> {
     /// Previous line buffer
     buffer: String,
 
+    /// The terminal interface.
     pub interface: Interface<Term>,
 }
 
@@ -38,14 +39,17 @@ impl<Term: Terminal> InputReader<Term> {
         })
     }
 
+    /// The current input buffer.
     pub fn input_buffer(&self) -> &str {
         self.input_buffer.as_str()
     }
 
+    /// Sets the prompt on the interface.
     pub fn set_prompt(&self, prompt: &str) -> io::Result<()> {
         self.interface.set_prompt(prompt)
     }
 
+    /// Sets the completer on the interface.
     pub fn set_completer(&mut self, completer: std::sync::Arc<linefeed::Completer<Term>>) {
         self.interface.set_completer(completer);
     }

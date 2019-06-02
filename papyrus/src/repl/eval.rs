@@ -1,6 +1,6 @@
 use super::*;
-use crate::pfh::{self, Input, StmtGrp};
 use crate::compile;
+use crate::pfh::{self, Input, StmtGrp};
 use linefeed::terminal::Terminal;
 use std::borrow::{Borrow, BorrowMut};
 use std::ops::{Deref, DerefMut};
@@ -234,8 +234,7 @@ impl<Data> ReplData<Data> {
         }
 
         // build directory
-        let res =
-            compile::build_compile_dir(&self.compilation_dir, &self.file_map, &self.linking);
+        let res = compile::build_compile_dir(&self.compilation_dir, &self.file_map, &self.linking);
         if let Err(e) = res {
             pop_input(self); // failed so don't save
             return (
