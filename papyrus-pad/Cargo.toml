@@ -9,8 +9,8 @@ edition = "2018"
 papyrus = { path = "../papyrus" }
 azul = { path = "/azul/azul" }
 azul-theming = { path = "/azul-theming" }
-cansi = "2.0"
-# fxhash = "0.2"
+# cansi = "2.0"
+cansi = { path = "/cansi" }
 
 [dev-dependencies]
 criterion = "0.2"

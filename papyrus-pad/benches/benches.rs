@@ -17,6 +17,12 @@ use std::sync::{Arc, RwLock};
 fn ansi_rendering(c: &mut Criterion) {
     use ansi_renderer::*;
 
+    // # split text -- check speed
+    let txt = large_colored_txt();
+    c.bench_function("azul::text_layout::split_text_into_words", move |b| {
+        b.iter(|| azul::text_layout::split_text_into_words(&txt))
+    });
+
     // # categorising -- check speed
     let txt = large_colored_txt();
     c.bench_function("categorising text", move |b| {
@@ -46,7 +52,7 @@ fn ansi_rendering(c: &mut Criterion) {
 // Azul Text Layout
 // Benchmarks my TextSlice impl
 fn azul_text_layout(c: &mut Criterion) {
-	use azul::text_layout::*;
+    use azul::text_layout::*;
 
     // # convert_byte_range
     let words = split_text_into_words(LOREM_IPSUM);
@@ -54,42 +60,43 @@ fn azul_text_layout(c: &mut Criterion) {
         b.iter(|| words.convert_byte_range(..))
     });
 
-	let words = split_text_into_words(LOREM_IPSUM);
+    let words = split_text_into_words(LOREM_IPSUM);
     c.bench_function("Words::convert_byte_range range: to 15000", move |b| {
         b.iter(|| words.convert_byte_range(..15000))
     });
 
-	let words = split_text_into_words(LOREM_IPSUM);
+    let words = split_text_into_words(LOREM_IPSUM);
     c.bench_function("Words::convert_byte_range range: 15000 from", move |b| {
         b.iter(|| words.convert_byte_range(15000..))
     });
 
-	let words = split_text_into_words(LOREM_IPSUM);
-    c.bench_function("Words::convert_byte_range range: 29500 to 30000", move |b| {
-        b.iter(|| words.convert_byte_range(29500..30000))
-    });
+    let words = split_text_into_words(LOREM_IPSUM);
+    c.bench_function(
+        "Words::convert_byte_range range: 29500 to 30000",
+        move |b| b.iter(|| words.convert_byte_range(29500..30000)),
+    );
 
-	// # clone slice
-	let words = split_text_into_words(LOREM_IPSUM);
-	let chrange = words.convert_byte_range(..).unwrap();
+    // # clone slice
+    let words = split_text_into_words(LOREM_IPSUM);
+    let chrange = words.convert_byte_range(..).unwrap();
     c.bench_function("Words::clone_slice range: full", move |b| {
         b.iter(|| words.clone_slice(chrange.clone()))
     });
 
-	let words = split_text_into_words(LOREM_IPSUM);
-	let chrange = words.convert_byte_range(..15000).unwrap();
+    let words = split_text_into_words(LOREM_IPSUM);
+    let chrange = words.convert_byte_range(..15000).unwrap();
     c.bench_function("Words::clone_slice range: to 15000", move |b| {
         b.iter(|| words.clone_slice(chrange.clone()))
     });
 
-	let words = split_text_into_words(LOREM_IPSUM);
-	let chrange = words.convert_byte_range(15000..).unwrap();
+    let words = split_text_into_words(LOREM_IPSUM);
+    let chrange = words.convert_byte_range(15000..).unwrap();
     c.bench_function("Words::clone_slice range: 15000 from", move |b| {
         b.iter(|| words.clone_slice(chrange.clone()))
     });
 
-	let words = split_text_into_words(LOREM_IPSUM);
-	let chrange = words.convert_byte_range(29500..30000).unwrap();
+    let words = split_text_into_words(LOREM_IPSUM);
+    let chrange = words.convert_byte_range(29500..30000).unwrap();
     c.bench_function("Words::clone_slice range: 29500 to 30000", move |b| {
         b.iter(|| words.clone_slice(chrange.clone()))
     });
@@ -170,7 +177,6 @@ impl BorrowMut<AppValue<PadState<Mock, ()>>> for Mock {
         &mut self.0
     }
 }
-
 
 const LOREM_IPSUM: &str = r#"
     Lorem ipsum dolor sit amet, consectetur adipiscing elit.
