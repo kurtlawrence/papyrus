@@ -160,6 +160,8 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
     ///
     /// # Panics
     /// - Failure to initialise `InputReader`.
+    #[cfg(feature = "runnable")]
+    #[cfg(feature = "racer-completion")]
     pub fn run(self, app_data: &mut Data) {
         output_ver(self.terminal.terminal.as_ref());
 
@@ -191,6 +193,7 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
     }
 }
 
+#[cfg(feature = "runnable")]
 fn output_ver<T: Terminal>(term: &T) {
     cratesiover::output_to_writer("papyrus", env!("CARGO_PKG_VERSION"), &mut Writer(term)).unwrap();
 }

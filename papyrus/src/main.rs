@@ -13,7 +13,6 @@
 //! papyrus=> 2+2
 //! papyrus [out0]: 4
 //! ```
-
 use papyrus::*;
 
 fn main() {

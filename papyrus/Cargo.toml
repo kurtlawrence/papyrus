@@ -16,9 +16,9 @@ travis-ci = { repository = "kurtlawrence/papyrus" }
 
 [dependencies]
 # My crates
+cratesiover =		{ version = "2.2",		optional = true }
 #linefeed = { git = "https://github.com/kurtlawrence/linefeed" }
 linefeed = { path = "/linefeed" }
-cratesiover = "2.2"
 cmdtree = "0.7"
 shh = "1.0"
 
@@ -32,7 +32,7 @@ reqwest = "0.9"
 libloading = "0.5"
 crossbeam = "0.7"
 sublime_fuzzy = "0.6"
-racer = "2.1"
+racer = 			{ version = "2.1",		optional = true }
 fxhash = "0.2"
 
 [dev-dependencies]
@@ -41,3 +41,15 @@ criterion = "0.2"
 [[bench]]
 name = "benches"
 harness = false
+
+[features]
+default = [ "runnable", "racer-completion" ]
+# allows to just run the repl
+runnable = [ "cratesiover" ]
+# requires nightly
+racer-completion = [ "racer" ]
+
+[[bin]]
+name = "papyrus"
+path = "src/main.rs"
+required-features = [ "runnable", "racer-completion" ]
