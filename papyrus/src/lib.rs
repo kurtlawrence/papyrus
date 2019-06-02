@@ -15,6 +15,7 @@
 //! ```
 
 #![warn(missing_docs)]
+#![feature(fnbox)]
 
 #[macro_use]
 extern crate log;

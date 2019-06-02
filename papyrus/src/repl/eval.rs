@@ -172,13 +172,13 @@ impl<Data> ReplData<Data> {
                     (Cow::Borrowed("beginning mut block"), false)
                 }
                 CommandResult::ActionOnReplData(action) => {
-                    let s = action(self, &mut Writer(terminal.as_ref()));
+                    let s = action.call_box((self, &mut Writer(terminal.as_ref())));
                     (Cow::Owned(s), false)
                 }
                 CommandResult::ActionOnAppData(action) => {
                     let mut r = obtain_app_data();
                     let app_data: &mut Data = r.borrow_mut();
-                    let s = action(app_data, &mut Writer(terminal.as_ref()));
+                    let s = action.call_box((app_data, &mut Writer(terminal.as_ref())));
                     (Cow::Owned(s), false)
                 }
                 CommandResult::Empty => (Cow::Borrowed(""), false),

@@ -1,12 +1,13 @@
 use super::*;
+use std::boxed::FnBox;
 use std::io::Write;
 
 /// The action to take. Passes through a mutable reference to the `ReplData`.
 /// Can't be W as it would add another generic argument.
-pub type ReplDataAction<D> = Box<Fn(&mut ReplData<D>, &mut Write) -> String>;
+pub type ReplDataAction<D> = Box<FnBox(&mut ReplData<D>, &mut Write) -> String>;
 
 /// The action to take. Passes through a mutable reference to the `Data`.
-pub type AppDataAction<D> = Box<Fn(&mut D, &mut Write) -> String>;
+pub type AppDataAction<D> = Box<FnBox(&mut D, &mut Write) -> String>;
 
 /// The result of a [`cmdtree action`](https://docs.rs/cmdtree/builder/trait.BuilderChain.html#tymethod.add_action).
 /// This result is handed in the repl's evaluating stage, and can alter `ReplData`.
