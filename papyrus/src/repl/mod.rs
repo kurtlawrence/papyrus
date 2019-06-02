@@ -72,6 +72,7 @@
 //! ```
 //!
 //! Please help if the Repl cannot parse your statements, or help with documentation! [https://github.com/kurtlawrence/papyrus](https://github.com/kurtlawrence/papyrus).
+mod any_state;
 mod cmds;
 mod data;
 mod eval;
@@ -79,22 +80,24 @@ mod print;
 mod read;
 mod writer;
 
+pub use cmds::*;
 pub use cmdtree::Builder as CommandBuilder;
 
-use crate::complete::*;
-use crate::input::{InputReader, InputResult};
-use crate::pfh::{self, linking::LinkingConfiguration};
+use crate::{
+    complete::*,
+    input::{InputReader, InputResult},
+    pfh::{self, linking::LinkingConfiguration},
+};
 use cmdtree::*;
 use colored::*;
 use crossbeam::channel::Receiver;
 use linefeed::terminal::Terminal;
-use std::borrow::Cow;
-use std::marker::PhantomData;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::{
-    fmt, fs,
-    io::{self, Write},
+    borrow::Cow,
+    fmt, fs, io,
+    marker::PhantomData,
+    path::{Path, PathBuf},
+    sync::Arc,
 };
 
 /// The repl structure. Stored as a state machine.
@@ -109,52 +112,6 @@ pub struct Repl<S, Term: Terminal, Data> {
     /// A persistent flag for the prompt to change for more input.
     more: bool,
     data_mrker: PhantomData<Data>,
-}
-
-impl<S, T: Terminal, D> Repl<S, T, D> {
-    /// The current input buffer.
-    ///
-    /// # Examples
-    /// ```rust
-    /// # use papyrus::*;
-    ///
-    /// let mut repl = repl_with_term!(papyrus::prelude::MemoryTerminal::new());
-    ///
-    /// repl = repl.push_input_str("let a =").unwrap_err();
-    ///
-    /// assert_eq!(repl.input(), "let a =");
-    /// ```
-    pub fn input(&self) -> &str {
-        self.terminal.input_rdr.input_buffer()
-    }
-
-    /// The terminal that the repl reads from and writes to.
-    pub fn terminal(&self) -> &T {
-        self.terminal.terminal.as_ref()
-    }
-
-    fn move_state<N>(self, state: N) -> Repl<N, T, D> {
-        Repl {
-            state: state,
-            terminal: self.terminal,
-            data: self.data,
-            more: self.more,
-            data_mrker: self.data_mrker,
-        }
-    }
-
-    /// Set completion on the terminal.
-    pub fn set_completion(&mut self, combined: crate::complete::CombinedCompleter<'static, T>) {
-        self.terminal
-            .input_rdr
-            .set_completer(std::sync::Arc::new(combined));
-    }
-}
-
-impl<S: fmt::Debug, T: Terminal, D> fmt::Debug for Repl<S, T, D> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Repl in <{:?}> state instance", self.state)
-    }
 }
 
 /// The inner configuration data of the repl.
@@ -216,38 +173,6 @@ pub struct Print {
     /// Specifies whether to print the `[out#]`
     as_out: bool,
 }
-
-/// The result of a [`cmdtree action`](https://docs.rs/cmdtree/builder/trait.BuilderChain.html#tymethod.add_action).
-/// This result is handed in the repl's evaluating stage, and can alter `ReplData`.
-pub enum CommandResult<Data> {
-    /// Flag to begin a mutating block.
-    BeginMutBlock,
-    /// Take an action on the `ReplData`.
-    ActionOnReplData(ReplDataAction<Data>),
-    /// Take an action on `Data`.
-    ActionOnAppData(AppDataAction<Data>),
-    /// A blank variant with no action.
-    Empty,
-}
-
-impl<D> CommandResult<D> {
-    /// Convenience function boxing an action on app data.
-    pub fn app_data_fn<F: 'static + Fn(&mut D, &mut Write) -> String>(func: F) -> Self {
-        CommandResult::ActionOnAppData(Box::new(func))
-    }
-
-    /// Convenience function boxing an action on repl data.
-    pub fn repl_data_fn<F: 'static + Fn(&mut ReplData<D>, &mut Write) -> String>(func: F) -> Self {
-        CommandResult::ActionOnReplData(Box::new(func))
-    }
-}
-
-/// The action to take. Passes through a mutable reference to the `ReplData`.
-/// Can't be W as it would add another generic argument.
-pub type ReplDataAction<D> = Box<Fn(&mut ReplData<D>, &mut Write) -> String>;
-
-/// The action to take. Passes through a mutable reference to the `Data`.
-pub type AppDataAction<D> = Box<Fn(&mut D, &mut Write) -> String>;
 
 /// Represents an evaluating result. Signal should be checked and handled.
 pub struct EvalResult<Term: Terminal, Data> {

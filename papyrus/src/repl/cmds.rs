@@ -1,6 +1,38 @@
 use super::*;
 use std::io::Write;
 
+/// The action to take. Passes through a mutable reference to the `ReplData`.
+/// Can't be W as it would add another generic argument.
+pub type ReplDataAction<D> = Box<Fn(&mut ReplData<D>, &mut Write) -> String>;
+
+/// The action to take. Passes through a mutable reference to the `Data`.
+pub type AppDataAction<D> = Box<Fn(&mut D, &mut Write) -> String>;
+
+/// The result of a [`cmdtree action`](https://docs.rs/cmdtree/builder/trait.BuilderChain.html#tymethod.add_action).
+/// This result is handed in the repl's evaluating stage, and can alter `ReplData`.
+pub enum CommandResult<Data> {
+    /// Flag to begin a mutating block.
+    BeginMutBlock,
+    /// Take an action on the `ReplData`.
+    ActionOnReplData(ReplDataAction<Data>),
+    /// Take an action on `Data`.
+    ActionOnAppData(AppDataAction<Data>),
+    /// A blank variant with no action.
+    Empty,
+}
+
+impl<D> CommandResult<D> {
+    /// Convenience function boxing an action on app data.
+    pub fn app_data_fn<F: 'static + Fn(&mut D, &mut Write) -> String>(func: F) -> Self {
+        CommandResult::ActionOnAppData(Box::new(func))
+    }
+
+    /// Convenience function boxing an action on repl data.
+    pub fn repl_data_fn<F: 'static + Fn(&mut ReplData<D>, &mut Write) -> String>(func: F) -> Self {
+        CommandResult::ActionOnReplData(Box::new(func))
+    }
+}
+
 impl<Data> ReplData<Data> {
     /// Uses the given `Builder` as the root of the command tree.
     ///
