@@ -8,7 +8,7 @@ type DataFunc<D> = unsafe fn(D) -> String;
 
 type ExecResult = Result<String, &'static str>;
 
-pub fn exec<P: AsRef<Path>, D, W: Write + Send>(
+pub(crate) fn exec<P: AsRef<Path>, D, W: Write + Send>(
     library_file: P,
     function_name: &str,
     app_data: D,

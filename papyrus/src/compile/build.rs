@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::{error, fmt};
 
+/// Run `rustc` in the given compilation directory.
 pub fn compile<P, F>(
     compile_dir: P,
     linking_config: &linking::LinkingConfiguration,

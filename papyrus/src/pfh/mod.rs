@@ -2,7 +2,6 @@
 //! Pertains to file operations and compilation.
 
 pub mod code;
-pub mod compile;
 pub mod linking;
 
 use std::collections::BTreeMap;
@@ -25,10 +24,13 @@ pub fn eval_fn_name<S: AsRef<str>>(mod_path: &[S], buf: &mut String) {
     buf.push_str("intern_eval"); // 11 len
 }
 
+/// Calculates the length of the evaluation function name.
+/// Used for performance.
 pub fn eval_fn_name_length<S: AsRef<str>>(mod_path: &[S]) -> usize {
     12 + mod_path.iter().map(|x| x.as_ref().len() + 1).sum::<usize>()
 }
 
+/// Transforms a path into a vector of components.
 pub fn into_mod_path_vec(path: &Path) -> Vec<&str> {
     path.iter().filter_map(|x| x.to_str()).collect()
 }

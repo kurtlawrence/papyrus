@@ -1,5 +1,6 @@
 use super::*;
 use crate::pfh::{self, Input, StmtGrp};
+use crate::compile;
 use linefeed::terminal::Terminal;
 use std::borrow::{Borrow, BorrowMut};
 use std::ops::{Deref, DerefMut};
@@ -234,7 +235,7 @@ impl<Data> ReplData<Data> {
 
         // build directory
         let res =
-            pfh::compile::build_compile_dir(&self.compilation_dir, &self.file_map, &self.linking);
+            compile::build_compile_dir(&self.compilation_dir, &self.file_map, &self.linking);
         if let Err(e) = res {
             pop_input(self); // failed so don't save
             return (
@@ -244,10 +245,10 @@ impl<Data> ReplData<Data> {
         }
 
         // format
-        pfh::compile::fmt(&self.compilation_dir);
+        compile::fmt(&self.compilation_dir);
 
         // compile
-        let lib_file = pfh::compile::compile(&self.compilation_dir, &self.linking, |line| {
+        let lib_file = compile::compile(&self.compilation_dir, &self.linking, |line| {
             Writer(terminal.as_ref())
                 .overwrite_current_console_line(&line)
                 .unwrap()
@@ -293,11 +294,11 @@ impl<Data> ReplData<Data> {
                 if self.linking.mutable {
                     let mut r = obtain_mut_data();
                     let app_data: &mut Data = r.borrow_mut();
-                    pfh::compile::exec(&lib_file, &fn_name, app_data, redirect_wtr)
+                    compile::exec(&lib_file, &fn_name, app_data, redirect_wtr)
                 } else {
                     let r = obtain_brw_data();
                     let app_data: &Data = r.borrow();
-                    pfh::compile::exec(&lib_file, &fn_name, app_data, redirect_wtr)
+                    compile::exec(&lib_file, &fn_name, app_data, redirect_wtr)
                 }
             };
             match exec_res {

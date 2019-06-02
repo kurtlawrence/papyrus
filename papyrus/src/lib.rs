@@ -59,8 +59,9 @@ macro_rules! repl_with_term {
 }
 
 pub mod complete;
-mod input;
-mod pfh;
+pub mod input;
+pub mod pfh;
+pub mod compile;
 pub mod repl;
 
 /// Re-exports of most common types and modules.
