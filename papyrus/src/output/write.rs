@@ -3,7 +3,9 @@ use std::io;
 
 impl Output<Write> {
     pub fn to_read(self) -> Output<Read> {
-        let Output { buf, lines_pos, .. } = self;
+        let Output {
+            buf, lines_pos, tx, ..
+        } = self;
 
         let state = Read { input_start: 0 };
 
@@ -11,6 +13,7 @@ impl Output<Write> {
             state,
             buf,
             lines_pos,
+            tx,
         }
     }
 
@@ -38,6 +41,8 @@ impl Output<Write> {
     pub fn erase_last_line(&mut self) {
         self.buf
             .truncate(self.lines_pos.last().map(|x| x + 1).unwrap_or(0));
+
+        self.send_line_chg(self.lines_len().saturating_sub(1));
     }
 }
 

@@ -1,6 +1,11 @@
 mod any_state;
+mod printer;
 mod read;
 mod write;
+
+pub use printer::Printer;
+
+use crossbeam_channel as channel;
 
 #[derive(Debug)]
 pub struct Output<S> {
@@ -15,6 +20,14 @@ pub struct Output<S> {
     /// First line always starts `[0..line_pos[0])` (can be empty).
     /// Every `nth` line after that is `[line_pos[n-1] + 1..line_pos[n])`.
     lines_pos: Vec<usize>,
+
+    tx: Option<channel::Sender<LineChange<'static>>>,
+}
+
+#[derive(Debug)]
+pub struct LineChange<'a> {
+    pub line_index: usize,
+    pub line: &'a str,
 }
 
 #[derive(Debug)]
@@ -82,6 +95,21 @@ impl<S> Output<S> {
                 .last()
                 .map(|&x| x == self.buf.len() - 1)
                 .unwrap_or(false)
+    }
+}
+
+// Message sending functions.
+impl<S> Output<S> {
+    fn send_line_chg(&mut self, line_index: usize) {
+        if let Some(tx) = self.tx.as_ref() {
+            match tx.try_send(LineChange {
+                line_index,
+                line: "Hello",
+            }) {
+                Ok(_) => (),
+                Err(_) => self.tx = None, // receiver disconnected, stop sending msgs
+            }
+        }
     }
 }
 

@@ -16,22 +16,23 @@ travis-ci = { repository = "kurtlawrence/papyrus" }
 
 [dependencies]
 # My crates
-cratesiover =		{ version = "2.2",		optional = true }
+cratesiover =		{ version = "2.2",		default-features = false,	optional = true }
 #linefeed = { git = "https://github.com/kurtlawrence/linefeed" }
 linefeed = { path = "/linefeed" }
-cmdtree = 			{ version = "0.7",		optional = false,	default-features = false }
+cmdtree = 			{ version = "0.8",		default-features = false }
 shh = "1.0"
 
 # crates.io
+crossbeam-channel =	{ version = "0.3",		default-features = false }
+crossbeam-utils =	{ version = "0.6",		default-features = false }
 dirs = "1.0"
 log = "0.4"
 syn = {	version = "0.15", default-features = false,	features =  [ "full" ] }
 colored = "1.8"
 term_cursor = "0.2"
 libloading = "0.5"
-crossbeam = "0.7"
 sublime_fuzzy = "0.6"
-racer = 			{ version = "2.1",		optional = true }
+racer = 			{ version = "2.1",		default-features = false,	optional = true,	features = [ "metadata" ] }
 fxhash = "0.2"
 
 [dev-dependencies]

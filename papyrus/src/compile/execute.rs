@@ -46,12 +46,12 @@ fn exec_and_redirect<P: AsRef<Path>, Data, W: Write + Send>(
     let lib = get_lib(library_file)?;
     let func = get_func(&lib, function_name)?;
 
-    let (tx, rx) = crossbeam::channel::bounded(0);
+    let (tx, rx) = crossbeam_channel::bounded(0);
 
     let (stdout_gag, stderr_gag) =
         get_gags().map_err(|_| "failed to apply redirect gags on stdout and stderr")?;
 
-    let res = crossbeam::scope(|scope| {
+    let res = crossbeam_utils::thread::scope(|scope| {
         let jh = if cfg!(debug_assertions) {
             // don't redirect on debug builds, such that dbg!() can print through to terminal for debugging.
             drop(stderr_gag);
@@ -107,7 +107,7 @@ fn get_gags() -> io::Result<(shh::ShhStdout, shh::ShhStderr)> {
 
 fn redirect_output_loop<W: Write, R1: io::Read, R2: io::Read>(
     wtr: &mut W,
-    rx: crossbeam::channel::Receiver<()>,
+    rx: crossbeam_channel::Receiver<()>,
     mut stdout_gag: R1,
     mut stderr_gag: R2,
 ) -> io::Result<()> {
@@ -124,8 +124,8 @@ fn redirect_output_loop<W: Write, R1: io::Read, R2: io::Read>(
         wtr.write_all(&buf)?;
 
         match rx.try_recv() {
-            Ok(_) => break,                                               // stop signal sent
-            Err(crossbeam::channel::TryRecvError::Disconnected) => break, // tx dropped
+            Ok(_) => break,                                              // stop signal sent
+            Err(crossbeam_channel::TryRecvError::Disconnected) => break, // tx dropped
             _ => (),
         };
     }

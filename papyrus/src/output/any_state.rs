@@ -27,6 +27,19 @@ impl<S> Output<S> {
             &self.buf[start..end]
         })
     }
+
+    /// The number of lines. Always >= 1 as the first line, even if empty, counts.
+    pub fn lines_len(&self) -> usize {
+        self.lines_pos.len() + 1
+    }
+
+    pub fn listen(&mut self) -> channel::Receiver<LineChange<'static>> {
+        let (tx, rx) = channel::unbounded();
+
+        self.tx = Some(tx);
+
+        rx
+    }
 }
 
 impl Default for Output<Read> {

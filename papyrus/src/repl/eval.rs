@@ -12,8 +12,8 @@ use std::sync::{Arc, RwLock};
 type HandleInputResult = (Cow<'static, str>, bool);
 
 impl<Term: Terminal, Data> Repl<Evaluate, Term, Data> {
-    /// Evaluates the read input, compiling and executing the code and printing all line prints until a result is found.
-    /// This result gets passed back as a print ready repl.
+    /// Evaluates the read input, compiling and executing the code and printing all line prints until
+    /// a result is found. This result gets passed back as a print ready repl.
     pub fn eval(self, app_data: &mut Data) -> EvalResult<Term, Data> {
         use std::cell::Cell;
         use std::rc::Rc;
@@ -46,11 +46,16 @@ impl<Term: Terminal, Data> Repl<Evaluate, Term, Data> {
 
 impl<Term: Terminal + 'static, Data: 'static + Send + Sync> Repl<Evaluate, Term, Data> {
     /// Same as `eval` but will evaluate on another thread, not blocking this one.
-    /// An `Arc::clone` will be taken of `app_data`. `RwLock` generally takes a read lock, making it possible to take more read locks
-    /// in another thread. A write lock will be taken when required, currently when in a mutating block or a command action is invoked.
-    /// > Be careful of blocking a program by taking a read lock and calling this function when a write lock is required.
+    ///
+    /// An `Arc::clone` will be taken of `app_data`. `RwLock` generally takes a read
+    /// lock, making it possible to take more read locks in another thread. A write lock
+    /// will be taken when required, currently when in a mutating block or a command action
+    /// is invoked.
+    ///
+    /// > Be careful of blocking a program by taking a read lock and calling this function
+    /// when a write lock is required.
     pub fn eval_async(self, app_data: &Arc<RwLock<Data>>) -> Evaluating<Term, Data> {
-        let (tx, rx) = crossbeam::channel::bounded(1);
+        let (tx, rx) = crossbeam_channel::bounded(1);
 
         let clone = Arc::clone(app_data);
 

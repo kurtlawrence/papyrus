@@ -78,6 +78,7 @@ mod data;
 mod eval;
 mod print;
 mod read;
+mod run;
 mod writer;
 
 pub use cmds::*;
@@ -91,7 +92,7 @@ use crate::{
 };
 use cmdtree::*;
 use colored::*;
-use crossbeam::channel::Receiver;
+use crossbeam_channel::Receiver;
 use linefeed::terminal::Terminal;
 use std::{
     borrow::Cow,
