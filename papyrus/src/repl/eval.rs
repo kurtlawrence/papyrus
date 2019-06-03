@@ -115,9 +115,13 @@ where
             keep_mutating = data.linking.mutable; // a command can alter the mutating state, needs to persist
             r
         }
-        InputResult::Program(input) => {
-            Ok(data.handle_program(input, &terminal.terminal, obtain_mut_data, obtain_brw_data))
-        }
+        InputResult::Program(input) => Ok(data.handle_program(
+            input,
+            &terminal.terminal,
+            &mut output,
+            obtain_mut_data,
+            obtain_brw_data,
+        )),
         InputResult::InputError(err) => Ok((Cow::Owned(err), false)),
         InputResult::Eof => Err(Signal::Exit),
         _ => Ok((Cow::Borrowed(""), false)),
@@ -198,6 +202,7 @@ impl<Data> ReplData<Data> {
         &mut self,
         input: Input,
         terminal: &Arc<T>,
+        writer: &mut Output<output::Write>,
         obtain_mut_data: Fmut,
         obtain_brw_data: Fbrw,
     ) -> HandleInputResult
@@ -253,6 +258,7 @@ impl<Data> ReplData<Data> {
 
         // compile
         let lib_file = compile::compile(&self.compilation_dir, &self.linking, |line| {
+            writer.write_line(line);
             Writer(terminal.as_ref())
                 .overwrite_current_console_line(&line)
                 .unwrap()
@@ -267,6 +273,8 @@ impl<Data> ReplData<Data> {
                 return (Cow::Owned(format!("{}", e)), false);
             }
         };
+
+        dbg!(writer);
 
         if has_stmts {
             // execute

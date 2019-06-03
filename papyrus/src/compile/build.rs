@@ -8,11 +8,11 @@ use std::{error, fmt};
 pub fn compile<P, F>(
     compile_dir: P,
     linking_config: &linking::LinkingConfiguration,
-    stderr_line_cb: F,
+    mut stderr_line_cb: F,
 ) -> Result<PathBuf, CompilationError>
 where
     P: AsRef<Path>,
-    F: Fn(&str),
+    F: FnMut(&str),
 {
     let compile_dir = compile_dir.as_ref();
     let lib_file = compile_dir.join("target/debug/");

@@ -9,6 +9,12 @@ impl Output<Write> {
 
         Output { state, buf }
     }
+
+    /// Writes the line contents into the buffer, appended with a `\n` character.
+    pub fn write_line(&mut self, line: &str) {
+        self.buf.push_str(line);
+        self.buf.push('\n');
+    }
 }
 
 impl io::Write for Output<Write> {
