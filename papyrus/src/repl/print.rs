@@ -5,7 +5,7 @@ use std::io::Write;
 
 impl<Term: Terminal, Data> Repl<Print, Term, Data> {
     /// Prints the result if successful as `[out#]` or the failure message if any.
-    pub fn print(self) -> Repl<Read, Term, Data> {
+    pub fn print(mut self) -> Repl<Read, Term, Data> {
         // write
         {
             if self.state.as_out {
@@ -17,9 +17,11 @@ impl<Term: Terminal, Data> Repl<Print, Term, Data> {
                     .stmts
                     .len()
                     .saturating_sub(1);
+
                 let out_stmt = format!("[out{}]", num);
+
                 writeln!(
-                    Writer(self.terminal.terminal.as_ref()),
+                    &mut self.state.output,
                     "{} {}: {}",
                     self.data.cmdtree.path().color(self.data.prompt_colour),
                     out_stmt.color(self.data.out_colour),
@@ -29,12 +31,8 @@ impl<Term: Terminal, Data> Repl<Print, Term, Data> {
             } else {
                 if self.state.to_print.len() > 0 {
                     // only write if there is something to write.
-                    writeln!(
-                        Writer(self.terminal.terminal.as_ref()),
-                        "{}",
-                        self.state.to_print
-                    )
-                    .expect("failed writing");
+                    writeln!(&mut self.state.output, "{}", self.state.to_print)
+                        .expect("failed writing");
                 }
             }
         }

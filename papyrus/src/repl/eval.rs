@@ -277,8 +277,6 @@ impl<Data> ReplData<Data> {
             }
         };
 
-        dbg!(writer);
-
         if has_stmts {
             // execute
             let exec_res = {
@@ -297,8 +295,8 @@ impl<Data> ReplData<Data> {
                 // what can you do ¯\_(ツ)_/¯
                 let lib_file = rename_lib_file(lib_file).expect("failed renaming library file");
 
-                let redirect_wtr = if self.redirect_on_execution {
-                    Some(OwnedWriter(Arc::clone(terminal)))
+                let redirect_wtr = if self.redirect_on_execution || true {
+                    Some(writer)
                 } else {
                     None
                 };

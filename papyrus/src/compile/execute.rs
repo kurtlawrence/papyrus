@@ -12,7 +12,7 @@ pub(crate) fn exec<P: AsRef<Path>, D, W: Write + Send>(
     library_file: P,
     function_name: &str,
     app_data: D,
-    wtr: Option<W>,
+    wtr: Option<&mut W>,
 ) -> ExecResult {
     if let Some(wtr) = wtr {
         exec_and_redirect(library_file, function_name, app_data, wtr)
@@ -41,7 +41,7 @@ fn exec_and_redirect<P: AsRef<Path>, Data, W: Write + Send>(
     library_file: P,
     function_name: &str,
     app_data: Data,
-    mut output_wtr: W,
+    output_wtr: &mut W,
 ) -> ExecResult {
     let lib = get_lib(library_file)?;
     let func = get_func(&lib, function_name)?;
@@ -55,9 +55,9 @@ fn exec_and_redirect<P: AsRef<Path>, Data, W: Write + Send>(
         let jh = if cfg!(debug_assertions) {
             // don't redirect on debug builds, such that dbg!() can print through to terminal for debugging.
             drop(stderr_gag);
-            scope.spawn(|_| redirect_output_loop(&mut output_wtr, rx, stdout_gag, std::io::empty()))
+            scope.spawn(|_| redirect_output_loop(output_wtr, rx, stdout_gag, std::io::empty()))
         } else {
-            scope.spawn(|_| redirect_output_loop(&mut output_wtr, rx, stdout_gag, stderr_gag))
+            scope.spawn(|_| redirect_output_loop(output_wtr, rx, stdout_gag, stderr_gag))
         };
 
         let res =
