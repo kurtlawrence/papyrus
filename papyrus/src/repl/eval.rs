@@ -100,16 +100,18 @@ where
         terminal,
         mut data,
         more,
-        ..
+        data_mrker,
     } = repl;
+
+    let Evaluate { mut output, result } = state;
 
     let mut keep_mutating = false; // default to stop mutating phase
                                    // can't cancel before as handle program requires it for decisions
 
     // map variants into Result<HandleInputResult, EvalSignal>
-    let mapped = match state.result {
+    let mapped = match result {
         InputResult::Command(cmds) => {
-            let r = data.handle_command(&cmds, &terminal.terminal, obtain_mut_data);
+            let r = data.handle_command(&cmds, &terminal.terminal, &mut output, obtain_mut_data);
             keep_mutating = data.linking.mutable; // a command can alter the mutating state, needs to persist
             r
         }
@@ -130,7 +132,6 @@ where
                                           // the alternative would be to keep alive on compilation failures, might not for now though.
                                           // this would have to be individually handled in each match arm and it, rather let the user
                                           // have to reinstate mutability if they fuck up input.
-    let output = state.output;
 
     EvalResult {
         signal: sig,
@@ -140,33 +141,31 @@ where
                 to_print,
                 as_out,
             },
-            terminal: terminal,
-            data: data,
-            more: more,
-            data_mrker: PhantomData,
+            terminal,
+            data,
+            more,
+            data_mrker,
         },
     }
 }
 
 impl<Data> ReplData<Data> {
-    fn handle_command<T, F, R>(
+    fn handle_command<T, F, R, W>(
         &mut self,
         cmds: &str,
         terminal: &Arc<T>,
-        obtain_app_data: F,
+        writer: &mut W,
+        obtain_mut_app_data: F,
     ) -> Result<HandleInputResult, Signal>
     where
         T: Terminal,
         F: FnOnce() -> R,
         R: DerefMut<Target = Data>,
+        W: io::Write,
     {
         use cmdtree::LineResult as lr;
 
-        // this will write to Writer(terminal)
-        let tuple = match self
-            .cmdtree
-            .parse_line(cmds, true, &mut Writer(terminal.as_ref()))
-        {
+        let tuple = match self.cmdtree.parse_line(cmds, true, writer) {
             lr::Exit => return Err(Signal::Exit),
             lr::Cancel => {
                 self.linking.mutable = false; // reset the mutating on cancel
@@ -178,13 +177,13 @@ impl<Data> ReplData<Data> {
                     (Cow::Borrowed("beginning mut block"), false)
                 }
                 CommandResult::ActionOnReplData(action) => {
-                    let s = action.call_box((self, &mut Writer(terminal.as_ref())));
+                    let s = action.call_box((self, writer));
                     (Cow::Owned(s), false)
                 }
                 CommandResult::ActionOnAppData(action) => {
-                    let mut r = obtain_app_data();
+                    let mut r = obtain_mut_app_data();
                     let app_data: &mut Data = r.borrow_mut();
-                    let s = action.call_box((app_data, &mut Writer(terminal.as_ref())));
+                    let s = action.call_box((app_data, writer));
                     (Cow::Owned(s), false)
                 }
                 CommandResult::Empty => (Cow::Borrowed(""), false),
