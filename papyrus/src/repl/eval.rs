@@ -258,14 +258,12 @@ impl<Data> ReplData<Data> {
 
         // compile
         let lib_file = compile::compile(&self.compilation_dir, &self.linking, |line| {
-            writer.write_line(line);
-            Writer(terminal.as_ref())
-                .overwrite_current_console_line(&line)
-                .unwrap()
+            writer.erase_last_line();
+            writer.write_str(line);
         });
-        Writer(terminal.as_ref())
-            .overwrite_current_console_line("")
-            .unwrap();
+
+        writer.erase_last_line();
+
         let lib_file = match lib_file {
             Ok(f) => f,
             Err(e) => {

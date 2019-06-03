@@ -14,10 +14,30 @@ impl Output<Write> {
         }
     }
 
-    /// Writes the line contents into the buffer, appended with a `\n` character.
-    pub fn write_line(&mut self, line: &str) {
+    /// Writes the string contents to the end of the buffer.
+    pub fn write_str(&mut self, line: &str) {
         self.push_str(line);
-        self.push_ch('\n');
+    }
+
+    /// Erase the last line in the buffer. This does not actually _remove_
+    /// the line, but removes all its contents.
+    ///
+    /// # Examples
+    /// ```rust
+    /// # use papyrus::output::Output;
+    ///
+    /// let mut o = Output::new().to_write();
+    ///
+    /// o.write_str("Hello\nworld");
+    /// o.erase_last_line();
+    /// assert_eq!(o.buffer(), "Hello\n");
+    ///
+    /// o.erase_last_line(); // keeps line.
+    /// assert_eq!(o.buffer(), "Hello\n");
+    /// ```
+    pub fn erase_last_line(&mut self) {
+        self.buf
+            .truncate(self.lines_pos.last().map(|x| x + 1).unwrap_or(0));
     }
 }
 
@@ -29,5 +49,27 @@ impl io::Write for Output<Write> {
 
     fn flush(&mut self) -> io::Result<()> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn erase_last_line() {
+        let mut o = Output::new().to_write();
+
+        o.write_str("Hello\nworld");
+        o.erase_last_line();
+        assert_eq!(o.buffer(), "Hello\n");
+        o.erase_last_line();
+        assert_eq!(o.buffer(), "Hello\n");
+
+        let mut o = Output::new().to_write();
+
+        o.write_str("Hello");
+        o.erase_last_line();
+        assert_eq!(o.buffer(), "");
     }
 }
