@@ -1633,7 +1633,6 @@ dependencies = [
  "linefeed 0.6.0",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "racer 2.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
- "reqwest 0.9.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "shh 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sublime_fuzzy 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.15.34 (registry+https://github.com/rust-lang/crates.io-index)",
