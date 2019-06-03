@@ -6,10 +6,10 @@ use papyrus::prelude::*;
 use std::sync::{Arc, Mutex, RwLock};
 
 impl<T, D> PadState<T, D> {
-    pub fn new(repl: Repl<repl::Read, MemoryTerminal, D>, data: Arc<RwLock<D>>) -> Self {
+    pub fn new(mut repl: Repl<repl::Read, MemoryTerminal, D>, data: Arc<RwLock<D>>) -> Self {
         let term = repl.terminal().clone();
 
-        let term_render = ansi_renderer::AnsiRenderer::new();
+        let term_render = ansi_renderer::ReplOutputRenderer::new(repl.output_listen());
 
         let completion = completion::CompletionPromptState::new(&repl.data);
 
@@ -45,7 +45,7 @@ impl<T, D> PadState<T, D> {
         let mut s = String::new();
         create_terminal_string(&self.terminal, &mut s);
 
-        self.term_render.update_text(&s, app_resources);
+        // self.term_render.update_text(&s, app_resources);
 
         self.last_terminal_string = s;
 

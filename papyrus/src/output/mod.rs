@@ -7,6 +7,8 @@ pub use printer::Printer;
 
 use crossbeam_channel as channel;
 
+pub type Receiver = channel::Receiver<LineChange>;
+
 #[derive(Debug)]
 pub struct Output<S> {
     state: S,

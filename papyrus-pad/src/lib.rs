@@ -36,7 +36,7 @@ pub struct PadState<T, Data> {
     data: Arc<RwLock<Data>>,
     after_eval_fn: fn(&mut T, &mut AppResources),
 
-    term_render: ansi_renderer::AnsiRenderer,
+    term_render: ansi_renderer::ReplOutputRenderer,
 
     completion: completion::CompletionPromptState,
 }

@@ -45,7 +45,8 @@ where
         if update_screen.is_some() {
             let mut buf = String::with_capacity(self.last_terminal_string.len());
             create_terminal_string(&self.terminal, &mut buf);
-            self.term_render.update_text(&buf, app_state.resources);
+			self.term_render.handle_line_changes(app_state.resources);
+            // self.term_render.update_text(&buf, app_state.resources);
         }
 
         if kickoff_eval {
@@ -92,7 +93,8 @@ where
         if redraw.is_some() {
             let mut buf = String::with_capacity(pad.last_terminal_string.len());
             create_terminal_string(&pad.terminal, &mut buf);
-            pad.term_render.update_text(&buf, app_resources);
+            // pad.term_render.update_text(&buf, app_resources);
+			pad.term_render.handle_line_changes(app_resources);
         }
 
         if finished {
