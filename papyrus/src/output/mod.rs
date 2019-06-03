@@ -21,13 +21,13 @@ pub struct Output<S> {
     /// Every `nth` line after that is `[line_pos[n-1] + 1..line_pos[n])`.
     lines_pos: Vec<usize>,
 
-    tx: Option<channel::Sender<LineChange<'static>>>,
+    tx: Option<channel::Sender<LineChange>>,
 }
 
 #[derive(Debug)]
-pub struct LineChange<'a> {
+pub struct LineChange {
     pub line_index: usize,
-    pub line: &'a str,
+    pub line: String,
 }
 
 #[derive(Debug)]
@@ -59,12 +59,24 @@ impl<S> Output<S> {
     /// | Backspace (`'\x08'`)     | pop, _only if not at start of line_ |
     /// | Tab (`'\t'`)             | append _four_ spaces                |
     /// | Other                    | append                              |
+    ///
+    /// # Line Changes
+    /// Sends a line change message if a new line is reached. Otherwise no line change signal is sent.
     fn push_ch(&mut self, ch: char) {
         match ch {
             '\r' => (), // carrige returns are ignored
             '\n' => {
                 self.lines_pos.push(self.buf.len());
                 self.buf.push('\n');
+
+                // send line change signal of this line
+                let idx = self.lines_len().saturating_sub(2);
+                self.send_line_chg(
+                    idx,
+                    self.line(idx)
+                        .map(|x| x.to_string())
+                        .unwrap_or(String::new()),
+                );
             }
             '\x08' => {
                 self.pop();
@@ -75,11 +87,26 @@ impl<S> Output<S> {
     }
 
     /// Iterates characters and pushes each one using `push_ch`.
+    ///
+    /// # Line Changes
+    /// Line change signal is sent for _all_ lines changed.
     fn push_str(&mut self, string: &str) {
-        string.chars().for_each(|ch| self.push_ch(ch))
+        string.chars().for_each(|ch| self.push_ch(ch));
+
+        // send line change signal of last line -- previous ones are handled in push_ch
+        let idx = self.lines_len().saturating_sub(1);
+        self.send_line_chg(
+            idx,
+            self.line(idx)
+                .map(|x| x.to_string())
+                .unwrap_or(String::new()),
+        );
     }
 
     /// Only pops input if not at start of new line.
+    ///
+    /// # Line Changes
+    /// No line change signal is sent.
     fn pop(&mut self) -> Option<char> {
         if !self.at_line_start() {
             self.buf.pop()
@@ -100,12 +127,9 @@ impl<S> Output<S> {
 
 // Message sending functions.
 impl<S> Output<S> {
-    fn send_line_chg(&mut self, line_index: usize) {
+    fn send_line_chg(&mut self, line_index: usize, line: String) {
         if let Some(tx) = self.tx.as_ref() {
-            match tx.try_send(LineChange {
-                line_index,
-                line: "Hello",
-            }) {
+            match tx.try_send(LineChange { line_index, line }) {
                 Ok(_) => (),
                 Err(_) => self.tx = None, // receiver disconnected, stop sending msgs
             }

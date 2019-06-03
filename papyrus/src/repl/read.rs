@@ -164,7 +164,7 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
             .map(|_| ())
     }
 
-    pub fn output_listen(&mut self) -> crossbeam_channel::Receiver<output::LineChange<'static>> {
+    pub fn output_listen(&mut self) -> crossbeam_channel::Receiver<output::LineChange> {
         self.state.output.listen()
     }
 }

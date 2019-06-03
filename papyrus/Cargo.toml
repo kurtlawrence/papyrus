@@ -29,10 +29,11 @@ dirs = "1.0"
 log = "0.4"
 syn = {	version = "0.15", default-features = false,	features =  [ "full" ] }
 colored = "1.8"
-term_cursor = "0.2"
 libloading = "0.5"
 sublime_fuzzy = "0.6"
 racer = 			{ version = "2.1",		default-features = false,	optional = true,	features = [ "metadata" ] }
+term_cursor =		{ version = "0.2",		default-features = false,	optional = true }
+term_size = 		{ version = "0.3",		default-features = false,	optional = true }
 fxhash = "0.2"
 
 [dev-dependencies]
@@ -45,7 +46,7 @@ harness = false
 [features]
 default = [ "runnable", "racer-completion" ]
 # allows to just run the repl
-runnable = [ "cratesiover" ]
+runnable = [ "cratesiover", "term_cursor", "term_size" ]
 # requires nightly
 racer-completion = [ "racer" ]
 

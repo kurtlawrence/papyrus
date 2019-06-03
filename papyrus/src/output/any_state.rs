@@ -33,7 +33,7 @@ impl<S> Output<S> {
         self.lines_pos.len() + 1
     }
 
-    pub fn listen(&mut self) -> channel::Receiver<LineChange<'static>> {
+    pub fn listen(&mut self) -> channel::Receiver<LineChange> {
         let (tx, rx) = channel::unbounded();
 
         self.tx = Some(tx);
