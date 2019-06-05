@@ -59,6 +59,22 @@ impl<Term: Terminal + Clone, Data> Repl<Read, Term, Data> {
 }
 
 impl<Term: Terminal, Data> Repl<Read, Term, Data> {
+    /// The current input buffer.
+    ///
+    /// # Examples
+    /// ```rust
+    /// # use papyrus::*;
+    ///
+    /// let mut repl = repl_with_term!(papyrus::prelude::MemoryTerminal::new());
+    ///
+    /// repl.input_str("let a =");
+    ///
+    /// assert_eq!(repl.input_buffer(), "let a =");
+    /// ```
+    pub fn input_buffer(&self) -> &str {
+        self.state.output.input_buffer()
+    }
+
     /// Reads input from the input reader until an evaluation phase can begin.
     pub fn read(mut self) -> Repl<Evaluate, Term, Data> {
         unimplemented!();

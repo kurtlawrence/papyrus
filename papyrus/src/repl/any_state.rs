@@ -2,17 +2,6 @@ use super::*;
 
 impl<S, T: Terminal, D> Repl<S, T, D> {
     /// The current input buffer.
-    ///
-    /// # Examples
-    /// ```rust
-    /// # use papyrus::*;
-    ///
-    /// let mut repl = repl_with_term!(papyrus::prelude::MemoryTerminal::new());
-    ///
-    /// repl = repl.push_input_str("let a =").unwrap_err();
-    ///
-    /// assert_eq!(repl.input(), "let a =");
-    /// ```
     pub fn input(&self) -> &str {
         self.terminal.input_rdr.input_buffer()
     }

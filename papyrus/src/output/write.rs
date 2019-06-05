@@ -2,6 +2,9 @@ use super::*;
 use std::io;
 
 impl Output<Write> {
+    /// Finished write state. Move to read state.
+    ///
+    /// The input buffer is initialised as empty.
     pub fn to_read(self) -> Output<Read> {
         let Output {
             buf, lines_pos, tx, ..
@@ -20,12 +23,19 @@ impl Output<Write> {
     }
 
     /// Writes the string contents to the end of the buffer.
-    pub fn write_str(&mut self, line: &str) {
-        self.push_str(line);
+    ///
+    /// # Line Changes
+    /// Triggers a line change event for _all_ changed lines
+    /// (say if there are new lines in the string).
+    pub fn write_str(&mut self, contents: &str) {
+        self.push_str(contents);
     }
 
     /// Erase the last line in the buffer. This does not actually _remove_
     /// the line, but removes all its contents.
+    ///
+    /// # Line Changes
+    /// Triggers a line change event.
     ///
     /// # Examples
     /// ```rust

@@ -1,16 +1,11 @@
 mod any_state;
-mod printer;
 mod read;
 mod write;
 
-pub use printer::Printer;
-
 use crossbeam_channel as channel;
 
+/// Line change receiving end.
 pub type Receiver = channel::Receiver<LineChange>;
-
-/// Flag to say that pushing input has finished. ie `Enter` has been struck
-pub type Execute = bool;
 
 #[derive(Debug)]
 pub struct Output<S> {
@@ -29,32 +24,32 @@ pub struct Output<S> {
     tx: Option<channel::Sender<LineChange>>,
 }
 
+/// Line change event.
 #[derive(Debug)]
 pub struct LineChange {
+    /// Line index of change.
     pub index: usize,
+    /// Total number of lines in buffer.
     pub total: usize,
+    /// Line contents.
     pub line: String,
 }
 
+/// Only read functions available.
 #[derive(Debug)]
 pub struct Read {
     /// Byte position that starts the input buffer.
     input_start: usize,
 }
 
+/// Only write functions available.
 #[derive(Debug)]
 pub struct Write;
 
-enum Char {
-    Ch(char),
-    Tab,
-    Return,
-    Backspace,
-}
-
-// Altering output buffer functions.
+/// Altering output buffer functions.
 impl<S> Output<S> {
-    /// Push a character onto end of buffer.
+    /// Push a character onto end of buffer. Returns if line change event
+    /// was sent.
     ///
     /// The character is interrogated and the following behaviours are followed.
     ///
@@ -62,15 +57,14 @@ impl<S> Output<S> {
     /// | ------------------------ | ----------------------------------- |
     /// | Carriage Return (`'\r'`) | ignored                             |
     /// | New Line (`'\n'`)        | append, add line                    |
-    /// | Backspace (`'\x08'`)     | pop, _only if not at start of line_ |
-    /// | Tab (`'\t'`)             | append _four_ spaces                |
     /// | Other                    | append                              |
     ///
     /// # Line Changes
-    /// Sends a line change message if a new line is reached. Otherwise no line change signal is sent.
-    fn push_ch(&mut self, ch: char) {
+    /// Sends a line change message if a new line is reached ('\n').
+    /// Otherwise no line change signal is sent.
+    fn push_ch(&mut self, ch: char) -> bool {
         match ch {
-            '\r' => (), // carrige returns are ignored
+            '\r' => false, // carrige returns are ignored
             '\n' => {
                 self.lines_pos.push(self.buf.len());
                 self.buf.push('\n');
@@ -78,12 +72,12 @@ impl<S> Output<S> {
                 // send line change signal of this line
                 let idx = self.lines_len().saturating_sub(2);
                 self.send_line_chg(idx);
+                true
             }
-            '\x08' => {
-                self.pop();
+            x => {
+                self.buf.push(x);
+                false
             }
-            '\t' => self.buf.push_str("    "),
-            x => self.buf.push(x),
         }
     }
 
@@ -92,23 +86,13 @@ impl<S> Output<S> {
     /// # Line Changes
     /// Line change signal is sent for _all_ lines changed.
     fn push_str(&mut self, string: &str) {
-        string.chars().for_each(|ch| self.push_ch(ch));
+        string.chars().for_each(|ch| {
+            self.push_ch(ch);
+        });
 
         // send line change signal of last line -- previous ones are handled in push_ch
         let idx = self.lines_len().saturating_sub(1);
         self.send_line_chg(idx);
-    }
-
-    /// Only pops input if not at start of new line.
-    ///
-    /// # Line Changes
-    /// No line change signal is sent.
-    fn pop(&mut self) -> Option<char> {
-        if !self.at_line_start() {
-            self.buf.pop()
-        } else {
-            None
-        }
     }
 
     fn at_line_start(&self) -> bool {
@@ -121,7 +105,7 @@ impl<S> Output<S> {
     }
 }
 
-// Message sending functions.
+/// Message sending functions.
 impl<S> Output<S> {
     fn send_line_chg(&mut self, line_index: usize) {
         if let Some(tx) = self.tx.as_ref() {
@@ -163,12 +147,12 @@ mod tests {
 
         let mut o = Output::new();
 
-        assert_eq!(o.lines_pos, vec![]);
+        assert_eq!(o.lines_pos, Vec::<usize>::new());
         assert_eq!(o.line(0), Some(""));
 
         o.push_str("Hello");
 
-        assert_eq!(o.lines_pos, vec![]);
+        assert_eq!(o.lines_pos, Vec::<usize>::new());
         assert_eq!(o.line(0), Some("Hello"));
 
         o.push_str("\nworld");
@@ -196,33 +180,5 @@ mod tests {
 
         o.push_str("\r\n");
         assert_eq!(o.buffer(), "Hello, World!\n");
-
-        o.push_str("\t");
-        assert_eq!(o.buffer(), "Hello, World!\n    ");
-
-        o.push_str("\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08");
-        assert_eq!(o.buffer(), "Hello, World!\n");
-
-        let mut o = Output::new();
-
-        o.push_str("Hello");
-        o.push_str("\x08\x08\x08\x08\x08\x08\x08\x08\x08\x08");
-        assert_eq!(o.buffer(), "");
-    }
-
-    #[test]
-    fn pop() {
-        let mut o = Output::new();
-
-        assert_eq!(o.pop(), None);
-
-        o.push_str("H");
-        assert_eq!(o.pop(), Some('H'));
-        assert_eq!(o.pop(), None);
-
-        o.push_str("\nHe");
-        assert_eq!(o.pop(), Some('e'));
-        assert_eq!(o.pop(), Some('H'));
-        assert_eq!(o.pop(), None);
     }
 }
