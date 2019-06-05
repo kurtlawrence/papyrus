@@ -27,7 +27,7 @@ crossbeam-channel =	{ version = "0.3",		default-features = false }
 crossbeam-utils =	{ version = "0.6",		default-features = false }
 dirs = "1.0"
 log = "0.4"
-mortal =			{ version = "0.2",		default-features = false }
+mortal =			{ version = "0.2",		default-features = false,	optional = true }
 syn = {	version = "0.15", default-features = false,	features =  [ "full" ] }
 colored = "1.8"
 libloading = "0.5"
@@ -47,7 +47,7 @@ harness = false
 [features]
 default = [ "runnable", "racer-completion" ]
 # allows to just run the repl
-runnable = [ "cratesiover", "term_cursor", "term_size" ]
+runnable = [ "cratesiover", "mortal", "term_cursor", "term_size" ]
 # requires nightly
 racer-completion = [ "racer" ]
 

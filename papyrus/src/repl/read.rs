@@ -61,76 +61,77 @@ impl<Term: Terminal + Clone, Data> Repl<Read, Term, Data> {
 impl<Term: Terminal, Data> Repl<Read, Term, Data> {
     /// Reads input from the input reader until an evaluation phase can begin.
     pub fn read(mut self) -> Repl<Evaluate, Term, Data> {
-        let term = mortal::Terminal::new().unwrap();
+		unimplemented!();
+        // let term = mortal::Terminal::new().unwrap();
 
-        let treat_as_cmd = !self.data.cmdtree.at_root();
+        // let treat_as_cmd = !self.data.cmdtree.at_root();
 
-        loop {
-            let prompt = self.prompt();
+        // loop {
+        //     let prompt = self.prompt();
 
-            {
-                let event = term.read_event(None).unwrap().unwrap();
+        //     {
+        //         let event = term.read_event(None).unwrap().unwrap();
 
-                use mortal::Event as ev;
-                use mortal::Key as k;
-                match event {
-                    ev::Key(key) => match key {
-                        k::Char(ch) => {
-                            self.state.output.push_input(ch);
-                        }
-                        x => {
-                            dbg!(x);
-                        }
-                    },
-                    x => {
-                        dbg!(x);
-                    }
-                }
+        //         use mortal::Event as ev;
+        //         use mortal::Key as k;
+        //         match event {
+        //             ev::Key(key) => match key {
+        //                 k::Char(ch) => {
+        //                     self.state.output.push_input(ch);
+        //                 }
+        //                 x => {
+        //                     dbg!(x);
+        //                 }
+        //             },
+        //             x => {
+        //                 dbg!(x);
+        //             }
+        //         }
 
-                // use std::io::Read;
+        //         // use std::io::Read;
 
-                // buf.clear();
+        //         // buf.clear();
 
-                // dbg!();
+        //         // dbg!();
 
-                // std::io::stdin().read_to_string(&mut buf);
+        //         // std::io::stdin().read_to_string(&mut buf);
 
-                // dbg!(&buf);
+        //         // dbg!(&buf);
 
-                // for ch in buf.chars() {
-                // 	self.state.output.push_input(ch);
-                // }
+        //         // for ch in buf.chars() {
+        //         // 	self.state.output.push_input(ch);
+        //         // }
 
-                // self.state.output.push_input('\n');
-            }
+        //         // self.state.output.push_input('\n');
+        //     }
 
-            // let mut buf = [0u8; 4];
+        //     // let mut buf = [0u8; 4];
 
-            // std::io::stdin().read(&mut buf);
+        //     // std::io::stdin().read(&mut buf);
 
-            // let ch = String::from_utf8_lossy(&buf).chars().first().unwrap();
+        //     // let ch = String::from_utf8_lossy(&buf).chars().first().unwrap();
 
-            // self.state.output.push_input(ch);
+        //     // self.state.output.push_input(ch);
 
-            // let result = self.terminal.input_rdr.read_input(&prompt, treat_as_cmd);
-            let result = self
-                .terminal
-                .input_rdr
-                .determine_result(self.state.output.input_buffer(), treat_as_cmd);
+        //     // let result = self.terminal.input_rdr.read_input(&prompt, treat_as_cmd);
+        //     let result = self
+        //         .terminal
+        //         .input_rdr
+        //         .determine_result(self.state.output.input_buffer(), treat_as_cmd);
 
-            self.more = match &result {
-                InputResult::Empty => self.more,
-                InputResult::More => true,
-                _ => false,
-            };
+        //     self.more = match &result {
+        //         InputResult::Empty => self.more,
+        //         InputResult::More => true,
+        //         _ => false,
+        //     };
 
-            if !self.more {
-                return self.move_state(|s| Evaluate {
-                    output: s.output.to_write(),
-                    result,
-                });
-            }
-        }
+        //     if !self.more {
+        //         return self.move_state(|s| Evaluate {
+        //             output: s.output.to_write(),
+        //             result,
+        //         });
+        //     }
+        // }
     }
 
     /// Pushes a single character into the repl. If that character finishes a read phase,

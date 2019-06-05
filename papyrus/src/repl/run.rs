@@ -1,5 +1,5 @@
 use super::*;
-use mortal::{Event, Key};
+
 
 #[cfg(feature = "runnable")]
 #[cfg(feature = "racer-completion")]
@@ -52,6 +52,8 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
     }
 
     fn read_line(&mut self, term: &mut mortal::Terminal) {
+		use mortal::{Event, Key};
+
         loop {
             match term
                 .read_event(None)
@@ -69,6 +71,7 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
     }
 }
 
+#[cfg(feature = "runnable")]
 fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
     use std::io::Write;
 
