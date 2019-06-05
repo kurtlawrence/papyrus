@@ -1,6 +1,5 @@
 use super::*;
 
-
 #[cfg(feature = "runnable")]
 #[cfg(feature = "racer-completion")]
 impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
@@ -17,7 +16,7 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
 
         // output to stdout
         let rx = read.output_listen();
-        std::thread::spawn(move || output_repl(rx));
+        std::thread::spawn(move || output_repl(rx).unwrap());
 
         loop {
             let combined = CombinedCompleter {
@@ -52,7 +51,7 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
     }
 
     fn read_line(&mut self, term: &mut mortal::Terminal) {
-		use mortal::{Event, Key};
+        use mortal::{Event, Key};
 
         loop {
             match term
@@ -73,28 +72,30 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
 
 #[cfg(feature = "runnable")]
 fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
-    use std::io::Write;
-
     let term = mortal::Terminal::new()?;
 
     let mut last_total = 1;
 
+    let mut lock = term.lock_write().unwrap();
+
     for msg in rx.iter() {
         for _ in 0..(msg.total.saturating_sub(last_total)) {
-            writeln!(term, "")?;
+            writeln!(lock, "")?;
         }
 
         last_total = msg.total;
 
         let diff = msg.total.saturating_sub(msg.index).saturating_sub(1);
 
-        term.move_up(diff)?;
-        term.move_to_first_column()?;
-        term.clear_to_line_end()?;
+        lock.move_up(diff)?;
+        lock.move_to_first_column()?;
+        lock.clear_to_line_end()?;
 
-        write!(term, "{}", msg.line)?;
+        write!(lock, "{}", msg.line)?;
 
-        term.move_down(diff)?;
+        lock.move_down(diff)?;
+
+        lock.flush()?;
     }
 
     Ok(())

@@ -61,7 +61,7 @@ impl<Term: Terminal + Clone, Data> Repl<Read, Term, Data> {
 impl<Term: Terminal, Data> Repl<Read, Term, Data> {
     /// Reads input from the input reader until an evaluation phase can begin.
     pub fn read(mut self) -> Repl<Evaluate, Term, Data> {
-		unimplemented!();
+        unimplemented!();
         // let term = mortal::Terminal::new().unwrap();
 
         // let treat_as_cmd = !self.data.cmdtree.at_root();
@@ -178,8 +178,8 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
     }
 
     pub fn read2(mut self) -> ReadResult<Term, Data> {
-		self.state.output.push_input('\n');
-		
+        self.state.output.push_input('\n');
+
         let treat_as_cmd = !self.data.cmdtree.at_root();
 
         let result = self
