@@ -24,4 +24,17 @@ impl Output<Read> {
             tx,
         }
     }
+
+    /// Insert character into input buffer.
+    ///
+    /// # Line Chanages
+    /// Triggers a line change event.
+    pub fn push_input(&mut self, ch: char) {
+        self.push_ch(ch);
+        self.send_line_chg(self.lines_len().saturating_sub(1))
+    }
+
+    pub fn input_buffer(&self) -> &str {
+        &self.buf[self.state.input_start..]
+    }
 }

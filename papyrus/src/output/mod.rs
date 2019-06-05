@@ -9,6 +9,9 @@ use crossbeam_channel as channel;
 
 pub type Receiver = channel::Receiver<LineChange>;
 
+/// Flag to say that pushing input has finished. ie `Enter` has been struck
+pub type Execute = bool;
+
 #[derive(Debug)]
 pub struct Output<S> {
     state: S,
@@ -28,7 +31,8 @@ pub struct Output<S> {
 
 #[derive(Debug)]
 pub struct LineChange {
-    pub line_index: usize,
+    pub index: usize,
+    pub total: usize,
     pub line: String,
 }
 
@@ -73,12 +77,7 @@ impl<S> Output<S> {
 
                 // send line change signal of this line
                 let idx = self.lines_len().saturating_sub(2);
-                self.send_line_chg(
-                    idx,
-                    self.line(idx)
-                        .map(|x| x.to_string())
-                        .unwrap_or(String::new()),
-                );
+                self.send_line_chg(idx);
             }
             '\x08' => {
                 self.pop();
@@ -97,12 +96,7 @@ impl<S> Output<S> {
 
         // send line change signal of last line -- previous ones are handled in push_ch
         let idx = self.lines_len().saturating_sub(1);
-        self.send_line_chg(
-            idx,
-            self.line(idx)
-                .map(|x| x.to_string())
-                .unwrap_or(String::new()),
-        );
+        self.send_line_chg(idx);
     }
 
     /// Only pops input if not at start of new line.
@@ -129,9 +123,13 @@ impl<S> Output<S> {
 
 // Message sending functions.
 impl<S> Output<S> {
-    fn send_line_chg(&mut self, line_index: usize, line: String) {
+    fn send_line_chg(&mut self, line_index: usize) {
         if let Some(tx) = self.tx.as_ref() {
-            match tx.try_send(LineChange { line_index, line }) {
+            let index = line_index;
+            let total = self.lines_len();
+            let line = self.line(line_index).unwrap_or("").to_string();
+
+            match tx.try_send(LineChange { index, line, total }) {
                 Ok(_) => (),
                 Err(_) => self.tx = None, // receiver disconnected, stop sending msgs
             }

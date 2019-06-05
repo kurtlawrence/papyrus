@@ -3,6 +3,10 @@ use super::*;
 use linefeed::terminal::{DefaultTerminal, Terminal};
 use std::io;
 
+// TODO add and handle things like Ctrl and stuff. See mortal::Key for more.
+// Ctrl + char
+// Left, right, pgup, pgdown blah blah
+
 impl<Data> Default for Repl<Read, DefaultTerminal, Data> {
     fn default() -> Self {
         let mut data = ReplData::default();
@@ -57,11 +61,62 @@ impl<Term: Terminal + Clone, Data> Repl<Read, Term, Data> {
 impl<Term: Terminal, Data> Repl<Read, Term, Data> {
     /// Reads input from the input reader until an evaluation phase can begin.
     pub fn read(mut self) -> Repl<Evaluate, Term, Data> {
+        let term = mortal::Terminal::new().unwrap();
+
         let treat_as_cmd = !self.data.cmdtree.at_root();
+
         loop {
             let prompt = self.prompt();
 
-            let result = self.terminal.input_rdr.read_input(&prompt, treat_as_cmd);
+            {
+                let event = term.read_event(None).unwrap().unwrap();
+
+                use mortal::Event as ev;
+                use mortal::Key as k;
+                match event {
+                    ev::Key(key) => match key {
+                        k::Char(ch) => {
+                            self.state.output.push_input(ch);
+                        }
+                        x => {
+                            dbg!(x);
+                        }
+                    },
+                    x => {
+                        dbg!(x);
+                    }
+                }
+
+                // use std::io::Read;
+
+                // buf.clear();
+
+                // dbg!();
+
+                // std::io::stdin().read_to_string(&mut buf);
+
+                // dbg!(&buf);
+
+                // for ch in buf.chars() {
+                // 	self.state.output.push_input(ch);
+                // }
+
+                // self.state.output.push_input('\n');
+            }
+
+            // let mut buf = [0u8; 4];
+
+            // std::io::stdin().read(&mut buf);
+
+            // let ch = String::from_utf8_lossy(&buf).chars().first().unwrap();
+
+            // self.state.output.push_input(ch);
+
+            // let result = self.terminal.input_rdr.read_input(&prompt, treat_as_cmd);
+            let result = self
+                .terminal
+                .input_rdr
+                .determine_result(self.state.output.input_buffer(), treat_as_cmd);
 
             self.more = match &result {
                 InputResult::Empty => self.more,
@@ -113,28 +168,83 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
         }
     }
 
-    fn handle_ch(mut self, ch: char, treat_as_cmd: bool) -> PushResult<Term, Data> {
-        let prompt = self.prompt();
-        match self
+    pub fn input_ch(&mut self, ch: char) {
+        self.state.output.push_input(ch);
+    }
+
+    pub fn input_str(&mut self, s: &str) {
+        s.chars().for_each(|ch| self.input_ch(ch));
+    }
+
+    pub fn read2(mut self) -> ReadResult<Term, Data> {
+		self.state.output.push_input('\n');
+		
+        let treat_as_cmd = !self.data.cmdtree.at_root();
+
+        let result = self
             .terminal
             .input_rdr
-            .push_input(&prompt, treat_as_cmd, ch)
-        {
-            Some(result) => {
-                if result == InputResult::More {
-                    self.more = true;
-                    self.draw_prompt().expect("should be able to draw prompt?");
-                    PushResult::Read(self)
-                } else {
-                    self.more = false;
-                    PushResult::Eval(self.move_state(|s| Evaluate {
-                        output: s.output.to_write(),
-                        result,
-                    }))
-                }
-            }
-            None => PushResult::Read(self),
+            .determine_result(self.state.output.input_buffer(), treat_as_cmd);
+
+        if result == InputResult::More {
+            self.more = true;
+            self.draw_prompt().expect("should be able to draw prompt?");
+            ReadResult::Read(self)
+        } else {
+            self.more = false;
+            ReadResult::Eval(self.move_state(|s| Evaluate {
+                output: s.output.to_write(),
+                result,
+            }))
         }
+    }
+
+    fn handle_ch(mut self, ch: char, treat_as_cmd: bool) -> PushResult<Term, Data> {
+        let prompt = self.prompt();
+
+        self.state.output.push_input(ch);
+
+        if ch == '\n' {
+            let result = self
+                .terminal
+                .input_rdr
+                .determine_result(self.state.output.input_buffer(), treat_as_cmd);
+
+            if result == InputResult::More {
+                self.more = true;
+                self.draw_prompt().expect("should be able to draw prompt?");
+                PushResult::Read(self)
+            } else {
+                self.more = false;
+                PushResult::Eval(self.move_state(|s| Evaluate {
+                    output: s.output.to_write(),
+                    result,
+                }))
+            }
+        } else {
+            PushResult::Read(self)
+        }
+
+        // match self
+        //     .terminal
+        //     .input_rdr
+        //     .push_input(&prompt, treat_as_cmd, ch)
+        // {
+        //     Some(result) => {
+        //         if result == InputResult::More {
+        //             self.more = true;
+        //             self.draw_prompt().expect("should be able to draw prompt?");
+        //             PushResult::Read(self)
+        //         } else {
+        //             self.more = false;
+        //             PushResult::Eval(self.move_state(|s| Evaluate {
+        //                 output: s.output.to_write(),
+        //                 result,
+        //             }))
+        //         }
+        //     }
+        //     None => PushResult::Read(self),
+        // }
     }
 
     fn prompt(&self) -> String {

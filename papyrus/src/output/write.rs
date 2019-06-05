@@ -7,7 +7,9 @@ impl Output<Write> {
             buf, lines_pos, tx, ..
         } = self;
 
-        let state = Read { input_start: 0 };
+        let state = Read {
+            input_start: buf.len(),
+        };
 
         Output {
             state,
@@ -42,7 +44,7 @@ impl Output<Write> {
         self.buf
             .truncate(self.lines_pos.last().map(|x| x + 1).unwrap_or(0));
 
-        self.send_line_chg(self.lines_len().saturating_sub(1), String::new()); // will not allocate empty string!
+        self.send_line_chg(self.lines_len().saturating_sub(1));
     }
 }
 

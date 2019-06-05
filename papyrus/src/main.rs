@@ -22,7 +22,8 @@ fn main() {
             .ok();
     }
 
-    let repl = repl!();
+    // let repl = repl!();
+    let repl = repl_with_term!(prelude::MemoryTerminal::new());
 
     repl.run(&mut ());
 

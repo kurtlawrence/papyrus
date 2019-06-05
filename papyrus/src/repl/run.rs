@@ -1,49 +1,23 @@
 use super::*;
+use mortal::{Event, Key};
 
+#[cfg(feature = "runnable")]
+#[cfg(feature = "racer-completion")]
 impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
     /// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
     ///
     /// # Panics
     /// - Failure to initialise `InputReader`.
-    #[cfg(feature = "runnable")]
-    #[cfg(feature = "racer-completion")]
     pub fn run(self, app_data: &mut Data) {
-        use std::io::Write;
-        use term_cursor as cursor;
+        let mut term = mortal::Terminal::new().unwrap();
 
         output_ver(self.terminal.terminal.as_ref());
 
         let mut read = self;
 
-        // start up writing received lines to terminal
-
-        // effectively this is output line idx of 0.
-        let start_y = cursor::get_pos().map(|x| x.1).unwrap_or(0);
-
+        // output to stdout
         let rx = read.output_listen();
-
-        std::thread::spawn(move || {
-            for msg in rx.iter() {
-                let (w, _) = term_size::dimensions().unwrap_or((0, 0));
-                let (x, y) = cursor::get_pos().unwrap_or((0, 0));
-
-                let line: i32 = start_y + msg.line_index as i32;
-
-                // first erase contents of line
-                cursor::set_pos(0, line).ok();
-                (0..w).into_iter().for_each(|_| print!(" "));
-
-                // then write line
-                cursor::set_pos(0, line).ok();
-                print!("{}", msg.line);
-
-                // reset cursor positon
-                cursor::set_pos(x, y).ok();
-
-                // flush changes
-                std::io::stdout().flush().ok();
-            }
-        });
+        std::thread::spawn(move || output_repl(rx));
 
         loop {
             let combined = CombinedCompleter {
@@ -59,16 +33,68 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
 
             read.set_completion(combined);
 
-            let result = read.read().eval(app_data);
+            read.read_line(&mut term);
 
-            match result.signal {
-                Signal::None => (),
-                Signal::Exit => break,
+            match read.read2() {
+                ReadResult::Read(repl) => read = repl,
+                ReadResult::Eval(repl) => {
+                    let result = repl.eval(app_data);
+
+                    match result.signal {
+                        Signal::None => (),
+                        Signal::Exit => break,
+                    }
+
+                    read = result.repl.print();
+                }
             }
-
-            read = result.repl.print();
         }
     }
+
+    fn read_line(&mut self, term: &mut mortal::Terminal) {
+        loop {
+            match term
+                .read_event(None)
+                .unwrap_or(None)
+                .unwrap_or(Event::NoEvent)
+            {
+                Event::Key(k) => match k {
+                    Key::Char(ch) => self.input_ch(ch),
+                    Key::Enter => break, // new line found!
+                    _ => (),
+                },
+                _ => (),
+            }
+        }
+    }
+}
+
+fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
+    use std::io::Write;
+
+    let term = mortal::Terminal::new()?;
+
+    let mut last_total = 1;
+
+    for msg in rx.iter() {
+        for _ in 0..(msg.total.saturating_sub(last_total)) {
+            writeln!(term, "")?;
+        }
+
+        last_total = msg.total;
+
+        let diff = msg.total.saturating_sub(msg.index).saturating_sub(1);
+
+        term.move_up(diff)?;
+        term.move_to_first_column()?;
+        term.clear_to_line_end()?;
+
+        write!(term, "{}", msg.line)?;
+
+        term.move_down(diff)?;
+    }
+
+    Ok(())
 }
 
 #[cfg(feature = "runnable")]

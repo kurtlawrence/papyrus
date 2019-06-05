@@ -27,6 +27,7 @@ crossbeam-channel =	{ version = "0.3",		default-features = false }
 crossbeam-utils =	{ version = "0.6",		default-features = false }
 dirs = "1.0"
 log = "0.4"
+mortal =			{ version = "0.2",		default-features = false }
 syn = {	version = "0.15", default-features = false,	features =  [ "full" ] }
 colored = "1.8"
 libloading = "0.5"

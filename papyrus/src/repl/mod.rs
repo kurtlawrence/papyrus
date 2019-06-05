@@ -211,6 +211,13 @@ pub enum PushResult<Term: Terminal, Data> {
     Eval(Repl<Evaluate, Term, Data>),
 }
 
+pub enum ReadResult<Term: Terminal, Data> {
+    /// The repl is still in a read state.
+    Read(Repl<Read, Term, Data>),
+    /// The repl is in an eval state.
+    Eval(Repl<Evaluate, Term, Data>),
+}
+
 /// `$HOME/.papyrus`
 fn default_compile_dir() -> PathBuf {
     dirs::home_dir().unwrap_or(PathBuf::new()).join(".papyrus/")

@@ -100,7 +100,7 @@ impl<Term: Terminal> InputReader<Term> {
             .map(|r| self.handle_input(r, treat_as_cmd))
     }
 
-    fn handle_input(&mut self, result: ReadResult, treat_as_cmd: bool) -> InputResult {
+    pub fn handle_input(&mut self, result: ReadResult, treat_as_cmd: bool) -> InputResult {
         let line = match result {
             ReadResult::Eof => return InputResult::Eof,
             ReadResult::Input(s) => s,
@@ -119,7 +119,7 @@ impl<Term: Terminal> InputReader<Term> {
         r
     }
 
-    fn determine_result(&mut self, line: &str, treat_as_cmd: bool) -> InputResult {
+    pub fn determine_result(&mut self, line: &str, treat_as_cmd: bool) -> InputResult {
         self.buffer.push_str(&line);
 
         if self.buffer.is_empty() {
