@@ -67,6 +67,8 @@ pub mod input;
 pub mod output;
 pub mod pfh;
 pub mod repl;
+#[cfg(feature = "runnable")]
+pub mod run;
 
 /// Re-exports of most common types and modules.
 pub mod prelude {

@@ -78,7 +78,6 @@ mod data;
 mod eval;
 mod print;
 mod read;
-mod run;
 mod writer;
 
 pub use cmds::*;
