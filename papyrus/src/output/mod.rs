@@ -43,6 +43,9 @@ pub struct Read {
 
     prompt_start: usize,
     prompt_end: usize,
+
+    cursor: usize,
+    cursor_start: usize,
 }
 
 /// Only write functions available.
