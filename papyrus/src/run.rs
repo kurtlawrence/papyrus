@@ -103,25 +103,30 @@ fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
         }
 
         // move to, and clear line
-        {
+        let cols = {
             let diff = line_lens[msg.index..]
                 .iter()
                 .sum::<usize>()
                 .saturating_sub(1);
             lock.move_up(diff)?;
-            lock.move_to_first_column()?;
+            let cols = mv_to_first_col(&mut lock);
             lock.clear_to_line_end()?;
-        }
+            cols
+        };
 
         // write contents, might spill over into multiple lines
         {
             let lines_count = {
-                let chars = msg.line.chars().count();
+                let chars = cansi::categorise_text(&msg.line)
+                    .iter()
+                    .map(|c| c.text.chars().count())
+                    .sum::<usize>();
 
                 if chars == 0 {
                     1
                 } else {
                     let r = chars % size.columns;
+
                     if r == 0 {
                         chars / size.columns
                     } else {
@@ -141,12 +146,26 @@ fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
                 .iter()
                 .sum::<usize>()
                 .saturating_sub(1);
-            lock.move_down(diff)?;
-            lock.move_to_first_column()?;
+
+            if msg.index != last_total - 1 {
+                lock.move_down(diff)?;
+                lock.move_to_first_column()?;
+                lock.move_right(cols)?;
+            }
         }
 
         lock.flush()?;
     }
 
     Ok(())
+}
+
+fn mv_to_first_col(lock: &mut mortal::TerminalWriteGuard) -> usize {
+    let mut cols = 0;
+
+    while let Ok(_) = lock.move_left(1) {
+        cols += 1;
+    }
+
+    cols
 }

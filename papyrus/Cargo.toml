@@ -16,6 +16,7 @@ travis-ci = { repository = "kurtlawrence/papyrus" }
 
 [dependencies]
 # My crates
+cansi = 			{ path = "/cansi",		default-features = false,	optional = true }
 cratesiover =		{ version = "2.2",		default-features = false,	optional = true }
 #linefeed = { git = "https://github.com/kurtlawrence/linefeed" }
 linefeed = { path = "/linefeed" }
@@ -47,7 +48,7 @@ harness = false
 [features]
 default = [ "runnable", "racer-completion" ]
 # allows to just run the repl
-runnable = [ "cratesiover", "mortal", "term_cursor", "term_size" ]
+runnable = [ "cansi", "cratesiover", "mortal", "term_cursor", "term_size" ]
 # requires nightly
 racer-completion = [ "racer" ]
 
