@@ -198,14 +198,16 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
 
         let treat_as_cmd = !self.data.cmdtree.at_root();
 
-        let result = self
-            .terminal
-            .input_rdr
-            .determine_result(self.state.output.input_buffer(), treat_as_cmd);
+        let result = self.terminal.input_rdr.determine_result(
+            self.state.output.input_buffer(),
+            self.state.output.input_buf_line(),
+            treat_as_cmd,
+        );
 
         if result == InputResult::More {
             self.more = true;
-            self.draw_prompt().expect("should be able to draw prompt?");
+            // self.draw_prompt().expect("should be able to draw prompt?");
+            self.draw_prompt2();
             ReadResult::Read(self)
         } else {
             self.more = false;
@@ -222,10 +224,11 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
         self.state.output.push_input(ch);
 
         if ch == '\n' {
-            let result = self
-                .terminal
-                .input_rdr
-                .determine_result(self.state.output.input_buffer(), treat_as_cmd);
+            let result = self.terminal.input_rdr.determine_result(
+                self.state.output.input_buffer(),
+                self.state.output.input_buf_line(),
+                treat_as_cmd,
+            );
 
             if result == InputResult::More {
                 self.more = true;
@@ -289,6 +292,10 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
             .interface
             .read_line_step(Some(std::time::Duration::new(0, 0)))
             .map(|_| ())
+    }
+
+    pub fn draw_prompt2(&mut self) {
+        self.state.output.set_prompt_and_trigger(&self.prompt());
     }
 
     pub fn output_listen(&mut self) -> output::Receiver {

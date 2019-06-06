@@ -38,8 +38,11 @@ pub struct LineChange {
 /// Only read functions available.
 #[derive(Debug)]
 pub struct Read {
-    /// Byte position that starts the input buffer.
-    input_start: usize,
+    /// Input buffer. This contains _all_ input, which may include previous lines.
+    buf: String,
+
+    prompt_start: usize,
+    prompt_end: usize,
 }
 
 /// Only write functions available.
@@ -60,7 +63,7 @@ impl<S> Output<S> {
     /// | Other                    | append                              |
     ///
     /// # Line Changes
-    /// Sends a line change message if a new line is reached ('\n').
+    /// Sends a line change message if a new line is reached (`'\n'`).
     /// Otherwise no line change signal is sent.
     fn push_ch(&mut self, ch: char) -> bool {
         match ch {

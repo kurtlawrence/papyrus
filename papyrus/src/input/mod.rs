@@ -110,7 +110,7 @@ impl<Term: Terminal> InputReader<Term> {
             }
         };
 
-        let r = self.determine_result(&line, treat_as_cmd);
+        let r = self.determine_result(&line, &line, treat_as_cmd);
         match &r {
             InputResult::Empty => (),
             _ => self.interface.add_history(line),
@@ -119,18 +119,18 @@ impl<Term: Terminal> InputReader<Term> {
         r
     }
 
-    pub fn determine_result(&mut self, line: &str, treat_as_cmd: bool) -> InputResult {
-        self.buffer.push_str(&line);
+    pub fn determine_result(&mut self, input: &str, line: &str, treat_as_cmd: bool) -> InputResult {
+        // self.buffer.push_str(&line);
 
-        if self.buffer.is_empty() {
+        if input.is_empty() {
             return InputResult::Empty; // if line is empty this could result. do not remove
         }
 
-        let res = if treat_as_cmd || is_command(&line) {
-            parse_command(&line)
+        let res = if treat_as_cmd || is_command(line) {
+            parse_command(line)
         } else {
             // check if the final statement ends with a semi
-            match parse_program(&self.buffer) {
+            match parse_program(input) {
                 InputResult::Program(input) => {
                     if input.stmts.len() > 0 && input.stmts.last().unwrap().semi {
                         InputResult::More

@@ -10,9 +10,7 @@ impl Output<Write> {
             buf, lines_pos, tx, ..
         } = self;
 
-        let state = Read {
-            input_start: buf.len(),
-        };
+        let state = Read::new(buf.len());
 
         Output {
             state,

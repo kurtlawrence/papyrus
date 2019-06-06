@@ -32,6 +32,8 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
 
             read.set_completion(combined);
 
+            read.draw_prompt2();
+
             read.read_line(&mut term);
 
             match read.read2() {
