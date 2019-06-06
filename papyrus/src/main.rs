@@ -27,5 +27,6 @@ fn main() {
 
     repl.run(&mut ());
 
+    std::thread::sleep(std::time::Duration::from_millis(10)); // let output thread finish up
     println!("Thanks for using papyrus!");
 }

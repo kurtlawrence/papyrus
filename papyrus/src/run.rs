@@ -1,8 +1,9 @@
+use crate::complete::*;
+use crate::output;
 use crate::prelude::*;
 use linefeed::Terminal;
-use crate::complete::*;
+use mortal::Cursor;
 use repl::{Read, ReadResult, Signal};
-use crate::output;
 
 // #[cfg(feature = "racer-completion")]
 impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
@@ -11,9 +12,10 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
     /// # Panics
     /// - Failure to initialise `InputReader`.
     pub fn run(self, app_data: &mut Data) {
-        let mut term = mortal::Terminal::new().unwrap();
+        cratesiover::output_to_writer("papyrus", env!("CARGO_PKG_VERSION"), &mut std::io::stdout())
+            .unwrap();
 
-		cratesiover::output_to_writer("papyrus", env!("CARGO_PKG_VERSION"), &mut std::io::stdout()).unwrap();
+        let mut term = mortal::Terminal::new().unwrap();
 
         let mut read = self;
 
@@ -80,28 +82,71 @@ fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
 
     let mut last_total = 1;
 
+    // Map of how many lines a line index prints to.
+    let mut line_lens = vec![1];
+
     let mut lock = term.lock_write().unwrap();
 
     for msg in rx.iter() {
-        for _ in 0..(msg.total.saturating_sub(last_total)) {
-            writeln!(lock, "")?;
+        let size = lock.size()?;
+
+        // add necessary new lines. Indices increment by one.
+        {
+            for _ in 0..(msg.total.saturating_sub(last_total)) {
+                line_lens.push(1);
+                writeln!(lock, "")?;
+            }
+
+            last_total = msg.total;
+
+            debug_assert_eq!(line_lens.len(), last_total);
         }
 
-        last_total = msg.total;
+        // move to, and clear line
+        {
+            let diff = line_lens[msg.index..]
+                .iter()
+                .sum::<usize>()
+                .saturating_sub(1);
+            lock.move_up(diff)?;
+            lock.move_to_first_column()?;
+            lock.clear_to_line_end()?;
+        }
 
-        let diff = msg.total.saturating_sub(msg.index).saturating_sub(1);
+        // write contents, might spill over into multiple lines
+        {
+            let lines_count = {
+                let chars = msg.line.chars().count();
 
-        lock.move_up(diff)?;
-        lock.move_to_first_column()?;
-        lock.clear_to_line_end()?;
+                if chars == 0 {
+                    1
+                } else {
+                    let r = chars % size.columns;
+                    if r == 0 {
+                        chars / size.columns
+                    } else {
+                        chars / size.columns + 1
+                    }
+                }
+            };
 
-        write!(lock, "{}", msg.line)?;
+            write!(lock, "{}", msg.line)?;
 
-        lock.move_down(diff)?;
+            line_lens.get_mut(msg.index).map(|x| *x = lines_count);
+        }
+
+        // move cursor to last line
+        {
+            let diff = line_lens[msg.index..]
+                .iter()
+                .sum::<usize>()
+                .saturating_sub(1);
+            lock.move_down(diff)?;
+            lock.move_to_first_column()?;
+        }
 
         lock.flush()?;
     }
 
     Ok(())
 }
-
