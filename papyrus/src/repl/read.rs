@@ -194,8 +194,6 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
     }
 
     pub fn read2(mut self) -> ReadResult<Term, Data> {
-        self.state.output.push_input('\n');
-
         let treat_as_cmd = !self.data.cmdtree.at_root();
 
         let result = self.terminal.input_rdr.determine_result(
@@ -203,6 +201,10 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
             self.state.output.input_buf_line(),
             treat_as_cmd,
         );
+
+        // have to push after as can't take mutable brw and last line
+        // if done before will not register cmds
+        self.state.output.push_input('\n');
 
         if result == InputResult::More {
             self.more = true;
