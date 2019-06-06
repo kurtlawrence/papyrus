@@ -1,7 +1,10 @@
-use super::*;
+use crate::prelude::*;
+use linefeed::Terminal;
+use crate::complete::*;
+use repl::{Read, ReadResult, Signal};
+use crate::output;
 
-#[cfg(feature = "runnable")]
-#[cfg(feature = "racer-completion")]
+// #[cfg(feature = "racer-completion")]
 impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
     /// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
     ///
@@ -10,7 +13,7 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
     pub fn run(self, app_data: &mut Data) {
         let mut term = mortal::Terminal::new().unwrap();
 
-        output_ver(self.terminal.terminal.as_ref());
+		cratesiover::output_to_writer("papyrus", env!("CARGO_PKG_VERSION"), &mut std::io::stdout()).unwrap();
 
         let mut read = self;
 
@@ -24,9 +27,9 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
                     Box::new(cmdr::TreeCompleter::build(&read.data.cmdtree)),
                     Box::new(modules::ModulesCompleter::build(
                         &read.data.cmdtree,
-                        &read.data.file_map,
+                        read.data.file_map(),
                     )),
-                    Box::new(code::CodeCompleter::build(&read.data)),
+                    // Box::new(code::CodeCompleter::build(&read.data)),
                 ],
             };
 
@@ -72,7 +75,6 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
     }
 }
 
-#[cfg(feature = "runnable")]
 fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
     let term = mortal::Terminal::new()?;
 
@@ -103,7 +105,3 @@ fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
     Ok(())
 }
 
-#[cfg(feature = "runnable")]
-fn output_ver<T: Terminal>(term: &T) {
-    cratesiover::output_to_writer("papyrus", env!("CARGO_PKG_VERSION"), &mut Writer(term)).unwrap();
-}
