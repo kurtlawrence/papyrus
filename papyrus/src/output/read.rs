@@ -39,9 +39,9 @@ impl Output<Read> {
 
     /// Insert character into input buffer.
     ///
-    /// # Line Chanages
+    /// # Line Changes
     /// _Always_ triggers a line change event.
-    pub fn push_input(&mut self, ch: char) {
+    pub fn insert_input(&mut self, ch: char) {
         let chg_event = self.push_ch(ch);
 
         if chg_event {
@@ -53,6 +53,19 @@ impl Output<Read> {
         }
 
         self.state.buf.push(ch); // add to input buffer
+    }
+
+    /// Removes a character at the current cursor position.
+    /// Only erases to start of current input line.
+    ///
+    /// # Line Changes
+    /// _Always_ triggers a line change event.
+    pub fn remove_ch(&mut self) {
+        if self.state.prompt_end != self.buf.len() {
+            self.buf.pop();
+            self.state.buf.pop();
+            self.send_line_chg(self.lines_len().saturating_sub(1));
+        }
     }
 
     /// Returns the current input buffer.

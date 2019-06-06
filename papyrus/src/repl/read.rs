@@ -186,11 +186,15 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
     }
 
     pub fn input_ch(&mut self, ch: char) {
-        self.state.output.push_input(ch);
+        self.state.output.insert_input(ch);
     }
 
     pub fn input_str(&mut self, s: &str) {
         s.chars().for_each(|ch| self.input_ch(ch));
+    }
+
+    pub fn remove_ch(&mut self) {
+        self.state.output.remove_ch();
     }
 
     pub fn read2(mut self) -> ReadResult<Term, Data> {
@@ -204,7 +208,7 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
 
         // have to push after as can't take mutable brw and last line
         // if done before will not register cmds
-        self.state.output.push_input('\n');
+        self.state.output.insert_input('\n');
 
         if result == InputResult::More {
             self.more = true;
@@ -223,7 +227,7 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
     fn handle_ch(mut self, ch: char, treat_as_cmd: bool) -> PushResult<Term, Data> {
         let prompt = self.prompt();
 
-        self.state.output.push_input(ch);
+        self.state.output.insert_input(ch);
 
         if ch == '\n' {
             let result = self.terminal.input_rdr.determine_result(

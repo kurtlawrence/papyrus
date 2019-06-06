@@ -68,6 +68,7 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
             {
                 Event::Key(k) => match k {
                     Key::Char(ch) => self.input_ch(ch),
+                    Key::Backspace => self.remove_ch(),
                     Key::Enter => break, // new line found!
                     _ => (),
                 },
