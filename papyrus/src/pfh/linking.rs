@@ -1,3 +1,5 @@
+//! TODO: Update with latest linking functionality.
+//!
 //! Linking an external crate and sharing data.
 //!
 //! When running a repl you might want to link an external crate. The specific use case is a developer wants to link the crate they are working on into the repl for the user to be able to use. A developer might also want to make data available to the repl. Papyrus has this functionality but makes some assumptions that the developer will need to be aware of, detailed below. When linking is desired, there are two main aspects to consider, the crate name to link and the data transferrence scheme.
@@ -20,7 +22,7 @@
 //! ### File Setup
 //!
 //! ***main.rs***:
-//! TODO: Fix when linking docs updated.
+//!
 //! ```rust, ignore
 //! #[macro_use]
 //! extern crate papyrus;
@@ -31,7 +33,6 @@
 //!   let mut repl = repl!();
 //!   repl.data = repl
 //!     .data
-//!     .with_extern_crate("some_lib", None)
 //!     .expect("failed linking crate");
 //!
 //!   repl.run(&mut ());
@@ -40,7 +41,7 @@
 //!
 //! ***lib.rs***:
 //!
-//! ```rust, no_run
+//! ```rust, ignore
 //! pub struct MyStruct {
 //!   a: i32,
 //!   b: i32,
@@ -71,11 +72,11 @@
 //! path = "src/lib.rs" # you may need path to the library
 //!
 //! [dependencies]
-//! papyrus = "*"
+//! papyrus = { version = "*", crate-type = [ "rlib" ] }
 //! ...
 //! ```
 //!
-//! Notice that you will have to specify the library with a certain `crate-type`. Papyrus links using an `rlib` file, but I have shown that you can also build multiple library files. If you build this project you should find a `libsome_lib.rlib` sitting in your build directory. Papyrus uses this to link when compiling.
+//! Notice that you will have to specify the library with a certain `crate-type`. Papyrus links using an `rlib` file, but it is shown that you can also build multiple library files. If you build this project you should find a `libsome_lib.rlib` sitting in your build directory. Papyrus uses this to link when compiling. The `papyrus` dependency also requires a `crate-type` specification. If not specified, references to `papyrus` in the _library_ will cause compilation errors inside the repl.
 //!
 //! ### Repl
 //!

@@ -16,24 +16,22 @@ travis-ci = { repository = "kurtlawrence/papyrus" }
 
 [dependencies]
 # My crates
-cansi = 			{ path = "/cansi",		default-features = false,	optional = true }
-cratesiover =		{ version = "2.2",		default-features = false,	optional = true }
 cmdtree = 			{ version = "0.8",		default-features = false }
-shh = "1.0"
+cratesiover =		{ version = "2",		default-features = false,	optional = true }
+shh = 				{ version = "1",		default-features = false }
 
 # crates.io
+colored = 			{ version = "1",		default-features = false }
 crossbeam-channel =	{ version = "0.3",		default-features = false }
 crossbeam-utils =	{ version = "0.6",		default-features = false }
-dirs = "1.0"
-log = "0.4"
-mortal =			{ version = "0.2",		default-features = false,	optional = true }
-syn = {	version = "0.15", default-features = false,	features =  [ "full" ] }
-colored = "1.8"
-libloading = "0.5"
+dirs = 				{ version = "1",		default-features = false }
+fxhash = 			{ version = "0.2",		default-features = false }
+libloading =		{ version = "0.5",		default-features = false }
 linefeed = 			{ path = "/linefeed",	default-features = false,	optional = true }
+log = 				{ version = "0.4",		default-features = false }
 racer = 			{ version = "2.1",		default-features = false,	optional = true,	features = [ "metadata" ] }
+syn = 				{ version = "0.15",		default-features = false,	optional = false,	features =  [ "full" ] }
 term_cursor =		{ version = "0.2",		default-features = false,	optional = true }
-fxhash = "0.2"
 
 [dev-dependencies]
 criterion = "0.2"
@@ -45,7 +43,7 @@ harness = false
 [features]
 default = [ "runnable", "racer-completion" ]
 # allows to just run the repl
-runnable = [ "cansi", "cratesiover", "linefeed", "mortal", "term_cursor" ]
+runnable = [ "cratesiover", "linefeed", "term_cursor" ]
 # requires nightly
 racer-completion = [ "racer" ]
 

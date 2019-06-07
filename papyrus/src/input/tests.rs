@@ -1,13 +1,5 @@
 use super::*;
 use crate::pfh::*;
-use linefeed::memory::MemoryTerminal;
-use linefeed::Signal;
-
-#[test]
-fn test_with_term() {
-    let rdr = InputReader::with_term("test", MemoryTerminal::new()).unwrap();
-    assert_eq!(rdr.buffer, String::new());
-}
 
 #[test]
 fn test_unclosed_delimiter() {
@@ -215,49 +207,22 @@ fn test_exprs() {
 }
 
 #[test]
-fn handle_input() {
-    let mut reader = InputReader {
-        input_buffer: String::new(),
-        buffer: String::new(),
-        interface: Interface::with_term("some name", MemoryTerminal::new()).unwrap(),
-    };
+fn test_determine_result() {
     assert_eq!(
-        reader.handle_input(ReadResult::Input(String::from(".help")), false),
+        determine_result(".help", ".help", false),
         InputResult::Command("help".to_string())
     );
     assert_eq!(
-        reader.handle_input(ReadResult::Signal(Signal::Break), false),
-        InputResult::Empty
-    );
-    assert_eq!(
-        reader.handle_input(ReadResult::Eof, false),
-        InputResult::Eof
-    );
-}
-
-#[test]
-fn determine_result() {
-    let mut reader = InputReader {
-        input_buffer: String::new(),
-        buffer: String::new(),
-        interface: Interface::with_term("some name", MemoryTerminal::new()).unwrap(),
-    };
-
-    assert_eq!(
-        reader.determine_result(".help", ".help", false),
-        InputResult::Command("help".to_string())
-    );
-    assert_eq!(
-        reader.determine_result(".another", ".another", false),
+        determine_result(".another", ".another", false),
         InputResult::Command("another".to_string())
     );
     assert_eq!(
-        reader.determine_result(".help cmd", ".help cmd", false),
+        determine_result(".help cmd", ".help cmd", false),
         InputResult::Command("help cmd".to_string())
     );
-    assert_eq!(reader.determine_result("", "", false), InputResult::Empty);
+    assert_eq!(determine_result("", "", false), InputResult::Empty);
     assert_eq!(
-        reader.determine_result("2+2", "2+2", false),
+        determine_result("2+2", "2+2", false),
         InputResult::Program(Input {
             items: Vec::new(),
             stmts: vec![Statement {
@@ -268,10 +233,10 @@ fn determine_result() {
         })
     );
     assert_eq!(
-        reader.determine_result("let a = 1;", "let a = 1;", false),
+        determine_result("let a = 1;", "let a = 1;", false),
         InputResult::More
     );
-    assert_eq!(reader.determine_result("{", "{", false), InputResult::More);
+    assert_eq!(determine_result("{", "{", false), InputResult::More);
 }
 
 #[test]

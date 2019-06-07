@@ -1,4 +1,4 @@
-//! The repl takes the commands given and evaluates them, setting a local variable such that the data can be continually referenced. To construct a repl instance, use the macros [`repl!`](../macros.html) or [`repl_with_term!`](../macros.html).
+//! The repl takes the commands given and evaluates them, setting a local variable such that the data can be continually referenced. To construct a repl instance, use the macros [`repl!`].
 //!
 //! Repls are state machines, consisting of a read, evaluate, and print states. Each state will lead directly to the next with relevant methods. Generally a user will only use the `.read` and `.eval` methods. Calling `.run` will consume the repl and block the thread until it exits.
 //!

@@ -13,6 +13,8 @@
 //! papyrus=> 2+2
 //! papyrus [out0]: 4
 //! ```
+//!
+//! Papyrus is in active development, see [changelog](https://github.com/kurtlawrence/papyrus) for updates
 use papyrus::*;
 use repl::{Read, Repl};
 

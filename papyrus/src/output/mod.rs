@@ -134,22 +134,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn at_line_start() {
-        let mut o = Output::default();
-
-        assert_eq!(o.at_line_start(), true);
-
-        o.push_str("Hello");
-        assert_eq!(o.at_line_start(), false);
-
-        o.push_str("\n");
-        assert_eq!(o.at_line_start(), true);
-
-        o.push_str("world");
-        assert_eq!(o.at_line_start(), false);
-    }
-
-    #[test]
     fn lines_data_structure() {
         // check that the vec of positions is suitable
 

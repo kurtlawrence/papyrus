@@ -1,8 +1,8 @@
 #[macro_use]
 extern crate papyrus;
-extern crate linefeed;
 
 use papyrus::prelude::*;
+use repl::ReadResult;
 
 fn main() {
     // first, lets show how to pass through a simple number
@@ -10,13 +10,16 @@ fn main() {
 
     let mut repl = repl!(u32);
 
-    repl = match read_until_new_line(repl, "app_data").map(|eval| eval.eval(&mut v).repl.print()) {
-        Ok(repl) => repl,
-        Err(repl) => repl,
+    repl.line_input("app_data");
+    repl = match repl.read() {
+        ReadResult::Eval(eval) => eval.eval(&mut v).repl.print(),
+        ReadResult::Read(read) => read,
     };
-    match read_until_new_line(repl, "app_data + 123").map(|eval| eval.eval(&mut v).repl.print()) {
-        Ok(repl) => repl,
-        Err(repl) => repl,
+
+    repl.line_input("app_data + 123");
+    match repl.read() {
+        ReadResult::Eval(eval) => eval.eval(&mut v).repl.print(),
+        ReadResult::Read(read) => read,
     };
 
     // second, how about a borrowed value?
@@ -25,15 +28,16 @@ fn main() {
     let mut repl = repl!(String);
 
     // v borrowed!
-    repl = match read_until_new_line(repl, "app_data").map(|eval| eval.eval(&mut v).repl.print()) {
-        Ok(repl) => repl,
-        Err(repl) => repl,
+    repl.line_input("app_data");
+    repl = match repl.read() {
+        ReadResult::Eval(eval) => eval.eval(&mut v).repl.print(),
+        ReadResult::Read(read) => read,
     };
-    match read_until_new_line(repl, "app_data.to_uppercase()")
-        .map(|eval| eval.eval(&mut v).repl.print())
-    {
-        Ok(repl) => repl,
-        Err(repl) => repl,
+
+    repl.line_input("app_data.to_uppercase()");
+    match repl.read() {
+        ReadResult::Eval(eval) => eval.eval(&mut v).repl.print(),
+        ReadResult::Read(read) => read,
     };
 
     // third, lets try a mutable borrow
@@ -42,42 +46,25 @@ fn main() {
     let mut repl = repl!(String);
 
     // v mutably borrowed!
-    repl = match read_until_new_line(repl, "app_data.to_string()")
-        .map(|eval| eval.eval(&mut v).repl.print())
-    {
-        Ok(repl) => repl,
-        Err(repl) => repl,
+    repl.line_input("app_data.to_string()");
+    repl = match repl.read() {
+        ReadResult::Eval(eval) => eval.eval(&mut v).repl.print(),
+        ReadResult::Read(read) => read,
     };
     assert_eq!(&v, "Hello,");
 
     // get into mutating block
-    repl = match read_until_new_line(repl, ".mut").map(|eval| eval.eval(&mut v).repl.print()) {
-        Ok(repl) => repl,
-        Err(repl) => repl,
+    repl.line_input(".mut");
+    repl = match repl.read() {
+        ReadResult::Eval(eval) => eval.eval(&mut v).repl.print(),
+        ReadResult::Read(read) => read,
     };
 
     // now change the string
-    match read_until_new_line(repl, r#"app_data.push_str(" world!"); app_data"#)
-        .map(|eval| eval.eval(&mut v).repl.print())
-    {
-        Ok(repl) => repl,
-        Err(repl) => repl,
+    repl.line_input(r#"app_data.push_str(" world!"); app_data"#);
+    match repl.read() {
+        ReadResult::Eval(eval) => eval.eval(&mut v).repl.print(),
+        ReadResult::Read(read) => read,
     };
     assert_eq!(&v, "Hello, world!");
-}
-
-/// Adds the newline for us!
-fn read_until_new_line<T: linefeed::Terminal + 'static, D>(
-    repl: Repl<repl::Read, T, D>,
-    line: &str,
-) -> Result<Repl<repl::Evaluate, T, D>, Repl<repl::Read, T, D>> {
-    let mut repl = repl;
-    for ch in line.chars().into_iter().chain("\n".chars()) {
-        repl = match repl.push_input(ch) {
-            papyrus::repl::PushResult::Read(r) => r,
-            papyrus::repl::PushResult::Eval(r) => return Ok(r),
-        }
-    }
-
-    Err(repl)
 }
