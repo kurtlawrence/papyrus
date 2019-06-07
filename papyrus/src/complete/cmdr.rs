@@ -7,10 +7,7 @@ use cmdtree::Commander;
 
 /// Completion items for the [`cmdtree`] class and action structure.
 ///
-/// Implements [`Completer`], as such is _all inclusive_ for completing.
-///
 /// [`cmdtree`]: cmdtree
-/// [`Completer`]: Completer
 pub struct TreeCompleter {
     items: Vec<String>,
 }
@@ -29,32 +26,13 @@ impl TreeCompleter {
         Self { items }
     }
 
+    pub fn word_break(line: &str) -> usize {
+        word_break_start(line, &[' '])
+    }
+
     /// Get the completions of the tree structure if it matches the line.
     pub fn complete<'a>(&'a self, line: &'a str) -> impl Iterator<Item = &'a str> {
         cmdtree::completion::tree_completions(line, self.items.iter())
-    }
-}
-
-impl<T: Terminal> Completer<T> for TreeCompleter {
-    fn complete(
-        &self,
-        _word: &str,
-        prompter: &Prompter<T>,
-        _start: usize,
-        _end: usize,
-    ) -> Option<Vec<Completion>> {
-        let line = prompter.buffer();
-
-        let v: Vec<_> = self
-            .complete(line)
-            .map(|x| Completion::simple(x.to_string()))
-            .collect();
-
-        if v.len() > 0 {
-            Some(v)
-        } else {
-            None
-        }
     }
 }
 
@@ -90,7 +68,7 @@ impl ActionArgComplete {
             .and_then(|x| {
                 if valid.contains(&x.qualified_path.as_str()) {
                     let line = &line[x.match_str.len()..];
-                    let word_start = linefeed::complete::word_break_start(line, " ");
+                    let word_start = word_break_start(line, &[' ']);
                     Some(ArgComplete {
                         line,
                         word: &line[word_start..],

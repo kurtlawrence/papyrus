@@ -187,8 +187,6 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
 
     pub fn line_input(&mut self, input: &str) {
         self.state.output.replace_line_input(input);
-		dbg!(self.state.output.input_buffer());
-		dbg!(self.state.output.input_buf_line());
     }
 
     pub fn read2(mut self) -> ReadResult<Term, Data> {

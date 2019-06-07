@@ -244,20 +244,20 @@ fn determine_result() {
     };
 
     assert_eq!(
-        reader.determine_result(".help", false),
+        reader.determine_result(".help", ".help", false),
         InputResult::Command("help".to_string())
     );
     assert_eq!(
-        reader.determine_result(".another", false),
+        reader.determine_result(".another", ".another", false),
         InputResult::Command("another".to_string())
     );
     assert_eq!(
-        reader.determine_result(".help cmd", false),
+        reader.determine_result(".help cmd", ".help cmd", false),
         InputResult::Command("help cmd".to_string())
     );
-    assert_eq!(reader.determine_result("", false), InputResult::Empty);
+    assert_eq!(reader.determine_result("", "", false), InputResult::Empty);
     assert_eq!(
-        reader.determine_result("2+2", false),
+        reader.determine_result("2+2", "2+2", false),
         InputResult::Program(Input {
             items: Vec::new(),
             stmts: vec![Statement {
@@ -268,10 +268,10 @@ fn determine_result() {
         })
     );
     assert_eq!(
-        reader.determine_result("let a = 1;", false),
+        reader.determine_result("let a = 1;", "let a = 1;", false),
         InputResult::More
     );
-    assert_eq!(reader.determine_result("{", false), InputResult::More);
+    assert_eq!(reader.determine_result("{", "{", false), InputResult::More);
 }
 
 #[test]

@@ -25,6 +25,10 @@ impl CodeCompleter {
         CodeCompleter { last_code, split }
     }
 
+    pub fn word_start(line: &str) -> usize {
+        word_break_start(line, &[' ', ':'])
+    }
+
     /// Get completions that would match a string injected into the current repl state.
     pub fn complete(&self, injection: &str, limit: Option<usize>) -> Vec<Match> {
         let limit = limit.unwrap_or(std::usize::MAX);
@@ -56,32 +60,6 @@ impl CodeCompleter {
         let pos = (self.split.start + injection.len()).into();
 
         (s, pos)
-    }
-}
-
-impl<T: Terminal> Completer<T> for CodeCompleter {
-    fn complete(
-        &self,
-        _word: &str,
-        prompter: &Prompter<T>,
-        _start: usize,
-        _end: usize,
-    ) -> Option<Vec<Completion>> {
-        let v: Vec<_> = self
-            .complete(prompter.buffer(), Some(10))
-            .into_iter()
-            .map(|x| Completion {
-                completion: x.matchstr,
-                display: None,
-                suffix: Suffix::None,
-            })
-            .collect();
-
-        if v.len() > 0 {
-            Some(v)
-        } else {
-            None
-        }
     }
 }
 

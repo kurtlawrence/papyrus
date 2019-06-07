@@ -14,6 +14,7 @@
 //! papyrus [out0]: 4
 //! ```
 use papyrus::*;
+use repl::{Read, Repl};
 
 fn main() {
     if cfg!(windows) {
@@ -22,11 +23,20 @@ fn main() {
             .ok();
     }
 
-    // let repl = repl!();
     let repl = repl_with_term!(prelude::MemoryTerminal::new());
 
-    repl.run(&mut ());
+    run_repl(repl);
 
     std::thread::sleep(std::time::Duration::from_millis(10)); // let output thread finish up
     println!("Thanks for using papyrus!");
+}
+
+#[cfg(feature = "racer-completion")]
+fn run_repl(repl: Repl<Read, prelude::MemoryTerminal, ()>) {
+    repl.run_with_racer_completion(&mut ()).unwrap();
+}
+
+#[cfg(not(feature = "racer-completion"))]
+fn run_repl(repl: Repl<Read, prelude::MemoryTerminal, ()>) {
+    repl.run(&mut ()).unwrap();
 }

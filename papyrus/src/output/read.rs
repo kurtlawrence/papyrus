@@ -45,7 +45,7 @@ impl Output<Read> {
 
     pub fn new_line(&mut self) {
         self.push_ch('\n');
-		self.state.start = self.state.buf.len();
+        self.state.start = self.state.buf.len();
         self.state.lines_idx = self.lines_len();
     }
 

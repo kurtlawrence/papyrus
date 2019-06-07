@@ -6,11 +6,6 @@ use cmdr::ActionArgComplete;
 use std::path::{Path, PathBuf};
 
 /// A completer that completes paths to modules, such as the `mod switch` action.
-///
-/// The `Completer` implementation is specific to `papyrus`. If you want to get
-/// path completion, see the [`complete_path`] function.
-///
-/// [`complete_path`]: modules::complete_path
 pub struct ModulesCompleter {
     inner: ActionArgComplete,
     mods: Vec<PathBuf>,
@@ -29,6 +24,10 @@ impl ModulesCompleter {
         Self { inner, mods }
     }
 
+    pub fn word_break(line: &str) -> usize {
+        word_break_start(line, &[' '])
+    }
+
     /// Get the completions of an actions arguments if it matches the line.
     pub fn complete<'a>(&'a self, line: &'a str) -> Option<impl Iterator<Item = String> + 'a> {
         let actions = ["mod..switch"];
@@ -36,28 +35,6 @@ impl ModulesCompleter {
         self.inner
             .find(line, &actions)
             .map(|x| complete_path(x.line, self.mods.iter()))
-    }
-}
-
-impl<T: Terminal> Completer<T> for ModulesCompleter {
-    fn complete(
-        &self,
-        _word: &str,
-        prompter: &Prompter<T>,
-        _start: usize,
-        _end: usize,
-    ) -> Option<Vec<Completion>> {
-        let line = prompter.buffer();
-
-        self.complete(line).and_then(|v| {
-            let v: Vec<_> = v.map(|x| Completion::simple(x)).collect();
-
-            if v.len() != 0 {
-                Some(v)
-            } else {
-                None
-            }
-        })
     }
 }
 

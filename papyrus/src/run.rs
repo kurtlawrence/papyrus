@@ -1,42 +1,47 @@
-use crate::complete::*;
+#[cfg(feature = "racer-completion")]
+use crate::complete::code::CodeCompleter;
+use crate::complete::{cmdr::TreeCompleter, modules::ModulesCompleter};
 use crate::output;
 use crate::prelude::*;
 use linefeed::Terminal;
-use linefeed::{DefaultTerminal, Interface};
+use linefeed::{Completion, DefaultTerminal, Interface, Prompter, Suffix};
 use mortal::Cursor;
 use repl::{Read, ReadResult, Signal};
+use std::cmp::max;
 use std::io;
+use std::sync::Arc;
 
-// #[cfg(feature = "racer-completion")]
 impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
     /// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
     ///
     /// # Panics
     /// - Failure to initialise `InputReader`.
     pub fn run(self, app_data: &mut Data) -> io::Result<()> {
-        cratesiover::output_to_writer("papyrus", env!("CARGO_PKG_VERSION"), &mut std::io::stdout())?;
+        self.run_inner(app_data, false)
+    }
+
+    #[cfg(feature = "racer-completion")]
+    pub fn run_with_racer_completion(self, app_data: &mut Data) -> io::Result<()> {
+        self.run_inner(app_data, true)
+    }
+
+    pub fn run_inner(self, app_data: &mut Data, racer: bool) -> io::Result<()> {
+        cratesiover::output_to_writer(
+            "papyrus",
+            env!("CARGO_PKG_VERSION"),
+            &mut std::io::stdout(),
+        )?;
 
         let term = Interface::new("papyrus")?;
 
         let mut read = self;
 
         loop {
-            let combined = CombinedCompleter {
-                completers: vec![
-                    Box::new(cmdr::TreeCompleter::build(&read.data.cmdtree)),
-                    Box::new(modules::ModulesCompleter::build(
-                        &read.data.cmdtree,
-                        read.data.file_map(),
-                    )),
-                    // Box::new(code::CodeCompleter::build(&read.data)),
-                ],
-            };
-
-            read.set_completion(combined);
-
             read.draw_prompt2();
+            term.set_prompt(&read.prompt())?;
 
-			term.set_prompt(&read.prompt())?;
+            let completer = Completer::build(&read.data, racer);
+            term.set_completer(Arc::new(completer));
 
             let input = match term.read_line().unwrap() {
                 linefeed::ReadResult::Input(s) => s,
@@ -61,14 +66,14 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
 
                     read = result.repl.print();
 
-					read.close_channel();
+                    read.close_channel();
 
-					jh.join().ok(); // wait to finish printing
+                    jh.join().ok(); // wait to finish printing
                 }
             }
         }
 
-		Ok(())
+        Ok(())
     }
 }
 
@@ -91,21 +96,21 @@ fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
                 o.move_up(diff)?;
                 o.move_to_first_column()?;
                 o.clear_to_screen_end()?;
-                
-				o.write(&line)?;
-                
-				o.flush()?;
+
+                o.write(&line)?;
+
+                o.flush()?;
             }
             output::OutputChange::NewLine(line) => {
                 let mut o = term.lock_write();
 
                 o.write("\n")?;
-                
-				pos = cursor::get_pos().unwrap_or((0, 0));
-                
-				o.write(&line)?;
-                
-				o.flush()?;
+
+                pos = cursor::get_pos().unwrap_or((0, 0));
+
+                o.write(&line)?;
+
+                o.flush()?;
             }
         }
     }
@@ -192,12 +197,138 @@ fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
     Ok(())
 }
 
-fn mv_to_first_col(lock: &mut mortal::TerminalWriteGuard) -> usize {
-    let mut cols = 0;
+struct Completer {
+    tree_cmplter: TreeCompleter,
+    mod_cmplter: ModulesCompleter,
+    #[cfg(feature = "racer-completion")]
+    code_cmplter: Option<CodeCompleter>,
+}
 
-    while let Ok(_) = lock.move_left(1) {
-        cols += 1;
+impl Completer {
+    #[cfg(feature = "racer-completion")]
+    fn build<T>(rdata: &repl::ReplData<T>, racer: bool) -> Self {
+        let tree_cmplter = TreeCompleter::build(&rdata.cmdtree);
+
+        let mod_cmplter = ModulesCompleter::build(&rdata.cmdtree, rdata.file_map());
+
+        let code_cmplter = if racer {
+            Some(CodeCompleter::build(rdata))
+        } else {
+            None
+        };
+
+        Self {
+            tree_cmplter,
+            mod_cmplter,
+            code_cmplter,
+        }
     }
 
-    cols
+    #[cfg(not(feature = "racer-completion"))]
+    fn build<T>(rdata: &repl::ReplData<T>, racer: bool) -> Self {
+        let tree_cmplter = TreeCompleter::build(&rdata.cmdtree);
+
+        let mod_cmplter = ModulesCompleter::build(&rdata.cmdtree, rdata.file_map());
+
+        Self {
+            tree_cmplter,
+            mod_cmplter,
+        }
+    }
+}
+
+#[cfg(not(feature = "racer-completion"))]
+impl<T: Terminal> linefeed::Completer<T> for Completer {
+    fn complete(
+        &self,
+        word: &str,
+        prompter: &Prompter<T>,
+        start: usize,
+        end: usize,
+    ) -> Option<Vec<Completion>> {
+        let mut v = Vec::new();
+
+        let line = prompter.buffer();
+
+        let trees = self
+            .tree_cmplter
+            .complete(line)
+            .map(|x| Completion::simple(x.to_string()));
+        v.extend(trees);
+
+        let mods = self
+            .mod_cmplter
+            .complete(line)
+            .map(|x| x.map(|y| Completion::simple(y)));
+        if let Some(mods) = mods {
+            v.extend(mods);
+        }
+
+        if v.len() > 0 {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    fn word_start(&self, line: &str, end: usize, prompter: &Prompter<T>) -> usize {
+        let s1 = TreeCompleter::word_break(line);
+        let s2 = ModulesCompleter::word_break(line);
+
+        max(s1, s2)
+    }
+}
+
+#[cfg(feature = "racer-completion")]
+impl<T: Terminal> linefeed::Completer<T> for Completer {
+    fn complete(
+        &self,
+        word: &str,
+        prompter: &Prompter<T>,
+        start: usize,
+        end: usize,
+    ) -> Option<Vec<Completion>> {
+        let mut v = Vec::new();
+
+        let line = prompter.buffer();
+
+        let trees = self
+            .tree_cmplter
+            .complete(line)
+            .map(|x| Completion::simple(x.to_string()));
+        v.extend(trees);
+
+        let mods = self
+            .mod_cmplter
+            .complete(line)
+            .map(|x| x.map(|y| Completion::simple(y)));
+        if let Some(mods) = mods {
+            v.extend(mods);
+        }
+
+        let code = self.code_cmplter.as_ref().map(|x| {
+            x.complete(line, Some(10)).into_iter().map(|x| Completion {
+                completion: x.matchstr,
+                display: None,
+                suffix: Suffix::None,
+            })
+        });
+        if let Some(code) = code {
+            v.extend(code);
+        }
+
+        if v.len() > 0 {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    fn word_start(&self, line: &str, _end: usize, _prompter: &Prompter<T>) -> usize {
+        let s1 = TreeCompleter::word_break(line);
+        let s2 = ModulesCompleter::word_break(line);
+        let s3 = CodeCompleter::word_start(line);
+
+        max(max(s1, s2), s3)
+    }
 }
