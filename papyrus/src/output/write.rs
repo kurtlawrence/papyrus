@@ -64,7 +64,8 @@ impl Output<Write> {
 
 impl io::Write for Output<Write> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.push_str(&String::from_utf8_lossy(buf));
+        let s = String::from_utf8_lossy(buf);
+        self.push_str(&s);
         Ok(buf.len())
     }
 

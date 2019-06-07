@@ -55,4 +55,4 @@ racer-completion = [ "racer" ]
 [[bin]]
 name = "papyrus"
 path = "src/main.rs"
-required-features = [ "runnable", "racer-completion" ]
+required-features = [ "runnable" ]

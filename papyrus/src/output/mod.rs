@@ -69,11 +69,13 @@ impl<S> Output<S> {
         match ch {
             '\r' => false, // carrige returns are ignored
             '\n' => {
-                self.lines_pos.push(self.buf.len());
-                self.buf.push('\n');
-
                 // send line change signal of this line
                 self.send_line_chg(true);
+
+                self.lines_pos.push(self.buf.len());
+
+                self.buf.push('\n');
+
                 true
             }
             x => {
