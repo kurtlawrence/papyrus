@@ -3,8 +3,10 @@ use crate::complete::code::CodeCompleter;
 use crate::complete::{cmdr::TreeCompleter, modules::ModulesCompleter};
 use crate::output;
 use crate::prelude::*;
+#[cfg(feature = "racer-completion")]
+use linefeed::Suffix;
 use linefeed::Terminal;
-use linefeed::{Completion, DefaultTerminal, Interface, Prompter, Suffix};
+use linefeed::{Completion, DefaultTerminal, Interface, Prompter};
 use repl::{Read, ReadResult, Signal};
 use std::cmp::max;
 use std::io;
@@ -149,7 +151,7 @@ impl Completer {
     }
 
     #[cfg(not(feature = "racer-completion"))]
-    fn build<T>(rdata: &repl::ReplData<T>, racer: bool) -> Self {
+    fn build<T>(rdata: &repl::ReplData<T>, _racer: bool) -> Self {
         let tree_cmplter = TreeCompleter::build(&rdata.cmdtree);
 
         let mod_cmplter = ModulesCompleter::build(&rdata.cmdtree, rdata.file_map());
@@ -165,10 +167,10 @@ impl Completer {
 impl<T: Terminal> linefeed::Completer<T> for Completer {
     fn complete(
         &self,
-        word: &str,
+        _word: &str,
         prompter: &Prompter<T>,
-        start: usize,
-        end: usize,
+        _start: usize,
+        _end: usize,
     ) -> Option<Vec<Completion>> {
         let mut v = Vec::new();
 
@@ -195,7 +197,7 @@ impl<T: Terminal> linefeed::Completer<T> for Completer {
         }
     }
 
-    fn word_start(&self, line: &str, end: usize, prompter: &Prompter<T>) -> usize {
+    fn word_start(&self, line: &str, _end: usize, _prompter: &Prompter<T>) -> usize {
         let s1 = TreeCompleter::word_break(line);
         let s2 = ModulesCompleter::word_break(line);
 

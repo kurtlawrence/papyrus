@@ -25,6 +25,7 @@ pub enum InputResult {
     InputError(String),
 }
 
+/// Parse `input` and `line` and determine what `InputResult`.
 pub fn determine_result(input: &str, line: &str, treat_as_cmd: bool) -> InputResult {
     if input.is_empty() {
         return InputResult::Empty; // if line is empty this could result. do not remove

@@ -7,6 +7,10 @@ use crossbeam_channel as channel;
 /// Line change receiving end.
 pub type Receiver = channel::Receiver<OutputChange>;
 
+/// Represents a buffered output from the repl.
+///
+/// Output can be either the `Read` or `Write` states,
+/// and can be listened to for line change events.
 #[derive(Debug)]
 pub struct Output<S> {
     state: S,
@@ -27,7 +31,9 @@ pub struct Output<S> {
 /// Line change event.
 #[derive(Debug)]
 pub enum OutputChange {
+    /// A change was made on the current line.
     CurrentLine(String),
+    /// A change was made on a new line.
     NewLine(String),
 }
 
@@ -96,15 +102,6 @@ impl<S> Output<S> {
 
         // send line change signal of last line -- previous ones are handled in push_ch
         self.send_line_chg(false);
-    }
-
-    fn at_line_start(&self) -> bool {
-        self.buf.len() == 0
-            || self
-                .lines_pos
-                .last()
-                .map(|&x| x == self.buf.len() - 1)
-                .unwrap_or(false)
     }
 }
 

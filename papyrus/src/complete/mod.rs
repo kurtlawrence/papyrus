@@ -5,7 +5,7 @@ pub mod cmdr;
 pub mod code;
 pub mod modules;
 
-/// Returns the start position of the _last_ word which is broken by any of the characters
+/// Returns the start position of the _last_ word which is broken by any of the characters.
 pub fn word_break_start(s: &str, word_break_chars: &[char]) -> usize {
     let mut start = s.len();
 

@@ -23,26 +23,21 @@ impl<D> Default for Repl<Read, D> {
 }
 
 impl<D> Repl<Read, D> {
+    /// Overwrite the current line in the input buffer.
+    ///
+    /// A line is considered if more input is required, the previous input stacked.
+    /// Only overwrites the most recent buffer.
     pub fn line_input(&mut self, input: &str) {
         self.state.output.replace_line_input(input);
     }
 
     /// The current input buffer.
-    ///
-    /// # Examples
-    /// ```rust
-    /// # use papyrus::*;
-    ///
-    /// let mut repl = repl_with_term!(papyrus::prelude::MemoryTerminal::new());
-    ///
-    /// repl.input_str("let a =");
-    ///
-    /// assert_eq!(repl.input_buffer(), "let a =");
-    /// ```
     pub fn input_buffer(&self) -> &str {
         self.state.output.input_buffer()
     }
 
+    /// Read the current contents of the input buffer.
+    /// This may move the repl into an evaluating state.
     pub fn read(mut self) -> ReadResult<D> {
         let treat_as_cmd = !self.data.cmdtree.at_root();
 
@@ -69,6 +64,7 @@ impl<D> Repl<Read, D> {
         }
     }
 
+    /// The prompt.
     pub fn prompt(&self) -> String {
         let mod_path =
             format!("[{}]", self.data.current_file.display()).color(self.data.prompt_colour);
@@ -90,10 +86,12 @@ impl<D> Repl<Read, D> {
         self.state.output.set_prompt_and_trigger(&self.prompt());
     }
 
+    /// Begin listening to line change events on the output.
     pub fn output_listen(&mut self) -> output::Receiver {
         self.state.output.listen()
     }
 
+    /// Close the sender side of the output channel.
     pub fn close_channel(&mut self) {
         self.state.output.close()
     }

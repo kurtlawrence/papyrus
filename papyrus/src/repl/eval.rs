@@ -42,8 +42,14 @@ impl<D> Repl<Evaluate, D> {
         map_variants(self, func, func)
     }
 
+    /// Begin listening to line change events on the output.
     pub fn output_listen(&mut self) -> output::Receiver {
         self.state.output.listen()
+    }
+
+    /// Close the sender side of the output channel.
+    pub fn close_channel(&mut self) {
+        self.state.output.close()
     }
 }
 

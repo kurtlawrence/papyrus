@@ -24,6 +24,7 @@ impl ModulesCompleter {
         Self { inner, mods }
     }
 
+    /// Returns the start position of the _last_ word which is broken in context to modules.
     pub fn word_break(line: &str) -> usize {
         word_break_start(line, &[' '])
     }

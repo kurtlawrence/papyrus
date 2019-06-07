@@ -36,7 +36,7 @@ impl<D> Repl<Print, D> {
             }
         }
 
-        let mut r = self.move_state(|s| Read {
+        let r = self.move_state(|s| Read {
             output: s.output.to_read(),
         });
 

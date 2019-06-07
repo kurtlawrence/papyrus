@@ -35,6 +35,7 @@ impl Output<Read> {
         }
     }
 
+    /// Overwrite the current input line buffer with `input`.
     pub fn replace_line_input(&mut self, input: &str) {
         self.buf.truncate(self.state.prompt_end);
         self.lines_pos.truncate(self.state.lines_idx);
@@ -43,6 +44,8 @@ impl Output<Read> {
         self.state.buf.replace_range(self.state.start.., input);
     }
 
+    /// Trigger a new input line. This stores previous input internally
+    /// and stacks the buffers.
     pub fn new_line(&mut self) {
         self.push_ch('\n');
         self.state.start = self.state.buf.len();

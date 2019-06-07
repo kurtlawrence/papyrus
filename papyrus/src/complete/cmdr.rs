@@ -26,6 +26,7 @@ impl TreeCompleter {
         Self { items }
     }
 
+    /// Returns the start position of the _last_ word which is broken in context to cmdtree.
     pub fn word_break(line: &str) -> usize {
         word_break_start(line, &[' '])
     }

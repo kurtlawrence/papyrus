@@ -95,7 +95,6 @@ use std::{
     fmt, fs, io,
     marker::PhantomData,
     path::{Path, PathBuf},
-    sync::Arc,
 };
 
 /// The repl structure. Stored as a state machine.

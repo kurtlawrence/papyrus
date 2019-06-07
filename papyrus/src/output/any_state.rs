@@ -6,6 +6,7 @@ impl<S> Output<S> {
         &self.buf
     }
 
+    /// Get the contents of the line at index `idx`.
     pub fn line(&self, idx: usize) -> Option<&str> {
         let lines_len = self.lines_pos.len();
 
@@ -33,6 +34,7 @@ impl<S> Output<S> {
         self.lines_pos.len() + 1
     }
 
+    /// Create a channel to listen to line change events.
     pub fn listen(&mut self) -> channel::Receiver<OutputChange> {
         let (tx, rx) = channel::unbounded();
 
@@ -41,6 +43,7 @@ impl<S> Output<S> {
         rx
     }
 
+    /// Close the sending channel.
     pub fn close(&mut self) {
         self.tx = None;
     }
