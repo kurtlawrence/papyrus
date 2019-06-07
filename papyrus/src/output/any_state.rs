@@ -40,6 +40,10 @@ impl<S> Output<S> {
 
         rx
     }
+
+    pub fn close(&mut self) {
+        self.tx = None;
+    }
 }
 
 impl Default for Output<Read> {

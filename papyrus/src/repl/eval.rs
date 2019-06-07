@@ -42,6 +42,10 @@ impl<Term: Terminal, Data> Repl<Evaluate, Term, Data> {
 
         map_variants(self, func, func)
     }
+
+    pub fn output_listen(&mut self) -> output::Receiver {
+        self.state.output.listen()
+    }
 }
 
 impl<Term: Terminal + 'static, Data: 'static + Send + Sync> Repl<Evaluate, Term, Data> {

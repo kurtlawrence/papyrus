@@ -41,11 +41,12 @@ pub struct Read {
     /// Input buffer. This contains _all_ input, which may include previous lines.
     buf: String,
 
+    start: usize,
+
     prompt_start: usize,
     prompt_end: usize,
 
-    cursor: usize,
-    cursor_start: usize,
+    lines_idx: usize,
 }
 
 /// Only write functions available.

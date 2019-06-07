@@ -10,7 +10,13 @@ impl Output<Write> {
             buf, lines_pos, tx, ..
         } = self;
 
-        let state = Read::new(buf.len());
+        let state = Read {
+            buf: String::new(),
+            start: 0,
+            prompt_start: buf.len(),
+            prompt_end: buf.len(),
+            lines_idx: lines_pos.len(),
+        };
 
         Output {
             state,

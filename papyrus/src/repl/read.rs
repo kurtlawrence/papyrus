@@ -185,20 +185,8 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
         }
     }
 
-    pub fn input_ch(&mut self, ch: char) {
-        if ch == '\n' {
-            self.state.output.new_line();
-        } else {
-            self.state.output.insert(ch);
-        }
-    }
-
-    pub fn input_str(&mut self, s: &str) {
-        s.chars().for_each(|ch| self.input_ch(ch));
-    }
-
-    pub fn remove_ch(&mut self) {
-        self.state.output.remove();
+    pub fn line_input(&mut self, input: &str) {
+        self.state.output.replace_line_input(input)
     }
 
     pub fn read2(mut self) -> ReadResult<Term, Data> {
@@ -231,7 +219,7 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
     fn handle_ch(mut self, ch: char, treat_as_cmd: bool) -> PushResult<Term, Data> {
         let prompt = self.prompt();
 
-        self.state.output.insert(ch);
+        // self.state.output.insert(ch);
 
         if ch == '\n' {
             let result = self.terminal.input_rdr.determine_result(
@@ -310,5 +298,9 @@ impl<Term: Terminal, Data> Repl<Read, Term, Data> {
 
     pub fn output_listen(&mut self) -> output::Receiver {
         self.state.output.listen()
+    }
+
+    pub fn close_channel(&mut self) {
+        self.state.output.close()
     }
 }
