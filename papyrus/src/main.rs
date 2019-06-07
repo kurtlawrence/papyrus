@@ -23,7 +23,7 @@ fn main() {
             .ok();
     }
 
-    let repl = repl_with_term!(prelude::MemoryTerminal::new());
+    let repl = repl!();
 
     run_repl(repl);
 
@@ -32,11 +32,11 @@ fn main() {
 }
 
 #[cfg(feature = "racer-completion")]
-fn run_repl(repl: Repl<Read, prelude::MemoryTerminal, ()>) {
+fn run_repl(repl: Repl<Read, ()>) {
     repl.run_with_racer_completion(&mut ()).unwrap();
 }
 
 #[cfg(not(feature = "racer-completion"))]
-fn run_repl(repl: Repl<Read, prelude::MemoryTerminal, ()>) {
+fn run_repl(repl: Repl<Read, ()>) {
     repl.run(&mut ()).unwrap();
 }

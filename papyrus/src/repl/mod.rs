@@ -78,21 +78,18 @@ mod data;
 mod eval;
 mod print;
 mod read;
-mod writer;
 
 pub use cmds::*;
 pub use cmdtree::Builder as CommandBuilder;
 
 use crate::{
-    complete::*,
-    input::{InputReader, InputResult},
+    input::InputResult,
     output::{self, Output},
     pfh::{self, linking::LinkingConfiguration},
 };
 use cmdtree::*;
 use colored::*;
 use crossbeam_channel::Receiver;
-use linefeed::terminal::Terminal;
 use std::{
     borrow::Cow,
     fmt, fs, io,
@@ -105,13 +102,15 @@ use std::{
 /// See the [module level documentation] for more information.
 ///
 /// A repl has different available methods depending on its state.
-pub struct Repl<S, Term: Terminal, Data> {
+pub struct Repl<S, Data> {
     /// The inner repl configuration data.
     pub data: ReplData<Data>,
+
     state: S,
-    terminal: ReplTerminal<Term>,
+
     /// A persistent flag for the prompt to change for more input.
     more: bool,
+
     data_mrker: PhantomData<Data>,
 }
 
@@ -142,19 +141,6 @@ pub struct ReplData<Data> {
     redirect_on_execution: bool,
 }
 
-struct ReplTerminal<Term: Terminal> {
-    /// The underlying terminal of `input_rdr`, used to directly control terminal
-    /// Kept as a `Arc` such that multiple references to the terminal can be shared across threads.
-    /// Lucky for us that `Terminal` implements an atomic locking interface.
-    terminal: Arc<Term>,
-    /// The persistent input reader.
-    input_rdr: InputReader<Term>,
-}
-
-struct Writer<'a, T: Terminal>(&'a T);
-/// This is done to be able to `Send` a writer with a reference to the terminal in it.
-struct OwnedWriter<T: Terminal>(Arc<T>);
-
 /// Repl read state.
 #[derive(Debug)]
 pub struct Read {
@@ -169,8 +155,8 @@ pub struct Evaluate {
 }
 
 /// Repl evaluating state. This can be constructed via a `eval_async` call.
-pub struct Evaluating<Term: Terminal, Data> {
-    jh: Receiver<EvalResult<Term, Data>>,
+pub struct Evaluating<D> {
+    jh: Receiver<EvalResult<D>>,
 }
 
 /// Repl print state.
@@ -183,9 +169,9 @@ pub struct Print {
 }
 
 /// Represents an evaluating result. Signal should be checked and handled.
-pub struct EvalResult<Term: Terminal, Data> {
+pub struct EvalResult<D> {
     /// The repl, in print ready state.
-    pub repl: Repl<Print, Term, Data>,
+    pub repl: Repl<Print, D>,
     /// The signal, if any.
     pub signal: Signal,
 }
@@ -203,18 +189,21 @@ pub enum Signal {
 
 /// The resulting state after pushing some input into the repl.
 /// Take a look at the [github examples](https://github.com/kurtlawrence/papyrus/tree/master/examples) for pushing input.
-pub enum PushResult<Term: Terminal, Data> {
+pub enum PushResult<D> {
     /// The repl is still in a read state.
-    Read(Repl<Read, Term, Data>),
+    Read(Repl<Read, D>),
     /// The repl is in an eval state.
-    Eval(Repl<Evaluate, Term, Data>),
+    Eval(Repl<Evaluate, D>),
 }
 
-pub enum ReadResult<Term: Terminal, Data> {
+/// Result of [`read`]ing the current input buffer.
+///
+/// [`read`]: Repl::read
+pub enum ReadResult<D> {
     /// The repl is still in a read state.
-    Read(Repl<Read, Term, Data>),
+    Read(Repl<Read, D>),
     /// The repl is in an eval state.
-    Eval(Repl<Evaluate, Term, Data>),
+    Eval(Repl<Evaluate, D>),
 }
 
 /// `$HOME/.papyrus`

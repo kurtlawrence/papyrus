@@ -3,7 +3,6 @@
 //! [`racer`]: racer
 use super::*;
 
-use linefeed::Suffix;
 use racer::{BytePos, FileCache, Location, Match, Session};
 
 const LIBRS: &str = "lib.rs";

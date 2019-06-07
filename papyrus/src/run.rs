@@ -5,27 +5,27 @@ use crate::output;
 use crate::prelude::*;
 use linefeed::Terminal;
 use linefeed::{Completion, DefaultTerminal, Interface, Prompter, Suffix};
-use mortal::Cursor;
 use repl::{Read, ReadResult, Signal};
 use std::cmp::max;
 use std::io;
 use std::sync::Arc;
 
-impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
-    /// Run the REPL interactively. Consumes the REPL in the process and will block this thread until exited.
-    ///
-    /// # Panics
-    /// - Failure to initialise `InputReader`.
-    pub fn run(self, app_data: &mut Data) -> io::Result<()> {
+impl<D> Repl<Read, D> {
+    /// Run the REPL interactively.
+    /// Consumes the REPL in the process and will block this thread until exited.
+    pub fn run(self, app_data: &mut D) -> io::Result<()> {
         self.run_inner(app_data, false)
     }
 
+    /// Run the REPL interactively.
+    /// Consumes the REPL in the process and will block this thread until exited.
+    /// Racer code completion is enabled.
     #[cfg(feature = "racer-completion")]
-    pub fn run_with_racer_completion(self, app_data: &mut Data) -> io::Result<()> {
+    pub fn run_with_racer_completion(self, app_data: &mut D) -> io::Result<()> {
         self.run_inner(app_data, true)
     }
 
-    fn run_inner(self, app_data: &mut Data, racer: bool) -> io::Result<()> {
+    fn run_inner(self, app_data: &mut D, racer: bool) -> io::Result<()> {
         cratesiover::output_to_writer(
             "papyrus",
             env!("CARGO_PKG_VERSION"),
@@ -37,7 +37,6 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
         let mut read = self;
 
         loop {
-            read.draw_prompt2();
             term.set_prompt(&read.prompt())?;
 
             let completer = Completer::build(&read.data, racer);
@@ -54,8 +53,7 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
                 term.add_history_unique(input);
             }
 
-
-            match read.read2() {
+            match read.read() {
                 ReadResult::Read(repl) => read = repl,
                 ReadResult::Eval(mut repl) => {
                     // output to stdout
@@ -119,85 +117,6 @@ fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
             }
         }
     }
-
-    // let term = mortal::Terminal::new()?;
-
-    // let mut last_total = 1;
-
-    // // Map of how many lines a line index prints to.
-    // let mut line_lens = vec![1];
-
-    // let mut lock = term.lock_write().unwrap();
-
-    // for msg in rx.iter() {
-    //     let size = lock.size()?;
-
-    //     // add necessary new lines. Indices increment by one.
-    //     {
-    //         for _ in 0..(msg.total.saturating_sub(last_total)) {
-    //             line_lens.push(1);
-    //             writeln!(lock, "")?;
-    //         }
-
-    //         last_total = msg.total;
-
-    //         debug_assert_eq!(line_lens.len(), last_total);
-    //     }
-
-    //     // move to, and clear line
-    //     let cols = {
-    //         let diff = line_lens[msg.index..]
-    //             .iter()
-    //             .sum::<usize>()
-    //             .saturating_sub(1);
-    //         lock.move_up(diff)?;
-    //         let cols = mv_to_first_col(&mut lock);
-    //         lock.clear_to_line_end()?;
-    //         cols
-    //     };
-
-    //     // write contents, might spill over into multiple lines
-    //     {
-    //         let lines_count = {
-    //             let chars = cansi::categorise_text(&msg.line)
-    //                 .iter()
-    //                 .map(|c| c.text.chars().count())
-    //                 .sum::<usize>();
-
-    //             if chars == 0 {
-    //                 1
-    //             } else {
-    //                 let r = chars % size.columns;
-
-    //                 if r == 0 {
-    //                     chars / size.columns
-    //                 } else {
-    //                     chars / size.columns + 1
-    //                 }
-    //             }
-    //         };
-
-    //         write!(lock, "{}", msg.line)?;
-
-    //         line_lens.get_mut(msg.index).map(|x| *x = lines_count);
-    //     }
-
-    //     // move cursor to last line
-    //     {
-    //         let diff = line_lens[msg.index..]
-    //             .iter()
-    //             .sum::<usize>()
-    //             .saturating_sub(1);
-
-    //         if msg.index != last_total - 1 {
-    //             lock.move_down(diff)?;
-    //             lock.move_to_first_column()?;
-    //             lock.move_right(cols)?;
-    //         }
-    //     }
-
-    //     lock.flush()?;
-    // }
 
     Ok(())
 }
@@ -288,10 +207,10 @@ impl<T: Terminal> linefeed::Completer<T> for Completer {
 impl<T: Terminal> linefeed::Completer<T> for Completer {
     fn complete(
         &self,
-        word: &str,
+        _word: &str,
         prompter: &Prompter<T>,
-        start: usize,
-        end: usize,
+        _start: usize,
+        _end: usize,
     ) -> Option<Vec<Completion>> {
         let mut v = Vec::new();
 

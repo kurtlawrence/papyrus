@@ -18,8 +18,6 @@ travis-ci = { repository = "kurtlawrence/papyrus" }
 # My crates
 cansi = 			{ path = "/cansi",		default-features = false,	optional = true }
 cratesiover =		{ version = "2.2",		default-features = false,	optional = true }
-#linefeed = { git = "https://github.com/kurtlawrence/linefeed" }
-linefeed = { path = "/linefeed" }
 cmdtree = 			{ version = "0.8",		default-features = false }
 shh = "1.0"
 
@@ -32,10 +30,9 @@ mortal =			{ version = "0.2",		default-features = false,	optional = true }
 syn = {	version = "0.15", default-features = false,	features =  [ "full" ] }
 colored = "1.8"
 libloading = "0.5"
-sublime_fuzzy = "0.6"
+linefeed = 			{ path = "/linefeed",	default-features = false,	optional = true }
 racer = 			{ version = "2.1",		default-features = false,	optional = true,	features = [ "metadata" ] }
 term_cursor =		{ version = "0.2",		default-features = false,	optional = true }
-term_size = 		{ version = "0.3",		default-features = false,	optional = true }
 fxhash = "0.2"
 
 [dev-dependencies]
@@ -48,7 +45,7 @@ harness = false
 [features]
 default = [ "runnable", "racer-completion" ]
 # allows to just run the repl
-runnable = [ "cansi", "cratesiover", "mortal", "term_cursor", "term_size" ]
+runnable = [ "cansi", "cratesiover", "linefeed", "mortal", "term_cursor" ]
 # requires nightly
 racer-completion = [ "racer" ]
 

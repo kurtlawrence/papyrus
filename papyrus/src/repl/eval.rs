@@ -1,7 +1,6 @@
 use super::*;
 use crate::compile;
 use crate::pfh::{self, Input, StmtGrp};
-use linefeed::terminal::Terminal;
 use std::borrow::{Borrow, BorrowMut};
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
@@ -11,10 +10,10 @@ use std::sync::{Arc, RwLock};
 /// `as_out` flags to output `out#`.
 type HandleInputResult = (Cow<'static, str>, bool);
 
-impl<Term: Terminal, Data> Repl<Evaluate, Term, Data> {
+impl<D> Repl<Evaluate, D> {
     /// Evaluates the read input, compiling and executing the code and printing all line prints until
     /// a result is found. This result gets passed back as a print ready repl.
-    pub fn eval(self, app_data: &mut Data) -> EvalResult<Term, Data> {
+    pub fn eval(self, app_data: &mut D) -> EvalResult<D> {
         use std::cell::Cell;
         use std::rc::Rc;
 
@@ -48,7 +47,7 @@ impl<Term: Terminal, Data> Repl<Evaluate, Term, Data> {
     }
 }
 
-impl<Term: Terminal + 'static, Data: 'static + Send + Sync> Repl<Evaluate, Term, Data> {
+impl<D: 'static + Send + Sync> Repl<Evaluate, D> {
     /// Same as `eval` but will evaluate on another thread, not blocking this one.
     ///
     /// An `Arc::clone` will be taken of `app_data`. `RwLock` generally takes a read
@@ -58,7 +57,7 @@ impl<Term: Terminal + 'static, Data: 'static + Send + Sync> Repl<Evaluate, Term,
     ///
     /// > Be careful of blocking a program by taking a read lock and calling this function
     /// when a write lock is required.
-    pub fn eval_async(self, app_data: &Arc<RwLock<Data>>) -> Evaluating<Term, Data> {
+    pub fn eval_async(self, app_data: &Arc<RwLock<D>>) -> Evaluating<D> {
         let (tx, rx) = crossbeam_channel::bounded(1);
 
         let clone = Arc::clone(app_data);
@@ -77,7 +76,7 @@ impl<Term: Terminal + 'static, Data: 'static + Send + Sync> Repl<Evaluate, Term,
     }
 }
 
-impl<Term: Terminal, Data> Evaluating<Term, Data> {
+impl<D> Evaluating<D> {
     /// Evaluating has finished.
     pub fn completed(&self) -> bool {
         !self.jh.is_empty()
@@ -85,20 +84,19 @@ impl<Term: Terminal, Data> Evaluating<Term, Data> {
 
     /// Waits for the evaluating to finish before return the result.
     /// If evaluating is `completed` this will return immediately.
-    pub fn wait(self) -> EvalResult<Term, Data> {
+    pub fn wait(self) -> EvalResult<D> {
         self.jh
             .recv()
             .expect("receiving eval result from async thread failed")
     }
 }
 
-fn map_variants<T, D, Fmut, Fbrw, Rmut, Rbrw>(
-    repl: Repl<Evaluate, T, D>,
+fn map_variants<D, Fmut, Fbrw, Rmut, Rbrw>(
+    repl: Repl<Evaluate, D>,
     obtain_mut_data: Fmut,
     obtain_brw_data: Fbrw,
-) -> EvalResult<T, D>
+) -> EvalResult<D>
 where
-    T: Terminal,
     Fmut: FnOnce() -> Rmut,
     Rmut: DerefMut<Target = D>,
     Fbrw: FnOnce() -> Rbrw,
@@ -106,7 +104,6 @@ where
 {
     let Repl {
         state,
-        terminal,
         mut data,
         more,
         data_mrker,
@@ -120,17 +117,13 @@ where
     // map variants into Result<HandleInputResult, EvalSignal>
     let mapped = match result {
         InputResult::Command(cmds) => {
-            let r = data.handle_command(&cmds, &terminal.terminal, &mut output, obtain_mut_data);
+            let r = data.handle_command(&cmds, &mut output, obtain_mut_data);
             keep_mutating = data.linking.mutable; // a command can alter the mutating state, needs to persist
             r
         }
-        InputResult::Program(input) => Ok(data.handle_program(
-            input,
-            &terminal.terminal,
-            &mut output,
-            obtain_mut_data,
-            obtain_brw_data,
-        )),
+        InputResult::Program(input) => {
+            Ok(data.handle_program(input, &mut output, obtain_mut_data, obtain_brw_data))
+        }
         InputResult::InputError(err) => Ok((Cow::Owned(err), false)),
         InputResult::Eof => Err(Signal::Exit),
         _ => Ok((Cow::Borrowed(""), false)),
@@ -154,7 +147,6 @@ where
                 to_print,
                 as_out,
             },
-            terminal,
             data,
             more,
             data_mrker,
@@ -162,18 +154,16 @@ where
     }
 }
 
-impl<Data> ReplData<Data> {
-    fn handle_command<T, F, R, W>(
+impl<D> ReplData<D> {
+    fn handle_command<F, R, W>(
         &mut self,
         cmds: &str,
-        terminal: &Arc<T>,
         writer: &mut W,
         obtain_mut_app_data: F,
     ) -> Result<HandleInputResult, Signal>
     where
-        T: Terminal,
         F: FnOnce() -> R,
-        R: DerefMut<Target = Data>,
+        R: DerefMut<Target = D>,
         W: io::Write,
     {
         use cmdtree::LineResult as lr;
@@ -195,7 +185,7 @@ impl<Data> ReplData<Data> {
                 }
                 CommandResult::ActionOnAppData(action) => {
                     let mut r = obtain_mut_app_data();
-                    let app_data: &mut Data = r.borrow_mut();
+                    let app_data: &mut D = r.borrow_mut();
                     let s = action.call_box((app_data, writer));
                     (Cow::Owned(s), false)
                 }
@@ -207,26 +197,24 @@ impl<Data> ReplData<Data> {
         Ok(tuple)
     }
 
-    fn handle_program<T, Fmut, Fbrw, Rmut, Rbrw>(
+    fn handle_program<Fmut, Fbrw, Rmut, Rbrw>(
         &mut self,
         input: Input,
-        terminal: &Arc<T>,
         writer: &mut Output<output::Write>,
         obtain_mut_data: Fmut,
         obtain_brw_data: Fbrw,
     ) -> HandleInputResult
     where
-        T: Terminal,
         Fmut: FnOnce() -> Rmut,
-        Rmut: DerefMut<Target = Data>,
+        Rmut: DerefMut<Target = D>,
         Fbrw: FnOnce() -> Rbrw,
-        Rbrw: Deref<Target = Data>,
+        Rbrw: Deref<Target = D>,
     {
         let (nitems, ncrates) = (input.items.len(), input.crates.len());
 
         let has_stmts = input.stmts.len() > 0;
 
-        let pop_input = |repl_data: &mut ReplData<Data>| {
+        let pop_input = |repl_data: &mut ReplData<D>| {
             let src = repl_data.get_current_file_mut();
             src.items.truncate(src.items.len() - nitems);
             src.crates.truncate(src.crates.len() - ncrates);
@@ -310,11 +298,11 @@ impl<Data> ReplData<Data> {
 
                 if self.linking.mutable {
                     let mut r = obtain_mut_data();
-                    let app_data: &mut Data = r.borrow_mut();
+                    let app_data: &mut D = r.borrow_mut();
                     compile::exec(&lib_file, &fn_name, app_data, redirect_wtr)
                 } else {
                     let r = obtain_brw_data();
-                    let app_data: &Data = r.borrow();
+                    let app_data: &D = r.borrow();
                     compile::exec(&lib_file, &fn_name, app_data, redirect_wtr)
                 }
             };

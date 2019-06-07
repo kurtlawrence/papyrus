@@ -1,11 +1,10 @@
 use super::*;
 
-use linefeed::terminal::Terminal;
 use std::io::Write;
 
-impl<Term: Terminal, Data> Repl<Print, Term, Data> {
+impl<D> Repl<Print, D> {
     /// Prints the result if successful as `[out#]` or the failure message if any.
-    pub fn print(mut self) -> Repl<Read, Term, Data> {
+    pub fn print(mut self) -> Repl<Read, D> {
         // write
         {
             if self.state.as_out {
@@ -37,11 +36,9 @@ impl<Term: Terminal, Data> Repl<Print, Term, Data> {
             }
         }
 
-        let r = self.move_state(|s| Read {
+        let mut r = self.move_state(|s| Read {
             output: s.output.to_read(),
         });
-
-        r.draw_prompt().unwrap(); // prep for next read
 
         r
     }
