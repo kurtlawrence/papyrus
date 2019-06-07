@@ -5,6 +5,7 @@ use linefeed::Terminal;
 use linefeed::{DefaultTerminal, Interface};
 use mortal::Cursor;
 use repl::{Read, ReadResult, Signal};
+use std::io;
 
 // #[cfg(feature = "racer-completion")]
 impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
@@ -12,11 +13,10 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
     ///
     /// # Panics
     /// - Failure to initialise `InputReader`.
-    pub fn run(self, app_data: &mut Data) {
-        cratesiover::output_to_writer("papyrus", env!("CARGO_PKG_VERSION"), &mut std::io::stdout())
-            .unwrap();
+    pub fn run(self, app_data: &mut Data) -> io::Result<()> {
+        cratesiover::output_to_writer("papyrus", env!("CARGO_PKG_VERSION"), &mut std::io::stdout())?;
 
-        let mut term = Interface::new("papyrus").unwrap();
+        let term = Interface::new("papyrus")?;
 
         let mut read = self;
 
@@ -36,6 +36,8 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
 
             read.draw_prompt2();
 
+			term.set_prompt(&read.prompt())?;
+
             let input = match term.read_line().unwrap() {
                 linefeed::ReadResult::Input(s) => s,
                 _ => String::new(),
@@ -43,14 +45,12 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
 
             read.line_input(&input);
 
-            // read.read_line(&mut term);
-
             match read.read2() {
                 ReadResult::Read(repl) => read = repl,
                 ReadResult::Eval(mut repl) => {
                     // output to stdout
                     let rx = repl.output_listen();
-                    std::thread::spawn(move || output_repl(rx).unwrap());
+                    let jh = std::thread::spawn(move || output_repl(rx).unwrap());
 
                     let result = repl.eval(app_data);
 
@@ -60,15 +60,20 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
                     }
 
                     read = result.repl.print();
+
+					read.close_channel();
+
+					jh.join().ok(); // wait to finish printing
                 }
             }
         }
+
+		Ok(())
     }
 }
 
 fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
     use term_cursor as cursor;
-    use term_size as size;
 
     let term = DefaultTerminal::new()?;
 
@@ -78,20 +83,29 @@ fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
         match msg {
             output::OutputChange::CurrentLine(line) => {
                 let mut o = term.lock_write();
+
                 let p = cursor::get_pos().unwrap_or((0, 0));
+
                 let diff = (p.1 as usize).saturating_sub(pos.1 as usize);
-                o.move_up(diff);
-                o.move_to_first_column();
-                o.clear_to_screen_end();
-                o.write(&line);
-                o.flush();
+
+                o.move_up(diff)?;
+                o.move_to_first_column()?;
+                o.clear_to_screen_end()?;
+                
+				o.write(&line)?;
+                
+				o.flush()?;
             }
             output::OutputChange::NewLine(line) => {
                 let mut o = term.lock_write();
-                o.write("\n");
-                pos = cursor::get_pos().unwrap_or((0, 0));
-                o.write(&line);
-                o.flush()?;
+
+                o.write("\n")?;
+                
+				pos = cursor::get_pos().unwrap_or((0, 0));
+                
+				o.write(&line)?;
+                
+				o.flush()?;
             }
         }
     }
