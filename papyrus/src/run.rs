@@ -25,7 +25,7 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
         self.run_inner(app_data, true)
     }
 
-    pub fn run_inner(self, app_data: &mut Data, racer: bool) -> io::Result<()> {
+    fn run_inner(self, app_data: &mut Data, racer: bool) -> io::Result<()> {
         cratesiover::output_to_writer(
             "papyrus",
             env!("CARGO_PKG_VERSION"),
@@ -43,19 +43,24 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
             let completer = Completer::build(&read.data, racer);
             term.set_completer(Arc::new(completer));
 
-            let input = match term.read_line().unwrap() {
+            let input = match term.read_line()? {
                 linefeed::ReadResult::Input(s) => s,
                 _ => String::new(),
             };
 
             read.line_input(&input);
 
+            if !input.is_empty() {
+                term.add_history_unique(input);
+            }
+
+
             match read.read2() {
                 ReadResult::Read(repl) => read = repl,
                 ReadResult::Eval(mut repl) => {
                     // output to stdout
                     let rx = repl.output_listen();
-                    let jh = std::thread::spawn(move || output_repl(rx).unwrap());
+                    let jh = std::thread::spawn(move || output_repl(rx));
 
                     let result = repl.eval(app_data);
 
@@ -68,7 +73,7 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
 
                     read.close_channel();
 
-                    jh.join().ok(); // wait to finish printing
+                    jh.join().ok().unwrap()?; // wait to finish printing
                 }
             }
         }
