@@ -5,7 +5,7 @@ mod write;
 use crossbeam_channel as channel;
 
 /// Line change receiving end.
-pub type Receiver = channel::Receiver<LineChange>;
+pub type Receiver = channel::Receiver<OutputChange>;
 
 #[derive(Debug)]
 pub struct Output<S> {
@@ -21,18 +21,14 @@ pub struct Output<S> {
     /// Every `nth` line after that is `[line_pos[n-1] + 1..line_pos[n])`.
     lines_pos: Vec<usize>,
 
-    tx: Option<channel::Sender<LineChange>>,
+    tx: Option<channel::Sender<OutputChange>>,
 }
 
 /// Line change event.
 #[derive(Debug)]
-pub struct LineChange {
-    /// Line index of change.
-    pub index: usize,
-    /// Total number of lines in buffer.
-    pub total: usize,
-    /// Line contents.
-    pub line: String,
+pub enum OutputChange {
+    CurrentLine(String),
+    NewLine(String),
 }
 
 /// Only read functions available.
@@ -77,8 +73,7 @@ impl<S> Output<S> {
                 self.buf.push('\n');
 
                 // send line change signal of this line
-                let idx = self.lines_len().saturating_sub(2);
-                self.send_line_chg(idx);
+                self.send_line_chg(true);
                 true
             }
             x => {
@@ -98,8 +93,7 @@ impl<S> Output<S> {
         });
 
         // send line change signal of last line -- previous ones are handled in push_ch
-        let idx = self.lines_len().saturating_sub(1);
-        self.send_line_chg(idx);
+        self.send_line_chg(false);
     }
 
     fn at_line_start(&self) -> bool {
@@ -114,13 +108,21 @@ impl<S> Output<S> {
 
 /// Message sending functions.
 impl<S> Output<S> {
-    fn send_line_chg(&mut self, line_index: usize) {
+    /// Always sends the last line, but whether it is flagged as a new line or not is up to caller.
+    fn send_line_chg(&mut self, new_line: bool) {
         if let Some(tx) = self.tx.as_ref() {
-            let index = line_index;
-            let total = self.lines_len();
-            let line = self.line(line_index).unwrap_or("").to_string();
+            let line = self
+                .line(self.lines_len().saturating_sub(1))
+                .unwrap_or("")
+                .to_string();
 
-            match tx.try_send(LineChange { index, line, total }) {
+            let chg = if new_line {
+                OutputChange::NewLine(line)
+            } else {
+                OutputChange::CurrentLine(line)
+            };
+
+            match tx.try_send(chg) {
                 Ok(_) => (),
                 Err(_) => self.tx = None, // receiver disconnected, stop sending msgs
             }

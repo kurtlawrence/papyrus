@@ -67,8 +67,33 @@ impl<Term: 'static + Terminal, Data> Repl<Read, Term, Data> {
 }
 
 fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
+    use term_cursor as cursor;
+    use term_size as size;
+
+    let term = DefaultTerminal::new()?;
+
+    let mut pos = cursor::get_pos().unwrap_or((0, 0));
+
     for msg in rx.iter() {
-        println!("{}", msg.line);
+        match msg {
+            output::OutputChange::CurrentLine(line) => {
+                let mut o = term.lock_write();
+                let p = cursor::get_pos().unwrap_or((0, 0));
+                let diff = (p.1 as usize).saturating_sub(pos.1 as usize);
+                o.move_up(diff);
+                o.move_to_first_column();
+                o.clear_to_screen_end();
+                o.write(&line);
+                o.flush();
+            }
+            output::OutputChange::NewLine(line) => {
+                let mut o = term.lock_write();
+                o.write("\n");
+                pos = cursor::get_pos().unwrap_or((0, 0));
+                o.write(&line);
+                o.flush()?;
+            }
+        }
     }
 
     // let term = mortal::Terminal::new()?;

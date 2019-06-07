@@ -87,6 +87,6 @@ impl Output<Read> {
     /// Panics if _prompt_ contains a new line.
     pub fn set_prompt_and_trigger(&mut self, prompt: &str) {
         self.set_prompt(prompt);
-        self.send_line_chg(self.lines_len().saturating_sub(1));
+        self.send_line_chg(false);
     }
 }
