@@ -27,7 +27,6 @@ impl AnsiLineRenderer {
 
         let categorised = cansi::categorise_text(words.get_str());
 
-        let mut idx = 0;
         for cat in categorised {
             let prop = StyleTextColor(crate::colour::map(&cat.fg_colour)).into();
 
@@ -38,33 +37,6 @@ impl AnsiLineRenderer {
             self.display.push((chrange, prop));
         }
     }
-
-    // pub fn dom<T>(&self) -> Dom<T> {
-    //     // piece together the components
-    //     let mut container = Dom::div();
-
-    //     let mut start = 0;
-
-    //     if let Some(id) = self.id {
-    //         for &end in &self.lines {
-    //             let mut line_div = Dom::div().with_class("ansi-renderer-line");
-
-    //             for (chrange, prop) in &self.display[start..end] {
-    //                 line_div.add_child(
-    //                     Dom::text_slice(id, *chrange)
-    //                         .with_class("ansi-renderer-text")
-    //                         .with_css_override(PROPERTY_STR, prop.clone()),
-    //                 );
-    //             }
-
-    //             container.add_child(line_div);
-
-    //             start = end;
-    //         }
-    //     }
-
-    //     container
-    // }
 
     pub fn dom<T>(&self) -> Dom<T> {
         let mut line = Dom::div().with_class("ansi-renderer-line");
@@ -96,8 +68,12 @@ impl ReplOutputRenderer {
         }
     }
 
-    pub fn handle_line_changes(&mut self, app_resources: &mut AppResources) {
+    pub fn handle_line_changes(&mut self, app_resources: &mut AppResources) -> bool {
+        let mut msgs = false;
+
         for chg in self.rx.try_iter() {
+            msgs = true;
+
             let line = match chg {
                 OutputChange::CurrentLine(l) => l,
                 OutputChange::NewLine(l) => {
@@ -106,10 +82,14 @@ impl ReplOutputRenderer {
                 }
             };
 
+			dbg!(&line);
+
             self.lines
                 .last_mut()
                 .map(|x| x.update_text(&line, app_resources));
         }
+
+        msgs
     }
 
     pub fn dom<T>(&self) -> Dom<T> {

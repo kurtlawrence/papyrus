@@ -1,9 +1,7 @@
 use super::*;
-use azul::prelude::*;
 use eval_state::EvalState;
-use papyrus::complete;
 use papyrus::prelude::*;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc,  RwLock};
 
 impl<T, D> PadState<T, D> {
     pub fn new(mut repl: Repl<repl::Read, D>, data: Arc<RwLock<D>>) -> Self {
@@ -14,7 +12,6 @@ impl<T, D> PadState<T, D> {
         Self {
             repl: EvalState::new(repl),
             input_buffer: String::new(),
-            last_terminal_string: String::new(),
             eval_daemon_id: TimerId::new(),
             data,
             after_eval_fn: none,
@@ -35,26 +32,6 @@ impl<T, D> PadState<T, D> {
             self.completion.build_completers(&repl.data);
         }
     }
-
-    pub fn initialise_resources(
-        &mut self,
-        app_resources: &mut AppResources,
-    ) -> (UpdateScreen, TerminateTimer) {
-        // let mut s = String::new();
-        // create_terminal_string(&self.terminal, &mut s);
-
-        // // self.term_render.update_text(&s, app_resources);
-
-        // self.last_terminal_string = s;
-
-        (Redraw, TerminateTimer::Terminate)
-    }
 }
 
 fn none<T>(_: &mut T, _: &mut AppResources) {}
-
-pub fn initialise_resources_task<T>(cb: azul::callbacks::TimerCallbackType<T>) -> Task<T> {
-    Task::new(&Arc::new(Mutex::new(())), initialise_resources_task_inner).then(Timer::new(cb))
-}
-
-fn initialise_resources_task_inner(_: Arc<Mutex<()>>, _: DropCheck) {}

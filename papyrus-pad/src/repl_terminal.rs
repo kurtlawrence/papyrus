@@ -1,37 +1,52 @@
 use super::*;
 use azul::app::AppStateNoData;
-use azul::callbacks::{DefaultCallback, DefaultCallbackId};
-use azul::prelude::*;
 use azul::window::FakeWindow;
 use papyrus::prelude::*;
 use repl::ReadResult;
 use std::borrow::BorrowMut;
-use std::marker::PhantomData;
-use std::sync::Mutex;
+use azul::callbacks::DefaultCallback;
 
-type KickOffEvalDaemon = bool;
-type KickOffCompletionTask = bool;
-type HandleCb = (UpdateScreen, KickOffEvalDaemon, KickOffCompletionTask);
+struct InputHandled {
+    redraw: UpdateScreen,
+    start_eval: bool,
+    start_complete: bool,
+}
+
+impl Default for InputHandled {
+    fn default() -> Self {
+        Self {
+            redraw: DontRedraw,
+            start_eval: false,
+            start_complete: false,
+        }
+    }
+}
+
+enum Input {
+    Backspace,
+    Char(char),
+    Return,
+}
 
 impl<T, D> PadState<T, D>
 where
     T: 'static + BorrowMut<AppValue<PadState<T, D>>>,
     D: 'static + Send + Sync,
 {
-    fn handle_input(&mut self, input: Input) -> HandleCb {
-        let mut kickoff_eval = false;
-        let mut kickoff_completion = false;
+    fn handle_input(&mut self, input: Input) -> InputHandled {
+        let mut handled = InputHandled::default();
 
-        let redraw = match input {
+        match input {
             Input::Backspace => {
                 self.input_buffer.pop();
                 self.set_repl_line_input();
-                Redraw
+                handled.redraw = Redraw;
             }
             Input::Char(ch) => {
                 self.input_buffer.push(ch);
                 self.set_repl_line_input();
-                Redraw
+                handled.start_complete = true;
+                handled.redraw = Redraw;
             }
             Input::Return => {
                 self.input_buffer.clear();
@@ -43,18 +58,18 @@ where
                                 self.repl.put_read(r);
                             }
                             ReadResult::Eval(r) => {
-                                kickoff_eval = true;
+                                handled.start_eval = true;
                                 self.repl.put_eval(r.eval_async(&self.data));
                             }
                         }
-                        Redraw
+                        handled.redraw = Redraw;
                     }
-                    None => DontRedraw,
+                    None => (),
                 }
             }
         };
 
-        (redraw, kickoff_eval, kickoff_completion)
+        handled
     }
 
     fn set_repl_line_input(&mut self) {
@@ -67,63 +82,46 @@ where
         }
     }
 
-    fn update(&mut self, app_state: &mut AppStateNoData<T>, hcb: HandleCb) -> UpdateScreen {
-        let (update_screen, kickoff_eval, kickoff_completion) = hcb;
-
-        if update_screen.is_some() {
-            // let mut buf = String::with_capacity(self.last_terminal_string.len());
-            // create_terminal_string(&self.terminal, &mut buf);
+    fn update(&mut self, app_state: &mut AppStateNoData<T>, handled: InputHandled) -> UpdateScreen {
+        if handled.redraw.is_some() {
             self.term_render.handle_line_changes(app_state.resources);
-            // self.term_render.update_text(&buf, app_state.resources);
         }
 
-        if kickoff_eval {
-            Self::kickoff_daemon(app_state, self.eval_daemon_id);
+        if handled.start_eval {
+            let daemon = Timer::new(Self::check_evaluating_done)
+                .with_interval(std::time::Duration::from_millis(10));
+            app_state.add_timer(self.eval_daemon_id, daemon);
         }
 
-        if kickoff_completion {
+        if handled.start_complete {
             if let Some(repl) = self.repl.brw_repl() {
                 app_state.add_task(self.completion.complete(repl.input_buffer(), None));
             }
         }
 
-        update_screen
-    }
-
-    fn kickoff_daemon(app_state: &mut AppStateNoData<T>, daemon_id: TimerId) {
-        let daemon = Timer::new(Self::check_evaluating_done)
-            .with_interval(std::time::Duration::from_millis(2));
-        app_state.add_timer(daemon_id, daemon);
+        handled.redraw
     }
 
     pub fn check_evaluating_done(
         app: &mut T,
         app_resources: &mut AppResources,
     ) -> (UpdateScreen, TerminateTimer) {
-        // FIXME need to bench this and redraw_on_term_chg to check that it runs quickly
-        // hopefully less than 1ms as it needs to be fast...
-
         let pad: &mut PadState<T, D> = &mut app.borrow_mut();
 
-        let (redraw, terminate, finished) = match pad.repl.take_eval() {
+        let (terminate, finished) = match pad.repl.take_eval() {
             Some(eval) => {
                 if eval.completed() {
                     pad.repl.put_read(eval.wait().repl.print());
-                    (Redraw, TerminateTimer::Terminate, true) // turn off daemon now
+                    (TerminateTimer::Terminate, true) // turn off daemon now
                 } else {
                     pad.repl.put_eval(eval);
-                    (pad.redraw_on_term_chg(), TerminateTimer::Continue, false) // continue to check later
+                    (TerminateTimer::Continue, false) // continue to check later
                 }
             }
-            None => (DontRedraw, TerminateTimer::Terminate, false), // if there is no eval, may as well stop checking
+            None => (TerminateTimer::Terminate, false), // if there is no eval, may as well stop checking
         };
 
-        if redraw.is_some() {
-            // let mut buf = String::with_capacity(pad.last_terminal_string.len());
-            // create_terminal_string(&pad.terminal, &mut buf);
-            // pad.term_render.update_text(&buf, app_resources);
-            pad.term_render.handle_line_changes(app_resources);
-        }
+        let redraw = pad.term_render.handle_line_changes(app_resources); // update any line changes no matter what
 
         if finished {
             // execute eval_finished on PadState
@@ -133,19 +131,11 @@ where
             (pad.after_eval_fn)(app, app_resources) // run user defined after_eval_fn
         }
 
-        (redraw, terminate)
-    }
-
-    fn redraw_on_term_chg(&mut self) -> UpdateScreen {
-        // let mut new_str = String::with_capacity(self.last_terminal_string.len());
-        // create_terminal_string(&self.terminal, &mut new_str);
-        // if new_str != self.last_terminal_string {
-        //     self.last_terminal_string = new_str;
-        //     Redraw
-        // } else {
-        //     DontRedraw
-        // }
-        DontRedraw
+        if redraw || finished {
+            (Redraw, terminate)
+        } else {
+            (DontRedraw, terminate)
+        }
     }
 
     fn update_state_on_text_input(
@@ -173,7 +163,7 @@ where
         {
             VirtualKeyCode::Back => self.handle_input(Input::Backspace),
             VirtualKeyCode::Return => self.handle_input(Input::Return),
-            _ => (DontRedraw, false, false),
+            _ => InputHandled::default(),
         };
 
         self.update(app_state, hcb)
@@ -223,80 +213,41 @@ impl ReplTerminal {
             DefaultCallback(PadState::priv_update_state_on_vk_down),
         );
 
-        let mut container = Dom::div()
+        // Container Div
+        let mut term_div = Dom::div()
             .with_class("repl-terminal")
             .with_tab_index(TabIndex::Auto); // make focusable
-        container.add_default_callback_id(On::TextInput, text_input_cb_id);
-        container.add_default_callback_id(
+
+        term_div.add_default_callback_id(
+            EventFilter::Focus(FocusEventFilter::TextInput),
+            text_input_cb_id,
+        );
+        term_div.add_default_callback_id(
             EventFilter::Focus(FocusEventFilter::VirtualKeyDown),
             vk_down_cb_id,
         );
 
-        // let mut text = String::with_capacity(state.last_terminal_string.len());
-        // create_terminal_string(&state.terminal, &mut text);
+        // Rendered Output
+        let output = state.term_render.dom();
+        term_div.add_child(output);
 
-        // let container = add_terminal_text(container, &text);
+        term_div
 
-        container.add_child(state.term_render.dom());
+        // Completion
 
-        let mut container = Dom::div().with_child(container);
+        // let mut container = Dom::div().with_child(term_div);
 
-        if let Ok(lock) = state.completion.data.try_lock() {
-            let completions = &lock.completions;
-            if !completions.is_empty() {
-                container.add_child(completion::CompletionPrompt::dom(
-                    state,
-                    window,
-                    completions.clone(),
-                ));
-            }
-        }
+        // if let Ok(lock) = state.completion.data.try_lock() {
+        //     let completions = &lock.completions;
+        //     if !completions.is_empty() {
+        //         container.add_child(completion::CompletionPrompt::dom(
+        //             state,
+        //             window,
+        //             completions.clone(),
+        //         ));
+        //     }
+        // }
 
-        container
+        // container
     }
-}
-
-enum Input {
-    Backspace,
-    Char(char),
-    Return,
-}
-
-/// Fills the buffer with the terminal contents. Clears buffer before writing.
-// pub fn create_terminal_string(term: &MemoryTerminal, buf: &mut String) {
-//     buf.clear();
-
-//     let mut lines = term.lines();
-//     while let Some(chars) = lines.next() {
-//         for ch in chars {
-//             buf.push(*ch);
-//         }
-//         buf.push('\n');
-//     }
-// }
-
-fn colour_slice<T>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
-    const PROPERTY_STR: &str = "ansi_esc_color";
-    let s = cat_slice.text.to_string();
-
-    Dom::label(s)
-        .with_class("repl-terminal-text")
-        .with_css_override(
-            PROPERTY_STR,
-            StyleTextColor(crate::colour::map(&cat_slice.fg_colour)).into(),
-        )
-}
-
-pub fn add_terminal_text<T>(mut container: Dom<T>, text: &str) -> Dom<T> {
-    let categorised = cansi::categorise_text(text);
-
-    for line in cansi::line_iter(&categorised) {
-        let mut line_div = Dom::div().with_class("repl-terminal-line");
-        for cat in line {
-            line_div.add_child(colour_slice(&cat));
-        }
-        container.add_child(line_div);
-    }
-
-    container
 }

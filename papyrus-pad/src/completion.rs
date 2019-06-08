@@ -1,16 +1,7 @@
 use super::*;
-use azul::app::AppStateNoData;
-use azul::callbacks::{DefaultCallback, DefaultCallbackId};
-use azul::prelude::*;
-use azul::window::FakeWindow;
 use papyrus::complete;
 use papyrus::prelude::*;
-use std::borrow::BorrowMut;
-use std::marker::PhantomData;
 use std::sync::{Arc, Mutex};
-
-type KickOffEvalDaemon = bool;
-type HandleCb = (UpdateScreen, KickOffEvalDaemon);
 
 pub struct CompletionPromptState {
     pub data: Arc<Mutex<CompletionData>>,
@@ -28,52 +19,38 @@ impl CompletionPromptState {
         }
     }
 
+    fn mut_op<F: FnOnce(&mut CompletionData)>(&mut self, func: F) {
+        // try to avoid locking if possible
+        if let Some(m) = Arc::get_mut(&mut self.data) {
+            func(m.get_mut().unwrap())
+        } else {
+            func(&mut self.data.lock().unwrap())
+        }
+    }
+
     /// Creates a completion task to be run on another thread.
     pub fn complete<T>(&mut self, line: &str, limit: Option<usize>) -> Task<T> {
-        fn set(data: &mut CompletionData, line: &str, limit: Option<usize>) {
+        self.mut_op(|data| {
             data.line.clear();
             data.line.push_str(line);
             data.limit = limit;
-        }
-
-        // try to avoid locking if possible
-        if let Some(m) = Arc::get_mut(&mut self.data) {
-            set(m.get_mut().unwrap(), line, limit);
-        } else {
-            set(&mut self.data.lock().unwrap(), line, limit);
-        }
+        });
 
         Task::new(&self.data, complete_task)
     }
 
     // Should be prefaced with reset call
     pub fn build_completers<D>(&mut self, repl_data: &ReplData<D>) {
-        fn build<D>(data: &mut CompletionData, repl_data: &ReplData<D>) {
-            data.completers = Completers::build(repl_data)
-        }
-
-        // try to avoid locking if possible
-        if let Some(m) = Arc::get_mut(&mut self.data) {
-            build(m.get_mut().unwrap(), repl_data);
-        } else {
-            build(&mut self.data.lock().unwrap(), repl_data);
-        }
+        self.mut_op(|data| data.completers = Completers::build(repl_data));
     }
 
     // resets the internal completions state
     pub fn reset(&mut self) {
-        fn clear(data: &mut CompletionData) {
+        self.mut_op(|data| {
             data.line.clear();
             data.limit = None;
             data.completions.clear();
-        }
-
-        // try to avoid locking if possible
-        if let Some(m) = Arc::get_mut(&mut self.data) {
-            clear(m.get_mut().unwrap());
-        } else {
-            clear(&mut self.data.lock().unwrap());
-        }
+        })
     }
 }
 
@@ -93,42 +70,6 @@ pub struct CompletionData {
 
     pub completions: Vec<String>,
 }
-
-impl<T, D> PadState<T, D> {
-    // fn handle_vk(&mut self, vk: VirtualKeyCode) -> HandleCb {
-    //     match vk {
-    //         VirtualKeyCode::Back => self.handle_input('\x08'), // backspace character
-    //         VirtualKeyCode::Tab => self.handle_input('\t'),
-    //         VirtualKeyCode::Return => self.handle_input('\n'),
-    //         _ => (DontRedraw, false),
-    //     }
-    // }
-}
-
-impl<T, D> PadState<T, D> {
-    // fn update_state_on_vk_down(
-    //     &mut self,
-    //     app_state: &mut AppStateNoData<T>,
-    //     window_event: &mut CallbackInfo<T>,
-    // ) -> UpdateScreen {
-    //     let (update_screen, kickoff) = self.handle_vk(
-    //         app_state.windows[window_event.window_id]
-    //             .get_keyboard_state()
-    //             .latest_virtual_keycode?,
-    //     );
-
-    //     if kickoff {
-    //         kickoff_daemon(app_state, self.eval_daemon_id);
-    //     }
-
-    //     update_screen
-    // }
-}
-
-// pub struct CompletionPrompt<T, D> {
-//     mrkr: PhantomData<T>,
-//     mrkr_data: PhantomData<D>,
-// }
 
 pub struct Completers {
     pub cmds_tree: complete::cmdr::TreeCompleter,
@@ -155,22 +96,11 @@ impl Completers {
 
 pub struct CompletionPrompt;
 
-// impl<T, D> CompletionPrompt<T, D>
 impl CompletionPrompt {
-    pub fn dom<T, D>(
-        pad_state: &AppValue<PadState<T, D>>,
-        window: &mut FakeWindow<T>,
+    pub fn dom<T>(
         completions: Vec<String>,
     ) -> Dom<T> {
-        // let ptr = StackCheckedPointer::new(state);
-
-        // let vk_down_cb_id =
-        // window.add_callback(ptr.clone(), DefaultCallback(Self::update_state_on_vk_down));
-
-        // container.add_default_callback_id(On::TextInput, text_input_cb_id);
-        // container.add_default_callback_id(On::VirtualKeyDown, vk_down_cb_id);
-
-        let mut container = completions
+        let container = completions
             .into_iter()
             .map(|x| Dom::label(x))
             .collect::<Dom<T>>()
@@ -179,8 +109,6 @@ impl CompletionPrompt {
 
         container
     }
-
-    // cb!(PadState, update_state_on_vk_down);
 }
 
 pub fn completions(completer: &Completers, line: &str, limit: Option<usize>) -> Vec<String> {

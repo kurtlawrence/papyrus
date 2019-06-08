@@ -1,104 +1,62 @@
 use papyrus::prelude::*;
 
-// TODO Get rid of Option wrapping and just make it a tri-variant with a None
-
 type Read<D> = Repl<repl::Read, D>;
 type Eval<D> = repl::Evaluating<D>;
 
 enum EvalStateVariant<D> {
     Read(Read<D>),
     Eval(Eval<D>),
+    None,
 }
 
 pub struct EvalState<D> {
-    variant: Option<EvalStateVariant<D>>,
+    variant: EvalStateVariant<D>,
 }
 
 impl<D> EvalState<D> {
     pub fn new(repl: Read<D>) -> Self {
         EvalState {
-            variant: Some(EvalStateVariant::Read(repl)),
-        }
-    }
-
-    pub fn is_read(&self) -> bool {
-        if self.variant.is_none() {
-            panic!("found none variant, inidicating a broken state. has a take call been called twice?");
-        }
-
-        match self.variant.as_ref().expect("should be some") {
-            EvalStateVariant::Read(_) => true,
-            EvalStateVariant::Eval(_) => false,
-        }
-    }
-
-    pub fn is_eval(&self) -> bool {
-        if self.variant.is_none() {
-            panic!("found none variant, inidicating a broken state. has a take call been called twice?");
-        }
-
-        match self.variant.as_ref().expect("should be some") {
-            EvalStateVariant::Read(_) => false,
-            EvalStateVariant::Eval(_) => true,
+            variant: EvalStateVariant::Read(repl),
         }
     }
 
     pub fn brw_repl(&self) -> Option<&Read<D>> {
-        if self.variant.is_none() {
-            panic!("found none variant, inidicating a broken state. has a take not been followed by put call?");
-        }
-
-        match self.variant.as_ref().expect("should be some") {
+        match &self.variant {
             EvalStateVariant::Read(repl) => Some(repl),
             EvalStateVariant::Eval(_) => None,
+            EvalStateVariant::None => None,
         }
     }
 
     pub fn take_read(&mut self) -> Option<Read<D>> {
-        if self.variant.is_none() {
-            panic!("found none variant, inidicating a broken state. has a take call been called twice?");
-        }
+        let v = std::mem::replace(&mut self.variant, EvalStateVariant::None);
 
-        match self.variant.take().expect("should be some") {
-            EvalStateVariant::Read(repl) => Some(repl),
-            EvalStateVariant::Eval(repl) => {
-                self.variant = Some(EvalStateVariant::Eval(repl));
+        match v {
+            EvalStateVariant::Read(r) => Some(r),
+            _ => {
+                self.variant = v;
                 None
             }
         }
     }
 
     pub fn take_eval(&mut self) -> Option<Eval<D>> {
-        if self.variant.is_none() {
-            panic!("found none variant, inidicating a broken state. has a take call been called twice?");
-        }
+        let v = std::mem::replace(&mut self.variant, EvalStateVariant::None);
 
-        match self.variant.take().expect("should be some") {
-            EvalStateVariant::Read(repl) => {
-                self.variant = Some(EvalStateVariant::Read(repl));
+        match v {
+            EvalStateVariant::Eval(e) => Some(e),
+            _ => {
+                self.variant = v;
                 None
             }
-            EvalStateVariant::Eval(repl) => Some(repl),
         }
     }
 
     pub fn put_read(&mut self, repl: Read<D>) {
-        if self.variant.is_some() {
-            panic!(
-                "found some variant, inidicating a broken state. has a put call been called twice?"
-            );
-        }
-
-        self.variant = Some(EvalStateVariant::Read(repl));
+        self.variant = EvalStateVariant::Read(repl);
     }
 
     pub fn put_eval(&mut self, repl: Eval<D>) {
-        if self.variant.is_some() {
-            panic!(
-                "found some variant, inidicating a broken state. has a put call been called twice?"
-            );
-        }
-
-        self.variant = Some(EvalStateVariant::Eval(repl));
+        self.variant = EvalStateVariant::Eval(repl);
     }
 }
