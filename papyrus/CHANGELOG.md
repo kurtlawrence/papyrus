@@ -3,6 +3,7 @@
 ## 0.9.0
 
 - mod paths now complete
+- No longer need a terminal interface, maintains own internal buffer for output
 
 ## 0.8.1
 
