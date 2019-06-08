@@ -22,15 +22,14 @@ pub mod pad;
 pub mod repl_terminal;
 
 pub use self::css::PAD_CSS;
-pub use self::repl_terminal::{add_terminal_text, create_terminal_string, ReplTerminal};
+pub use self::repl_terminal::{add_terminal_text, ReplTerminal};
 
 use eval_state::EvalState;
-use papyrus::prelude::MemoryTerminal;
 use std::sync::{Arc, RwLock};
 
 pub struct PadState<T, Data> {
     repl: EvalState<Data>,
-    terminal: MemoryTerminal,
+    input_buffer: String,
     last_terminal_string: String,
     eval_daemon_id: TimerId,
     data: Arc<RwLock<Data>>,

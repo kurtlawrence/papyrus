@@ -6,16 +6,14 @@ use papyrus::prelude::*;
 use std::sync::{Arc, Mutex, RwLock};
 
 impl<T, D> PadState<T, D> {
-    pub fn new(mut repl: Repl<repl::Read, MemoryTerminal, D>, data: Arc<RwLock<D>>) -> Self {
-        let term = repl.terminal().clone();
-
+    pub fn new(mut repl: Repl<repl::Read, D>, data: Arc<RwLock<D>>) -> Self {
         let term_render = ansi_renderer::ReplOutputRenderer::new(repl.output_listen());
 
         let completion = completion::CompletionPromptState::new(&repl.data);
 
         Self {
             repl: EvalState::new(repl),
-            terminal: term,
+            input_buffer: String::new(),
             last_terminal_string: String::new(),
             eval_daemon_id: TimerId::new(),
             data,
@@ -42,12 +40,12 @@ impl<T, D> PadState<T, D> {
         &mut self,
         app_resources: &mut AppResources,
     ) -> (UpdateScreen, TerminateTimer) {
-        let mut s = String::new();
-        create_terminal_string(&self.terminal, &mut s);
+        // let mut s = String::new();
+        // create_terminal_string(&self.terminal, &mut s);
 
-        // self.term_render.update_text(&s, app_resources);
+        // // self.term_render.update_text(&s, app_resources);
 
-        self.last_terminal_string = s;
+        // self.last_terminal_string = s;
 
         (Redraw, TerminateTimer::Terminate)
     }

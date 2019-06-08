@@ -5,12 +5,11 @@ authors = ["kurt <kurtlawrence92@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+azul =			{ path = "/azul/azul",		default-features = true,	features = [ "css_parser" ] }
+azul-theming = 	{ path = "/azul-theming",	default-features = false }
+cansi = 		{ path = "/cansi",			default-features = false }
 # papyrus -- for now just links the folder. Once stabilised can link the crates.io ver
-papyrus = { path = "../papyrus",	default-features = false,	features = [ "racer-completion" ] }
-azul = { path = "/azul/azul" }
-azul-theming = { path = "/azul-theming" }
-# cansi = "2.0"
-cansi = { path = "/cansi" }
+papyrus = 		{ path = "../papyrus",		default-features = false,	features = [ "racer-completion" ] }
 
 [dev-dependencies]
 criterion = "0.2"

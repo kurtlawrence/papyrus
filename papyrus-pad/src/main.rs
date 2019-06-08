@@ -2,7 +2,6 @@
 extern crate papyrus;
 
 use azul::prelude::*;
-use papyrus::prelude::MemoryTerminal;
 use papyrus_pad::*;
 use std::sync::{Arc, RwLock};
 
@@ -31,9 +30,7 @@ impl Layout for MyApp {
 }
 
 fn main() {
-    let term = MemoryTerminal::new();
-
-    let repl = repl_with_term!(term.clone(), String);
+    let repl = repl!(String);
 
     let mut app = App::new(
         MyApp {

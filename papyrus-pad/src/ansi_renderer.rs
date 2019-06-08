@@ -1,5 +1,6 @@
 use super::*;
 use azul::css::CssProperty;
+use papyrus::output::OutputChange;
 
 const PROPERTY_STR: &str = "ansi_esc_color";
 
@@ -90,22 +91,24 @@ pub struct ReplOutputRenderer {
 impl ReplOutputRenderer {
     pub fn new(receiver: papyrus::output::Receiver) -> Self {
         Self {
-            lines: Vec::new(),
+            lines: vec![AnsiLineRenderer::new()],
             rx: receiver,
         }
     }
 
     pub fn handle_line_changes(&mut self, app_resources: &mut AppResources) {
         for chg in self.rx.try_iter() {
-            if chg.line_index >= self.lines.len() {
-                for _ in 0..=(chg.line_index - self.lines.len()) {
-                    self.lines.push(AnsiLineRenderer::new())
+            let line = match chg {
+                OutputChange::CurrentLine(l) => l,
+                OutputChange::NewLine(l) => {
+                    self.lines.push(AnsiLineRenderer::new());
+                    l
                 }
-            }
+            };
 
-            let line = self.lines.get_mut(chg.line_index).unwrap();
-
-            line.update_text(&chg.line, app_resources);
+            self.lines
+                .last_mut()
+                .map(|x| x.update_text(&line, app_resources));
         }
     }
 

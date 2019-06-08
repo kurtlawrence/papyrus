@@ -4,6 +4,7 @@ use azul::callbacks::{DefaultCallback, DefaultCallbackId};
 use azul::prelude::*;
 use azul::window::FakeWindow;
 use papyrus::prelude::*;
+use repl::ReadResult;
 use std::borrow::BorrowMut;
 use std::marker::PhantomData;
 use std::sync::Mutex;
@@ -17,25 +18,52 @@ where
     T: 'static + BorrowMut<AppValue<PadState<T, D>>>,
     D: 'static + Send + Sync,
 {
-    pub fn handle_input(&mut self, input: char) -> HandleCb {
+    fn handle_input(&mut self, input: Input) -> HandleCb {
         let mut kickoff_eval = false;
         let mut kickoff_completion = false;
 
-        match self.repl.take_read() {
-            Some(repl) => {
-                match repl.push_input(input) {
-                    repl::PushResult::Read(r) => {
-                        self.repl.put_read(r);
-                        kickoff_completion = true;
-                    }
-                    repl::PushResult::Eval(r) => {
-                        kickoff_eval = true;
-                        self.repl.put_eval(r.eval_async(&self.data));
-                    }
-                }
-                (Redraw, kickoff_eval, kickoff_completion)
+        let redraw = match input {
+            Input::Backspace => {
+                self.input_buffer.pop();
+                self.set_repl_line_input();
+                Redraw
             }
-            None => (DontRedraw, kickoff_eval, kickoff_completion),
+            Input::Char(ch) => {
+                self.input_buffer.push(ch);
+                self.set_repl_line_input();
+                Redraw
+            }
+            Input::Return => {
+                self.input_buffer.clear();
+
+                match self.repl.take_read() {
+                    Some(repl) => {
+                        match repl.read() {
+                            ReadResult::Read(r) => {
+                                self.repl.put_read(r);
+                            }
+                            ReadResult::Eval(r) => {
+                                kickoff_eval = true;
+                                self.repl.put_eval(r.eval_async(&self.data));
+                            }
+                        }
+                        Redraw
+                    }
+                    None => DontRedraw,
+                }
+            }
+        };
+
+        (redraw, kickoff_eval, kickoff_completion)
+    }
+
+    fn set_repl_line_input(&mut self) {
+        match self.repl.take_read() {
+            Some(mut repl) => {
+                repl.line_input(&self.input_buffer);
+                self.repl.put_read(repl);
+            }
+            None => (),
         }
     }
 
@@ -43,9 +71,9 @@ where
         let (update_screen, kickoff_eval, kickoff_completion) = hcb;
 
         if update_screen.is_some() {
-            let mut buf = String::with_capacity(self.last_terminal_string.len());
-            create_terminal_string(&self.terminal, &mut buf);
-			self.term_render.handle_line_changes(app_state.resources);
+            // let mut buf = String::with_capacity(self.last_terminal_string.len());
+            // create_terminal_string(&self.terminal, &mut buf);
+            self.term_render.handle_line_changes(app_state.resources);
             // self.term_render.update_text(&buf, app_state.resources);
         }
 
@@ -55,7 +83,7 @@ where
 
         if kickoff_completion {
             if let Some(repl) = self.repl.brw_repl() {
-                app_state.add_task(self.completion.complete(repl.input(), None));
+                app_state.add_task(self.completion.complete(repl.input_buffer(), None));
             }
         }
 
@@ -91,10 +119,10 @@ where
         };
 
         if redraw.is_some() {
-            let mut buf = String::with_capacity(pad.last_terminal_string.len());
-            create_terminal_string(&pad.terminal, &mut buf);
+            // let mut buf = String::with_capacity(pad.last_terminal_string.len());
+            // create_terminal_string(&pad.terminal, &mut buf);
             // pad.term_render.update_text(&buf, app_resources);
-			pad.term_render.handle_line_changes(app_resources);
+            pad.term_render.handle_line_changes(app_resources);
         }
 
         if finished {
@@ -109,14 +137,15 @@ where
     }
 
     fn redraw_on_term_chg(&mut self) -> UpdateScreen {
-        let mut new_str = String::with_capacity(self.last_terminal_string.len());
-        create_terminal_string(&self.terminal, &mut new_str);
-        if new_str != self.last_terminal_string {
-            self.last_terminal_string = new_str;
-            Redraw
-        } else {
-            DontRedraw
-        }
+        // let mut new_str = String::with_capacity(self.last_terminal_string.len());
+        // create_terminal_string(&self.terminal, &mut new_str);
+        // if new_str != self.last_terminal_string {
+        //     self.last_terminal_string = new_str;
+        //     Redraw
+        // } else {
+        //     DontRedraw
+        // }
+        DontRedraw
     }
 
     fn update_state_on_text_input(
@@ -124,11 +153,11 @@ where
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
     ) -> UpdateScreen {
-        let hcb = self.handle_input(
-            app_state.windows[window_event.window_id]
-                .get_keyboard_state()
-                .current_char?,
-        );
+        let ch = app_state.windows[window_event.window_id]
+            .get_keyboard_state()
+            .current_char?;
+
+        let hcb = self.handle_input(Input::Char(ch));
 
         self.update(app_state, hcb)
     }
@@ -142,9 +171,8 @@ where
             .get_keyboard_state()
             .latest_virtual_keycode?
         {
-            VirtualKeyCode::Back => self.handle_input('\x08'), // backspace character
-            VirtualKeyCode::Tab => self.handle_input('\t'),
-            VirtualKeyCode::Return => self.handle_input('\n'),
+            VirtualKeyCode::Back => self.handle_input(Input::Backspace),
+            VirtualKeyCode::Return => self.handle_input(Input::Return),
             _ => (DontRedraw, false, false),
         };
 
@@ -228,18 +256,24 @@ impl ReplTerminal {
     }
 }
 
-/// Fills the buffer with the terminal contents. Clears buffer before writing.
-pub fn create_terminal_string(term: &MemoryTerminal, buf: &mut String) {
-    buf.clear();
-
-    let mut lines = term.lines();
-    while let Some(chars) = lines.next() {
-        for ch in chars {
-            buf.push(*ch);
-        }
-        buf.push('\n');
-    }
+enum Input {
+    Backspace,
+    Char(char),
+    Return,
 }
+
+/// Fills the buffer with the terminal contents. Clears buffer before writing.
+// pub fn create_terminal_string(term: &MemoryTerminal, buf: &mut String) {
+//     buf.clear();
+
+//     let mut lines = term.lines();
+//     while let Some(chars) = lines.next() {
+//         for ch in chars {
+//             buf.push(*ch);
+//         }
+//         buf.push('\n');
+//     }
+// }
 
 fn colour_slice<T>(cat_slice: &cansi::CategorisedSlice) -> Dom<T> {
     const PROPERTY_STR: &str = "ansi_esc_color";
