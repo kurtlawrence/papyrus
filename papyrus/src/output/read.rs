@@ -50,6 +50,8 @@ impl Output<Read> {
         self.push_ch('\n');
         self.state.start = self.state.buf.len();
         self.state.lines_idx = self.lines_len();
+		self.state.prompt_start = self.buf.len();
+		self.state.prompt_end = self.buf.len();
     }
 
     /// Returns the current input buffer.

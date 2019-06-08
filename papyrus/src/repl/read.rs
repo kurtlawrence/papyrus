@@ -96,3 +96,43 @@ impl<D> Repl<Read, D> {
         self.state.output.close()
     }
 }
+
+impl<D> ReadResult<D> {
+	#[cfg(test)]
+	pub fn unwrap_read(self) -> Repl<Read, D> {
+		match self {
+			ReadResult::Read(read) => read,
+			ReadResult::Eval(_) => panic!("unwrap_read ReadResult invoked on Eval variant.")
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate as papyrus;
+
+	#[test]
+	fn test_line_input() {
+		let mut repl = repl!();
+
+		let _rx = repl.output_listen();
+
+		repl.line_input("test");
+		assert_eq!(repl.input_buffer(), "test");
+
+		repl.line_input(""); // check doesn't break
+		assert_eq!(repl.input_buffer(), "");
+
+		repl.line_input("{");
+		repl = repl.read().unwrap_read();
+
+		assert_eq!(repl.input_buffer(), "{");
+
+		repl.line_input("test");
+		assert_eq!(repl.input_buffer(), "{test");
+
+		repl.line_input("");
+		assert_eq!(repl.input_buffer(), "{");
+	}
+}
