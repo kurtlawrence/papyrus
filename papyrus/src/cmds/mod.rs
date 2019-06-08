@@ -7,10 +7,10 @@ use std::path::{Path, PathBuf};
 pub use cmdtree::Builder as CommandBuilder;
 
 /// The action to take. Passes through a mutable reference to the `ReplData`.
-pub type ReplDataAction<D> = Box<Fn(&mut ReplData<D>, &mut Write) -> String>;
+pub type ReplDataAction<D> = Box<dyn Fn(&mut ReplData<D>, &mut dyn Write) -> String>;
 
 /// The action to take. Passes through a mutable reference to the data `D`.
-pub type AppDataAction<D> = Box<Fn(&mut D, &mut Write) -> String>;
+pub type AppDataAction<D> = Box<dyn Fn(&mut D, &mut dyn Write) -> String>;
 
 /// The result of a [`cmdtree action`].
 /// This result is handed in the repl's evaluating stage, and can alter `ReplData` or the data `D`.
@@ -29,12 +29,14 @@ pub enum CommandResult<D> {
 
 impl<D> CommandResult<D> {
     /// Convenience function boxing an action on app data.
-    pub fn app_data_fn<F: 'static + Fn(&mut D, &mut Write) -> String>(func: F) -> Self {
+    pub fn app_data_fn<F: 'static + Fn(&mut D, &mut dyn Write) -> String>(func: F) -> Self {
         CommandResult::ActionOnAppData(Box::new(func))
     }
 
     /// Convenience function boxing an action on repl data.
-    pub fn repl_data_fn<F: 'static + Fn(&mut ReplData<D>, &mut Write) -> String>(func: F) -> Self {
+    pub fn repl_data_fn<F: 'static + Fn(&mut ReplData<D>, &mut dyn Write) -> String>(
+        func: F,
+    ) -> Self {
         CommandResult::ActionOnReplData(Box::new(func))
     }
 }

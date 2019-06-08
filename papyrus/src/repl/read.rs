@@ -82,7 +82,7 @@ impl<D> Repl<Read, D> {
         }
     }
 
-    fn draw_prompt(&mut self) {
+    pub(super) fn draw_prompt(&mut self) {
         self.state.output.set_prompt_and_trigger(&self.prompt());
     }
 

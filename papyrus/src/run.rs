@@ -34,6 +34,7 @@ impl<D> Repl<Read, D> {
             &mut std::io::stdout(),
         )?;
 
+        let def_term = DefaultTerminal::new()?;
         let term = Interface::new("papyrus")?;
 
         let mut read = self;
@@ -74,6 +75,9 @@ impl<D> Repl<Read, D> {
                     read.close_channel();
 
                     jh.join().ok().unwrap()?; // wait to finish printing
+
+                    // erase last line, otherwise a double prompt will be set
+                    def_term.lock_write().move_to_first_column()?;
                 }
             }
         }

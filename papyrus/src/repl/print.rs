@@ -36,9 +36,11 @@ impl<D> Repl<Print, D> {
             }
         }
 
-        let r = self.move_state(|s| Read {
+        let mut r = self.move_state(|s| Read {
             output: s.output.to_read(),
         });
+
+        r.draw_prompt();
 
         r
     }
