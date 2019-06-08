@@ -24,10 +24,10 @@ shh = 				{ version = "1",		default-features = false }
 colored = 			{ version = "1",		default-features = false }
 crossbeam-channel =	{ version = "0.3",		default-features = false }
 crossbeam-utils =	{ version = "0.6",		default-features = false }
-dirs = 				{ version = "1",		default-features = false }
+dirs = 				{ version = "2",		default-features = false }
 fxhash = 			{ version = "0.2",		default-features = false }
 libloading =		{ version = "0.5",		default-features = false }
-linefeed = 			{ path = "/linefeed",	default-features = false,	optional = true }
+linefeed = 			{ version = "0.6",		default-features = false,	optional = true }
 log = 				{ version = "0.4",		default-features = false }
 racer = 			{ version = "2.1",		default-features = false,	optional = true,	features = [ "metadata" ] }
 syn = 				{ version = "0.15",		default-features = false,	optional = false,	features =  [ "full" ] }

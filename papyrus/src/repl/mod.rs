@@ -73,14 +73,10 @@
 //!
 //! Please help if the Repl cannot parse your statements, or help with documentation! [https://github.com/kurtlawrence/papyrus](https://github.com/kurtlawrence/papyrus).
 mod any_state;
-mod cmds;
 mod data;
 mod eval;
 mod print;
 mod read;
-
-pub use cmds::*;
-pub use cmdtree::Builder as CommandBuilder;
 
 use crate::{
     input::InputResult,

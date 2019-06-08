@@ -17,7 +17,6 @@
 //! Papyrus is in active development, see [changelog](https://github.com/kurtlawrence/papyrus) for updates
 
 #![warn(missing_docs)]
-#![feature(fnbox)]
 
 #[macro_use]
 extern crate log;
@@ -51,6 +50,8 @@ pub mod input;
 pub mod output;
 pub mod pfh;
 pub mod repl;
+/// Extendable commands for repl.
+pub mod cmds;
 
 /// Running the repl. Requires `runnable` feature.
 #[cfg(feature = "runnable")]

@@ -2,22 +2,25 @@ use super::*;
 use std::boxed::FnBox;
 use std::io::Write;
 
+pub use cmdtree::Builder as CommandBuilder;
+
 /// The action to take. Passes through a mutable reference to the `ReplData`.
-/// Can't be W as it would add another generic argument.
 pub type ReplDataAction<D> = Box<FnBox(&mut ReplData<D>, &mut Write) -> String>;
 
-/// The action to take. Passes through a mutable reference to the `Data`.
+/// The action to take. Passes through a mutable reference to the data `D`.
 pub type AppDataAction<D> = Box<FnBox(&mut D, &mut Write) -> String>;
 
-/// The result of a [`cmdtree action`](https://docs.rs/cmdtree/builder/trait.BuilderChain.html#tymethod.add_action).
-/// This result is handed in the repl's evaluating stage, and can alter `ReplData`.
-pub enum CommandResult<Data> {
+/// The result of a [`cmdtree action`].
+/// This result is handed in the repl's evaluating stage, and can alter `ReplData` or the data `D`.
+/// 
+/// [`cmdtree action`]: cmdtree::Action
+pub enum CommandResult<D> {
     /// Flag to begin a mutating block.
     BeginMutBlock,
     /// Take an action on the `ReplData`.
-    ActionOnReplData(ReplDataAction<Data>),
+    ActionOnReplData(ReplDataAction<D>),
     /// Take an action on `Data`.
-    ActionOnAppData(AppDataAction<Data>),
+    ActionOnAppData(AppDataAction<D>),
     /// A blank variant with no action.
     Empty,
 }
