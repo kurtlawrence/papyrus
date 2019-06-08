@@ -1,18 +1,20 @@
 use super::*;
-use std::boxed::FnBox;
+use crate::repl::ReplData;
+use cmdtree::{BuildError, Builder, BuilderChain};
 use std::io::Write;
+use std::path::{Path, PathBuf};
 
 pub use cmdtree::Builder as CommandBuilder;
 
 /// The action to take. Passes through a mutable reference to the `ReplData`.
-pub type ReplDataAction<D> = Box<FnBox(&mut ReplData<D>, &mut Write) -> String>;
+pub type ReplDataAction<D> = Box<Fn(&mut ReplData<D>, &mut Write) -> String>;
 
 /// The action to take. Passes through a mutable reference to the data `D`.
-pub type AppDataAction<D> = Box<FnBox(&mut D, &mut Write) -> String>;
+pub type AppDataAction<D> = Box<Fn(&mut D, &mut Write) -> String>;
 
 /// The result of a [`cmdtree action`].
 /// This result is handed in the repl's evaluating stage, and can alter `ReplData` or the data `D`.
-/// 
+///
 /// [`cmdtree action`]: cmdtree::Action
 pub enum CommandResult<D> {
     /// Flag to begin a mutating block.
@@ -37,13 +39,13 @@ impl<D> CommandResult<D> {
     }
 }
 
-impl<Data> ReplData<Data> {
+impl<D> ReplData<D> {
     /// Uses the given `Builder` as the root of the command tree.
     ///
     /// An error will be returned if any command already exists.
     pub fn with_cmdtree_builder(
         &mut self,
-        builder: Builder<'static, CommandResult<Data>>,
+        builder: Builder<'static, CommandResult<D>>,
     ) -> Result<&mut Self, BuildError> {
         let cmdr = builder
             .root()

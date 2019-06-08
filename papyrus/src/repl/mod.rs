@@ -79,6 +79,7 @@ mod print;
 mod read;
 
 use crate::{
+    cmds::CommandResult,
     input::InputResult,
     output::{self, Output},
     pfh::{self, linking::LinkingConfiguration},
@@ -115,9 +116,9 @@ pub struct ReplData<Data> {
     pub cmdtree: Commander<'static, CommandResult<Data>>,
 
     /// The file map of relative paths.
-    file_map: pfh::FileMap,
+    pub(crate) file_map: pfh::FileMap,
     /// The current editing and executing file.
-    current_file: PathBuf,
+    pub(crate) current_file: PathBuf,
 
     /// The colour of the prompt region. ie `papyrus`.
     pub prompt_colour: Color,
@@ -180,15 +181,6 @@ pub enum Signal {
     None,
     /// A signal to exit the repl has been sent.
     Exit,
-}
-
-/// The resulting state after pushing some input into the repl.
-/// Take a look at the [github examples](https://github.com/kurtlawrence/papyrus/tree/master/examples) for pushing input.
-pub enum PushResult<D> {
-    /// The repl is still in a read state.
-    Read(Repl<Read, D>),
-    /// The repl is in an eval state.
-    Eval(Repl<Evaluate, D>),
 }
 
 /// Result of [`read`]ing the current input buffer.

@@ -1,4 +1,5 @@
 use super::*;
+use crate::cmds::CommandResult;
 use crate::compile;
 use crate::pfh::{self, Input, StmtGrp};
 use std::borrow::{Borrow, BorrowMut};
@@ -186,13 +187,13 @@ impl<D> ReplData<D> {
                     (Cow::Borrowed("beginning mut block"), false)
                 }
                 CommandResult::ActionOnReplData(action) => {
-                    let s = action.call_box((self, writer));
+                    let s = action(self, writer);
                     (Cow::Owned(s), false)
                 }
                 CommandResult::ActionOnAppData(action) => {
                     let mut r = obtain_mut_app_data();
                     let app_data: &mut D = r.borrow_mut();
-                    let s = action.call_box((app_data, writer));
+                    let s = action(app_data, writer);
                     (Cow::Owned(s), false)
                 }
                 CommandResult::Empty => (Cow::Borrowed(""), false),

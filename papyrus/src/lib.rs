@@ -42,6 +42,8 @@ macro_rules! repl {
     }};
 }
 
+/// Extendable commands for repl.
+pub mod cmds;
 pub mod compile;
 pub mod complete;
 /// Parsing of input.
@@ -50,8 +52,6 @@ pub mod input;
 pub mod output;
 pub mod pfh;
 pub mod repl;
-/// Extendable commands for repl.
-pub mod cmds;
 
 /// Running the repl. Requires `runnable` feature.
 #[cfg(feature = "runnable")]
