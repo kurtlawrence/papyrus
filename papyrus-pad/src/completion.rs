@@ -1,22 +1,108 @@
 use super::*;
 use papyrus::complete;
 use papyrus::prelude::*;
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
+
+struct ThreadedOption<T> {
+    data: Mutex<Option<T>>,
+    changed: AtomicBool,
+}
+
+impl<T> ThreadedOption<T> {
+    /// Constructs new message with no value.
+    fn empty() -> Self {
+        Self {
+            data: Mutex::new(None),
+            changed: AtomicBool::default(),
+        }
+    }
+
+    /// Fast check if a message is waiting.
+    fn has(&self) -> bool {
+        self.changed.load(Ordering::SeqCst)
+    }
+
+    /// Place a value, overwriting any previous value.
+    fn put(&self, value: T) {
+        *self.data.lock().unwrap() = Some(value);
+        self.changed.store(true, Ordering::SeqCst);
+    }
+
+    /// Take the value if one exists.
+    fn take(&self) -> Option<T> {
+        if self.has() {
+            self.changed.store(false, Ordering::SeqCst);
+            self.data.lock().unwrap().take()
+        } else {
+            None
+        }
+    }
+}
+
+struct CompletionInput {
+    pub line: String,
+    pub limit: Option<usize>,
+}
 
 pub struct CompletionPromptState {
     pub data: Arc<Mutex<CompletionData>>,
+
+    line_msg: Arc<ThreadedOption<CompletionInput>>,
+
+    completions: Arc<ThreadedOption<Vec<String>>>,
 }
 
 impl CompletionPromptState {
-    pub fn new<D>(repl_data: &ReplData<D>) -> Self {
-        Self {
-            data: Arc::new(Mutex::new(CompletionData {
-                completers: Completers::build(repl_data),
-                line: String::new(),
-                limit: None,
-                completions: Vec::new(),
-            })),
-        }
+    pub fn initialise<D>(repl_data: &ReplData<D>) -> Self {
+        let data = Arc::new(Mutex::new(CompletionData {
+            completers: Completers::build(repl_data),
+            line: String::new(),
+            limit: None,
+            completions: Vec::new(),
+        }));
+
+        let line_msg = Arc::new(ThreadedOption::empty());
+
+        let completions_var = Arc::new(ThreadedOption::empty());
+
+        let ct_data = Arc::clone(&data);
+        let ct_line_msg = Arc::clone(&line_msg);
+        let ct_completions = Arc::clone(&completions_var);
+
+        let ret = Self {
+            data,
+            line_msg,
+            completions: completions_var,
+        };
+
+        std::thread::spawn(move || {
+            // completions run on a separate thread
+            // tried using a azul::Task but spinning up a thread for each char input
+            // was lagging, so instead we run on one other thread and use message passing
+
+            let line_msg = ct_line_msg;
+            let data = ct_data;
+            let completions_option = ct_completions;
+
+            if let Some(input) = line_msg.take() {
+                let lock = data.lock().unwrap();
+
+                let completed = completions(&lock.completers, &input.line, input.limit);
+
+                if completed.len() > 0 {
+                    completions_option.put(completed);
+                } else {
+                    completions_option.take(); // remove prev if any, as there are _no_ completions
+                }
+            } else {
+                std::thread::sleep(std::time::Duration::from_millis(20)); // only check every so often
+            }
+        });
+
+        ret
     }
 
     fn mut_op<F: FnOnce(&mut CompletionData)>(&mut self, func: F) {
@@ -28,15 +114,8 @@ impl CompletionPromptState {
         }
     }
 
-    /// Creates a completion task to be run on another thread.
-    pub fn complete<T>(&mut self, line: &str, limit: Option<usize>) -> Task<T> {
-        self.mut_op(|data| {
-            data.line.clear();
-            data.line.push_str(line);
-            data.limit = limit;
-        });
-
-        Task::new(&self.data, complete_task)
+    pub fn to_complete(&mut self, line: String, limit: Option<usize>) {
+        self.line_msg.put(CompletionInput { line, limit });
     }
 
     // Should be prefaced with reset call
@@ -97,9 +176,7 @@ impl Completers {
 pub struct CompletionPrompt;
 
 impl CompletionPrompt {
-    pub fn dom<T>(
-        completions: Vec<String>,
-    ) -> Dom<T> {
+    pub fn dom<T>(completions: Vec<String>) -> Dom<T> {
         let container = completions
             .into_iter()
             .map(|x| Dom::label(x))

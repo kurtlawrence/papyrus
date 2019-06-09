@@ -1,13 +1,13 @@
 use super::*;
 use eval_state::EvalState;
 use papyrus::prelude::*;
-use std::sync::{Arc,  RwLock};
+use std::sync::{Arc, RwLock};
 
 impl<T, D> PadState<T, D> {
     pub fn new(mut repl: Repl<repl::Read, D>, data: Arc<RwLock<D>>) -> Self {
         let term_render = ansi_renderer::ReplOutputRenderer::new(repl.output_listen());
 
-        let completion = completion::CompletionPromptState::new(&repl.data);
+        let completion = completion::CompletionPromptState::initialise(&repl.data);
 
         Self {
             repl: EvalState::new(repl),

@@ -1,10 +1,10 @@
 use super::*;
 use azul::app::AppStateNoData;
+use azul::callbacks::DefaultCallback;
 use azul::window::FakeWindow;
 use papyrus::prelude::*;
 use repl::ReadResult;
 use std::borrow::BorrowMut;
-use azul::callbacks::DefaultCallback;
 
 struct InputHandled {
     redraw: UpdateScreen,
@@ -95,7 +95,8 @@ where
 
         if handled.start_complete {
             if let Some(repl) = self.repl.brw_repl() {
-                app_state.add_task(self.completion.complete(repl.input_buffer(), None));
+                self.completion
+                    .to_complete(repl.input_buffer().to_owned(), None);
             }
         }
 

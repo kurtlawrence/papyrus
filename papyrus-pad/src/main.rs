@@ -78,4 +78,3 @@ fn create_css() -> String {
 
     inject_theme(&css, &themes::dark_theme())
 }
-

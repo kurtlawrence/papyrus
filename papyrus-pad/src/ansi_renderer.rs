@@ -82,7 +82,7 @@ impl ReplOutputRenderer {
                 }
             };
 
-			dbg!(&line);
+            dbg!(&line);
 
             self.lines
                 .last_mut()
