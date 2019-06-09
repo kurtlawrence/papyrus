@@ -43,3 +43,15 @@ pub struct PadState<T, Data> {
     completion: completion::CompletionPromptState,
     completion_timer_id: TimerId,
 }
+
+pub fn kb_seq<T, F: FnOnce() -> T>(
+    kb_state: &KeyboardState,
+    keys: &[AcceleratorKey],
+    result: F,
+) -> Option<T> {
+    if keys.iter().all(|key| key.matches(kb_state)) {
+        Some(result())
+    } else {
+        None
+    }
+}

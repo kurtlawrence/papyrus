@@ -7,10 +7,13 @@ use papyrus::prelude::*;
 use repl::ReadResult;
 use std::borrow::BorrowMut;
 
+const SPACE: char = ' ';
+
 struct InputHandled {
     redraw: UpdateScreen,
     start_eval: bool,
     start_complete: bool,
+    hide_complete: bool,
 }
 
 impl Default for InputHandled {
@@ -19,6 +22,7 @@ impl Default for InputHandled {
             redraw: DontRedraw,
             start_eval: false,
             start_complete: false,
+            hide_complete: false,
         }
     }
 }
@@ -26,6 +30,7 @@ impl Default for InputHandled {
 enum Input {
     Backspace,
     Char(char),
+    Ctrl(char),
     Return,
 }
 
@@ -41,6 +46,7 @@ where
             Input::Backspace => {
                 self.input_buffer.pop();
                 self.set_repl_line_input();
+                handled.hide_complete = true;
                 handled.redraw = Redraw;
             }
             Input::Char(ch) => {
@@ -49,6 +55,10 @@ where
                 handled.start_complete = true;
                 handled.redraw = Redraw;
             }
+            Input::Ctrl(ch) => match ch {
+                SPACE => handled.start_complete = true,
+                _ => (),
+            },
             Input::Return => {
                 self.input_buffer.clear();
 
@@ -102,6 +112,10 @@ where
                     .with_interval(std::time::Duration::from_millis(10));
                 app_state.add_timer(self.completion_timer_id, timer);
             }
+        }
+
+        if handled.hide_complete {
+            self.completion.last_completions.clear();
         }
 
         handled.redraw
@@ -158,13 +172,17 @@ where
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
     ) -> UpdateScreen {
-        let ch = app_state.windows[window_event.window_id]
-            .get_keyboard_state()
-            .current_char?;
+        let kb = app_state.windows[window_event.window_id].get_keyboard_state();
 
-        let hcb = self.handle_input(Input::Char(ch));
+        if kb.ctrl_down || kb.alt_down || kb.super_down {
+            None
+        } else {
+            let ch = kb.current_char?;
 
-        self.update(app_state, hcb)
+            let hcb = self.handle_input(Input::Char(ch));
+
+            self.update(app_state, hcb)
+        }
     }
 
     fn update_state_on_vk_down(
@@ -172,14 +190,18 @@ where
         app_state: &mut AppStateNoData<T>,
         window_event: &mut CallbackInfo<T>,
     ) -> UpdateScreen {
-        let hcb = match app_state.windows[window_event.window_id]
-            .get_keyboard_state()
-            .latest_virtual_keycode?
-        {
-            VirtualKeyCode::Back => self.handle_input(Input::Backspace),
-            VirtualKeyCode::Return => self.handle_input(Input::Return),
-            _ => InputHandled::default(),
-        };
+        use AcceleratorKey::*;
+        use VirtualKeyCode::*;
+
+        let kb = app_state.windows[window_event.window_id].get_keyboard_state();
+
+        let input = kb_seq(kb, &[Ctrl, Key(Space)], || Input::Ctrl(' '))
+            .or_else(|| kb_seq(kb, &[Key(Back)], || Input::Backspace))
+            .or_else(|| kb_seq(kb, &[Key(Return)], || Input::Return));
+
+        let hcb = input
+            .map(|input| self.handle_input(input))
+            .unwrap_or_default();
 
         self.update(app_state, hcb)
     }
