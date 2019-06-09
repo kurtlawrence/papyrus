@@ -91,13 +91,16 @@ where
         if handled.start_eval {
             let daemon = Timer::new(Self::check_evaluating_done)
                 .with_interval(std::time::Duration::from_millis(10));
-            app_state.add_timer(self.eval_daemon_id, daemon);
+            app_state.add_timer(self.eval_timer_id, daemon);
         }
 
         if handled.start_complete {
             if let Some(repl) = self.repl.brw_repl() {
                 self.completion
                     .to_complete(repl.input_buffer().to_owned(), None);
+                let timer = Timer::new(Self::redraw_completions)
+                    .with_interval(std::time::Duration::from_millis(10));
+                app_state.add_timer(self.completion_timer_id, timer);
             }
         }
 
@@ -137,6 +140,16 @@ where
             (Redraw, terminate)
         } else {
             (DontRedraw, terminate)
+        }
+    }
+
+    pub fn redraw_completions(app: &mut T, _: &mut AppResources) -> (UpdateScreen, TerminateTimer) {
+        let pad: &mut PadState<T, D> = &mut app.borrow_mut();
+
+        if pad.completion.update() {
+            (Redraw, TerminateTimer::Terminate)
+        } else {
+            (DontRedraw, TerminateTimer::Continue)
         }
     }
 
@@ -238,10 +251,10 @@ impl ReplTerminal {
         // Completion
         let mut container = Dom::div().with_child(term_div);
 
-        let completions = state.completion.completions();
+        let completions = &state.completion.last_completions;
 
         if !completions.is_empty() {
-            container.add_child(CompletionPrompt::dom(completions));
+            container.add_child(CompletionPrompt::dom(completions.clone()));
         }
 
         container

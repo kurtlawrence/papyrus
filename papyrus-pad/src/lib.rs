@@ -34,8 +34,12 @@ pub struct PadState<T, Data> {
 
     // ReplTerminal
     input_buffer: String,
-    eval_daemon_id: TimerId,
+
     term_render: ansi_renderer::ReplOutputRenderer,
-    completion: completion::CompletionPromptState,
+
     after_eval_fn: fn(&mut T, &mut AppResources),
+    eval_timer_id: TimerId,
+
+    completion: completion::CompletionPromptState,
+    completion_timer_id: TimerId,
 }

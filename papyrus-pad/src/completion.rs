@@ -47,30 +47,41 @@ struct CompletionInput {
     pub limit: Option<usize>,
 }
 
+/// Holds state of a `CompletionPrompt`.
 pub struct CompletionPromptState {
+    /// Completion data.
     data: Arc<Mutex<Completers>>,
 
+    /// A completion item waiting to complete.
     line_msg: Arc<ThreadedOption<CompletionInput>>,
 
-    completions: Arc<Mutex<Vec<String>>>,
+    /// Completed items, waiting to be updated into `last_completions`.
+    completions_msg: Arc<ThreadedOption<Vec<String>>>,
+
+    /// The last iteration of completion items.
+    pub last_completions: Vec<String>,
 }
 
 impl CompletionPromptState {
+    /// Build completion data and spin off a completing thread.
     pub fn initialise<D>(repl_data: &ReplData<D>) -> Self {
         let data = Arc::new(Mutex::new(Completers::build(repl_data)));
 
         let line_msg = Arc::new(ThreadedOption::empty());
 
-        let completions_var = Arc::new(Mutex::new(Vec::new()));
+        let completions_msg = Arc::new(ThreadedOption::empty());
+
+        let last_completions = Vec::new();
 
         let ct_data = Arc::clone(&data);
         let ct_line_msg = Arc::clone(&line_msg);
-        let ct_completions = Arc::clone(&completions_var);
+        let ct_completions_msg = Arc::clone(&completions_msg);
 
         let ret = Self {
             data,
             line_msg,
-            completions: completions_var,
+            completions_msg,
+            last_completions,
         };
 
         std::thread::spawn(move || {
@@ -80,7 +91,7 @@ impl CompletionPromptState {
 
             let line_msg = ct_line_msg;
             let data = ct_data;
-            let completions_option = ct_completions;
+            let completions_msg = ct_completions_msg;
 
             loop {
                 if let Some(input) = line_msg.take() {
@@ -88,7 +99,7 @@ impl CompletionPromptState {
 
                     let completed = completions(&completers, &input.line, input.limit);
 
-                    *completions_option.lock().unwrap() = completed;
+                    completions_msg.put(completed);
                 } else {
                     std::thread::sleep(std::time::Duration::from_millis(20)); // only check every so often
                 }
@@ -98,27 +109,36 @@ impl CompletionPromptState {
         ret
     }
 
+    /// Send a line to be completed, with a limit of number of completions.
     pub fn to_complete(&mut self, line: String, limit: Option<usize>) {
         self.line_msg.put(CompletionInput { line, limit });
     }
 
-    pub fn completions(&self) -> Vec<String> {
-        self.completions.lock().unwrap().clone()
+    /// Read if there are completed items waiting to be set into `last_completions`.
+    /// Returns true if therer were items.
+    pub fn update(&mut self) -> bool {
+        if let Some(completions) = self.completions_msg.take() {
+            self.last_completions = completions;
+            true
+        } else {
+            false
+        }
     }
 
+    /// Update completion data with repl data state.
     pub fn build_completers<D>(&mut self, repl_data: &ReplData<D>) {
         *self.data.lock().unwrap() = Completers::build(repl_data);
     }
 }
 
-pub struct Completers {
-    pub cmds_tree: complete::cmdr::TreeCompleter,
-    pub mods: complete::modules::ModulesCompleter,
-    pub code: complete::code::CodeCompleter,
+struct Completers {
+    cmds_tree: complete::cmdr::TreeCompleter,
+    mods: complete::modules::ModulesCompleter,
+    code: complete::code::CodeCompleter,
 }
 
 impl Completers {
-    pub fn build<D>(repl_data: &ReplData<D>) -> Self {
+    fn build<D>(repl_data: &ReplData<D>) -> Self {
         let cmds_tree = complete::cmdr::TreeCompleter::build(&repl_data.cmdtree);
 
         let mods =
@@ -134,9 +154,11 @@ impl Completers {
     }
 }
 
+/// Draw a completion prompt.
 pub struct CompletionPrompt;
 
 impl CompletionPrompt {
+    /// Draw a completion prompt with the completions.
     pub fn dom<T>(completions: Vec<String>) -> Dom<T> {
         let container = completions
             .into_iter()
@@ -149,7 +171,7 @@ impl CompletionPrompt {
     }
 }
 
-pub fn completions(completer: &Completers, line: &str, limit: Option<usize>) -> Vec<String> {
+fn completions(completer: &Completers, line: &str, limit: Option<usize>) -> Vec<String> {
     let limit = limit.unwrap_or(std::usize::MAX);
 
     let mut v = Vec::<String>::new();

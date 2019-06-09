@@ -12,11 +12,12 @@ impl<T, D> PadState<T, D> {
         Self {
             repl: EvalState::new(repl),
             input_buffer: String::new(),
-            eval_daemon_id: TimerId::new(),
+            eval_timer_id: TimerId::new(),
             data,
             after_eval_fn: none,
             term_render,
             completion,
+            completion_timer_id: TimerId::new(),
         }
     }
 
