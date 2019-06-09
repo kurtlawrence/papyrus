@@ -28,7 +28,6 @@ impl<T, D> PadState<T, D> {
     /// Functions to run after the evaluation phase finished.
     pub fn eval_finished(&mut self) {
         if let Some(repl) = self.repl.brw_repl() {
-            self.completion.reset();
             self.completion.build_completers(&repl.data);
         }
     }

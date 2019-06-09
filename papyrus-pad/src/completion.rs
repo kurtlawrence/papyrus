@@ -48,7 +48,7 @@ struct CompletionInput {
 }
 
 pub struct CompletionPromptState {
-    pub data: Arc<Mutex<CompletionData>>,
+    data: Arc<Mutex<Completers>>,
 
     line_msg: Arc<ThreadedOption<CompletionInput>>,
 
@@ -57,12 +57,7 @@ pub struct CompletionPromptState {
 
 impl CompletionPromptState {
     pub fn initialise<D>(repl_data: &ReplData<D>) -> Self {
-        let data = Arc::new(Mutex::new(CompletionData {
-            completers: Completers::build(repl_data),
-            line: String::new(),
-            limit: None,
-            completions: Vec::new(),
-        }));
+        let data = Arc::new(Mutex::new(Completers::build(repl_data)));
 
         let line_msg = Arc::new(ThreadedOption::empty());
 
@@ -88,9 +83,9 @@ impl CompletionPromptState {
             let completions_option = ct_completions;
 
             if let Some(input) = line_msg.take() {
-                let lock = data.lock().unwrap();
+                let completers = data.lock().unwrap();
 
-                let completed = completions(&lock.completers, &input.line, input.limit);
+                let completed = completions(&completers, &input.line, input.limit);
 
                 if completed.len() > 0 {
                     completions_option.put(completed);
@@ -105,49 +100,17 @@ impl CompletionPromptState {
         ret
     }
 
-    fn mut_op<F: FnOnce(&mut CompletionData)>(&mut self, func: F) {
-        // try to avoid locking if possible
-        if let Some(m) = Arc::get_mut(&mut self.data) {
-            func(m.get_mut().unwrap())
-        } else {
-            func(&mut self.data.lock().unwrap())
-        }
-    }
-
     pub fn to_complete(&mut self, line: String, limit: Option<usize>) {
         self.line_msg.put(CompletionInput { line, limit });
     }
 
-    // Should be prefaced with reset call
+    pub fn completions(&self) -> Option<Vec<String>> {
+        self.completions.take()
+    }
+
     pub fn build_completers<D>(&mut self, repl_data: &ReplData<D>) {
-        self.mut_op(|data| data.completers = Completers::build(repl_data));
+        *self.data.lock().unwrap() = Completers::build(repl_data);
     }
-
-    // resets the internal completions state
-    pub fn reset(&mut self) {
-        self.mut_op(|data| {
-            data.line.clear();
-            data.limit = None;
-            data.completions.clear();
-        })
-    }
-}
-
-fn complete_task(data: Arc<Mutex<CompletionData>>, _: DropCheck) {
-    let mut lock = data.lock().unwrap();
-
-    let completions = completions(&lock.completers, &lock.line, lock.limit);
-
-    lock.completions = completions;
-}
-
-pub struct CompletionData {
-    pub completers: Completers,
-
-    pub line: String,
-    pub limit: Option<usize>,
-
-    pub completions: Vec<String>,
 }
 
 pub struct Completers {

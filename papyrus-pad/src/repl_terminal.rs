@@ -232,23 +232,18 @@ impl ReplTerminal {
         let output = state.term_render.dom();
         term_div.add_child(output);
 
-        term_div
+        // term_div
 
         // Completion
 
-        // let mut container = Dom::div().with_child(term_div);
+        let mut container = Dom::div().with_child(term_div);
 
-        // if let Ok(lock) = state.completion.data.try_lock() {
-        //     let completions = &lock.completions;
-        //     if !completions.is_empty() {
-        //         container.add_child(completion::CompletionPrompt::dom(
-        //             state,
-        //             window,
-        //             completions.clone(),
-        //         ));
-        //     }
-        // }
+        if let Some(completions) = state.completion.completions() {
+            if !completions.is_empty() {
+                container.add_child(completion::CompletionPrompt::dom(completions));
+            }
+        }
 
-        // container
+        container
     }
 }
