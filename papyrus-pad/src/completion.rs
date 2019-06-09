@@ -188,13 +188,16 @@ fn completions(completer: &Completers, line: &str, limit: Option<usize>) -> Vec<
         v.extend(i.take(limit.saturating_sub(v.len())));
     }
 
-    v.extend(
-        completer
-            .code
-            .complete(line, Some(limit.saturating_sub(v.len())))
-            .into_iter()
-            .map(|x| x.matchstr),
-    );
+    if !line.starts_with('.') {
+        // don't do code completion on command
+        v.extend(
+            completer
+                .code
+                .complete(line, Some(limit.saturating_sub(v.len())))
+                .into_iter()
+                .map(|x| x.matchstr),
+        );
+    }
 
     v
 }

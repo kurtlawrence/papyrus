@@ -236,15 +236,17 @@ impl<T: Terminal> linefeed::Completer<T> for Completer {
             v.extend(mods);
         }
 
-        let code = self.code_cmplter.as_ref().map(|x| {
-            x.complete(line, Some(10)).into_iter().map(|x| Completion {
-                completion: x.matchstr,
-                display: None,
-                suffix: Suffix::None,
-            })
-        });
-        if let Some(code) = code {
-            v.extend(code);
+        if !line.starts_with('.') {
+            let code = self.code_cmplter.as_ref().map(|x| {
+                x.complete(line, Some(10)).into_iter().map(|x| Completion {
+                    completion: x.matchstr,
+                    display: None,
+                    suffix: Suffix::None,
+                })
+            });
+            if let Some(code) = code {
+                v.extend(code);
+            }
         }
 
         if v.len() > 0 {
