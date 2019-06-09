@@ -2,6 +2,7 @@ use super::*;
 use azul::app::AppStateNoData;
 use azul::callbacks::DefaultCallback;
 use azul::window::FakeWindow;
+use completion::*;
 use papyrus::prelude::*;
 use repl::ReadResult;
 use std::borrow::BorrowMut;
@@ -235,13 +236,12 @@ impl ReplTerminal {
         // term_div
 
         // Completion
-
         let mut container = Dom::div().with_child(term_div);
 
-        if let Some(completions) = state.completion.completions() {
-            if !completions.is_empty() {
-                container.add_child(completion::CompletionPrompt::dom(completions));
-            }
+        let completions = state.completion.completions();
+
+        if !completions.is_empty() {
+            container.add_child(CompletionPrompt::dom(completions));
         }
 
         container

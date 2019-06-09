@@ -52,7 +52,7 @@ pub struct CompletionPromptState {
 
     line_msg: Arc<ThreadedOption<CompletionInput>>,
 
-    completions: Arc<ThreadedOption<Vec<String>>>,
+    completions: Arc<Mutex<Vec<String>>>,
 }
 
 impl CompletionPromptState {
@@ -61,7 +61,7 @@ impl CompletionPromptState {
 
         let line_msg = Arc::new(ThreadedOption::empty());
 
-        let completions_var = Arc::new(ThreadedOption::empty());
+        let completions_var = Arc::new(Mutex::new(Vec::new()));
 
         let ct_data = Arc::clone(&data);
         let ct_line_msg = Arc::clone(&line_msg);
@@ -82,18 +82,16 @@ impl CompletionPromptState {
             let data = ct_data;
             let completions_option = ct_completions;
 
-            if let Some(input) = line_msg.take() {
-                let completers = data.lock().unwrap();
+            loop {
+                if let Some(input) = line_msg.take() {
+                    let completers = data.lock().unwrap();
 
-                let completed = completions(&completers, &input.line, input.limit);
+                    let completed = completions(&completers, &input.line, input.limit);
 
-                if completed.len() > 0 {
-                    completions_option.put(completed);
+                    *completions_option.lock().unwrap() = completed;
                 } else {
-                    completions_option.take(); // remove prev if any, as there are _no_ completions
+                    std::thread::sleep(std::time::Duration::from_millis(20)); // only check every so often
                 }
-            } else {
-                std::thread::sleep(std::time::Duration::from_millis(20)); // only check every so often
             }
         });
 
@@ -104,8 +102,8 @@ impl CompletionPromptState {
         self.line_msg.put(CompletionInput { line, limit });
     }
 
-    pub fn completions(&self) -> Option<Vec<String>> {
-        self.completions.take()
+    pub fn completions(&self) -> Vec<String> {
+        self.completions.lock().unwrap().clone()
     }
 
     pub fn build_completers<D>(&mut self, repl_data: &ReplData<D>) {

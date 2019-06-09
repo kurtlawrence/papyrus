@@ -82,8 +82,6 @@ impl ReplOutputRenderer {
                 }
             };
 
-            dbg!(&line);
-
             self.lines
                 .last_mut()
                 .map(|x| x.update_text(&line, app_resources));
