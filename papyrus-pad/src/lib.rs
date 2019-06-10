@@ -1,17 +1,16 @@
 use azul::prelude::*;
 
-// macro_rules! cb {
-// 	// TODO Work out how to append ident with something to make priv_$fn
-// 	// ($fn:ident) => {
-//     //     fn $fn(
-//     //         data: &StackCheckedPointer<T>,
-//     //         app_state_no_data: &mut AppStateNoData<T>,
-//     //         window_event: &mut CallbackInfo<T>,
-//     //     ) -> UpdateScreen {
-//     //         data.invoke_mut(Self::$fn, app_state_no_data, window_event)
-//     //     }
-//     // };
-// }
+macro_rules! cb {
+    ($priv:ident, $fn:ident) => {
+        fn $priv(
+            data: &StackCheckedPointer<T>,
+            app_state_no_data: &mut AppStateNoData<T>,
+            window_event: &mut CallbackInfo<T>,
+        ) -> UpdateScreen {
+            data.invoke_mut(Self::$fn, app_state_no_data, window_event)
+        }
+    };
+}
 
 pub mod ansi_renderer;
 pub mod colour;
@@ -40,7 +39,7 @@ pub struct PadState<T, Data> {
     after_eval_fn: fn(&mut T, &mut AppResources),
     eval_timer_id: TimerId,
 
-    completion: completion::CompletionPromptState,
+    completion: AppValue<completion::CompletionPromptState<T>>,
     completion_timer_id: TimerId,
 }
 

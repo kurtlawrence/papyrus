@@ -8,6 +8,7 @@ impl<T, D> PadState<T, D> {
         let term_render = ansi_renderer::ReplOutputRenderer::new(repl.output_listen());
 
         let completion = completion::CompletionPromptState::initialise(&repl.data);
+        let completion = AppValue::new(completion);
 
         Self {
             repl: EvalState::new(repl),

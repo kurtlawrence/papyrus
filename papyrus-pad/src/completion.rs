@@ -1,10 +1,23 @@
 use super::*;
+use azul::{
+    app::AppStateNoData,
+    callbacks::DefaultCallback,
+    css::{CssProperty, LayoutHeight},
+};
 use papyrus::complete;
 use papyrus::prelude::*;
+use std::cmp::min;
+use std::marker::PhantomData;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc, Mutex,
 };
+
+const FOCUS_LMD: EventFilter = EventFilter::Focus(FocusEventFilter::LeftMouseDown);
+const WINDOW_LMD: EventFilter = EventFilter::Window(WindowEventFilter::LeftMouseDown);
+const FOCUS_VKDOWN: EventFilter = EventFilter::Focus(FocusEventFilter::VirtualKeyDown);
+
+const ITEM_HEIGHT: f32 = 20.0;
 
 struct ThreadedOption<T> {
     data: Mutex<Option<T>>,
@@ -48,7 +61,7 @@ struct CompletionInput {
 }
 
 /// Holds state of a `CompletionPrompt`.
-pub struct CompletionPromptState {
+pub struct CompletionPromptState<T> {
     /// Completion data.
     data: Arc<Mutex<Completers>>,
 
@@ -60,9 +73,14 @@ pub struct CompletionPromptState {
 
     /// The last iteration of completion items.
     pub last_completions: Vec<String>,
+
+    // Rendering info
+    pub kb_focus: usize,
+
+    mrkr: PhantomData<T>,
 }
 
-impl CompletionPromptState {
+impl<T> CompletionPromptState<T> {
     /// Build completion data and spin off a completing thread.
     pub fn initialise<D>(repl_data: &ReplData<D>) -> Self {
         let data = Arc::new(Mutex::new(Completers::build(repl_data)));
@@ -82,6 +100,8 @@ impl CompletionPromptState {
             line_msg,
             completions_msg,
             last_completions,
+            kb_focus: 0,
+            mrkr: PhantomData,
         };
 
         std::thread::spawn(move || {
@@ -109,6 +129,11 @@ impl CompletionPromptState {
         ret
     }
 
+    /// Will render if `last_completions` is not empty.
+    pub fn will_render(&self) -> bool {
+        !self.last_completions.is_empty()
+    }
+
     /// Send a line to be completed, with a limit of number of completions.
     pub fn to_complete(&mut self, line: String, limit: Option<usize>) {
         self.line_msg.put(CompletionInput { line, limit });
@@ -129,6 +154,51 @@ impl CompletionPromptState {
     pub fn build_completers<D>(&mut self, repl_data: &ReplData<D>) {
         *self.data.lock().unwrap() = Completers::build(repl_data);
     }
+
+    pub fn on_focus_vk_down(
+        &mut self,
+        app: &mut AppStateNoData<T>,
+        event: &mut CallbackInfo<T>,
+    ) -> UpdateScreen {
+        use AcceleratorKey::*;
+        use VirtualKeyCode::*;
+
+        let kb = app.windows[event.window_id].get_keyboard_state();
+
+        kb_seq(kb, &[Key(Up)], || {
+            self.kb_focus = self.kb_focus.saturating_sub(1)
+        })
+        .or_else(|| {
+            kb_seq(kb, &[Key(Down)], || {
+                self.kb_focus = min(
+                    self.kb_focus + 1,
+                    self.last_completions.len().saturating_sub(1),
+                )
+            })
+        })
+    }
+
+    fn on_focus_left_mouse_down(
+        &mut self,
+        app: &mut AppStateNoData<T>,
+        event: &mut CallbackInfo<T>,
+    ) -> UpdateScreen {
+        DontRedraw
+    }
+
+    fn on_window_left_mouse_down(
+        &mut self,
+        app: &mut AppStateNoData<T>,
+        event: &mut CallbackInfo<T>,
+    ) -> UpdateScreen {
+        DontRedraw
+    }
+}
+
+impl<T: 'static> CompletionPromptState<T> {
+    cb!(priv_on_focus_vk_down, on_focus_vk_down);
+    cb!(priv_on_focus_left_mouse_down, on_focus_left_mouse_down);
+    cb!(priv_on_window_left_mouse_down, on_window_left_mouse_down);
 }
 
 struct Completers {
@@ -159,15 +229,57 @@ pub struct CompletionPrompt;
 
 impl CompletionPrompt {
     /// Draw a completion prompt with the completions.
-    pub fn dom<T>(completions: Vec<String>) -> Dom<T> {
-        let container = completions
-            .into_iter()
-            .map(|x| Dom::label(x))
-            .collect::<Dom<T>>()
-            .with_id("completion-prompt")
-            .with_tab_index(TabIndex::Auto); // make focusable
+    /// Will return `None` if `last_completions` is empty.
+    pub fn dom<T: 'static>(
+        state: &AppValue<CompletionPromptState<T>>,
+        info: &mut LayoutInfo<T>,
+    ) -> Option<Dom<T>> {
+        if state.last_completions.is_empty() {
+            None
+        } else {
+            let ptr = StackCheckedPointer::new(state);
 
-        container
+            let focus_vk_down_cb_id = info.window.add_callback(
+                ptr.clone(),
+                DefaultCallback(CompletionPromptState::priv_on_focus_vk_down),
+            );
+            let focus_left_mouse_down_cb_id = info.window.add_callback(
+                ptr.clone(),
+                DefaultCallback(CompletionPromptState::priv_on_focus_left_mouse_down),
+            );
+            let window_left_mouse_down_cb_id = info.window.add_callback(
+                ptr.clone(),
+                DefaultCallback(CompletionPromptState::priv_on_window_left_mouse_down),
+            );
+
+            let mut container = state
+                .last_completions
+                .iter()
+                .enumerate()
+                .map(|(idx, x)| {
+                    let mut item = Dom::label(x.to_owned())
+                        .with_class("completion-prompt-item")
+                        .with_css_override(
+                            "height",
+                            CssProperty::Height(LayoutHeight::px(ITEM_HEIGHT)),
+                        );
+
+                    if idx == state.kb_focus {
+                        item.add_class("completion-prompt-item-kb");
+                    }
+
+                    item
+                })
+                .collect::<Dom<T>>()
+                .with_class("completion-prompt")
+                .with_tab_index(TabIndex::Auto); // make focusable
+
+            container.add_default_callback_id(FOCUS_VKDOWN, focus_vk_down_cb_id);
+            container.add_default_callback_id(FOCUS_LMD, focus_left_mouse_down_cb_id);
+            container.add_default_callback_id(WINDOW_LMD, window_left_mouse_down_cb_id);
+
+            Some(container)
+        }
     }
 }
 

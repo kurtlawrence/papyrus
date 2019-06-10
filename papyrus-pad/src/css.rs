@@ -6,10 +6,7 @@ pub const PAD_CSS: &'static str = r##"
 
 .ansi-renderer-text {
 	color: [[ ansi_esc_color | white ]];
-	text-align: left;
 	line-height: 135%;
-	font-size: 1em;
-	font-family: Lucida Console,Lucida Sans Typewriter,monaco,Bitstream Vera Sans Mono,monospace;
 }
 
 .ansi-renderer-text:hover {
@@ -19,9 +16,30 @@ pub const PAD_CSS: &'static str = r##"
 .repl-terminal {
 	background-color: black;
 	padding: 5px;
+	text-align: left;
+	font-size: 1em;
+	font-family: Lucida Console,Lucida Sans Typewriter,monaco,Bitstream Vera Sans Mono,monospace;
 }
 
-#completion-prompt {
+.completion-prompt {
+	position: absolute;
+	width: 400px;
+	left: [[ left | 0px ]];
+	top: [[ top | 0px ]];
+
 	background-color: white;
+
+}
+
+.completion-prompt-item {
+	height: [[ height | auto ]]
+}
+
+.completion-prompt-item:hover {
+	background: #9b9b9b;
+}
+
+.completion-prompt-item-kb {
+	background: blue;
 }
 "##;

@@ -1,7 +1,6 @@
 use super::*;
 use azul::app::AppStateNoData;
 use azul::callbacks::DefaultCallback;
-use azul::window::FakeWindow;
 use completion::*;
 use papyrus::prelude::*;
 use repl::ReadResult;
@@ -31,7 +30,9 @@ enum Input {
     Backspace,
     Char(char),
     Ctrl(char),
+    Down,
     Return,
+    Up,
 }
 
 impl<T, D> PadState<T, D>
@@ -39,26 +40,36 @@ where
     T: 'static + BorrowMut<AppValue<PadState<T, D>>>,
     D: 'static + Send + Sync,
 {
-    fn handle_input(&mut self, input: Input) -> InputHandled {
-        let mut handled = InputHandled::default();
-
-        match input {
+    fn handle_input(
+        &mut self,
+        input: Input,
+        app: &mut AppStateNoData<T>,
+        event: &mut CallbackInfo<T>,
+    ) -> UpdateScreen {
+        let redraw = match input {
             Input::Backspace => {
                 self.input_buffer.pop();
                 self.set_repl_line_input();
-                handled.hide_complete = true;
-                handled.redraw = Redraw;
+                self.completion.last_completions.clear();
+                Redraw
             }
             Input::Char(ch) => {
                 self.input_buffer.push(ch);
                 self.set_repl_line_input();
-                handled.start_complete = true;
-                handled.redraw = Redraw;
+                self.start_completion_timer(app);
+                Redraw
             }
             Input::Ctrl(ch) => match ch {
-                SPACE => handled.start_complete = true,
-                _ => (),
+                SPACE => Some(self.start_completion_timer(app)),
+                _ => DontRedraw,
             },
+            Input::Down => {
+                if self.completion.will_render() {
+                    self.completion.on_focus_vk_down(app, event)
+                } else {
+                    DontRedraw
+                }
+            }
             Input::Return => {
                 self.input_buffer.clear();
 
@@ -69,18 +80,29 @@ where
                                 self.repl.put_read(r);
                             }
                             ReadResult::Eval(r) => {
-                                handled.start_eval = true;
                                 self.repl.put_eval(r.eval_async(&self.data));
+                                self.start_eval_timer(app);
                             }
                         }
-                        handled.redraw = Redraw;
+                        Redraw
                     }
-                    None => (),
+                    None => DontRedraw,
+                }
+            }
+            Input::Up => {
+                if self.completion.will_render() {
+                    self.completion.on_focus_vk_down(app, event)
+                } else {
+                    DontRedraw
                 }
             }
         };
 
-        handled
+        if redraw.is_some() {
+            self.term_render.handle_line_changes(app.resources);
+        }
+
+        redraw
     }
 
     fn set_repl_line_input(&mut self) {
@@ -93,35 +115,23 @@ where
         }
     }
 
-    fn update(&mut self, app_state: &mut AppStateNoData<T>, handled: InputHandled) -> UpdateScreen {
-        if handled.redraw.is_some() {
-            self.term_render.handle_line_changes(app_state.resources);
-        }
-
-        if handled.start_eval {
-            let daemon = Timer::new(Self::check_evaluating_done)
+    fn start_completion_timer(&mut self, app_state: &mut AppStateNoData<T>) {
+        if let Some(repl) = self.repl.brw_repl() {
+            self.completion
+                .to_complete(repl.input_buffer().to_owned(), None);
+            let timer = Timer::new(Self::redraw_completions)
                 .with_interval(std::time::Duration::from_millis(10));
-            app_state.add_timer(self.eval_timer_id, daemon);
+            app_state.add_timer(self.completion_timer_id, timer);
         }
-
-        if handled.start_complete {
-            if let Some(repl) = self.repl.brw_repl() {
-                self.completion
-                    .to_complete(repl.input_buffer().to_owned(), None);
-                let timer = Timer::new(Self::redraw_completions)
-                    .with_interval(std::time::Duration::from_millis(10));
-                app_state.add_timer(self.completion_timer_id, timer);
-            }
-        }
-
-        if handled.hide_complete {
-            self.completion.last_completions.clear();
-        }
-
-        handled.redraw
     }
 
-    pub fn check_evaluating_done(
+    fn start_eval_timer(&self, app_state: &mut AppStateNoData<T>) {
+        let timer = Timer::new(Self::check_evaluating_done)
+            .with_interval(std::time::Duration::from_millis(10));
+        app_state.add_timer(self.eval_timer_id, timer);
+    }
+
+    fn check_evaluating_done(
         app: &mut T,
         app_resources: &mut AppResources,
     ) -> (UpdateScreen, TerminateTimer) {
@@ -157,7 +167,7 @@ where
         }
     }
 
-    pub fn redraw_completions(app: &mut T, _: &mut AppResources) -> (UpdateScreen, TerminateTimer) {
+    fn redraw_completions(app: &mut T, _: &mut AppResources) -> (UpdateScreen, TerminateTimer) {
         let pad: &mut PadState<T, D> = &mut app.borrow_mut();
 
         if pad.completion.update() {
@@ -177,11 +187,7 @@ where
         if kb.ctrl_down || kb.alt_down || kb.super_down {
             None
         } else {
-            let ch = kb.current_char?;
-
-            let hcb = self.handle_input(Input::Char(ch));
-
-            self.update(app_state, hcb)
+            self.handle_input(Input::Char(kb.current_char?), app_state, window_event)
         }
     }
 
@@ -197,13 +203,15 @@ where
 
         let input = kb_seq(kb, &[Ctrl, Key(Space)], || Input::Ctrl(' '))
             .or_else(|| kb_seq(kb, &[Key(Back)], || Input::Backspace))
-            .or_else(|| kb_seq(kb, &[Key(Return)], || Input::Return));
+            .or_else(|| kb_seq(kb, &[Key(Return)], || Input::Return))
+            .or_else(|| kb_seq(kb, &[Key(Up)], || Input::Up))
+            .or_else(|| kb_seq(kb, &[Key(Down)], || Input::Down));
 
-        let hcb = input
-            .map(|input| self.handle_input(input))
+        let redraw = input
+            .map(|input| self.handle_input(input, app_state, window_event))
             .unwrap_or_default();
 
-        self.update(app_state, hcb)
+        redraw
     }
 
     fn priv_update_state_on_text_input(
@@ -234,18 +242,18 @@ where
 pub struct ReplTerminal;
 
 impl ReplTerminal {
-    pub fn dom<T, D>(state: &AppValue<PadState<T, D>>, window: &mut FakeWindow<T>) -> Dom<T>
+    pub fn dom<T, D>(state: &AppValue<PadState<T, D>>, info: &mut LayoutInfo<T>) -> Dom<T>
     where
         T: 'static + BorrowMut<AppValue<PadState<T, D>>>,
         D: 'static + Send + Sync,
     {
         let ptr = StackCheckedPointer::new(state);
 
-        let text_input_cb_id = window.add_callback(
+        let text_input_cb_id = info.window.add_callback(
             ptr.clone(),
             DefaultCallback(PadState::priv_update_state_on_text_input),
         );
-        let vk_down_cb_id = window.add_callback(
+        let vk_down_cb_id = info.window.add_callback(
             ptr.clone(),
             DefaultCallback(PadState::priv_update_state_on_vk_down),
         );
@@ -268,17 +276,11 @@ impl ReplTerminal {
         let output = state.term_render.dom();
         term_div.add_child(output);
 
-        // term_div
-
         // Completion
-        let mut container = Dom::div().with_child(term_div);
-
-        let completions = &state.completion.last_completions;
-
-        if !completions.is_empty() {
-            container.add_child(CompletionPrompt::dom(completions.clone()));
+        if let Some(prompt) = CompletionPrompt::dom(&state.completion, info) {
+            term_div.add_child(prompt);
         }
 
-        container
+        term_div
     }
 }

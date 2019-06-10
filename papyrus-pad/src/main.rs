@@ -24,8 +24,8 @@ impl std::borrow::Borrow<AppValue<TypedPadState>> for MyApp {
 }
 
 impl Layout for MyApp {
-    fn layout(&self, info: LayoutInfo<Self>) -> Dom<Self> {
-        Dom::div().with_child(ReplTerminal::dom(&self.repl_term, info.window))
+    fn layout(&self, mut info: LayoutInfo<Self>) -> Dom<Self> {
+        Dom::div().with_child(ReplTerminal::dom(&self.repl_term, &mut info))
     }
 }
 
@@ -50,17 +50,15 @@ fn main() {
     let css = create_css();
 
     let window = if cfg!(debug_assertions) {
-        // app.create_hot_reload_window(
-        //     WindowCreateOptions::default(),
-        //     css::hot_reload_override_native(
-        //         "styles/test.css",
-        //         std::time::Duration::from_millis(1000),
-        //     ),
-        // )
-        // .unwrap()
+        std::fs::write("hot-reload.css", create_css()).unwrap();
+        app.create_hot_reload_window(
+            WindowCreateOptions::default(),
+            css::hot_reload("hot-reload.css", std::time::Duration::from_millis(1000)),
+        )
+        .unwrap()
 
-        app.create_window(WindowCreateOptions::default(), css::from_str(&css).unwrap())
-            .unwrap()
+    // app.create_window(WindowCreateOptions::default(), css::from_str(&css).unwrap())
+    //     .unwrap()
     } else {
         app.create_window(WindowCreateOptions::default(), css::from_str(&css).unwrap())
             .unwrap()
