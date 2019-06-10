@@ -6,32 +6,18 @@ use papyrus::prelude::*;
 use repl::ReadResult;
 use std::borrow::BorrowMut;
 
+const WINDOW_LMD: EventFilter = EventFilter::Window(WindowEventFilter::LeftMouseDown);
+
 const SPACE: char = ' ';
-
-struct InputHandled {
-    redraw: UpdateScreen,
-    start_eval: bool,
-    start_complete: bool,
-    hide_complete: bool,
-}
-
-impl Default for InputHandled {
-    fn default() -> Self {
-        Self {
-            redraw: DontRedraw,
-            start_eval: false,
-            start_complete: false,
-            hide_complete: false,
-        }
-    }
-}
 
 enum Input {
     Backspace,
     Char(char),
     Ctrl(char),
     Down,
+    LeftMouseDown,
     Return,
+    Tab,
     Up,
 }
 
@@ -44,7 +30,7 @@ where
         &mut self,
         input: Input,
         app: &mut AppStateNoData<T>,
-        event: &mut CallbackInfo<T>,
+        _: &mut CallbackInfo<T>,
     ) -> UpdateScreen {
         let redraw = match input {
             Input::Backspace => {
@@ -70,6 +56,11 @@ where
                     DontRedraw
                 }
             }
+            Input::LeftMouseDown => {
+                dbg!(&self.completion.last_mouse_hovered);
+
+                DontRedraw
+            }
             Input::Return => {
                 self.input_buffer.clear();
 
@@ -88,6 +79,10 @@ where
                     }
                     None => DontRedraw,
                 }
+            }
+            Input::Tab => {
+                dbg!(self.completion.kb_focus);
+                DontRedraw
             }
             Input::Up => {
                 if !self.completion.will_render() {
@@ -205,11 +200,20 @@ where
             .or_else(|| kb_seq(kb, &[Key(Back)], || Input::Backspace))
             .or_else(|| kb_seq(kb, &[Key(Return)], || Input::Return))
             .or_else(|| kb_seq(kb, &[Key(Up)], || Input::Up))
-            .or_else(|| kb_seq(kb, &[Key(Down)], || Input::Down));
+            .or_else(|| kb_seq(kb, &[Key(Down)], || Input::Down))
+            .or_else(|| kb_seq(kb, &[Key(Tab)], || Input::Tab));
 
         input
             .and_then(|input| self.handle_input(input, app_state, window_event))
             .or_else(|| self.completion.on_focus_vk_down(app_state, window_event))
+    }
+
+    fn on_window_left_mouse_down(
+        &mut self,
+        app: &mut AppStateNoData<T>,
+        event: &mut CallbackInfo<T>,
+    ) -> UpdateScreen {
+        self.handle_input(Input::LeftMouseDown, app, event)
     }
 
     fn priv_update_state_on_text_input(
@@ -235,6 +239,8 @@ where
             window_event,
         )
     }
+
+    cb!(priv_on_window_left_mouse_down, on_window_left_mouse_down);
 }
 
 pub struct ReplTerminal;
@@ -255,6 +261,10 @@ impl ReplTerminal {
             ptr.clone(),
             DefaultCallback(PadState::priv_update_state_on_vk_down),
         );
+        let window_lmd_cb_id = info.window.add_callback(
+            ptr.clone(),
+            DefaultCallback(PadState::priv_on_window_left_mouse_down),
+        );
 
         // Container Div
         let mut term_div = Dom::div()
@@ -269,6 +279,7 @@ impl ReplTerminal {
             EventFilter::Focus(FocusEventFilter::VirtualKeyDown),
             vk_down_cb_id,
         );
+        term_div.add_default_callback_id(WINDOW_LMD, window_lmd_cb_id);
 
         // Rendered Output
         let output = state.term_render.dom();

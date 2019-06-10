@@ -13,8 +13,6 @@ use std::sync::{
     Arc, Mutex,
 };
 
-const FOCUS_LMD: EventFilter = EventFilter::Focus(FocusEventFilter::LeftMouseDown);
-const WINDOW_LMD: EventFilter = EventFilter::Window(WindowEventFilter::LeftMouseDown);
 const FOCUS_VKDOWN: EventFilter = EventFilter::Focus(FocusEventFilter::VirtualKeyDown);
 
 const ITEM_HEIGHT: f32 = 20.0;
@@ -76,6 +74,7 @@ pub struct CompletionPromptState<T> {
 
     // Rendering info
     pub kb_focus: usize,
+    pub last_mouse_hovered: Option<usize>,
 
     mrkr: PhantomData<T>,
 }
@@ -101,6 +100,7 @@ impl<T> CompletionPromptState<T> {
             completions_msg,
             last_completions,
             kb_focus: 0,
+            last_mouse_hovered: None,
             mrkr: PhantomData,
         };
 
@@ -179,27 +179,34 @@ impl<T> CompletionPromptState<T> {
         .or_else(|| kb_seq(kb, &[Key(Escape)], || self.last_completions.clear()))
     }
 
-    fn on_focus_left_mouse_down(
+    fn on_mouse_enter(
         &mut self,
-        app: &mut AppStateNoData<T>,
+        _: &mut AppStateNoData<T>,
         event: &mut CallbackInfo<T>,
     ) -> UpdateScreen {
+        self.last_mouse_hovered = event.get_index_in_parent(event.hit_dom_node).map(|x| x.0);
         DontRedraw
     }
 
-    fn on_window_left_mouse_down(
+    fn on_mouse_leave(
         &mut self,
-        app: &mut AppStateNoData<T>,
+        _: &mut AppStateNoData<T>,
         event: &mut CallbackInfo<T>,
     ) -> UpdateScreen {
+        let (idx, _) = event.get_index_in_parent(event.hit_dom_node)?;
+
+        if self.last_mouse_hovered == Some(idx) {
+            self.last_mouse_hovered = None;
+        }
+
         DontRedraw
     }
 }
 
 impl<T: 'static> CompletionPromptState<T> {
     cb!(priv_on_focus_vk_down, on_focus_vk_down);
-    cb!(priv_on_focus_left_mouse_down, on_focus_left_mouse_down);
-    cb!(priv_on_window_left_mouse_down, on_window_left_mouse_down);
+    cb!(priv_on_mouse_enter, on_mouse_enter);
+    cb!(priv_on_mouse_leave, on_mouse_leave);
 }
 
 struct Completers {
@@ -240,17 +247,17 @@ impl CompletionPrompt {
         } else {
             let ptr = StackCheckedPointer::new(state);
 
-            let focus_vk_down_cb_id = info.window.add_callback(
+            let focus_vkdown_cb_id = info.window.add_callback(
                 ptr.clone(),
                 DefaultCallback(CompletionPromptState::priv_on_focus_vk_down),
             );
-            let focus_left_mouse_down_cb_id = info.window.add_callback(
+            let menter_cb_id = info.window.add_callback(
                 ptr.clone(),
-                DefaultCallback(CompletionPromptState::priv_on_focus_left_mouse_down),
+                DefaultCallback(CompletionPromptState::priv_on_mouse_enter),
             );
-            let window_left_mouse_down_cb_id = info.window.add_callback(
+            let mleave_cb_id = info.window.add_callback(
                 ptr.clone(),
-                DefaultCallback(CompletionPromptState::priv_on_window_left_mouse_down),
+                DefaultCallback(CompletionPromptState::priv_on_mouse_leave),
             );
 
             let mut container = state
@@ -263,7 +270,10 @@ impl CompletionPrompt {
                         .with_css_override(
                             "height",
                             CssProperty::Height(LayoutHeight::px(ITEM_HEIGHT)),
-                        );
+                        )
+                        .with_tab_index(TabIndex::Auto);
+                    item.add_default_callback_id(On::MouseEnter, menter_cb_id);
+                    item.add_default_callback_id(On::MouseLeave, mleave_cb_id);
 
                     if idx == state.kb_focus {
                         item.add_class("completion-prompt-item-kb");
@@ -275,9 +285,7 @@ impl CompletionPrompt {
                 .with_class("completion-prompt")
                 .with_tab_index(TabIndex::Auto); // make focusable
 
-            container.add_default_callback_id(FOCUS_VKDOWN, focus_vk_down_cb_id);
-            container.add_default_callback_id(FOCUS_LMD, focus_left_mouse_down_cb_id);
-            container.add_default_callback_id(WINDOW_LMD, window_left_mouse_down_cb_id);
+            container.add_default_callback_id(FOCUS_VKDOWN, focus_vkdown_cb_id);
 
             Some(container)
         }
