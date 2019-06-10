@@ -176,6 +176,7 @@ impl<T> CompletionPromptState<T> {
                 )
             })
         })
+        .or_else(|| kb_seq(kb, &[Key(Escape)], || self.last_completions.clear()))
     }
 
     fn on_focus_left_mouse_down(

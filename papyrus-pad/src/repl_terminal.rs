@@ -64,8 +64,8 @@ where
                 _ => DontRedraw,
             },
             Input::Down => {
-                if self.completion.will_render() {
-                    self.completion.on_focus_vk_down(app, event)
+                if !self.completion.will_render() {
+                    DontRedraw
                 } else {
                     DontRedraw
                 }
@@ -90,8 +90,8 @@ where
                 }
             }
             Input::Up => {
-                if self.completion.will_render() {
-                    self.completion.on_focus_vk_down(app, event)
+                if !self.completion.will_render() {
+                    DontRedraw
                 } else {
                     DontRedraw
                 }
@@ -207,11 +207,9 @@ where
             .or_else(|| kb_seq(kb, &[Key(Up)], || Input::Up))
             .or_else(|| kb_seq(kb, &[Key(Down)], || Input::Down));
 
-        let redraw = input
-            .map(|input| self.handle_input(input, app_state, window_event))
-            .unwrap_or_default();
-
-        redraw
+        input
+            .and_then(|input| self.handle_input(input, app_state, window_event))
+            .or_else(|| self.completion.on_focus_vk_down(app_state, window_event))
     }
 
     fn priv_update_state_on_text_input(
