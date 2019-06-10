@@ -63,3 +63,5 @@ pub mod prelude {
     pub use crate::repl::{self, Repl, ReplData};
     pub use cmdtree::{BuildError, BuilderChain};
 }
+
+pub use ::racer;

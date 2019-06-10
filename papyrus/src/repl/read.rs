@@ -36,6 +36,15 @@ impl<D> Repl<Read, D> {
         self.state.output.input_buffer()
     }
 
+    /// The _line_ of the current input buffer.
+    ///
+    /// This differs to the input buffer if there has been a requirement for
+    /// `More` input, say if a block `{` was started and not closed out. The
+    /// line is what has be set with `line_input`.
+    pub fn input_buffer_line(&self) -> &str {
+        self.state.output.input_buf_line()
+    }
+
     /// Read the current contents of the input buffer.
     /// This may move the repl into an evaluating state.
     pub fn read(mut self) -> ReadResult<D> {

@@ -259,7 +259,7 @@ impl<T: Terminal> linefeed::Completer<T> for Completer {
     fn word_start(&self, line: &str, _end: usize, _prompter: &Prompter<T>) -> usize {
         let s1 = TreeCompleter::word_break(line);
         let s2 = ModulesCompleter::word_break(line);
-        let s3 = CodeCompleter::word_start(line);
+        let s3 = CodeCompleter::word_break(line);
 
         max(max(s1, s2), s3)
     }

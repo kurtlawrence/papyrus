@@ -25,7 +25,7 @@ impl CodeCompleter {
     }
 
     /// Returns the start position of the _last_ word which is broken, in context to rust code.
-    pub fn word_start(line: &str) -> usize {
+    pub fn word_break(line: &str) -> usize {
         word_break_start(line, &[' ', ':'])
     }
 

@@ -36,7 +36,7 @@ where
             Input::Backspace => {
                 self.input_buffer.pop();
                 self.set_repl_line_input();
-                self.completion.last_completions.clear();
+                self.completion.clear();
                 Redraw
             }
             Input::Char(ch) => {
@@ -59,7 +59,17 @@ where
             Input::LeftMouseDown => {
                 dbg!(&self.completion.last_mouse_hovered);
 
-                DontRedraw
+                if let Some(idx) = self.completion.last_mouse_hovered.as_ref().cloned() {
+                    if let Some(item) = self.completion.complete_input_buffer_line(idx) {
+                        self.input_buffer = item;
+                        self.set_repl_line_input();
+                        Redraw
+                    } else {
+                        DontRedraw
+                    }
+                } else {
+                    DontRedraw
+                }
             }
             Input::Return => {
                 self.input_buffer.clear();
@@ -112,8 +122,11 @@ where
 
     fn start_completion_timer(&mut self, app_state: &mut AppStateNoData<T>) {
         if let Some(repl) = self.repl.brw_repl() {
-            self.completion
-                .to_complete(repl.input_buffer().to_owned(), None);
+            self.completion.to_complete(
+                repl.input_buffer().to_owned(),
+                repl.input_buffer_line().to_owned(),
+                None,
+            );
             let timer = Timer::new(Self::redraw_completions)
                 .with_interval(std::time::Duration::from_millis(10));
             app_state.add_timer(self.completion_timer_id, timer);
@@ -216,30 +229,8 @@ where
         self.handle_input(Input::LeftMouseDown, app, event)
     }
 
-    fn priv_update_state_on_text_input(
-        data: &StackCheckedPointer<T>,
-        app_state_no_data: &mut AppStateNoData<T>,
-        window_event: &mut CallbackInfo<T>,
-    ) -> UpdateScreen {
-        data.invoke_mut(
-            Self::update_state_on_text_input,
-            app_state_no_data,
-            window_event,
-        )
-    }
-
-    fn priv_update_state_on_vk_down(
-        data: &StackCheckedPointer<T>,
-        app_state_no_data: &mut AppStateNoData<T>,
-        window_event: &mut CallbackInfo<T>,
-    ) -> UpdateScreen {
-        data.invoke_mut(
-            Self::update_state_on_vk_down,
-            app_state_no_data,
-            window_event,
-        )
-    }
-
+    cb!(priv_update_state_on_text_input, update_state_on_text_input);
+    cb!(priv_update_state_on_vk_down, update_state_on_vk_down);
     cb!(priv_on_window_left_mouse_down, on_window_left_mouse_down);
 }
 

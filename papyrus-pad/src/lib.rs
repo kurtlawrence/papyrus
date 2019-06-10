@@ -32,6 +32,7 @@ pub struct PadState<T, Data> {
     data: Arc<RwLock<Data>>,
 
     // ReplTerminal
+    /// This is the input buffer _line_, so completions and such need to work off this.
     input_buffer: String,
 
     term_render: ansi_renderer::ReplOutputRenderer,
