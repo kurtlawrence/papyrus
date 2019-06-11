@@ -7,6 +7,7 @@ use azul::{
 use papyrus::complete::{cmdr::TreeCompleter, code::CodeCompleter, modules::ModulesCompleter};
 use papyrus::prelude::*;
 use papyrus::racer::MatchType;
+use std::borrow::Cow;
 use std::cmp::min;
 use std::marker::PhantomData;
 use std::sync::{
@@ -263,13 +264,16 @@ impl CompletionPrompt {
                 .iter()
                 .enumerate()
                 .map(|(idx, x)| {
-                    let mut item = Dom::label(x.completion.to_owned())
+                    let mut item = Dom::div()
                         .with_class("completion-prompt-item")
                         .with_css_override(
                             "height",
                             CssProperty::Height(LayoutHeight::px(ITEM_HEIGHT)),
                         )
-                        .with_tab_index(TabIndex::Auto);
+                        .with_tab_index(TabIndex::Auto)
+                        .with_child(Dom::label(x.completion.to_owned()))
+                        .with_child(Dom::label(x.completion_type.dom_string()));
+
                     item.add_default_callback_id(On::MouseEnter, menter_cb_id);
                     item.add_default_callback_id(On::MouseLeave, mleave_cb_id);
 
@@ -284,6 +288,22 @@ impl CompletionPrompt {
                 .with_tab_index(TabIndex::Auto); // make focusable
 
             container.add_default_callback_id(FOCUS_VKDOWN, focus_vkdown_cb_id);
+
+            // Add a context and documentation panel beside other one.
+            if let Some(item) = state.last_completions.items.get(state.kb_focus) {
+                container.add_child(
+                    Dom::div()
+                        .with_class("completion-prompt-info")
+                        .with_css_override(
+                            "top",
+                            CssProperty::Top(LayoutHeight::px(state.kb_focus as f32 * ITEM_HEIGHT)),
+                        )
+                        .with_child(Dom::label(item.contextstr.to_string()))
+                        .with_child(Dom::label(
+                            item.docs.lines().next().unwrap_or("").to_owned(),
+                        )),
+                );
+            }
 
             Some(container)
         }
@@ -382,14 +402,34 @@ struct Completion {
     completion_type: CompletionType,
     word_start: usize,
     suffix: Option<char>,
+    contextstr: Cow<'static, str>,
+    docs: Cow<'static, str>,
 }
 
 #[derive(Copy, Clone)]
 enum CompletionType {
     Cmd,
     Fn,
+    Mod,
+    Struct,
     TreeMods,
     Type,
+    Unknown,
+}
+
+impl CompletionType {
+    fn dom_string(&self) -> DomString {
+        match self {
+            CompletionType::Cmd => "cmd",
+            CompletionType::Fn => "fn",
+            CompletionType::Mod => "mod",
+            CompletionType::Struct => "struct",
+            CompletionType::TreeMods => "mod-path",
+            CompletionType::Type => "type",
+            CompletionType::Unknown => "?",
+        }
+        .into()
+    }
 }
 
 fn completions(
@@ -417,6 +457,8 @@ fn completions(
                     completion_type,
                     word_start,
                     suffix,
+                    contextstr: Cow::Borrowed(""),
+                    docs: Cow::Borrowed(""),
                 })
         });
     }
@@ -433,6 +475,8 @@ fn completions(
                     completion_type,
                     word_start,
                     suffix,
+                    contextstr: Cow::Borrowed(""),
+                    docs: Cow::Borrowed(""),
                 }),
         );
     }
@@ -447,15 +491,13 @@ fn completions(
                 .code
                 .complete(input_buffer, Some(limit.saturating_sub(v.len())))
                 .into_iter()
-                .map(|x| {
-                    dbg!(x.docs);
-                    dbg!(x.contextstr);
-                    Completion {
-                        completion: x.matchstr,
-                        completion_type: x.mtype.into(),
-                        word_start,
-                        suffix,
-                    }
+                .map(|x| Completion {
+                    completion: x.matchstr,
+                    completion_type: x.mtype.into(),
+                    word_start,
+                    suffix,
+                    contextstr: Cow::Owned(x.contextstr),
+                    docs: Cow::Owned(x.docs),
                 }),
         );
     }
@@ -465,6 +507,11 @@ fn completions(
 
 impl From<MatchType> for CompletionType {
     fn from(mtype: MatchType) -> Self {
-        CompletionType::Fn
+        match mtype {
+            MatchType::Struct(_) => CompletionType::Struct,
+            MatchType::Module => CompletionType::Mod,
+            MatchType::Function => CompletionType::Fn,
+            _ => CompletionType::Unknown,
+        }
     }
 }

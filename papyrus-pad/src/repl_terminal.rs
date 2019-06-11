@@ -57,16 +57,8 @@ where
                 }
             }
             Input::LeftMouseDown => {
-                dbg!(&self.completion.last_mouse_hovered);
-
                 if let Some(idx) = self.completion.last_mouse_hovered.as_ref().cloned() {
-                    if let Some(item) = self.completion.complete_input_buffer_line(idx) {
-                        self.input_buffer = item;
-                        self.set_repl_line_input();
-                        Redraw
-                    } else {
-                        DontRedraw
-                    }
+                    self.complete_input_buffer(idx)
                 } else {
                     DontRedraw
                 }
@@ -90,10 +82,7 @@ where
                     None => DontRedraw,
                 }
             }
-            Input::Tab => {
-                dbg!(self.completion.kb_focus);
-                DontRedraw
-            }
+            Input::Tab => self.complete_input_buffer(self.completion.kb_focus),
             Input::Up => {
                 if !self.completion.will_render() {
                     DontRedraw
@@ -117,6 +106,16 @@ where
                 self.repl.put_read(repl);
             }
             None => (),
+        }
+    }
+
+    fn complete_input_buffer(&mut self, idx: usize) -> UpdateScreen {
+        if let Some(item) = self.completion.complete_input_buffer_line(idx) {
+            self.input_buffer = item;
+            self.set_repl_line_input();
+            Redraw
+        } else {
+            DontRedraw
         }
     }
 

@@ -23,7 +23,7 @@ pub const PAD_CSS: &'static str = r##"
 
 .completion-prompt {
 	position: absolute;
-	width: 400px;
+	width: 500px;
 	left: [[ left | 0px ]];
 	top: [[ top | 0px ]];
 
@@ -32,7 +32,10 @@ pub const PAD_CSS: &'static str = r##"
 }
 
 .completion-prompt-item {
-	height: [[ height | auto ]]
+	height: [[ height | auto ]];
+	width: 200px;
+
+	flex-direction: row;
 }
 
 .completion-prompt-item:hover {
@@ -41,5 +44,14 @@ pub const PAD_CSS: &'static str = r##"
 
 .completion-prompt-item-kb {
 	background: blue;
+}
+
+.completion-prompt-info {
+	position: absolute;
+	top: [[ top | 0px ]];
+	left: 200px;
+
+	font-size: 8pt;
+	word-wrap: normal;
 }
 "##;
