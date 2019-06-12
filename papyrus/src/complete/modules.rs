@@ -30,7 +30,7 @@ impl ModulesCompleter {
     }
 
     /// Get the completions of an actions arguments if it matches the line.
-    pub fn complete<'a>(&'a self, line: &'a str) -> Option<impl Iterator<Item = String> + 'a> {
+    pub fn complete<'b>(&'b self, line: &'b str) -> Option<impl Iterator<Item = String> + 'b> {
         let actions = ["mod..switch"];
 
         self.inner

@@ -47,7 +47,7 @@ impl<D> ReplData<D> {
     /// An error will be returned if any command already exists.
     pub fn with_cmdtree_builder(
         &mut self,
-        builder: Builder<'static, CommandResult<D>>,
+        builder: Builder<CommandResult<D>>,
     ) -> Result<&mut Self, BuildError> {
         let cmdr = builder
             .root()

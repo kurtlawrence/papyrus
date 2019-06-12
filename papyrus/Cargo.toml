@@ -16,7 +16,7 @@ travis-ci = { repository = "kurtlawrence/papyrus" }
 
 [dependencies]
 # My crates
-cmdtree = 			{ version = "0.8",		default-features = false }
+cmdtree = 			{ path = "/cmdtree",		default-features = false }
 cratesiover =		{ version = "2",		default-features = false,	optional = true }
 shh = 				{ version = "1",		default-features = false }
 

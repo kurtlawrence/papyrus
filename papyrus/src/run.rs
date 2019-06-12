@@ -225,7 +225,7 @@ impl<T: Terminal> linefeed::Completer<T> for Completer {
         let trees = self
             .tree_cmplter
             .complete(line)
-            .map(|x| Completion::simple(x.to_string()));
+            .map(|x| Completion::simple(x.0.to_string()));
         v.extend(trees);
 
         let mods = self

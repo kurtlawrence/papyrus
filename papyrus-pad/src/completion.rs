@@ -426,6 +426,7 @@ enum CompletionType {
     TreeMods,
     Type,
     Unknown,
+	Variable
 }
 
 impl CompletionType {
@@ -441,6 +442,7 @@ impl CompletionType {
             CompletionType::TreeMods => "mod-path",
             CompletionType::Type => "type",
             CompletionType::Unknown => "?",
+			CompletionType::Variable => "var",
         }
         .into()
     }
@@ -522,8 +524,9 @@ fn completions(
 impl From<MatchType> for CompletionType {
     fn from(mtype: MatchType) -> Self {
         match mtype {
-            MatchType::Enum => CompletionType::Enum,
+            MatchType::Enum(_) => CompletionType::Enum,
             MatchType::Function => CompletionType::Fn,
+			MatchType::Let(_) => CompletionType::Variable,
             MatchType::Macro => CompletionType::Macro,
             MatchType::Module => CompletionType::Mod,
             MatchType::Struct(_) => CompletionType::Struct,

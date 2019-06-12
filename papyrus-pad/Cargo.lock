@@ -343,8 +343,7 @@ dependencies = [
 
 [[package]]
 name = "cmdtree"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+version = "0.9.0"
 dependencies = [
  "colored 1.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1091,7 +1090,7 @@ dependencies = [
 name = "papyrus"
 version = "0.8.0"
 dependencies = [
- "cmdtree 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cmdtree 0.9.0",
  "colored 1.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-utils 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2263,7 +2262,6 @@ source = "git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b72
 "checksum clipboard2 0.1.1 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
 "checksum cmake 0.1.35 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
-"checksum cmdtree 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c9a0e3cf301adbdd4ac843bc98741eb7ff47da478498be1df7a7064ccdd01c8b"
 "checksum cocoa 0.18.4 (git+https://github.com/maps4print/azul-dependencies?rev=380b7e7cba8b728a3fc89fe28952e3b07aa624e7)" = "<none>"
 "checksum colored 1.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6cdb90b60f2927f8d76139c72dbde7e10c3a2bc47c8594c9c7a66529f2687c03"
 "checksum constant_time_eq 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "8ff012e225ce166d4422e0e78419d901719760f62ae2b7969ca6b564d1b54a9e"

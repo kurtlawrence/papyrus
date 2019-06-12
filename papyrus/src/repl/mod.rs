@@ -113,7 +113,7 @@ pub struct Repl<S, Data> {
 /// The inner configuration data of the repl.
 pub struct ReplData<Data> {
     /// The REPL commands as a `cmdtree::Commander`.
-    pub cmdtree: Commander<'static, CommandResult<Data>>,
+    pub cmdtree: Commander<CommandResult<Data>>,
 
     /// The file map of relative paths.
     pub(crate) file_map: pfh::FileMap,

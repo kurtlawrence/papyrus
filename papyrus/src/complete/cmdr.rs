@@ -4,12 +4,14 @@
 
 use super::*;
 use cmdtree::Commander;
+use cmdtree::completion::CompletionInfo;
+use std::borrow::Cow;
 
 /// Completion items for the [`cmdtree`] class and action structure.
 ///
 /// [`cmdtree`]: cmdtree
 pub struct TreeCompleter {
-    items: Vec<String>,
+    items: Vec<CompletionInfo>,
 }
 
 impl TreeCompleter {
@@ -19,7 +21,7 @@ impl TreeCompleter {
 
         items.iter_mut().for_each(|x| {
             if cmdr.at_root() {
-                x.insert(0, '.');
+                x.completestr.insert(0, '.');
             }
         });
 
@@ -32,7 +34,7 @@ impl TreeCompleter {
     }
 
     /// Get the completions of the tree structure if it matches the line.
-    pub fn complete<'a>(&'a self, line: &'a str) -> impl Iterator<Item = &'a str> {
+    pub fn complete<'b>(&'b self, line: &'b str) -> impl Iterator<Item = (&'b str, &'b CompletionInfo)> {
         cmdtree::completion::tree_completions(line, self.items.iter())
     }
 }
@@ -52,7 +54,7 @@ impl ActionArgComplete {
 
         items.iter_mut().for_each(|x| {
             if cmdr.at_root() {
-                x.match_str.insert(0, '.');
+                x.info.completestr.insert(0, '.');
             }
         });
 
@@ -65,15 +67,16 @@ impl ActionArgComplete {
     pub fn find<'a>(&self, line: &'a str, valid: &[&str]) -> Option<ArgComplete<'a>> {
         self.items
             .iter()
-            .find(|x| line.starts_with(x.match_str.as_str()))
+            .find(|x| line.starts_with(x.info.completestr.as_str()))
             .and_then(|x| {
                 if valid.contains(&x.qualified_path.as_str()) {
-                    let line = &line[x.match_str.len()..];
+                    let line = &line[x.info.completestr.len()..];
                     let word_start = word_break_start(line, &[' ']);
                     Some(ArgComplete {
                         line,
                         word: &line[word_start..],
                         word_start,
+						help_msg: x.info.help_msg.inner_cow.clone()
                     })
                 } else {
                     None
@@ -96,6 +99,8 @@ pub struct ArgComplete<'a> {
     pub word: &'a str,
     /// The start index inside `line` of `word`.
     pub word_start: usize,
+	/// The help message of the command action.
+	pub help_msg: Cow<'static, str>,
 }
 
 #[cfg(test)]
