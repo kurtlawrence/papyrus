@@ -2,6 +2,7 @@
 extern crate papyrus;
 
 use azul::prelude::*;
+use azul::window::{Window, WindowCreateError, WindowSize};
 use papyrus_pad::*;
 use std::sync::{Arc, RwLock};
 
@@ -47,32 +48,55 @@ fn main() {
     )
     .unwrap();
 
-    let css = create_css();
-
-    let window = if cfg!(debug_assertions) {
-        std::fs::write("hot-reload.css", create_css()).unwrap();
-        app.create_hot_reload_window(
-            WindowCreateOptions::default(),
-            css::hot_reload("hot-reload.css", std::time::Duration::from_millis(1000)),
-        )
-        .unwrap()
-
-    // app.create_window(WindowCreateOptions::default(), css::from_str(&css).unwrap())
-    //     .unwrap()
-    } else {
-        app.create_window(WindowCreateOptions::default(), css::from_str(&css).unwrap())
-            .unwrap()
+    let mut window_state = WindowState::default();
+    window_state.size = WindowSize {
+        dimensions: LogicalSize {
+            width: 1200.0,
+            height: 1000.0,
+        },
+        ..WindowSize::default()
     };
+    window_state.title = String::from("Papyrus Pad");
+
+    let window_create_options = WindowCreateOptions {
+        state: window_state,
+        ..WindowCreateOptions::default()
+    };
+
+    let window = create_window(&mut app, window_create_options).unwrap();
 
     app.run(window).unwrap();
 }
 
-fn create_css() -> String {
+#[cfg(debug_assertions)]
+fn create_window<T>(
+    app: &mut App<T>,
+    options: WindowCreateOptions<T>,
+) -> Result<Window<T>, WindowCreateError> {
     use azul_theming::*;
 
-    let mut css = String::new();
+    let interval = std::time::Duration::from_secs(1);
 
-    css.push_str(papyrus_pad::PAD_CSS);
+    hot_reload(
+        "hot-reload.css",
+        "hot-reload-injected.css",
+        themes::dark_theme(),
+        interval,
+    );
 
-    inject_theme(&css, &themes::dark_theme())
+    let css = css::hot_reload("hot-reload-injected.css", interval);
+
+    app.create_hot_reload_window(options, css)
+}
+
+#[cfg(not(debug_assertions))]
+fn create_window<T>(
+    app: &mut App<T>,
+    options: WindowCreateOptions<T>,
+) -> Result<Window<T>, WindowCreateError> {
+    use azul_theming::*;
+
+    let css = css::from_str(&inject_theme(papyrus_pad::PAD_CSS, &themes::dark_theme())).unwrap();
+
+    app.create_window(options, css)
 }

@@ -9,6 +9,7 @@ use std::borrow::BorrowMut;
 const WINDOW_LMD: EventFilter = EventFilter::Window(WindowEventFilter::LeftMouseDown);
 
 const SPACE: char = ' ';
+const LINE_HEIGHT: f32 = 25.0; // px
 
 enum Input {
     Backspace,
@@ -276,7 +277,10 @@ impl ReplTerminal {
         term_div.add_child(output);
 
         // Completion
-        if let Some(prompt) = CompletionPrompt::dom(&state.completion, info) {
+        let top = state.term_render.lines.len() as f32 * LINE_HEIGHT;
+        let left = 0.0;
+
+        if let Some(prompt) = CompletionPrompt::dom(&state.completion, info, top, left) {
             term_div.add_child(prompt);
         }
 

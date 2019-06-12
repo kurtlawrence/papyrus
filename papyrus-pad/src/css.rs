@@ -2,19 +2,16 @@
 pub const PAD_CSS: &'static str = r##"
 .ansi-renderer-line {
 	flex-direction: row;
+	height: 25px;
 }
 
 .ansi-renderer-text {
-	color: [[ ansi_esc_color | white ]];
-	line-height: 135%;
-}
-
-.ansi-renderer-text:hover {
-	border: 1px solid #9b9b9b;
+	color: [[ ansi_esc_color | !z0-fg-colour ]];
 }
 
 .repl-terminal {
-	background-color: black;
+	position: relative;
+	background-color: !z0-bg-colour;
 	padding: 5px;
 	text-align: left;
 	font-size: 1em;
@@ -27,8 +24,8 @@ pub const PAD_CSS: &'static str = r##"
 	left: [[ left | 0px ]];
 	top: [[ top | 0px ]];
 
-	background-color: white;
-
+	color: !z0-fg-colour;	
+	background-color: !z2-bg-colour;
 }
 
 .completion-prompt-item {
@@ -43,7 +40,12 @@ pub const PAD_CSS: &'static str = r##"
 }
 
 .completion-prompt-item-kb {
-	background: blue;
+	background: !z3-fg-colour;
+}
+
+.completion-prompt-item-type {
+	text-align: right;
+	color: !z2-fg-colour;
 }
 
 .completion-prompt-info {
@@ -52,6 +54,5 @@ pub const PAD_CSS: &'static str = r##"
 	left: 200px;
 
 	font-size: 8pt;
-	word-wrap: normal;
 }
 "##;

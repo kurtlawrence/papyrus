@@ -236,9 +236,12 @@ pub struct CompletionPrompt;
 impl CompletionPrompt {
     /// Draw a completion prompt with the completions.
     /// Will return `None` if `last_completions` is empty.
+    /// `top` and `left` are relative to the container they are in.
     pub fn dom<T: 'static>(
         state: &AppValue<CompletionPromptState<T>>,
         info: &mut LayoutInfo<T>,
+        top: f32,
+        left: f32,
     ) -> Option<Dom<T>> {
         if state.last_completions.is_empty() {
             None
@@ -258,7 +261,7 @@ impl CompletionPrompt {
                 DefaultCallback(CompletionPromptState::priv_on_mouse_leave),
             );
 
-            let mut container = state
+            let mut prompt = state
                 .last_completions
                 .items
                 .iter()
@@ -272,7 +275,10 @@ impl CompletionPrompt {
                         )
                         .with_tab_index(TabIndex::Auto)
                         .with_child(Dom::label(x.completion.to_owned()))
-                        .with_child(Dom::label(x.completion_type.dom_string()));
+                        .with_child(
+                            Dom::label(x.completion_type.dom_string())
+                                .with_class("completion-prompt-item-type"),
+                        );
 
                     item.add_default_callback_id(On::MouseEnter, menter_cb_id);
                     item.add_default_callback_id(On::MouseLeave, mleave_cb_id);
@@ -285,18 +291,20 @@ impl CompletionPrompt {
                 })
                 .collect::<Dom<T>>()
                 .with_class("completion-prompt")
+                .with_css_override("top", CssProperty::Top(LayoutTop::px(top)))
+                .with_css_override("left", CssProperty::Left(LayoutLeft::px(left)))
                 .with_tab_index(TabIndex::Auto); // make focusable
 
-            container.add_default_callback_id(FOCUS_VKDOWN, focus_vkdown_cb_id);
+            prompt.add_default_callback_id(FOCUS_VKDOWN, focus_vkdown_cb_id);
 
             // Add a context and documentation panel beside other one.
             if let Some(item) = state.last_completions.items.get(state.kb_focus) {
-                container.add_child(
+                prompt.add_child(
                     Dom::div()
                         .with_class("completion-prompt-info")
                         .with_css_override(
                             "top",
-                            CssProperty::Top(LayoutHeight::px(state.kb_focus as f32 * ITEM_HEIGHT)),
+                            CssProperty::Top(LayoutTop::px(state.kb_focus as f32 * ITEM_HEIGHT)),
                         )
                         .with_child(Dom::label(item.contextstr.to_string()))
                         .with_child(Dom::label(
@@ -305,7 +313,7 @@ impl CompletionPrompt {
                 );
             }
 
-            Some(container)
+            Some(prompt)
         }
     }
 }
@@ -409,9 +417,12 @@ struct Completion {
 #[derive(Copy, Clone)]
 enum CompletionType {
     Cmd,
+    Enum,
     Fn,
+    Macro,
     Mod,
     Struct,
+    Trait,
     TreeMods,
     Type,
     Unknown,
@@ -421,9 +432,12 @@ impl CompletionType {
     fn dom_string(&self) -> DomString {
         match self {
             CompletionType::Cmd => "cmd",
+            CompletionType::Enum => "enum",
             CompletionType::Fn => "fn",
+            CompletionType::Macro => "macro",
             CompletionType::Mod => "mod",
             CompletionType::Struct => "struct",
+            CompletionType::Trait => "trait",
             CompletionType::TreeMods => "mod-path",
             CompletionType::Type => "type",
             CompletionType::Unknown => "?",
@@ -508,10 +522,18 @@ fn completions(
 impl From<MatchType> for CompletionType {
     fn from(mtype: MatchType) -> Self {
         match mtype {
-            MatchType::Struct(_) => CompletionType::Struct,
-            MatchType::Module => CompletionType::Mod,
+            MatchType::Enum => CompletionType::Enum,
             MatchType::Function => CompletionType::Fn,
-            _ => CompletionType::Unknown,
+            MatchType::Macro => CompletionType::Macro,
+            MatchType::Module => CompletionType::Mod,
+            MatchType::Struct(_) => CompletionType::Struct,
+            MatchType::Trait => CompletionType::Trait,
+            MatchType::Type => CompletionType::Type,
+            x => {
+                eprintln!("need to handle MatchType");
+                dbg!(x);
+                CompletionType::Unknown
+            }
         }
     }
 }
