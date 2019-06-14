@@ -213,7 +213,7 @@ impl<T: Terminal> linefeed::Completer<T> for Completer {
 impl<T: Terminal> linefeed::Completer<T> for Completer {
     fn complete(
         &self,
-        _word: &str,
+        word: &str,
         prompter: &Prompter<T>,
         _start: usize,
         _end: usize,
@@ -222,10 +222,17 @@ impl<T: Terminal> linefeed::Completer<T> for Completer {
 
         let line = prompter.buffer();
 
+        let start = if !word.is_empty() && line.starts_with(&format!(".{}", word)) {
+            1
+        } else {
+            0
+        };
+
         let trees = self
             .tree_cmplter
             .complete(line)
-            .map(|x| Completion::simple(x.0.to_string()));
+            .map(|x| &x.0[start..])
+            .map(|x| Completion::simple(x.to_string()));
         v.extend(trees);
 
         let mods = self
