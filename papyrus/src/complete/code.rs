@@ -2,10 +2,12 @@
 //!
 //! [`racer`]: racer
 use super::*;
+use std::io;
+use std::path::Path;
 
-use racer::{BytePos, FileCache, Location, Match, Session};
+use racer::{BytePos, FileCache, Location, Match};
 
-const LIBRS: &str = "lib.rs";
+const LIBRS: &'static str = "lib.rs";
 
 /// Completion used for rust code in the repl.
 pub struct CodeCompleter {
@@ -30,11 +32,10 @@ impl CodeCompleter {
     }
 
     /// Get completions that would match a string injected into the current repl state.
-    pub fn complete(&self, injection: &str, limit: Option<usize>) -> Vec<Match> {
+    pub fn complete(&self, injection: &str, limit: Option<usize>, cache: &CodeCache) -> Vec<Match> {
         let limit = limit.unwrap_or(std::usize::MAX);
 
-        let cache = FileCache::default();
-        let session = Session::new(&cache);
+        let session = racer::Session::new(&cache.cache);
 
         let (contents, pos) = self.inject(injection);
 
@@ -60,6 +61,48 @@ impl CodeCompleter {
         let pos = (self.split.start + injection.len()).into();
 
         (s, pos)
+    }
+}
+
+/// Caching for code.
+pub struct CodeCache {
+    cache: FileCache,
+}
+
+impl CodeCache {
+	/// Construct new cache.
+    pub fn new() -> Self {
+        Self {
+            cache: FileCache::new(PapyrusCodeFileLoader),
+        }
+    }
+}
+
+struct PapyrusCodeFileLoader;
+
+impl racer::FileLoader for PapyrusCodeFileLoader {
+    fn load_file(&self, path: &Path) -> io::Result<String> {
+        use std::fs::File;
+        use std::io::Read;
+
+        // copied from racers implementation and special handling for lib.rs
+
+        if path == Path::new(LIBRS) {
+            Ok(String::new())
+        } else {
+            let mut rawbytes = Vec::new();
+            let mut f = File::open(path)?;
+            f.read_to_end(&mut rawbytes)?;
+
+            // skip BOM bytes, if present
+            if rawbytes.len() > 2 && rawbytes[0..3] == [0xEF, 0xBB, 0xBF] {
+                std::str::from_utf8(&rawbytes[3..])
+                    .map(|s| s.to_owned())
+                    .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+            } else {
+                String::from_utf8(rawbytes).map_err(|err| io::Error::new(io::ErrorKind::Other, err))
+            }
+        }
     }
 }
 

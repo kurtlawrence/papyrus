@@ -3,8 +3,8 @@
 //! [`cmdtree`]: cmdtree
 
 use super::*;
-use cmdtree::Commander;
 use cmdtree::completion::CompletionInfo;
+use cmdtree::Commander;
 use std::borrow::Cow;
 
 /// Completion items for the [`cmdtree`] class and action structure.
@@ -34,7 +34,10 @@ impl TreeCompleter {
     }
 
     /// Get the completions of the tree structure if it matches the line.
-    pub fn complete<'b>(&'b self, line: &'b str) -> impl Iterator<Item = (&'b str, &'b CompletionInfo)> {
+    pub fn complete<'b>(
+        &'b self,
+        line: &'b str,
+    ) -> impl Iterator<Item = (&'b str, &'b CompletionInfo)> {
         cmdtree::completion::tree_completions(line, self.items.iter())
     }
 }
@@ -76,7 +79,7 @@ impl ActionArgComplete {
                         line,
                         word: &line[word_start..],
                         word_start,
-						help_msg: x.info.help_msg.inner_cow.clone()
+                        help_msg: x.info.help_msg.inner_cow.clone(),
                     })
                 } else {
                     None
@@ -99,8 +102,8 @@ pub struct ArgComplete<'a> {
     pub word: &'a str,
     /// The start index inside `line` of `word`.
     pub word_start: usize,
-	/// The help message of the command action.
-	pub help_msg: Cow<'static, str>,
+    /// The help message of the command action.
+    pub help_msg: Cow<'static, str>,
 }
 
 #[cfg(test)]

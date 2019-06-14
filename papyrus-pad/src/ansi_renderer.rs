@@ -40,7 +40,7 @@ impl AnsiLineRenderer {
             let chrange = words
                 .convert_byte_range(cat.start..cat.end)
                 .expect("should be on char boundaries");
-				
+
             self.display.push((chrange, prop));
         }
     }
@@ -90,8 +90,6 @@ impl ReplOutputRenderer {
                     l
                 }
             };
-
-			dbg!(&line);
 
             self.lines
                 .last_mut()

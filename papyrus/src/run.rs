@@ -1,5 +1,5 @@
 #[cfg(feature = "racer-completion")]
-use crate::complete::code::CodeCompleter;
+use crate::complete::code::{CodeCache, CodeCompleter};
 use crate::complete::{cmdr::TreeCompleter, modules::ModulesCompleter};
 use crate::output;
 use crate::prelude::*;
@@ -237,12 +237,15 @@ impl<T: Terminal> linefeed::Completer<T> for Completer {
         }
 
         if !line.starts_with('.') {
+            let cache = CodeCache::new();
             let code = self.code_cmplter.as_ref().map(|x| {
-                x.complete(line, Some(10)).into_iter().map(|x| Completion {
-                    completion: x.matchstr,
-                    display: None,
-                    suffix: Suffix::None,
-                })
+                x.complete(line, Some(10), &cache)
+                    .into_iter()
+                    .map(|x| Completion {
+                        completion: x.matchstr,
+                        display: None,
+                        suffix: Suffix::None,
+                    })
             });
             if let Some(code) = code {
                 v.extend(code);

@@ -4,7 +4,11 @@ use azul::{
     callbacks::DefaultCallback,
     css::{CssProperty, LayoutHeight},
 };
-use papyrus::complete::{cmdr::TreeCompleter, code::CodeCompleter, modules::ModulesCompleter};
+use papyrus::complete::{
+    cmdr::TreeCompleter,
+    code::{CodeCache, CodeCompleter},
+    modules::ModulesCompleter,
+};
 use papyrus::prelude::*;
 use papyrus::racer::MatchType;
 use std::borrow::Cow;
@@ -73,6 +77,7 @@ impl<T> CompletionPromptState<T> {
             let line_msg = ct_line_msg;
             let data = ct_data;
             let completions_msg = ct_completions_msg;
+            let code_cache = CodeCache::new();
 
             loop {
                 if let Some(input) = line_msg.take() {
@@ -84,7 +89,13 @@ impl<T> CompletionPromptState<T> {
                         limit,
                     } = input;
 
-                    let items = completions(&completers, &input_buffer, &input_buffer_line, limit);
+                    let items = completions(
+                        &completers,
+                        &input_buffer,
+                        &input_buffer_line,
+                        limit,
+                        &code_cache,
+                    );
 
                     let completions = Completions {
                         input_buffer_line,
@@ -459,6 +470,7 @@ fn completions(
     input_buffer: &str,
     input_buffer_line: &str,
     limit: Option<usize>,
+    code_cache: &CodeCache,
 ) -> Vec<Completion> {
     let limit = limit.unwrap_or(std::usize::MAX);
 
@@ -521,7 +533,11 @@ fn completions(
         v.extend(
             completer
                 .code
-                .complete(input_buffer, Some(limit.saturating_sub(v.len())))
+                .complete(
+                    input_buffer,
+                    Some(limit.saturating_sub(v.len())),
+                    code_cache,
+                )
                 .into_iter()
                 .map(|x| Completion {
                     completion: x.matchstr,

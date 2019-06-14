@@ -63,5 +63,5 @@ pub mod prelude {
     pub use crate::repl::{self, Repl, ReplData};
 }
 
-pub use ::racer;
 pub use ::cmdtree;
+pub use ::racer;
