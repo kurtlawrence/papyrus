@@ -28,9 +28,9 @@ where
     cb!(priv_on_mouse_down, on_mouse_down);
 }
 
-pub struct PathTree;
+pub struct ReplModulesTree;
 
-impl PathTree {
+impl ReplModulesTree {
     pub fn dom<T, D>(pad: &AppValue<PadState<T, D>>, info: &mut LayoutInfo<T>) -> Dom<T>
     where
         T: 'static + BorrowMut<AppValue<PadState<T, D>>>,

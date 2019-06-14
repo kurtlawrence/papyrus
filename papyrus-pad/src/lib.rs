@@ -17,12 +17,12 @@ pub mod colour;
 mod completion;
 mod eval_state;
 mod history;
+pub mod mods_tree;
 pub mod pad;
-pub mod path_tree;
 pub mod repl_terminal;
 pub mod styles;
 
-pub use self::path_tree::PathTree;
+pub use self::mods_tree::ReplModulesTree;
 pub use self::repl_terminal::ReplTerminal;
 
 use eval_state::EvalState;

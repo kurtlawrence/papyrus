@@ -28,7 +28,7 @@ impl Layout for MyApp {
     fn layout(&self, mut info: LayoutInfo<Self>) -> Dom<Self> {
         Dom::div()
             .with_id("pad")
-            .with_child(path_tree::PathTree::dom(&self.repl_term, &mut info))
+            .with_child(ReplModulesTree::dom(&self.repl_term, &mut info))
             .with_child(ReplTerminal::dom(&self.repl_term, &mut info))
     }
 }

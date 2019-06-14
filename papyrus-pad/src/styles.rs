@@ -57,8 +57,8 @@ pub const REPL_TERM_CSS: &'static str = r##"
 }
 "##;
 
-pub const PATH_TREE_CSS: &'static str = r##"
-.path-tree {
+pub const MODS_TREE_CSS: &'static str = r##"
+.mods-tree {
 	width: 250px;
 	padding-left: 3px;
 	
@@ -69,13 +69,13 @@ pub const PATH_TREE_CSS: &'static str = r##"
 	background-color: !z1-bg-colour;
 }
 
-.path-tree-item {
+.mods-tree-item {
 	height: 20px;
 
 	color: !z2-fg-colour;
 }
 
-.path-tree-item:hover{
+.mods-tree-item:hover{
 	color: !z0-fg-colour;
 	background-color: !z3-bg-colour;
 }
