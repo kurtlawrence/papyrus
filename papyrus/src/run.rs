@@ -139,7 +139,7 @@ impl Completer {
     fn build<T>(rdata: &repl::ReplData<T>, racer: bool) -> Self {
         let tree_cmplter = TreeCompleter::build(&rdata.cmdtree);
 
-        let mod_cmplter = ModulesCompleter::build(&rdata.cmdtree, rdata.file_map());
+        let mod_cmplter = ModulesCompleter::build(&rdata.cmdtree, rdata.mods_map());
 
         let code_cmplter = if racer {
             Some(CodeCompleter::build(rdata))

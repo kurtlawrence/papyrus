@@ -19,9 +19,9 @@ impl CodeCompleter {
     /// Build the code completion state. Uses the current repl state.
     pub fn build<T>(repl_data: &crate::repl::ReplData<T>) -> Self {
         let (last_code, map) =
-            crate::pfh::code::construct_source_code(repl_data.file_map(), repl_data.linking());
+            crate::pfh::code::construct_source_code(repl_data.mods_map(), repl_data.linking());
 
-        let split = map.get(repl_data.current_file()).cloned().unwrap_or(0..0); // return an empty range if this fails
+        let split = map.get(repl_data.current_mod()).cloned().unwrap_or(0..0); // return an empty range if this fails
 
         CodeCompleter { last_code, split }
     }
@@ -164,7 +164,7 @@ mod tests {
 
         assert_eq!(&s, "fn apple() {} \n\n fn main() { ap }");
 
-        let matches = cc.complete("ap", None);
+        let matches = cc.complete("ap", None, &CodeCache::new());
 
         assert_eq!(matches.get(0).map(|x| x.matchstr.as_str()), Some("apple"));
     }

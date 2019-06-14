@@ -1,5 +1,5 @@
 use super::*;
-use crate::pfh::{self, linking};
+use crate::pfh::{self, linking, SourceCode};
 
 impl<Data> Default for ReplData<Data> {
     fn default() -> Self {
@@ -12,12 +12,13 @@ impl<Data> Default for ReplData<Data> {
                 .into_commander()
                 .expect("empty should pass"),
             mods_map: map,
-            current_file: lib_path,
+            current_mod: lib_path,
             prompt_colour: Color::Cyan,
             out_colour: Color::BrightGreen,
             compilation_dir: default_compile_dir(),
             linking: LinkingConfiguration::default(),
             redirect_on_execution: true,
+            editing: None,
         };
 
         r.with_cmdtree_builder(Builder::new("papyrus"))
@@ -52,9 +53,15 @@ impl<Data> ReplData<Data> {
         self
     }
 
-    /// The current file/mod that is being repl'd on.
-    pub fn current_file(&self) -> &Path {
-        self.current_file.as_path()
+    /// The current mod that is being repl'd on.
+    pub fn current_mod(&self) -> &Path {
+        self.current_mod.as_path()
+    }
+
+    pub fn current_src(&self) -> &SourceCode {
+        self.mods_map
+            .get(self.current_mod())
+            .expect("thin shouldn't fail, always should exist.")
     }
 
     /// The current file map, mappings of modules to source code.

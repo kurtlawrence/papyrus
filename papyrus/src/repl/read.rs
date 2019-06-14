@@ -76,7 +76,7 @@ impl<D> Repl<Read, D> {
     /// The prompt.
     pub fn prompt(&self) -> String {
         let mod_path =
-            format!("[{}]", self.data.current_file.display()).color(self.data.prompt_colour);
+            format!("[{}]", self.data.current_mod.display()).color(self.data.prompt_colour);
         let cmdtree_path = self.data.cmdtree.path().color(self.data.prompt_colour);
         let m = if self.data.linking.mutable {
             "-mut"

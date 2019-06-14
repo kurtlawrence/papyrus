@@ -117,8 +117,8 @@ pub struct ReplData<Data> {
 
     /// The modules map of relative paths.
     pub(crate) mods_map: pfh::ModsMap,
-    /// The current editing and executing file.
-    pub(crate) current_file: PathBuf,
+    /// The current editing and executing mod.
+    pub(crate) current_mod: PathBuf,
 
     /// The colour of the prompt region. ie `papyrus`.
     pub prompt_colour: Color,
@@ -135,6 +135,18 @@ pub struct ReplData<Data> {
     /// Flag if output is to be redirected. Generally redirection is needed,
     /// `DefaultTerminal` however will not require it (fucks linux).
     redirect_on_execution: bool,
+
+    /// Flag for editing a statement, item, or crate.
+    ///
+    /// If a value is set when an evaluation starts, the input buffer
+    /// will be used to overwrite the element at the given index (if it exists).
+    /// Compilation and evaluation could both fail, but the change _will not be reverted_.
+    ///
+    /// If the index is outside the array bounds then there will be no change. Evaluation
+    /// phase will still run.
+    ///
+    /// [`read()`]: Repl::read
+    pub editing: Option<EditingIndex>,
 }
 
 /// Repl read state.
@@ -191,6 +203,19 @@ pub enum ReadResult<D> {
     Read(Repl<Read, D>),
     /// The repl is in an eval state.
     Eval(Repl<Evaluate, D>),
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct EditingIndex {
+    pub editing: Editing,
+    pub index: usize,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum Editing {
+    Stmt,
+    Item,
+    Crate,
 }
 
 /// `$HOME/.papyrus`

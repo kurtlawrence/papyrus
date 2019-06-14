@@ -113,7 +113,11 @@ mod tests {
     #[test]
     fn arg_complete_test() {
         let items = vec![cmdtree::completion::ActionMatch {
-            match_str: "some action ".to_string(),
+            info: CompletionInfo {
+                completestr: "some action ".to_string(),
+                itemtype: cmdtree::ItemType::Action,
+                help_msg: "".into(),
+            },
             qualified_path: "some..action".to_string(),
         }];
 
@@ -128,7 +132,8 @@ mod tests {
             ArgComplete {
                 line: "arg1",
                 word: "arg1",
-                word_start: 0
+                word_start: 0,
+                help_msg: Cow::Borrowed("")
             }
         );
 
@@ -139,7 +144,8 @@ mod tests {
             ArgComplete {
                 line: "arg1 argu",
                 word: "argu",
-                word_start: 5
+                word_start: 5,
+                help_msg: Cow::Borrowed("")
             }
         );
     }

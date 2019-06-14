@@ -1,6 +1,6 @@
 use super::*;
-use crate::repl::ReplData;
-use cmdtree::{BuildError, Builder, BuilderChain};
+use crate::repl::{Editing, EditingIndex, ReplData};
+use cmdtree::{BuildError, Builder, BuilderChain, Commander};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
@@ -49,24 +49,36 @@ impl<D> ReplData<D> {
         &mut self,
         builder: Builder<CommandResult<D>>,
     ) -> Result<&mut Self, BuildError> {
-        let cmdr = builder
-            .root()
-            .add_action("mut", "Begin a mutable block of code", |_, _| {
-                CommandResult::BeginMutBlock
-            })
-            .begin_class("mod", "Handle modules")
-            .add_action(
-                "switch",
-                "Switch to a module, creating one if necessary. switch path/to/module",
-                |wtr, args| switch_module(args, wtr),
-            )
-            .end_class()
-            .into_commander()?;
-
-        self.cmdtree = cmdr;
-
+        self.cmdtree = papyrus_cmdr(builder)?;
         Ok(self)
     }
+}
+
+fn papyrus_cmdr<D>(
+    builder: Builder<CommandResult<D>>,
+) -> Result<Commander<CommandResult<D>>, BuildError> {
+    builder
+        .root()
+        .add_action("mut", "Begin a mutable block of code", |_, _| {
+            CommandResult::BeginMutBlock
+        })
+        .begin_class("edit", "Edit previous input")
+        .begin_class("stmt", "Edit previous statements")
+        .add_action(
+            "alter",
+            "Alter statement contents. args: stmt-number",
+            |wtr, args| alter(args, wtr, Editing::Stmt),
+        )
+        .end_class()
+        .end_class()
+        .begin_class("mod", "Handle modules")
+        .add_action(
+            "switch",
+            "Switch to a module, creating one if necessary. switch path/to/module",
+            |wtr, args| switch_module(args, wtr),
+        )
+        .end_class()
+        .into_commander()
 }
 
 fn switch_module<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
@@ -84,7 +96,7 @@ fn switch_module<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
                     }
                 }
 
-                repl_data.current_file = path.to_path_buf();
+                repl_data.current_mod = path.to_path_buf();
 
                 String::new()
             })
@@ -124,6 +136,42 @@ fn make_path(path: &str) -> Option<PathBuf> {
     }
 
     Some(PathBuf::from(path))
+}
+
+fn alter<D, W: Write>(args: &[&str], mut wtr: W, t: Editing) -> CommandResult<D> {
+    if let Some(idx) = args.get(0) {
+        match parse_idx(idx, t) {
+            Ok(ei) => CommandResult::repl_data_fn(move |data, wtr| {
+                let src = data.current_src();
+
+                let len = match ei.editing {
+                    Editing::Stmt => src.stmts.len(),
+                    Editing::Item => src.items.len(),
+                    Editing::Crate => src.crates.len(),
+                };
+
+                if ei.index >= len {
+                    String::from("index is outside of range")
+                } else {
+                    data.editing = Some(ei);
+                    String::new()
+                }
+            }),
+            Err(e) => {
+                writeln!(wtr, "failed parsing {} as number: {}", idx, e).ok();
+                CommandResult::Empty
+            }
+        }
+    } else {
+        writeln!(wtr, "alter expects an index number").ok();
+        CommandResult::Empty
+    }
+}
+
+fn parse_idx(s: &str, editing: Editing) -> Result<EditingIndex, String> {
+    s.parse()
+        .map_err(|e| format!("{}", e))
+        .map(|index| EditingIndex { editing, index })
 }
 
 #[test]

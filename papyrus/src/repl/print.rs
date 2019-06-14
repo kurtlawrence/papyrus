@@ -8,14 +8,7 @@ impl<D> Repl<Print, D> {
         // write
         {
             if self.state.as_out {
-                let num = self
-                    .data
-                    .mods_map
-                    .get(&self.data.current_file)
-                    .expect("file map does not contain key")
-                    .stmts
-                    .len()
-                    .saturating_sub(1);
+                let num = self.data.current_src().stmts.len().saturating_sub(1);
 
                 let out_stmt = format!("[out{}]", num);
 

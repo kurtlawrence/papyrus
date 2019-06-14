@@ -384,7 +384,7 @@ mod tests {
         ]
         .into_iter()
         .collect();
-        let mut i = file_map_with_lvls(&map).map(|x| (x.0, x.1));
+        let mut i = mods_map_with_lvls(&map).map(|x| (x.0, x.1));
 
         assert_eq!(i.next(), Some((0, 1)));
         assert_eq!(i.next(), Some((1, 2)));
