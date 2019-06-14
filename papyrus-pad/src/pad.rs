@@ -30,9 +30,18 @@ impl<T, D> PadState<T, D> {
 
     /// Functions to run after the evaluation phase finished.
     pub fn eval_finished(&mut self) {
-        if let Some(repl) = self.repl.brw_repl() {
+        if let Some(repl) = self.repl.brw_read() {
             self.completion.build_completers(&repl.data);
         }
+    }
+
+    pub fn set_line_input(&mut self, line: String) -> UpdateScreen {
+        self.input_buffer = line;
+
+        self.repl.take_read().map(|mut repl| {
+            repl.line_input(&self.input_buffer);
+            self.repl.put_read(repl);
+        })
     }
 }
 

@@ -36,13 +36,13 @@ where
         let redraw = match input {
             Input::Backspace => {
                 self.input_buffer.pop();
-                self.set_repl_line_input();
+                self.line_using_buf();
                 self.completion.clear();
                 Redraw
             }
             Input::Char(ch) => {
                 self.input_buffer.push(ch);
-                self.set_repl_line_input();
+                self.line_using_buf();
                 self.start_completion_timer(app);
                 Redraw
             }
@@ -59,7 +59,7 @@ where
                         self.input_buffer.clear();
                     }
 
-                    self.set_repl_line_input();
+                    self.line_using_buf();
                     Redraw
                 } else {
                     DontRedraw
@@ -72,37 +72,14 @@ where
                     DontRedraw
                 }
             }
-            Input::Return => {
-                self.completion.clear();
-
-                self.history.add_unique(self.input_buffer.clone());
-                self.history.reset_position();
-
-                self.input_buffer.clear();
-
-                match self.repl.take_read() {
-                    Some(repl) => {
-                        match repl.read() {
-                            ReadResult::Read(r) => {
-                                self.repl.put_read(r);
-                            }
-                            ReadResult::Eval(r) => {
-                                self.repl.put_eval(r.eval_async(&self.data));
-                                self.start_eval_timer(app);
-                            }
-                        }
-                        Redraw
-                    }
-                    None => DontRedraw,
-                }
-            }
+            Input::Return => self.read_input(app),
             Input::Tab => self.complete_input_buffer(self.completion.kb_focus),
             Input::Up => {
                 if !self.completion.will_render() {
                     if let Some(buf) = self.history.move_backwards() {
                         self.input_buffer.clear();
                         self.input_buffer.push_str(buf);
-                        self.set_repl_line_input();
+                        self.line_using_buf();
                         Redraw
                     } else {
                         DontRedraw
@@ -120,28 +97,44 @@ where
         redraw
     }
 
-    fn set_repl_line_input(&mut self) {
+    pub fn read_input(&mut self, app: &mut AppStateNoData<T>) -> UpdateScreen {
+        self.completion.clear();
+
+        self.history.add_unique(self.input_buffer.clone());
+        self.history.reset_position();
+
+        self.input_buffer.clear();
+
         match self.repl.take_read() {
-            Some(mut repl) => {
-                repl.line_input(&self.input_buffer);
-                self.repl.put_read(repl);
+            Some(repl) => {
+                match repl.read() {
+                    ReadResult::Read(r) => {
+                        self.repl.put_read(r);
+                    }
+                    ReadResult::Eval(r) => {
+                        self.repl.put_eval(r.eval_async(&self.data));
+                        self.start_eval_timer(app);
+                    }
+                }
+                Redraw
             }
-            None => (),
+            None => DontRedraw,
         }
+    }
+
+    fn line_using_buf(&mut self) {
+        let s = std::mem::replace(&mut self.input_buffer, String::new());
+        self.set_line_input(s);
     }
 
     fn complete_input_buffer(&mut self, idx: usize) -> UpdateScreen {
-        if let Some(item) = self.completion.complete_input_buffer_line(idx) {
-            self.input_buffer = item;
-            self.set_repl_line_input();
-            Redraw
-        } else {
-            DontRedraw
-        }
+        self.completion
+            .complete_input_buffer_line(idx)
+            .and_then(|item| self.set_line_input(item))
     }
 
     fn start_completion_timer(&mut self, app_state: &mut AppStateNoData<T>) {
-        if let Some(repl) = self.repl.brw_repl() {
+        if let Some(repl) = self.repl.brw_read() {
             self.completion.to_complete(
                 repl.input_buffer().to_owned(),
                 repl.input_buffer_line().to_owned(),

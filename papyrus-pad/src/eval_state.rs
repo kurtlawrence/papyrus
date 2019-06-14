@@ -20,7 +20,7 @@ impl<D> EvalState<D> {
         }
     }
 
-    pub fn brw_repl(&self) -> Option<&Read<D>> {
+    pub fn brw_read(&self) -> Option<&Read<D>> {
         match &self.variant {
             EvalStateVariant::Read(repl) => Some(repl),
             EvalStateVariant::Eval(_) => None,

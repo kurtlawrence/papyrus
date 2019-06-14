@@ -59,6 +59,9 @@ pub const REPL_TERM_CSS: &'static str = r##"
 
 pub const PATH_TREE_CSS: &'static str = r##"
 .path-tree {
+	width: 250px;
+	padding-left: 3px;
+	
 	text-align: left;
 	font-size: 10pt;
 	font-family: Lucida Console,Lucida Sans Typewriter,monaco,Bitstream Vera Sans Mono,monospace;
