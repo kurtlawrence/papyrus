@@ -48,6 +48,22 @@ impl SourceCode {
 pub struct StmtGrp(pub Vec<Statement>);
 
 impl StmtGrp {
+    pub fn src_line(&self) -> String {
+        let mut buf = String::with_capacity(self.assign_let_binding_length(0));
+
+        let stmts = &self.0;
+
+        for stmt in stmts {
+            buf.push_str(&stmt.expr);
+            if stmt.semi {
+                buf.push(';');
+            }
+            buf.push(' ');
+        }
+
+        buf
+    }
+
     /// Stringfy's the statements and assigns trailing expressions with `let out# = expr;`.
     fn assign_let_binding(&self, input_num: usize, buf: &mut String) {
         let stmts = &self.0;

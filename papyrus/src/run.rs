@@ -7,7 +7,7 @@ use crate::prelude::*;
 use linefeed::Suffix;
 use linefeed::Terminal;
 use linefeed::{Completion, DefaultTerminal, Interface, Prompter};
-use repl::{Read, ReadResult, Signal};
+use repl::{Editing, Read, ReadResult, Signal};
 use std::cmp::max;
 use std::io;
 use std::sync::Arc;
@@ -44,6 +44,20 @@ impl<D> Repl<Read, D> {
 
             let completer = Completer::build(&read.data, racer);
             term.set_completer(Arc::new(completer));
+
+            if let Some(ei) = read.data.editing {
+                let src = read.data.current_src();
+
+                let buf = match ei.editing {
+                    Editing::Crate => src.crates.get(ei.index).map(|x| &x.src_line).cloned(),
+                    Editing::Item => src.items.get(ei.index).cloned(),
+                    Editing::Stmt => src.stmts.get(ei.index).map(|x| x.src_line()),
+                };
+
+                if let Some(buf) = buf {
+                    term.set_buffer(&buf)?;
+                }
+            }
 
             let input = match term.read_line()? {
                 linefeed::ReadResult::Input(s) => s,
