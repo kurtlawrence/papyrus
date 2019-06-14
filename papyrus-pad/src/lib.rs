@@ -15,13 +15,13 @@ macro_rules! cb {
 pub mod ansi_renderer;
 pub mod colour;
 mod completion;
-mod css;
 mod eval_state;
 mod history;
 pub mod pad;
+pub mod path_tree;
 pub mod repl_terminal;
+pub mod styles;
 
-pub use self::css::PAD_CSS;
 pub use self::repl_terminal::ReplTerminal;
 
 use eval_state::EvalState;

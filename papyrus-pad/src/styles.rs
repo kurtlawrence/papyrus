@@ -1,5 +1,5 @@
-/// CSS for all pad items.
-pub const PAD_CSS: &'static str = r##"
+/// CSS for all items in `ReplTerminal` widget.
+pub const REPL_TERM_CSS: &'static str = r##"
 .ansi-renderer-line {
 	flex-direction: row;
 	height: 25px;
@@ -54,5 +54,26 @@ pub const PAD_CSS: &'static str = r##"
 	left: 200px;
 
 	font-size: 8pt;
+}
+"##;
+
+pub const PATH_TREE_CSS: &'static str = r##"
+.path-tree {
+	text-align: left;
+	font-size: 10pt;
+	font-family: Lucida Console,Lucida Sans Typewriter,monaco,Bitstream Vera Sans Mono,monospace;
+
+	background-color: !z1-bg-colour;
+}
+
+.path-tree-item {
+	height: 20px;
+
+	color: !z2-fg-colour;
+}
+
+.path-tree-item:hover{
+	color: !z0-fg-colour;
+	background-color: !z3-bg-colour;
 }
 "##;

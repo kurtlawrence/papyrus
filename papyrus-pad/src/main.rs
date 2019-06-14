@@ -26,7 +26,10 @@ impl std::borrow::Borrow<AppValue<TypedPadState>> for MyApp {
 
 impl Layout for MyApp {
     fn layout(&self, mut info: LayoutInfo<Self>) -> Dom<Self> {
-        Dom::div().with_child(ReplTerminal::dom(&self.repl_term, &mut info))
+        Dom::div()
+            .with_id("pad")
+            .with_child(path_tree::PathTree::dom(&self.repl_term))
+            .with_child(ReplTerminal::dom(&self.repl_term, &mut info))
     }
 }
 
@@ -95,8 +98,21 @@ fn create_window<T>(
     options: WindowCreateOptions<T>,
 ) -> Result<Window<T>, WindowCreateError> {
     use azul_theming::*;
+    use styles::*;
 
-    let css = css::from_str(&inject_theme(papyrus_pad::PAD_CSS, &themes::dark_theme())).unwrap();
+    let s: String = [PAD_CSS, REPL_TERM_CSS, PATH_TREE_CSS]
+        .into_iter()
+        .map(|x| x.to_owned())
+        .collect();
+
+    let css = css::from_str(&inject_theme(&s, &themes::dark_theme())).unwrap();
 
     app.create_window(options, css)
 }
+
+#[cfg(not(debug_assertions))]
+const PAD_CSS: &str = r##"
+#pad {
+	flex-direction: row;
+}
+"##;
