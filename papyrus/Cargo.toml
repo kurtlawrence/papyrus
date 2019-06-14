@@ -30,6 +30,7 @@ libloading =		{ version = "0.5",		default-features = false }
 linefeed = 			{ version = "0.6",		default-features = false,	optional = true }
 log = 				{ version = "0.4",		default-features = false }
 racer = 			{ version = "2.1",		default-features = false,	optional = true,	features = [ "metadata" ] }
+rustfmt-nightly =	{ version = "1.3",		default-features = false }
 syn = 				{ version = "0.15",		default-features = false,	optional = false,	features =  [ "full" ] }
 term_cursor =		{ version = "0.2",		default-features = false,	optional = true }
 
