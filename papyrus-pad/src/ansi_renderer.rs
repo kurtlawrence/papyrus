@@ -7,7 +7,7 @@ const PROPERTY_STR: &str = "ansi_esc_color";
 pub struct AnsiLineRenderer {
     id: Option<TextId>,
     /// Each text component to display.
-    display: Vec<(CharRange, CssProperty)>,
+    display: Vec<(CharRange, Option<CssProperty>)>,
 }
 
 impl AnsiLineRenderer {
@@ -28,12 +28,19 @@ impl AnsiLineRenderer {
         let categorised = cansi::categorise_text(words.get_str());
 
         for cat in categorised {
-            let prop = StyleTextColor(crate::colour::map(&cat.fg_colour)).into();
+            let col = cat.fg_colour;
+            use cansi::Color::*;
+
+            let prop = if col == Black || col == White || col == BrightBlack || col == BrightWhite {
+                None
+            } else {
+                Some(StyleTextColor(crate::colour::map(&cat.fg_colour)).into())
+            };
 
             let chrange = words
                 .convert_byte_range(cat.start..cat.end)
                 .expect("should be on char boundaries");
-
+				
             self.display.push((chrange, prop));
         }
     }
@@ -43,11 +50,13 @@ impl AnsiLineRenderer {
 
         if let Some(id) = self.id {
             for (chrange, prop) in &self.display {
-                line.add_child(
-                    Dom::text_slice(id, *chrange)
-                        .with_class("ansi-renderer-text")
-                        .with_css_override(PROPERTY_STR, prop.clone()),
-                );
+                let mut child = Dom::text_slice(id, *chrange).with_class("ansi-renderer-text");
+
+                if let Some(prop) = prop {
+                    child.add_css_override(PROPERTY_STR, prop.clone());
+                }
+
+                line.add_child(child);
             }
         }
 
@@ -81,6 +90,8 @@ impl ReplOutputRenderer {
                     l
                 }
             };
+
+			dbg!(&line);
 
             self.lines
                 .last_mut()
