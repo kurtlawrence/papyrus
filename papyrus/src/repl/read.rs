@@ -77,17 +77,35 @@ impl<D> Repl<Read, D> {
     pub fn prompt(&self) -> String {
         let mod_path =
             format!("[{}]", self.data.current_mod.display()).color(self.data.prompt_colour);
+
         let cmdtree_path = self.data.cmdtree.path().color(self.data.prompt_colour);
+
         let m = if self.data.linking.mutable {
             "-mut"
         } else {
             ""
         }
         .bright_red();
-        if self.more {
-            format!("{} {}{}.> ", mod_path, cmdtree_path, m)
+
+        let e = if let Some(ei) = self.data.editing {
+            format!(
+                "-editing-{}{}",
+                match ei.editing {
+                    Editing::Crate => "crate",
+                    Editing::Item => "item",
+                    Editing::Stmt => "stmt",
+                },
+                ei.index
+            )
         } else {
-            format!("{} {}{}=> ", mod_path, cmdtree_path, m)
+            String::new()
+        }
+        .bright_red();
+
+        if self.more {
+            format!("{} {}{}{}.> ", mod_path, cmdtree_path, m, e)
+        } else {
+            format!("{} {}{}{}=> ", mod_path, cmdtree_path, m, e)
         }
     }
 
