@@ -18,6 +18,18 @@ impl<S, D> Repl<S, D> {
             data_mrker,
         }
     }
+
+    pub fn editing_src(&self) -> Option<String> {
+        self.data.editing.and_then(|ei| {
+            let src = self.data.current_src();
+
+            match ei.editing {
+                Editing::Crate => src.crates.get(ei.index).map(|x| &x.src_line).cloned(),
+                Editing::Item => src.items.get(ei.index).cloned(),
+                Editing::Stmt => src.stmts.get(ei.index).map(|x| x.src_line()),
+            }
+        })
+    }
 }
 
 impl<S: fmt::Debug, D> fmt::Debug for Repl<S, D> {

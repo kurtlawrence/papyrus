@@ -100,7 +100,7 @@ fn create_window<T>(
     use azul_theming::*;
     use styles::*;
 
-    let s: String = [PAD_CSS, REPL_TERM_CSS, PATH_TREE_CSS]
+    let s: String = [PAD_CSS, REPL_TERM_CSS, MODS_TREE_CSS]
         .into_iter()
         .map(|x| x.to_owned())
         .collect();

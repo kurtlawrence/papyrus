@@ -32,6 +32,10 @@ impl<T, D> PadState<T, D> {
     pub fn eval_finished(&mut self) {
         if let Some(repl) = self.repl.brw_read() {
             self.completion.build_completers(&repl.data);
+
+            if let Some(src) = repl.editing_src() {
+                self.set_line_input(src);
+            }
         }
     }
 

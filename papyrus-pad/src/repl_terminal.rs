@@ -171,8 +171,6 @@ where
             None => (TerminateTimer::Terminate, false), // if there is no eval, may as well stop checking
         };
 
-        let redraw = pad.term_render.handle_line_changes(app_resources); // update any line changes no matter what
-
         if finished {
             // execute eval_finished on PadState
             pad.eval_finished();
@@ -180,6 +178,10 @@ where
             // execute the after_eval_fn that is stored on pad
             (pad.after_eval_fn)(app, app_resources) // run user defined after_eval_fn
         }
+
+        let pad = &mut app.borrow_mut(); // have to reborrow
+        let redraw = pad.term_render.handle_line_changes(app_resources); // update any line changes no matter what
+                                                                         // this also captures any line changes in the eval finished functions
 
         if redraw || finished {
             (Redraw, terminate)

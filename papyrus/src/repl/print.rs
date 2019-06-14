@@ -33,8 +33,12 @@ impl<D> Repl<Print, D> {
             output: s.output.to_read(),
         });
 
-        r.draw_prompt();
+        prepare_read(&mut r);
 
         r
     }
+}
+
+fn prepare_read<D>(repl: &mut Repl<Read, D>) {
+    repl.draw_prompt();
 }

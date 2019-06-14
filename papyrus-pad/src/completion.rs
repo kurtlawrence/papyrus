@@ -381,7 +381,7 @@ impl Completers {
     fn build<D>(repl_data: &ReplData<D>) -> Self {
         let cmds_tree = TreeCompleter::build(&repl_data.cmdtree);
 
-        let mods = ModulesCompleter::build(&repl_data.cmdtree, &repl_data.file_map());
+        let mods = ModulesCompleter::build(&repl_data.cmdtree, &repl_data.mods_map());
 
         let code = CodeCompleter::build(repl_data);
 

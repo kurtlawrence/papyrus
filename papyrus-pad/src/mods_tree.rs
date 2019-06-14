@@ -17,7 +17,7 @@ where
 
         let repl = self.repl.brw_read()?;
 
-        let path = repl.data.file_map().keys().nth(idx)?;
+        let path = repl.data.mods_map().keys().nth(idx)?;
 
         let line = format!(".mod switch {}", path.display());
 
@@ -36,7 +36,7 @@ impl ReplModulesTree {
         T: 'static + BorrowMut<AppValue<PadState<T, D>>>,
         D: 'static + Send + Sync,
     {
-        let mut container = Dom::div().with_class("path-tree");
+        let mut container = Dom::div().with_class("mods-tree");
 
         if let Some(repl) = pad.repl.brw_read() {
             let ptr = StackCheckedPointer::new(pad);
@@ -45,7 +45,7 @@ impl ReplModulesTree {
                 .window
                 .add_callback(ptr, DefaultCallback(PadState::<T, D>::priv_on_mouse_down));
 
-            for path in repl.data.file_map().keys() {
+            for path in repl.data.mods_map().keys() {
                 let mut s = String::new();
 
                 let comps = path.iter().count().saturating_sub(1);
@@ -58,7 +58,7 @@ impl ReplModulesTree {
                     .and_then(|x| x.to_str())
                     .map(|x| s.push_str(x));
 
-                let mut item = Dom::label(s).with_class("path-tree-item");
+                let mut item = Dom::label(s).with_class("mods-tree-item");
 
                 item.add_default_callback_id(On::MouseDown, md_cbid);
 
