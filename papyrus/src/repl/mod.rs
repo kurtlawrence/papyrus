@@ -115,8 +115,8 @@ pub struct ReplData<Data> {
     /// The REPL commands as a `cmdtree::Commander`.
     pub cmdtree: Commander<CommandResult<Data>>,
 
-    /// The file map of relative paths.
-    pub(crate) file_map: pfh::FileMap,
+    /// The modules map of relative paths.
+    pub(crate) mods_map: pfh::ModsMap,
     /// The current editing and executing file.
     pub(crate) current_file: PathBuf,
 

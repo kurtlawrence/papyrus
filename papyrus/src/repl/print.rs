@@ -10,7 +10,7 @@ impl<D> Repl<Print, D> {
             if self.state.as_out {
                 let num = self
                     .data
-                    .file_map
+                    .mods_map
                     .get(&self.data.current_file)
                     .expect("file map does not contain key")
                     .stmts

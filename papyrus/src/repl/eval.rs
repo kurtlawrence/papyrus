@@ -248,7 +248,7 @@ impl<D> ReplData<D> {
         }
 
         // build directory
-        let res = compile::build_compile_dir(&self.compilation_dir, &self.file_map, &self.linking);
+        let res = compile::build_compile_dir(&self.compilation_dir, &self.mods_map, &self.linking);
         if let Err(e) = res {
             pop_input(self); // failed so don't save
             return (
@@ -334,7 +334,7 @@ impl<D> ReplData<D> {
     }
 
     fn get_current_file_mut(&mut self) -> &mut pfh::SourceCode {
-        self.file_map.get_mut(&self.current_file).expect(&format!(
+        self.mods_map.get_mut(&self.current_file).expect(&format!(
             "file map does not have key: {}",
             self.current_file.display()
         ))

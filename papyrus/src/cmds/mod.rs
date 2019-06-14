@@ -79,8 +79,8 @@ fn switch_module<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
                 all.push(path.to_path_buf());
 
                 for x in all {
-                    if !repl_data.file_map.contains_key(&x) {
-                        repl_data.file_map.insert(x, pfh::SourceCode::new());
+                    if !repl_data.mods_map.contains_key(&x) {
+                        repl_data.mods_map.insert(x, pfh::SourceCode::new());
                     }
                 }
 

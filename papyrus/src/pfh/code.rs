@@ -92,12 +92,12 @@ impl StmtGrp {
 
 /// Construct a single string containing all the source code in file_map.
 pub fn construct_source_code<'a>(
-    file_map: &'a FileMap,
+    mods_map: &'a ModsMap,
     linking_config: &LinkingConfiguration,
 ) -> (String, ReturnRangeMap<'a>) {
     // assumed to be sorted, FileMap is BTreeMap
 
-    let (cap, map) = calc_capacity(file_map, linking_config);
+    let (cap, map) = calc_capacity(mods_map, linking_config);
 
     let mut contents = String::with_capacity(cap);
 
@@ -107,7 +107,7 @@ pub fn construct_source_code<'a>(
     }
 
     // do the lib first
-    if let Some(lib) = file_map.get(Path::new("lib")) {
+    if let Some(lib) = mods_map.get(Path::new("lib")) {
         code::append_buffer(
             lib,
             &into_mod_path_vec(Path::new("lib")),
@@ -116,7 +116,7 @@ pub fn construct_source_code<'a>(
         );
     }
 
-    for (prev_lvl, new_lvl, file, src_code) in file_map_with_lvls(file_map) {
+    for (prev_lvl, new_lvl, file, src_code) in mods_map_with_lvls(mods_map) {
         match new_lvl.cmp(&prev_lvl) {
             Ordering::Equal | Ordering::Less => {
                 // need to close off the open modules
@@ -146,7 +146,7 @@ pub fn construct_source_code<'a>(
     }
 
     // close off any outstanding modules
-    let lvl = file_map_with_lvls(file_map)
+    let lvl = mods_map_with_lvls(mods_map)
         .last()
         .map(|x| x.1)
         .unwrap_or(0);
@@ -164,11 +164,11 @@ pub fn construct_source_code<'a>(
 }
 
 /// **Skips lib**
-fn file_map_with_lvls(
-    file_map: &FileMap,
+fn mods_map_with_lvls(
+    mods_map: &ModsMap,
 ) -> impl Iterator<Item = (usize, usize, &Path, &SourceCode)> {
     let mut prev = 0;
-    file_map
+    mods_map
         .iter()
         .filter(|x| x.0 != Path::new("lib"))
         .map(move |x| {
@@ -180,7 +180,7 @@ fn file_map_with_lvls(
 }
 
 fn calc_capacity<'a>(
-    file_map: &'a FileMap,
+    mods_map: &'a ModsMap,
     linking_config: &LinkingConfiguration,
 ) -> (usize, ReturnRangeMap<'a>) {
     fn mv_rng(mut rng: ReturnRange, by: usize) -> ReturnRange {
@@ -192,14 +192,14 @@ fn calc_capacity<'a>(
     let mut cap = 0;
 
     let mut map =
-        HashMap::with_capacity_and_hasher(file_map.len(), fxhash::FxBuildHasher::default());
+        HashMap::with_capacity_and_hasher(mods_map.len(), fxhash::FxBuildHasher::default());
 
     for external in linking_config.external_libs.iter() {
         cap += external.construct_code_str_length();
     }
 
     // do the lib first
-    if let Some(lib) = file_map.get(Path::new("lib")) {
+    if let Some(lib) = mods_map.get(Path::new("lib")) {
         let (src_code_len, src_code_return) =
             append_buffer_length(lib, &into_mod_path_vec(Path::new("lib")), linking_config);
 
@@ -208,7 +208,7 @@ fn calc_capacity<'a>(
         cap += src_code_len;
     }
 
-    for (prev_lvl, new_lvl, file, src_code) in file_map_with_lvls(file_map) {
+    for (prev_lvl, new_lvl, file, src_code) in mods_map_with_lvls(mods_map) {
         match new_lvl.cmp(&prev_lvl) {
             Ordering::Equal | Ordering::Less => {
                 cap += prev_lvl - new_lvl + 2;
@@ -234,7 +234,7 @@ fn calc_capacity<'a>(
     }
 
     // close off any outstanding modules
-    let lvl = file_map_with_lvls(file_map)
+    let lvl = mods_map_with_lvls(mods_map)
         .last()
         .map(|x| x.1)
         .unwrap_or(0);

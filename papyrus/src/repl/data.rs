@@ -4,14 +4,14 @@ use crate::pfh::{self, linking};
 impl<Data> Default for ReplData<Data> {
     fn default() -> Self {
         let lib_path = PathBuf::from("lib");
-        let mut map = pfh::FileMap::new();
+        let mut map = pfh::ModsMap::new();
         map.insert(lib_path.clone(), pfh::SourceCode::new());
 
         let mut r = ReplData {
             cmdtree: Builder::new("papyrus")
                 .into_commander()
                 .expect("empty should pass"),
-            file_map: map,
+            mods_map: map,
             current_file: lib_path,
             prompt_colour: Color::Cyan,
             out_colour: Color::BrightGreen,
@@ -58,8 +58,8 @@ impl<Data> ReplData<Data> {
     }
 
     /// The current file map, mappings of modules to source code.
-    pub fn file_map(&self) -> &pfh::FileMap {
-        &self.file_map
+    pub fn mods_map(&self) -> &pfh::ModsMap {
+        &self.mods_map
     }
 
     /// The current linking configuration.

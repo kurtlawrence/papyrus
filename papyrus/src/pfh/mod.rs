@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 pub use code::{CrateType, Input, SourceCode, Statement, StmtGrp};
 
 /// Mapping of modules to source code.
-pub type FileMap = BTreeMap<PathBuf, SourceCode>;
+pub type ModsMap = BTreeMap<PathBuf, SourceCode>;
 
 /// The library name to compile as.c
 pub const LIBRARY_NAME: &str = "papyrus_mem_code";

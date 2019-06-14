@@ -70,7 +70,7 @@ pub struct CodeCache {
 }
 
 impl CodeCache {
-	/// Construct new cache.
+    /// Construct new cache.
     pub fn new() -> Self {
         Self {
             cache: FileCache::new(PapyrusCodeFileLoader),

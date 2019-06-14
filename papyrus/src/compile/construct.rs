@@ -9,18 +9,18 @@ use std::process::Command;
 /// Builds `Cargo.toml` using crates found in `SourceFile`.
 pub fn build_compile_dir<P: AsRef<Path>>(
     compile_dir: P,
-    file_map: &FileMap,
+    mods_map: &ModsMap,
     linking_config: &linking::LinkingConfiguration,
 ) -> io::Result<()> {
     let compile_dir = compile_dir.as_ref();
 
-    let crates = file_map.iter().flat_map(|kvp| kvp.1.crates.iter());
+    let crates = mods_map.iter().flat_map(|kvp| kvp.1.crates.iter());
 
     // write cargo toml contents
     create_file_and_dir(compile_dir.join("Cargo.toml"))?
         .write_all(cargotoml_contents(LIBRARY_NAME, crates).as_bytes())?;
 
-    let (src_code, _map) = code::construct_source_code(file_map, linking_config);
+    let (src_code, _map) = code::construct_source_code(mods_map, linking_config);
 
     create_file_and_dir(compile_dir.join("src/lib.rs"))?.write_all(src_code.as_bytes())?;
 

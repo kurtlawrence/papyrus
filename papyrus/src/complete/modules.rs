@@ -1,7 +1,7 @@
 //! Complete module paths.
 
 use super::*;
-use crate::pfh::FileMap;
+use crate::pfh::ModsMap;
 use cmdr::ActionArgComplete;
 use std::path::{Path, PathBuf};
 
@@ -13,7 +13,7 @@ pub struct ModulesCompleter {
 
 impl ModulesCompleter {
     /// Build the `ModulesCompleter`.
-    pub fn build<T>(cmdr: &cmdtree::Commander<T>, modules: &FileMap) -> Self {
+    pub fn build<T>(cmdr: &cmdtree::Commander<T>, modules: &ModsMap) -> Self {
         let mods = modules
             .iter()
             .map(|x| x.0.clone())

@@ -64,4 +64,5 @@ pub mod prelude {
 }
 
 pub use ::cmdtree;
+#[cfg(feature = "racer-completion")]
 pub use ::racer;
