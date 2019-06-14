@@ -61,7 +61,7 @@ pub mod run;
 pub mod prelude {
     pub use crate::pfh::{code, linking};
     pub use crate::repl::{self, Repl, ReplData};
-    pub use cmdtree::{BuildError, BuilderChain};
 }
 
 pub use ::racer;
+pub use ::cmdtree;

@@ -416,33 +416,39 @@ struct Completion {
 
 #[derive(Copy, Clone)]
 enum CompletionType {
-    Cmd,
+    CmdAction,
+    CmdClass,
     Enum,
+    EnumVariant,
     Fn,
     Macro,
     Mod,
+    Primitive,
     Struct,
     Trait,
     TreeMods,
     Type,
     Unknown,
-	Variable
+    Variable,
 }
 
 impl CompletionType {
     fn dom_string(&self) -> DomString {
         match self {
-            CompletionType::Cmd => "cmd",
+            CompletionType::CmdAction => "cmd-action",
+            CompletionType::CmdClass => "cmd-class",
             CompletionType::Enum => "enum",
+            CompletionType::EnumVariant => "variant",
             CompletionType::Fn => "fn",
             CompletionType::Macro => "macro",
             CompletionType::Mod => "mod",
+            CompletionType::Primitive => "prim",
             CompletionType::Struct => "struct",
             CompletionType::Trait => "trait",
             CompletionType::TreeMods => "mod-path",
             CompletionType::Type => "type",
             CompletionType::Unknown => "?",
-			CompletionType::Variable => "var",
+            CompletionType::Variable => "var",
         }
         .into()
     }
@@ -460,7 +466,6 @@ fn completions(
 
     {
         let word_start = TreeCompleter::word_break(input_buffer_line);
-        let completion_type = CompletionType::Cmd;
         let suffix = Some(' ');
 
         v.extend({
@@ -468,13 +473,24 @@ fn completions(
                 .cmds_tree
                 .complete(input_buffer_line)
                 .take(limit)
-                .map(|x| Completion {
-                    completion: x.to_owned(),
-                    completion_type,
-                    word_start,
-                    suffix,
-                    contextstr: Cow::Borrowed(""),
-                    docs: Cow::Borrowed(""),
+                .map(|x| {
+                    use papyrus::cmdtree::ItemType;
+
+                    let (comp, info) = x;
+
+                    let completion_type = match info.itemtype {
+                        ItemType::Action => CompletionType::CmdAction,
+                        ItemType::Class => CompletionType::CmdClass,
+                    };
+
+                    Completion {
+                        completion: comp.to_owned(),
+                        completion_type,
+                        word_start,
+                        suffix,
+                        contextstr: info.help_msg.inner_cow.clone(),
+                        docs: Cow::Borrowed(""),
+                    }
                 })
         });
     }
@@ -524,9 +540,11 @@ fn completions(
 impl From<MatchType> for CompletionType {
     fn from(mtype: MatchType) -> Self {
         match mtype {
+            MatchType::Builtin(_) => CompletionType::Primitive,
             MatchType::Enum(_) => CompletionType::Enum,
+            MatchType::EnumVariant(_) => CompletionType::EnumVariant,
             MatchType::Function => CompletionType::Fn,
-			MatchType::Let(_) => CompletionType::Variable,
+            MatchType::Let(_) => CompletionType::Variable,
             MatchType::Macro => CompletionType::Macro,
             MatchType::Module => CompletionType::Mod,
             MatchType::Struct(_) => CompletionType::Struct,

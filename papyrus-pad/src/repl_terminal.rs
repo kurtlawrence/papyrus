@@ -52,7 +52,15 @@ where
             },
             Input::Down => {
                 if !self.completion.will_render() {
-                    DontRedraw
+                    if let Some(buf) = self.history.move_forwards() {
+                        self.input_buffer.clear();
+                        self.input_buffer.push_str(buf);
+                    } else {
+                        self.input_buffer.clear();
+                    }
+
+                    self.set_repl_line_input();
+                    Redraw
                 } else {
                     DontRedraw
                 }
@@ -65,6 +73,11 @@ where
                 }
             }
             Input::Return => {
+                self.completion.clear();
+
+                self.history.add_unique(self.input_buffer.clone());
+                self.history.reset_position();
+
                 self.input_buffer.clear();
 
                 match self.repl.take_read() {
@@ -86,7 +99,14 @@ where
             Input::Tab => self.complete_input_buffer(self.completion.kb_focus),
             Input::Up => {
                 if !self.completion.will_render() {
-                    DontRedraw
+                    if let Some(buf) = self.history.move_backwards() {
+                        self.input_buffer.clear();
+                        self.input_buffer.push_str(buf);
+                        self.set_repl_line_input();
+                        Redraw
+                    } else {
+                        DontRedraw
+                    }
                 } else {
                     DontRedraw
                 }

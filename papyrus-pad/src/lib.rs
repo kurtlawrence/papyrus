@@ -17,6 +17,7 @@ pub mod colour;
 mod completion;
 mod css;
 mod eval_state;
+mod history;
 pub mod pad;
 pub mod repl_terminal;
 
@@ -34,6 +35,7 @@ pub struct PadState<T, Data> {
     // ReplTerminal
     /// This is the input buffer _line_, so completions and such need to work off this.
     input_buffer: String,
+    history: history::History,
 
     term_render: ansi_renderer::ReplOutputRenderer,
 

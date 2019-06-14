@@ -13,6 +13,7 @@ impl<T, D> PadState<T, D> {
         Self {
             repl: EvalState::new(repl),
             input_buffer: String::new(),
+            history: history::History::new(),
             eval_timer_id: TimerId::new(),
             data,
             after_eval_fn: none,
