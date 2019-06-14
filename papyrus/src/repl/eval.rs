@@ -355,12 +355,22 @@ impl<D> ReplData<D> {
             (src.stmts.len(), src.items.len(), src.crates.len())
         };
 
+        let mut undo = true;
+
         let (stmt_idx, item_idx, crate_idx) = if let Some(ei) = self.editing.take() {
+            let src = self.get_current_file_mut(); // remove at the index
+                                                   // then insert, so
+                                                   // acts like replace
+
+            undo = false;
+
             match ei.editing {
                 // we clear the edits if the indices fall outside the bounds
                 Editing::Stmt => {
                     if ei.index >= lstmts {
                         input.stmts.clear();
+                    } else {
+                        src.stmts.remove(ei.index);
                     }
 
                     (ei.index, litem, lcrates)
@@ -368,6 +378,8 @@ impl<D> ReplData<D> {
                 Editing::Item => {
                     if ei.index >= litem {
                         input.items.clear();
+                    } else {
+                        src.items.remove(ei.index);
                     }
 
                     (lstmts, ei.index, lcrates)
@@ -375,6 +387,8 @@ impl<D> ReplData<D> {
                 Editing::Crate => {
                     if ei.index >= lcrates {
                         input.crates.clear();
+                    } else {
+                        src.crates.remove(ei.index);
                     }
 
                     (lstmts, litem, ei.index)
@@ -386,26 +400,28 @@ impl<D> ReplData<D> {
 
         self.insert_input(input, stmt_idx, item_idx, crate_idx);
 
-        let pop_input = |repl_data: &mut ReplData<D>| {
-            let src = repl_data.get_current_file_mut();
+        let maybe_pop_input = |repl_data: &mut ReplData<D>| {
+            if undo {
+                let src = repl_data.get_current_file_mut();
 
-            if has_stmts {
-                src.stmts.remove(stmt_idx);
-            }
+                if has_stmts {
+                    src.stmts.remove(stmt_idx);
+                }
 
-            for _ in 0..nitems {
-                src.items.remove(item_idx);
-            }
+                for _ in 0..nitems {
+                    src.items.remove(item_idx);
+                }
 
-            for _ in 0..ncrates {
-                src.items.remove(crate_idx);
+                for _ in 0..ncrates {
+                    src.items.remove(crate_idx);
+                }
             }
         };
 
         // build directory
         let res = compile::build_compile_dir(&self.compilation_dir, &self.mods_map, &self.linking);
         if let Err(e) = res {
-            pop_input(self); // failed so don't save
+            maybe_pop_input(self); // failed so don't save
             return (
                 Cow::Owned(format!("failed to build compile directory: {}", e)),
                 false,
@@ -426,7 +442,7 @@ impl<D> ReplData<D> {
         let lib_file = match lib_file {
             Ok(f) => f,
             Err(e) => {
-                pop_input(self); // failed so don't save
+                maybe_pop_input(self); // failed so don't save
                 return (Cow::Owned(format!("{}", e)), false);
             }
         };
@@ -471,14 +487,14 @@ impl<D> ReplData<D> {
             match exec_res {
                 Ok(s) => {
                     if self.linking.mutable {
-                        pop_input(self); // don't save mutating inputs
+                        maybe_pop_input(self); // don't save mutating inputs
                         ((Cow::Owned(format!("finished mutating block: {}", s)), false)) // don't print as `out#`
                     } else {
                         ((Cow::Owned(s), true))
                     }
                 }
                 Err(e) => {
-                    pop_input(self); // failed so don't save
+                    maybe_pop_input(self); // failed so don't save
                     (Cow::Borrowed(e), false)
                 }
             }
