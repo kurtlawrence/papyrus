@@ -19,6 +19,12 @@ pub type AppDataAction<D> = Box<dyn Fn(&mut D, &mut dyn Write) -> String>;
 pub enum CommandResult<D> {
     /// Flag to begin a mutating block.
     BeginMutBlock,
+    /// Flag to alter a previous statement, item, or crate.
+    EditAlter(EditingIndex),
+    /// Replace a previous statement, item, or crate with value.
+    EditReplace(EditingIndex, String),
+    /// Switch to a module.
+    SwitchModule(PathBuf),
     /// Take an action on the `ReplData`.
     ActionOnReplData(ReplDataAction<D>),
     /// Take an action on `Data`.
@@ -67,7 +73,7 @@ fn papyrus_cmdr<D>(
         .add_action(
             "alter",
             "Alter statement contents. args: stmt-number",
-            |wtr, args| alter(args, wtr, Editing::Stmt),
+            |wtr, args| edit_alter_priv(args, wtr, Editing::Stmt),
         )
         .end_class()
         .end_class()
@@ -75,31 +81,16 @@ fn papyrus_cmdr<D>(
         .add_action(
             "switch",
             "Switch to a module, creating one if necessary. switch path/to/module",
-            |wtr, args| switch_module(args, wtr),
+            |wtr, args| switch_module_priv(args, wtr),
         )
         .end_class()
         .into_commander()
 }
 
-fn switch_module<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
+fn switch_module_priv<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
     if let Some(path) = args.get(0) {
         if let Some(path) = make_path(path) {
-            CommandResult::repl_data_fn(move |repl_data, _wtr| {
-                let path = &path;
-
-                let mut all = make_all_parents(path);
-                all.push(path.to_path_buf());
-
-                for x in all {
-                    if !repl_data.mods_map.contains_key(&x) {
-                        repl_data.mods_map.insert(x, pfh::SourceCode::new());
-                    }
-                }
-
-                repl_data.current_mod = path.to_path_buf();
-
-                String::new()
-            })
+            CommandResult::SwitchModule(path)
         } else {
             writeln!(wtr, "failed to parse {} into a valid module path", path).unwrap();
             CommandResult::Empty
@@ -138,25 +129,10 @@ fn make_path(path: &str) -> Option<PathBuf> {
     Some(PathBuf::from(path))
 }
 
-fn alter<D, W: Write>(args: &[&str], mut wtr: W, t: Editing) -> CommandResult<D> {
+fn edit_alter_priv<D, W: Write>(args: &[&str], mut wtr: W, t: Editing) -> CommandResult<D> {
     if let Some(idx) = args.get(0) {
         match parse_idx(idx, t) {
-            Ok(ei) => CommandResult::repl_data_fn(move |data, _| {
-                let src = data.current_src();
-
-                let len = match ei.editing {
-                    Editing::Stmt => src.stmts.len(),
-                    Editing::Item => src.items.len(),
-                    Editing::Crate => src.crates.len(),
-                };
-
-                if ei.index >= len {
-                    String::from("index is outside of range")
-                } else {
-                    data.editing = Some(ei);
-                    String::new()
-                }
-            }),
+            Ok(ei) => CommandResult::EditAlter(ei),
             Err(e) => {
                 writeln!(wtr, "failed parsing {} as number: {}", idx, e).ok();
                 CommandResult::Empty
@@ -172,6 +148,38 @@ fn parse_idx(s: &str, editing: Editing) -> Result<EditingIndex, String> {
     s.parse()
         .map_err(|e| format!("{}", e))
         .map(|index| EditingIndex { editing, index })
+}
+
+pub(crate) fn edit_alter<D>(data: &mut ReplData<D>, ei: EditingIndex) -> &'static str {
+    let src = data.current_src();
+
+    let len = match ei.editing {
+        Editing::Stmt => src.stmts.len(),
+        Editing::Item => src.items.len(),
+        Editing::Crate => src.crates.len(),
+    };
+
+    if ei.index >= len {
+        "index is outside of range"
+    } else {
+        data.editing = Some(ei);
+        ""
+    }
+}
+
+pub(crate) fn switch_module<D>(data: &mut ReplData<D>, path: &Path) -> &'static str {
+    let mut all = make_all_parents(path);
+    all.push(path.to_path_buf());
+
+    for x in all {
+        if !data.mods_map.contains_key(&x) {
+            data.mods_map.insert(x, pfh::SourceCode::new());
+        }
+    }
+
+    data.current_mod = path.to_path_buf();
+
+    ""
 }
 
 #[test]

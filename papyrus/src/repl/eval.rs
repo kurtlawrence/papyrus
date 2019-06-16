@@ -1,7 +1,9 @@
 use super::*;
-use crate::cmds::CommandResult;
-use crate::compile;
-use crate::pfh::{self, Input, StmtGrp};
+use crate::{
+    cmds::{self, CommandResult},
+    compile,
+    pfh::{self, Input, StmtGrp},
+};
 use std::borrow::{Borrow, BorrowMut};
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
@@ -186,6 +188,12 @@ impl<D> ReplData<D> {
                     self.linking.mutable = true;
                     (Cow::Borrowed("beginning mut block"), false)
                 }
+                CommandResult::EditAlter(ei) => (Cow::Borrowed(cmds::edit_alter(self, ei)), false),
+                CommandResult::EditReplace(ei, val) => unimplemented!(),
+                CommandResult::SwitchModule(path) => (
+                    Cow::Borrowed(crate::cmds::switch_module(self, &path)),
+                    false,
+                ),
                 CommandResult::ActionOnReplData(action) => {
                     let s = action(self, writer);
                     (Cow::Owned(s), false)
