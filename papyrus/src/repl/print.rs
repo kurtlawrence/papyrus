@@ -41,4 +41,15 @@ impl<D> Repl<Print, D> {
 
 fn prepare_read<D>(repl: &mut Repl<Read, D>) {
     repl.draw_prompt();
+
+    let editing_src = repl.data.editing.and_then(|ei| {
+        let src = repl.data.current_src();
+
+        match ei.editing {
+            Editing::Crate => src.crates.get(ei.index).map(|x| &x.src_line).cloned(),
+            Editing::Item => src.items.get(ei.index).cloned(),
+            Editing::Stmt => src.stmts.get(ei.index).map(|x| x.src_line()),
+        }
+    });
+    repl.data.editing_src = editing_src;
 }

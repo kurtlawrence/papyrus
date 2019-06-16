@@ -3,7 +3,6 @@ use azul::app::AppStateNoData;
 use azul::callbacks::DefaultCallback;
 use completion::*;
 use papyrus::prelude::*;
-use repl::ReadResult;
 use std::borrow::BorrowMut;
 
 const WINDOW_LMD: EventFilter = EventFilter::Window(WindowEventFilter::LeftMouseDown);
@@ -98,6 +97,19 @@ where
     }
 
     pub fn read_input(&mut self, app: &mut AppStateNoData<T>) -> UpdateScreen {
+        let (redraw, fire) = self.read_input_priv();
+
+        if fire {
+            self.start_eval_timer(app);
+        }
+
+        redraw
+    }
+
+    /// Does all that's necessary to match a read result on the repl,
+    /// but does _not_ fire off the evaluation timer. Returns `true` if
+    /// the evaluation timer should be started.
+    fn read_input_priv(&mut self) -> (UpdateScreen, bool) {
         self.completion.clear();
 
         self.history.add_unique(self.input_buffer.clone());
@@ -106,19 +118,17 @@ where
         self.input_buffer.clear();
 
         match self.repl.take_read() {
-            Some(repl) => {
-                match repl.read() {
-                    ReadResult::Read(r) => {
-                        self.repl.put_read(r);
-                    }
-                    ReadResult::Eval(r) => {
-                        self.repl.put_eval(r.eval_async(&self.data));
-                        self.start_eval_timer(app);
-                    }
+            Some(repl) => match repl.read() {
+                ReadResult::Read(r) => {
+                    self.repl.put_read(r);
+                    (Redraw, false)
                 }
-                Redraw
-            }
-            None => DontRedraw,
+                ReadResult::Eval(r) => {
+                    self.repl.put_eval(r.eval_async(&self.data));
+                    (Redraw, true)
+                }
+            },
+            None => (DontRedraw, false),
         }
     }
 
@@ -161,8 +171,25 @@ where
         let (terminate, finished) = match pad.repl.take_eval() {
             Some(eval) => {
                 if eval.completed() {
-                    pad.repl.put_read(eval.wait().repl.print());
-                    (TerminateTimer::Terminate, true) // turn off daemon now
+                    let r = eval.wait();
+
+                    let (read, signal) = (r.repl.print(), r.signal);
+
+                    pad.repl.put_read(read);
+
+                    let fire = match signal {
+                        Signal::ReEvaluate(val) => {
+                            pad.set_line_input(val);
+                            pad.read_input_priv().1
+                        }
+                        _ => false,
+                    };
+
+                    if fire {
+                        (TerminateTimer::Continue, true)
+                    } else {
+                        (TerminateTimer::Terminate, true)
+                    }
                 } else {
                     pad.repl.put_eval(eval);
                     (TerminateTimer::Continue, false) // continue to check later

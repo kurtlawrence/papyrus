@@ -28,6 +28,14 @@ impl<D> EvalState<D> {
         }
     }
 
+    pub fn brw_mut_read(&mut self) -> Option<&mut Read<D>> {
+        match &mut self.variant {
+            EvalStateVariant::Read(repl) => Some(repl),
+            EvalStateVariant::Eval(_) => None,
+            EvalStateVariant::None => None,
+        }
+    }
+
     pub fn take_read(&mut self) -> Option<Read<D>> {
         let v = std::mem::replace(&mut self.variant, EvalStateVariant::None);
 

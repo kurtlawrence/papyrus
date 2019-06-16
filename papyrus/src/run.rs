@@ -46,8 +46,8 @@ impl<D> Repl<Read, D> {
             let completer = Completer::build(&read.data, racer);
             term.set_completer(Arc::new(completer));
 
-            if reevaluate.is_none() {
-                if let Some(buf) = read.data.editing_src() {
+            if let Some(buf) = read.data.editing_src.take() {
+                if reevaluate.is_none() {
                     term.set_buffer(&buf)?;
                 }
             }

@@ -181,6 +181,7 @@ impl<D> ReplData<D> {
             lr::Exit => return Err(Signal::Exit),
             lr::Cancel => {
                 self.linking.mutable = false; // reset the mutating on cancel
+                self.editing = None; // reset the editing on cancel
                 (Cow::Borrowed("cancelled input and returned to root"), false)
             }
             lr::Action(res) => match res {

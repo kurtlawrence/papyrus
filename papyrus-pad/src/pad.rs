@@ -30,10 +30,11 @@ impl<T, D> PadState<T, D> {
 
     /// Functions to run after the evaluation phase finished.
     pub fn eval_finished(&mut self) {
-        if let Some(repl) = self.repl.brw_read() {
+        // These will fail if a re-evaluation is triggered. is that ok?
+        if let Some(repl) = self.repl.brw_mut_read() {
             self.completion.build_completers(&repl.data);
 
-            if let Some(src) = repl.editing_src() {
+            if let Some(src) = repl.data.editing_src.take() {
                 self.set_line_input(src);
             }
         }

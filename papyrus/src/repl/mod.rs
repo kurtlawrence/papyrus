@@ -147,6 +147,12 @@ pub struct ReplData<Data> {
     ///
     /// [`read()`]: Repl::read
     pub editing: Option<EditingIndex>,
+    /// The rust source code as a string which is being edited.
+    ///
+    /// This is helpful if an alteration has been requested and you want to
+    /// show the old source code. It is recommended to `.take()` the value
+    /// to avoid repeating the contents.
+    pub editing_src: Option<String>,
 }
 
 /// Repl read state.

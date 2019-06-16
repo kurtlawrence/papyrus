@@ -19,6 +19,7 @@ impl<Data> Default for ReplData<Data> {
             linking: LinkingConfiguration::default(),
             redirect_on_execution: true,
             editing: None,
+            editing_src: None,
         };
 
         r.with_cmdtree_builder(Builder::new("papyrus"))
@@ -69,22 +70,6 @@ impl<Data> ReplData<Data> {
     /// The current file map, mappings of modules to source code.
     pub fn mods_map(&self) -> &pfh::ModsMap {
         &self.mods_map
-    }
-
-    /// The source code as a string which is being edited.
-    ///
-    /// This is helpful if an alteration has been requested and you want to
-    /// show the old source code.
-    pub fn editing_src(&self) -> Option<String> {
-        self.editing.and_then(|ei| {
-            let src = self.current_src();
-
-            match ei.editing {
-                Editing::Crate => src.crates.get(ei.index).map(|x| &x.src_line).cloned(),
-                Editing::Item => src.items.get(ei.index).cloned(),
-                Editing::Stmt => src.stmts.get(ei.index).map(|x| x.src_line()),
-            }
-        })
     }
 
     /// The current linking configuration.

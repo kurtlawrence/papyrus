@@ -62,7 +62,7 @@ pub mod run;
 /// Re-exports of most common types and modules.
 pub mod prelude {
     pub use crate::pfh::{code, linking};
-    pub use crate::repl::{self, Repl, ReplData};
+    pub use crate::repl::{self, ReadResult, Repl, ReplData, Signal};
 }
 
 pub use ::cmdtree;
