@@ -37,11 +37,12 @@ pub fn parse_program(code: &str) -> InputResult {
                         })
                     }
                     Stmt::Item(item) => match parse_item(item) {
-                        ParseItemResult::ExternCrate(string) => match CrateType::parse_str(&string)
-                        {
-                            Ok(c) => crates.push(c),
-                            Err(e) => error!("crate parsing failed: {}", e),
-                        },
+                        ParseItemResult::ExternCrate(string) => {
+                            match CrateType::parse_str(&fmt(string)) {
+                                Ok(c) => crates.push(c),
+                                Err(e) => error!("crate parsing failed: {}", e),
+                            }
+                        }
                         ParseItemResult::Span(string) => items.push(fmt(string)),
                         ParseItemResult::Error(s) => return InputResult::InputError(s),
                     },

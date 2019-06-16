@@ -17,7 +17,7 @@ fn test_items() {
     assert_eq!(
         parse_program("fn b() {}"),
         InputResult::Program(Input {
-            items: vec!["fn b ( ) { }".to_string()],
+            items: vec!["fn b() {}".to_string()],
             stmts: vec![],
             crates: vec![]
         })
@@ -25,7 +25,7 @@ fn test_items() {
     assert_eq!(
         parse_program("#[derive(Debug)]\nstruct A {\n\tu: u32\n}"),
         InputResult::Program(Input {
-            items: vec!["# [ derive ( Debug ) ] struct A { u : u32 }".to_string()],
+            items: vec!["#[derive(Debug)] struct A { u: u32, }".to_string()],
             stmts: vec![],
             crates: vec![]
         })
@@ -35,7 +35,7 @@ fn test_items() {
         InputResult::Program(Input {
             items: vec![],
             stmts: vec![],
-            crates: vec![CrateType::parse_str(&"extern crate rand as r ;").unwrap()]
+            crates: vec![CrateType::parse_str(&"extern crate rand as r;").unwrap()]
         })
     ); // Item::ExternCrate
 }
@@ -71,7 +71,7 @@ fn test_exprs() {
         InputResult::Program(Input {
             items: vec![],
             stmts: vec![Statement {
-                expr: "println ! ( \"hello\" )".to_string(),
+                expr: "println!(\"hello\")".to_string(),
                 semi: false
             }],
             crates: vec![]
@@ -82,7 +82,7 @@ fn test_exprs() {
         InputResult::Program(Input {
             items: vec![],
             stmts: vec![Statement {
-                expr: "println ! ( \"hello\" )".to_string(),
+                expr: "println!(\"hello\")".to_string(),
                 semi: true
             }],
             crates: vec![]
@@ -94,7 +94,7 @@ fn test_exprs() {
         InputResult::Program(Input {
             items: vec![],
             stmts: vec![Statement {
-                expr: "( )".to_string(),
+                expr: "()".to_string(),
                 semi: false
             }],
             crates: vec![]
@@ -105,7 +105,7 @@ fn test_exprs() {
         InputResult::Program(Input {
             items: vec![],
             stmts: vec![Statement {
-                expr: "( )".to_string(),
+                expr: "()".to_string(),
                 semi: true
             }],
             crates: vec![]
@@ -117,7 +117,7 @@ fn test_exprs() {
         InputResult::Program(Input {
             items: vec![],
             stmts: vec![Statement {
-                expr: "f ( )".to_string(),
+                expr: "f()".to_string(),
                 semi: false
             }],
             crates: vec![]
@@ -128,7 +128,7 @@ fn test_exprs() {
         InputResult::Program(Input {
             items: vec![],
             stmts: vec![Statement {
-                expr: "f ( )".to_string(),
+                expr: "f()".to_string(),
                 semi: true
             }],
             crates: vec![]
@@ -140,7 +140,7 @@ fn test_exprs() {
         InputResult::Program(Input {
             items: vec![],
             stmts: vec![Statement {
-                expr: "let a = 1 ".to_string(),
+                expr: "let a = 1".to_string(),
                 semi: true
             }],
             crates: vec![]
@@ -152,7 +152,7 @@ fn test_exprs() {
         InputResult::Program(Input {
             items: vec![],
             stmts: vec![Statement {
-                expr: "for i in 0 .. 3 { }".to_string(),
+                expr: "for i in 0..3 {}".to_string(),
                 semi: false
             }],
             crates: vec![]
@@ -187,7 +187,7 @@ fn test_exprs() {
         InputResult::Program(Input {
             items: vec![],
             stmts: vec![Statement {
-                expr: "std :: env :: current_dir ( )".to_string(),
+                expr: "std::env::current_dir()".to_string(),
                 semi: false
             }],
             crates: vec![]
@@ -198,7 +198,7 @@ fn test_exprs() {
         InputResult::Program(Input {
             items: vec![],
             stmts: vec![Statement {
-                expr: "std :: env :: current_dir ( )".to_string(),
+                expr: "std::env::current_dir()".to_string(),
                 semi: true
             }],
             crates: vec![]

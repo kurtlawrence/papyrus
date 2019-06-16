@@ -92,6 +92,6 @@ mod tests {
         let snippet = "fn fmt(){ let a = 1  ; a + b   ";
         let s = format(snippet);
         let ans = s.as_ref().map(|x| x.as_str());
-        assert_eq!(ans, Ok(FormatError::RustfmtFailure));
+        assert_eq!(ans, Err(&FormatError::RustfmtFailure));
     }
 }
