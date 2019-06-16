@@ -257,9 +257,6 @@ impl<D> ReplData<D> {
             );
         }
 
-        // format
-        compile::fmt(&self.compilation_dir);
-
         // compile
         let lib_file = compile::compile(&self.compilation_dir, &self.linking, |line| {
             writer.erase_last_line();
@@ -427,9 +424,6 @@ impl<D> ReplData<D> {
                 false,
             );
         }
-
-        // format
-        compile::fmt(&self.compilation_dir);
 
         // compile
         let lib_file = compile::compile(&self.compilation_dir, &self.linking, |line| {

@@ -77,6 +77,10 @@ pub fn parse_program(code: &str) -> InputResult {
     }
 }
 
+fn fmt(s: String) -> String {
+    s
+}
+
 enum ParseItemResult {
     Span(String),
     ExternCrate(String),

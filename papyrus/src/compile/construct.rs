@@ -27,21 +27,6 @@ pub fn build_compile_dir<P: AsRef<Path>>(
     Ok(())
 }
 
-/// Run `cargo fmt` in the given directory.
-pub fn fmt<P: AsRef<Path>>(compile_dir: P) -> bool {
-    match Command::new("cargo")
-        .current_dir(compile_dir)
-        .args(&["fmt"])
-        .output()
-    {
-        Ok(output) => output.status.success(),
-        Err(e) => {
-            debug!("{}", e);
-            false
-        }
-    }
-}
-
 /// Creates the specified file along with the directory to it if it doesn't exist.
 fn create_file_and_dir<P: AsRef<Path>>(file: P) -> io::Result<fs::File> {
     let file = file.as_ref();

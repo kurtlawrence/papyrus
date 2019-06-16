@@ -46,6 +46,7 @@ macro_rules! repl {
 pub mod cmds;
 pub mod compile;
 pub mod complete;
+pub mod fmt;
 /// Parsing of input.
 pub mod input;
 /// Reading and writing output.

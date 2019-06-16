@@ -26,7 +26,14 @@ fn pfh_compile_construct(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, pfh_compile_construct);
+fn rustfmt(c: &mut Criterion) {
+    let code = "let a = 1 ; let b = 2 ; a + b ";
+    c.bench_function("format code", move |b| {
+        b.iter(|| papyrus::fmt::format(code))
+    });
+}
+
+criterion_group!(benches, pfh_compile_construct, rustfmt);
 criterion_main!(benches);
 
 fn cstr() -> String {

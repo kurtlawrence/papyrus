@@ -5,7 +5,7 @@ mod construct;
 mod execute;
 
 pub use self::build::{compile, CompilationError};
-pub use self::construct::{build_compile_dir, fmt};
+pub use self::construct::build_compile_dir;
 pub(crate) use self::execute::exec;
 
 #[cfg(test)]
