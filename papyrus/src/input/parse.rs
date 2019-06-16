@@ -29,7 +29,7 @@ pub fn parse_program(code: &str) -> InputResult {
             for stmt in block.stmts {
                 match stmt {
                     Stmt::Local(local) => {
-                        let mut s = format!("{}", local.into_token_stream());
+                        let mut s = fmt(local.into_token_stream().to_string());
                         s.pop(); // local is handled slightly differently, the trailing semi is dropped.
                         stmts.push(Statement {
                             expr: s,
@@ -42,19 +42,19 @@ pub fn parse_program(code: &str) -> InputResult {
                             Ok(c) => crates.push(c),
                             Err(e) => error!("crate parsing failed: {}", e),
                         },
-                        ParseItemResult::Span(string) => items.push(string),
+                        ParseItemResult::Span(string) => items.push(fmt(string)),
                         ParseItemResult::Error(s) => return InputResult::InputError(s),
                     },
                     Stmt::Expr(expr) => match parse_expr(expr) {
                         Ok(string) => stmts.push(Statement {
-                            expr: string,
+                            expr: fmt(string),
                             semi: false,
                         }),
                         Err(s) => return InputResult::InputError(s),
                     },
                     Stmt::Semi(expr, _) => match parse_expr(expr) {
                         Ok(string) => stmts.push(Statement {
-                            expr: string,
+                            expr: fmt(string),
                             semi: true,
                         }),
                         Err(s) => return InputResult::InputError(s),
@@ -78,7 +78,7 @@ pub fn parse_program(code: &str) -> InputResult {
 }
 
 fn fmt(s: String) -> String {
-    s
+    crate::fmt::format(&s).unwrap_or(s)
 }
 
 enum ParseItemResult {
