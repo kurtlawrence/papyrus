@@ -189,7 +189,15 @@ impl<D> ReplData<D> {
                     (Cow::Borrowed("beginning mut block"), false)
                 }
                 CommandResult::EditAlter(ei) => (Cow::Borrowed(cmds::edit_alter(self, ei)), false),
-                CommandResult::EditReplace(ei, val) => unimplemented!(),
+                CommandResult::EditReplace(ei, val) => {
+                    let r = Cow::Borrowed(cmds::edit_alter(self, ei));
+
+                    if r.is_empty() {
+                        return Err(Signal::ReEvaluate(val));
+                    } else {
+                        (r, false)
+                    }
+                }
                 CommandResult::SwitchModule(path) => (
                     Cow::Borrowed(crate::cmds::switch_module(self, &path)),
                     false,

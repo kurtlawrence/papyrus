@@ -193,6 +193,13 @@ pub enum Signal {
     None,
     /// A signal to exit the repl has been sent.
     Exit,
+    /// Signal to run the evaluation loop again with the inner
+    /// value as the line input.
+    ///
+    /// This is usually signaled when [`EditReplace`] is instigated.
+    /// Re-evaulation is signalled rather than handled as the input
+    /// may be not enough to complete a full repl cycle.
+    ReEvaluate(String),
 }
 
 /// Result of [`read`]ing the current input buffer.

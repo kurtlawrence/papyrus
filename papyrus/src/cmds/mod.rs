@@ -75,6 +75,11 @@ fn papyrus_cmdr<D>(
             "Alter statement contents. args: stmt-number",
             |wtr, args| edit_alter_priv(args, wtr, Editing::Stmt),
         )
+        .add_action(
+            "replace",
+            "Replace statement contents. args: stmt-number value",
+            |wtr, args| edit_replace_priv(args, wtr, Editing::Stmt),
+        )
         .end_class()
         .end_class()
         .begin_class("mod", "Handle modules")
@@ -140,6 +145,23 @@ fn edit_alter_priv<D, W: Write>(args: &[&str], mut wtr: W, t: Editing) -> Comman
         }
     } else {
         writeln!(wtr, "alter expects an index number").ok();
+        CommandResult::Empty
+    }
+}
+
+fn edit_replace_priv<D, W: Write>(args: &[&str], mut wtr: W, t: Editing) -> CommandResult<D> {
+    if let Some(idx) = args.get(0) {
+        match parse_idx(idx, t) {
+            Ok(ei) => {
+                CommandResult::EditReplace(ei, args[1..].iter().map(|x| *x).collect::<String>())
+            }
+            Err(e) => {
+                writeln!(wtr, "failed parsing {} as number: {}", idx, e).ok();
+                CommandResult::Empty
+            }
+        }
+    } else {
+        writeln!(wtr, "replace expects an index number").ok();
         CommandResult::Empty
     }
 }

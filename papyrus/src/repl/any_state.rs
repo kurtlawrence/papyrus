@@ -18,22 +18,6 @@ impl<S, D> Repl<S, D> {
             data_mrker,
         }
     }
-
-    /// The source code as a string which is being edited.
-    ///
-    /// This is helpful if an alteration has been requested and you want to
-    /// show the old source code.
-    pub fn editing_src(&self) -> Option<String> {
-        self.data.editing.and_then(|ei| {
-            let src = self.data.current_src();
-
-            match ei.editing {
-                Editing::Crate => src.crates.get(ei.index).map(|x| &x.src_line).cloned(),
-                Editing::Item => src.items.get(ei.index).cloned(),
-                Editing::Stmt => src.stmts.get(ei.index).map(|x| x.src_line()),
-            }
-        })
-    }
 }
 
 impl<S: fmt::Debug, D> fmt::Debug for Repl<S, D> {
