@@ -48,6 +48,7 @@ impl SourceCode {
 pub struct StmtGrp(pub Vec<Statement>);
 
 impl StmtGrp {
+    /// The statements as a single line of rust code.
     pub fn src_line(&self) -> String {
         let mut buf = String::with_capacity(self.assign_let_binding_length(0));
 
@@ -60,6 +61,8 @@ impl StmtGrp {
             }
             buf.push(' ');
         }
+
+        buf.pop();
 
         buf
     }

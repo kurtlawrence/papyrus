@@ -58,6 +58,8 @@ impl<Data> ReplData<Data> {
         self.current_mod.as_path()
     }
 
+    /// The current source code, this is short hand for
+    /// `self.mods_map().get(self.current_mod()).unwrap()`.
     pub fn current_src(&self) -> &SourceCode {
         self.mods_map
             .get(self.current_mod())

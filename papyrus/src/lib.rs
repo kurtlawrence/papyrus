@@ -46,6 +46,7 @@ macro_rules! repl {
 pub mod cmds;
 pub mod compile;
 pub mod complete;
+/// Format rust code snippets using `rustfmt`.
 pub mod fmt;
 /// Parsing of input.
 pub mod input;

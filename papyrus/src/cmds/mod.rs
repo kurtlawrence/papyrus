@@ -141,7 +141,7 @@ fn make_path(path: &str) -> Option<PathBuf> {
 fn alter<D, W: Write>(args: &[&str], mut wtr: W, t: Editing) -> CommandResult<D> {
     if let Some(idx) = args.get(0) {
         match parse_idx(idx, t) {
-            Ok(ei) => CommandResult::repl_data_fn(move |data, wtr| {
+            Ok(ei) => CommandResult::repl_data_fn(move |data, _| {
                 let src = data.current_src();
 
                 let len = match ei.editing {

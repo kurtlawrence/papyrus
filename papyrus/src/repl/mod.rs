@@ -205,16 +205,23 @@ pub enum ReadResult<D> {
     Eval(Repl<Evaluate, D>),
 }
 
+/// The index of the statement group, item, or crate being edited.
 #[derive(Copy, Clone, Debug)]
 pub struct EditingIndex {
+    /// Type being edited.
     pub editing: Editing,
+    /// Index.
     pub index: usize,
 }
 
+/// Type being edited
 #[derive(Copy, Clone, Debug)]
 pub enum Editing {
+    /// A statement group, corresponding to the `out#`.
     Stmt,
+    /// An item, such as fn or struct.
     Item,
+    /// A crate.
     Crate,
 }
 

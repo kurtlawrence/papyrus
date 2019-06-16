@@ -2,7 +2,6 @@ use crate::pfh::*;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
-use std::process::Command;
 
 /// Constructs the compile directory.
 /// Takes a list of source files and writes the contents to file.
