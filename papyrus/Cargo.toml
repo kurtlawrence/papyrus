@@ -18,6 +18,7 @@ travis-ci = { repository = "kurtlawrence/papyrus" }
 # My crates
 cmdtree = 			{ path = "/cmdtree",		default-features = false }
 cratesiover =		{ version = "2",		default-features = false,	optional = true }
+kserd = 			{ path = "/kserd/kserd",	default-features = false }
 shh = 				{ version = "1",		default-features = false }
 
 # crates.io

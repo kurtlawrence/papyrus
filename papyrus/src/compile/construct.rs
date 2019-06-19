@@ -67,6 +67,8 @@ crate-type = [ "cdylib" ]
 path = "src/lib.rs"
 
 [dependencies]
+kserd = {{ path = "/kserd/kserd" }}
+kserd_derive = {{ path = "/kserd/kserd_derive" }}
 {crates}
 "#,
         lib_name = lib_name,
