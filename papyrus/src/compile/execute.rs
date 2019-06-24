@@ -1,12 +1,13 @@
+use ::kserd::Kserd;
 use libloading::{Library, Symbol};
 use std::io::{self, Write};
 use std::path::Path;
 
 /// We don't type anything here. You must be **VERY** careful to pass through the correct borrow to match the
 /// function signature!
-type DataFunc<D> = unsafe fn(D) -> kserd::Kserd<'static>;
+type DataFunc<D> = unsafe fn(D) -> Kserd<'static>;
 
-type ExecResult = Result<String, &'static str>;
+type ExecResult = Result<Kserd<'static>, &'static str>;
 
 pub(crate) fn exec<P: AsRef<Path>, D, W: Write + Send>(
     library_file: P,
@@ -32,7 +33,7 @@ fn exec_no_redirect<P: AsRef<Path>, Data>(
     let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe { func(app_data) }));
 
     match res {
-        Ok(s) => Ok(s.to_string()), // TODO, return Kserd???
+        Ok(kserd) => Ok(kserd),
         Err(_) => Err("a panic occured with evaluation"),
     }
 }
@@ -73,7 +74,7 @@ fn exec_and_redirect<P: AsRef<Path>, Data, W: Write + Send>(
     let res = res.map_err(|_| "crossbeam scoping failed")?;
 
     match res {
-        Ok(s) => Ok(s.to_string()), // TODO return Kserd
+        Ok(kserd) => Ok(kserd),
         Err(_) => Err("a panic occured with evaluation"),
     }
 }

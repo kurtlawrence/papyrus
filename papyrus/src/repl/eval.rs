@@ -9,10 +9,6 @@ use std::ops::{Deref, DerefMut};
 use std::path::Path;
 use std::sync::{Arc, RwLock};
 
-/// Represents a type of `(to_print, as_out)`.
-/// `as_out` flags to output `out#`.
-type HandleInputResult = (Cow<'static, str>, bool);
-
 impl<D> Repl<Evaluate, D> {
     /// Evaluates the read input, compiling and executing the code and printing all line prints until
     /// a result is found. This result gets passed back as a print ready repl.
@@ -128,19 +124,19 @@ where
         InputResult::Command(cmds) => {
             let r = data.handle_command(&cmds, &mut output, obtain_mut_data);
             keep_mutating = data.linking.mutable; // a command can alter the mutating state, needs to persist
-            r
+            r.map(|x| EvalOutput::Print(x))
         }
         InputResult::Program(input) => {
             Ok(data.handle_program(input, &mut output, obtain_mut_data, obtain_brw_data))
         }
-        InputResult::InputError(err) => Ok((Cow::Owned(err), false)),
+        InputResult::InputError(err) => Ok(EvalOutput::Print(Cow::Owned(err))),
         InputResult::Eof => Err(Signal::Exit),
-        _ => Ok((Cow::Borrowed(""), false)),
+        _ => Ok(EvalOutput::Print(Cow::Borrowed(""))),
     };
 
-    let ((to_print, as_out), sig) = match mapped {
+    let (eval_output, sig) = match mapped {
         Ok(hir) => (hir, Signal::None),
-        Err(sig) => ((Cow::Borrowed(""), false), sig),
+        Err(sig) => (EvalOutput::Print(Cow::Borrowed("")), sig),
     };
 
     data.linking.mutable = keep_mutating; // always cancel a mutating block on evaluation??
@@ -153,8 +149,7 @@ where
         repl: Repl {
             state: Print {
                 output,
-                to_print,
-                as_out,
+                data: eval_output,
             },
             data,
             more,
@@ -169,7 +164,7 @@ impl<D> ReplData<D> {
         cmds: &str,
         writer: &mut W,
         obtain_mut_app_data: F,
-    ) -> Result<HandleInputResult, Signal>
+    ) -> Result<Cow<'static, str>, Signal>
     where
         F: FnOnce() -> R,
         R: DerefMut<Target = D>,
@@ -182,40 +177,37 @@ impl<D> ReplData<D> {
             lr::Cancel => {
                 self.linking.mutable = false; // reset the mutating on cancel
                 self.editing = None; // reset the editing on cancel
-                (Cow::Borrowed("cancelled input and returned to root"), false)
+                Cow::Borrowed("cancelled input and returned to root")
             }
             lr::Action(res) => match res {
                 CommandResult::BeginMutBlock => {
                     self.linking.mutable = true;
-                    (Cow::Borrowed("beginning mut block"), false)
+                    Cow::Borrowed("beginning mut block")
                 }
-                CommandResult::EditAlter(ei) => (Cow::Borrowed(cmds::edit_alter(self, ei)), false),
+                CommandResult::EditAlter(ei) => Cow::Borrowed(cmds::edit_alter(self, ei)),
                 CommandResult::EditReplace(ei, val) => {
                     let r = Cow::Borrowed(cmds::edit_alter(self, ei));
 
                     if r.is_empty() {
                         return Err(Signal::ReEvaluate(val));
                     } else {
-                        (r, false)
+                        r
                     }
                 }
-                CommandResult::SwitchModule(path) => (
-                    Cow::Borrowed(crate::cmds::switch_module(self, &path)),
-                    false,
-                ),
-                CommandResult::ActionOnReplData(action) => {
-                    let s = action(self, writer);
-                    (Cow::Owned(s), false)
+                CommandResult::SwitchModule(path) => {
+                    Cow::Borrowed(crate::cmds::switch_module(self, &path))
                 }
+
+                CommandResult::ActionOnReplData(action) => Cow::Owned(action(self, writer)),
                 CommandResult::ActionOnAppData(action) => {
                     let mut r = obtain_mut_app_data();
                     let app_data: &mut D = r.borrow_mut();
                     let s = action(app_data, writer);
-                    (Cow::Owned(s), false)
+                    Cow::Owned(s)
                 }
-                CommandResult::Empty => (Cow::Borrowed(""), false),
+                CommandResult::Empty => Cow::Borrowed(""),
             },
-            _ => (Cow::Borrowed(""), false),
+            _ => Cow::Borrowed(""),
         };
 
         Ok(tuple)
@@ -227,7 +219,7 @@ impl<D> ReplData<D> {
         writer: &mut Output<output::Write>,
         obtain_mut_data: Fmut,
         obtain_brw_data: Fbrw,
-    ) -> HandleInputResult
+    ) -> EvalOutput
     where
         Fmut: FnOnce() -> Rmut,
         Rmut: DerefMut<Target = D>,
@@ -310,10 +302,10 @@ impl<D> ReplData<D> {
         let res = compile::build_compile_dir(&self.compilation_dir, &self.mods_map, &self.linking);
         if let Err(e) = res {
             maybe_pop_input(self); // failed so don't save
-            return (
-                Cow::Owned(format!("failed to build compile directory: {}", e)),
-                false,
-            );
+            return EvalOutput::Print(Cow::Owned(format!(
+                "failed to build compile directory: {}",
+                e
+            )));
         }
 
         // compile
@@ -328,7 +320,7 @@ impl<D> ReplData<D> {
             Ok(f) => f,
             Err(e) => {
                 maybe_pop_input(self); // failed so don't save
-                return (Cow::Owned(format!("{}", e)), false);
+                return EvalOutput::Print(Cow::Owned(format!("{}", e)));
             }
         };
 
@@ -373,19 +365,19 @@ impl<D> ReplData<D> {
                 Ok(s) => {
                     if self.linking.mutable {
                         maybe_pop_input(self); // don't save mutating inputs
-                        ((Cow::Owned(format!("finished mutating block: {}", s)), false)) // don't print as `out#`
+                        EvalOutput::Print(Cow::Owned(format!("finished mutating block: {}", s))) // don't print as `out#`
                     } else {
-                        ((Cow::Owned(s), true))
+                        EvalOutput::Data(s)
                     }
                 }
                 Err(e) => {
                     maybe_pop_input(self); // failed so don't save
-                    (Cow::Borrowed(e), false)
+                    EvalOutput::Print(Cow::Borrowed(e))
                 }
             }
         } else {
             // this will keep inputs, might not be preferrable to do so in mutating state?
-            (Cow::Borrowed(""), false) // do not execute if no extra statements have been added
+            EvalOutput::Print(Cow::Borrowed("")) // do not execute if no extra statements have been added
         }
     }
 

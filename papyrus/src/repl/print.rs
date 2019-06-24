@@ -1,13 +1,17 @@
 use super::*;
-
+use ::kserd::format::FormattingConfig;
 use std::io::Write;
 
 impl<D> Repl<Print, D> {
     /// Prints the result if successful as `[out#]` or the failure message if any.
+    /// Uses the default formatter for the `Kserd` data.
     pub fn print(mut self) -> Repl<Read, D> {
-        // write
-        {
-            if self.state.as_out {
+        self.print_with_formatting(FormattingConfig::default())
+    }
+
+    pub fn print_with_formatting(mut self, config: FormattingConfig) -> Repl<Read, D> {
+        match &self.state.data {
+            EvalOutput::Data(kserd) => {
                 let num = self.data.current_src().stmts.len().saturating_sub(1);
 
                 let out_stmt = format!("[out{}]", num);
@@ -17,14 +21,14 @@ impl<D> Repl<Print, D> {
                     "{} {}: {}",
                     self.data.cmdtree.path().color(self.data.prompt_colour),
                     out_stmt.color(self.data.out_colour),
-                    self.state.to_print
+                    kserd.as_str_with_config(config),
                 )
                 .expect("failed writing");
-            } else {
-                if self.state.to_print.len() > 0 {
+            }
+            EvalOutput::Print(print) => {
+                if print.len() > 0 {
                     // only write if there is something to write.
-                    writeln!(&mut self.state.output, "{}", self.state.to_print)
-                        .expect("failed writing");
+                    writeln!(&mut self.state.output, "{}", print).expect("failed writing");
                 }
             }
         }

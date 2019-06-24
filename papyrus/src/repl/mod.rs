@@ -87,6 +87,7 @@ use crate::{
 use cmdtree::*;
 use colored::*;
 use crossbeam_channel::Receiver;
+use kserd::Kserd;
 use std::{
     borrow::Cow,
     fmt, fs, io,
@@ -177,9 +178,15 @@ pub struct Evaluating<D> {
 #[derive(Debug)]
 pub struct Print {
     output: Output<output::Write>,
-    to_print: Cow<'static, str>,
-    /// Specifies whether to print the `[out#]`
-    as_out: bool,
+    data: EvalOutput,
+}
+
+/// Was the eval something that produces data??
+#[derive(Debug)]
+enum EvalOutput {
+    /// If there is data, then it should be prefaced with `[out#]`.
+    Data(Kserd<'static>),
+    Print(Cow<'static, str>),
 }
 
 /// Represents an evaluating result. Signal should be checked and handled.
