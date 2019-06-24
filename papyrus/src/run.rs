@@ -82,7 +82,7 @@ impl<D> Repl<Read, D> {
                         Signal::ReEvaluate(val) => reevaluate = Some(val),
                     }
 
-                    read = result.repl.print();
+                    read = result.repl.print().0;
 
                     read.close_channel();
 

@@ -2,44 +2,71 @@ use super::*;
 use ::kserd::format::FormattingConfig;
 use std::io::Write;
 
+/// Methods when repl is in `Print` state.
 impl<D> Repl<Print, D> {
     /// Prints the result if successful as `[out#]` or the failure message if any.
     /// Uses the default formatter for the `Kserd` data.
-    pub fn print(mut self) -> Repl<Read, D> {
+    pub fn print(self) -> (Repl<Read, D>, Option<(usize, Kserd<'static>)>) {
         self.print_with_formatting(FormattingConfig::default())
     }
 
-    pub fn print_with_formatting(mut self, config: FormattingConfig) -> Repl<Read, D> {
-        match &self.state.data {
-            EvalOutput::Data(kserd) => {
-                let num = self.data.current_src().stmts.len().saturating_sub(1);
+    /// Prints the result if successful as `[out#]` or the failure message if any.
+    /// Uses the given formatting configuration for the `Kserd` data.
+    /// The return is (<repl in read state>, <maybe <stmt index, data>>)
+    pub fn print_with_formatting(
+        self,
+        config: FormattingConfig,
+    ) -> (Repl<Read, D>, Option<(usize, Kserd<'static>)>) {
+        let Repl {
+            state,
+            data,
+            more,
+            data_mrker,
+        } = self;
+
+        let repl_data = data;
+
+        let Print { mut output, data } = state;
+
+        let mut kserd = None;
+
+        match data {
+            EvalOutput::Data(k) => {
+                let num = repl_data.current_src().stmts.len().saturating_sub(1);
 
                 let out_stmt = format!("[out{}]", num);
 
                 writeln!(
-                    &mut self.state.output,
+                    &mut output,
                     "{} {}: {}",
-                    self.data.cmdtree.path().color(self.data.prompt_colour),
-                    out_stmt.color(self.data.out_colour),
-                    kserd.as_str_with_config(config),
+                    repl_data.cmdtree.path().color(repl_data.prompt_colour),
+                    out_stmt.color(repl_data.out_colour),
+                    k.as_str_with_config(config),
                 )
                 .expect("failed writing");
+
+                kserd = Some((num, k));
             }
             EvalOutput::Print(print) => {
                 if print.len() > 0 {
                     // only write if there is something to write.
-                    writeln!(&mut self.state.output, "{}", print).expect("failed writing");
+                    writeln!(&mut output, "{}", print).expect("failed writing");
                 }
             }
         }
 
-        let mut r = self.move_state(|s| Read {
-            output: s.output.to_read(),
-        });
+        let mut r = Repl {
+            state: Read {
+                output: output.to_read(),
+            },
+            data: repl_data,
+            data_mrker,
+            more,
+        };
 
         prepare_read(&mut r);
 
-        r
+        (r, kserd)
     }
 }
 

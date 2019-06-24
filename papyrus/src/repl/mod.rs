@@ -184,7 +184,7 @@ pub struct Print {
 /// Was the eval something that produces data??
 #[derive(Debug)]
 enum EvalOutput {
-    /// If there is data, then it should be prefaced with `[out#]`.
+    /// If there is data, then it should be prefixed with `[out#]`.
     Data(Kserd<'static>),
     Print(Cow<'static, str>),
 }
