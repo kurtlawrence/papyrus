@@ -285,10 +285,9 @@ fn append_buffer<S: AsRef<str>>(
             x.assign_let_binding(i, buf);
             buf.push('\n');
         });
-        // buf.push_str("format!(\"{:?}\", out");
-        buf.push_str("kserd::ToKserd::to_kserd(out");
+        buf.push_str("kserd::AsKserd::as_kserd(&out");
         buf.push_str(&c.saturating_sub(1).to_string());
-        buf.push_str(")\n");
+        buf.push_str(").to_owned()\n");
     } else {
         buf.push_str("String::from(\"no statements\")\n");
     }
