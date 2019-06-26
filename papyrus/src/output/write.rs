@@ -58,13 +58,15 @@ impl Output<Write> {
         self.buf
             .truncate(self.lines_pos.last().map(|x| x + 1).unwrap_or(0));
 
-        self.send_line_chg(false);
+        self.send_line_chg();
     }
 }
 
+// FIXME Remove this once rectified
 impl io::Write for Output<Write> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let s = String::from_utf8_lossy(buf);
+        dbg!(&s);
         self.push_str(&s);
         Ok(buf.len())
     }

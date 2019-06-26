@@ -42,6 +42,19 @@ macro_rules! repl {
     }};
 }
 
+#[cfg(debug_assertions)]
+macro_rules! dbg_to_file {
+    ($val:expr) => {{
+        use std::io::Write;
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("_dbg_to_file_output")
+            .expect("failed to create/open _dbg_to_file_output file");
+        writeln!(file, "[{}:{}] {:?}", file!(), line!(), $val).unwrap();
+    }};
+}
+
 /// Extendable commands for repl.
 pub mod cmds;
 pub mod compile;

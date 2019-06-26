@@ -29,12 +29,12 @@ pub struct Output<S> {
 }
 
 /// Line change event.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum OutputChange {
     /// A change was made on the current line.
     CurrentLine(String),
-    /// A change was made on a new line.
-    NewLine(String),
+    /// Output is on a new line now.
+    NewLine,
 }
 
 /// Only read functions available.
@@ -76,7 +76,8 @@ impl<S> Output<S> {
             '\r' => false, // carrige returns are ignored
             '\n' => {
                 // send line change signal of this line
-                self.send_line_chg(true);
+                self.send_line_chg();
+                self.send_newline();
 
                 self.lines_pos.push(self.buf.len());
 
@@ -101,27 +102,30 @@ impl<S> Output<S> {
         });
 
         // send line change signal of last line -- previous ones are handled in push_ch
-        self.send_line_chg(false);
+        self.send_line_chg();
     }
 }
 
 /// Message sending functions.
 impl<S> Output<S> {
-    /// Always sends the last line, but whether it is flagged as a new line or not is up to caller.
-    fn send_line_chg(&mut self, new_line: bool) {
+    /// Always sends the last line content.
+    fn send_line_chg(&mut self) {
         if let Some(tx) = self.tx.as_ref() {
             let line = self
                 .line(self.lines_len().saturating_sub(1))
                 .unwrap_or("")
                 .to_string();
 
-            let chg = if new_line {
-                OutputChange::NewLine(line)
-            } else {
-                OutputChange::CurrentLine(line)
-            };
+            match tx.try_send(OutputChange::CurrentLine(line)) {
+                Ok(_) => (),
+                Err(_) => self.tx = None, // receiver disconnected, stop sending msgs
+            }
+        }
+    }
 
-            match tx.try_send(chg) {
+    fn send_newline(&mut self) {
+        if let Some(tx) = self.tx.as_ref() {
+            match tx.try_send(OutputChange::NewLine) {
                 Ok(_) => (),
                 Err(_) => self.tx = None, // receiver disconnected, stop sending msgs
             }
@@ -172,5 +176,64 @@ mod tests {
 
         o.push_str("\r\n");
         assert_eq!(o.buffer(), "Hello, World!\n");
+    }
+
+    #[test]
+    fn writeln_as_one_line_chg_trigger() {
+        // It was found that using write! or writeln! seems to make multiple calls to
+        // line changes. This behaviour is inconsistent, especially if using the writeln!
+        // macro, where the expectation is just a single new line...
+
+        let mut output = Output::new().to_write();
+
+        let rx = output.listen();
+
+        output.push_str(&format!("{}, {}!\n", "Hello", "world"));
+
+        output.close();
+
+        use OutputChange as oc;
+
+        let msgs = rx.iter().collect::<Vec<_>>();
+
+        assert_eq!(
+            &msgs,
+            &[
+                oc::CurrentLine("Hello, world!".to_owned()),
+                oc::NewLine,
+                oc::CurrentLine(String::new())
+            ]
+        );
+    }
+
+    #[test]
+    fn line_listening_consistenty() {
+        // check that rebuilding a buffer using line change events matches
+
+        let mut output = Output::new().to_write();
+
+        let rx = output.listen();
+
+        output.push_str("Hello,");
+        output.push_str(" world!");
+        output.push_str("\n");
+        output.push_str("A full line\n");
+
+        output.close();
+
+        let mut lines = vec![String::new()];
+
+        for msg in rx.iter() {
+            match msg {
+                OutputChange::CurrentLine(s) => {
+                    lines.last_mut().map(|x| *x = s);
+                }
+                OutputChange::NewLine => lines.push(String::new()),
+            }
+        }
+
+        let buffer = lines.join("\n");
+
+        assert_eq!(buffer, output.buffer());
     }
 }

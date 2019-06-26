@@ -12,6 +12,7 @@ pub(crate) use self::execute::exec;
 mod tests {
     use super::*;
     use crate::pfh::*;
+    use ::kserd::Kserd;
     use linking::{Extern, LinkingConfiguration};
     use std::fs;
     use std::path::PathBuf;
@@ -40,7 +41,7 @@ mod tests {
         // eval
         let r = exec::<_, _, std::io::Sink>(path, "_lib_intern_eval", &(), None).unwrap(); // execute library fn
 
-        assert_eq!(&r, "4");
+        assert_eq!(r, Kserd::new_int(4));
     }
 
     #[test]
@@ -71,7 +72,7 @@ mod tests {
         // eval
         let r = exec::<_, _, std::io::Sink>(path, "_lib_intern_eval", &(), None).unwrap(); // execute library fn
 
-        assert_eq!(&r, "4");
+        assert_eq!(r, Kserd::new_int(4));
     }
 
     #[test]
@@ -102,7 +103,7 @@ mod tests {
         // eval
         let r = exec::<_, _, std::io::Sink>(path, "_lib_intern_eval", &(), None).unwrap(); // execute library fn
 
-        assert_eq!(&r, "4");
+        assert_eq!(r, Kserd::new_int(4));
     }
 
     #[test]
@@ -133,7 +134,7 @@ mod tests {
         // eval
         let r = exec(path, "_lib_intern_eval", &(), Some(&mut std::io::sink())).unwrap(); // execute library fn
 
-        assert_eq!(&r, "4");
+        assert_eq!(r, Kserd::new_int(4));
     }
 
     #[test]
@@ -158,6 +159,7 @@ mod tests {
     }
 
     // TODO enable when not on nightly
+    // Maybe look into why it doesn't work on nightly?
     // #[test]
     // fn fail_eval_test() {
     //     let compile_dir = "target/testing/fail_eval_test";

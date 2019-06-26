@@ -342,7 +342,10 @@ impl<D> ReplData<D> {
                 // what can you do ¯\_(ツ)_/¯
                 let lib_file = rename_lib_file(lib_file).expect("failed renaming library file");
 
-                let redirect_wtr = if self.redirect_on_execution || true {
+                // FIXME If removing the true this won't work through terminals
+                // Need to trial it in linux though as I remember it breaking a lot...
+                // If it is all good, I should be able to just redirect _all_ output
+                let redirect_wtr = if self.redirect_on_execution {
                     Some(writer)
                 } else {
                     None

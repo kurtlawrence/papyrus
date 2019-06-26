@@ -113,6 +113,10 @@ impl<D> Repl<Read, D> {
         self.state.output.set_prompt_and_trigger(&self.prompt());
     }
 
+    pub fn output(&self) -> &str {
+        self.state.output.buffer()
+    }
+
     /// Begin listening to line change events on the output.
     pub fn output_listen(&mut self) -> output::Receiver {
         self.state.output.listen()

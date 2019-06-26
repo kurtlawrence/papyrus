@@ -15,7 +15,7 @@ pub enum FormatError {
 
 /// Format a code snippet.
 ///
-/// Removes newlines.
+/// Removes newlines from formatted code.
 pub fn format(code_snippet: &str) -> Result<String, FormatError> {
     use rustfmt_nightly::*;
 
@@ -29,7 +29,14 @@ pub fn format(code_snippet: &str) -> Result<String, FormatError> {
 
         let mut session = Session::new(config, Some(&mut buf));
 
+        let stderr = std::io::stderr();
+        let _stderr_lock = stderr.lock();
+        let _shherr = shh::stderr().map_err(|_| FormatError::Io);
+
+        let stdout = std::io::stdout();
+        let _stdout_lock = stdout.lock();
         let _shhout = shh::stdout().map_err(|_| FormatError::Io);
+
         session.format(Input::Text(code)).is_ok()
     };
 

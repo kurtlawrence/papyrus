@@ -173,7 +173,10 @@ where
                 if eval.completed() {
                     let r = eval.wait();
 
-                    let (read, signal) = (r.repl.print(), r.signal);
+                    let (print, signal) = (r.repl, r.signal);
+
+					// TODO, store the kserd! Should be stored in a map that matches the filemap
+					let read = print.print().0;
 
                     pad.repl.put_read(read);
 

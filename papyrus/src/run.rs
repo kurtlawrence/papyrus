@@ -106,6 +106,8 @@ fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
     let mut pos = cursor::get_pos().unwrap_or((0, 0));
 
     for msg in rx.iter() {
+        dbg_to_file!(&msg);
+
         match msg {
             output::OutputChange::CurrentLine(line) => {
                 let mut o = term.lock_write();
@@ -122,14 +124,12 @@ fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
 
                 o.flush()?;
             }
-            output::OutputChange::NewLine(line) => {
+            output::OutputChange::NewLine => {
                 let mut o = term.lock_write();
 
                 o.write("\n")?;
 
                 pos = cursor::get_pos().unwrap_or((0, 0));
-
-                o.write(&line)?;
 
                 o.flush()?;
             }

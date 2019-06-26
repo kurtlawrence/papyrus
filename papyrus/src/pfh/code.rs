@@ -173,12 +173,11 @@ pub fn construct_source_code<'a>(
         contents.push('}');
     }
 
-    // TODO turn back on once I fix kserd
-    // debug_assert_eq!(
-    //     cap,
-    //     contents.len(),
-    //     "failed at calculating the correct capacity"
-    // );
+    debug_assert_eq!(
+        cap,
+        contents.len(),
+        "failed at calculating the correct capacity"
+    );
 
     (contents, map)
 }
@@ -275,7 +274,7 @@ fn append_buffer<S: AsRef<str>>(
     eval_fn_name(mod_path, buf);
     buf.push('(');
     linking_config.construct_fn_args(buf);
-    buf.push_str(") -> kserd::Kserd<'static> {\n"); // 14 len // TODO fix this length
+    buf.push_str(") -> kserd::Kserd<'static> {\n"); // 29 len
 
     // add stmts
     let c = src_code.stmts.len();
@@ -289,7 +288,7 @@ fn append_buffer<S: AsRef<str>>(
         buf.push_str(&c.saturating_sub(1).to_string());
         buf.push_str(").to_owned()\n");
     } else {
-        buf.push_str("String::from(\"no statements\")\n");
+        buf.push_str("kserd::Kserd::new_str(\"no statements\")\n");
     }
     buf.push_str("}\n");
 
@@ -307,7 +306,7 @@ fn append_buffer_length<S: AsRef<str>>(
 ) -> (usize, ReturnRange) {
     // wrap stmts
     let mut cap =
-        31 + eval_fn_name_length(mod_path) + 1 + linking_config.construct_fn_args_length() + 14;
+        31 + eval_fn_name_length(mod_path) + 1 + linking_config.construct_fn_args_length() + 29;
 
     // add stmts
     let c = src_code.stmts.len();
@@ -318,17 +317,17 @@ fn append_buffer_length<S: AsRef<str>>(
             .enumerate()
             .map(|(i, x)| x.assign_let_binding_length(i) + 1)
             .sum::<usize>();
-        let return_str = 19 // format!("{:?}", out
+        let return_str = 29 // kserd::AsKserd::as_kserd(&out
             + c.saturating_sub(1).to_string().len()
-            + 2; // )\n
+            + 13; // ).to_owned()\n
 
         (
             stmts + return_str,
             cap + stmts..cap + stmts + return_str - 1,
         )
     } else {
-        // String::from("no statements")
-        (30, cap..cap + 29)
+        // kserd::Kserd::new_str("no statements")\n
+        (39, cap..cap + 38)
     };
     cap += add + 2; // }\n
 
@@ -522,14 +521,14 @@ mod tests {
         let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
-pub extern "C" fn _intern_eval() -> String {
-String::from("no statements")
+pub extern "C" fn _intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
 }
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 58..87);
-        assert_eq!(&ans[rng], "String::from(\"no statements\")");
+        assert_eq!(rng, 73..111);
+        assert_eq!(&ans[rng], r#"kserd::Kserd::new_str("no statements")"#);
 
         // alter mod path
         let mod_path = ["some".to_string(), "path".to_string()];
@@ -539,14 +538,14 @@ String::from("no statements")
         let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval() -> String {
-String::from("no statements")
+pub extern "C" fn _some_path_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
 }
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 68..97);
-        assert_eq!(&ans[rng], "String::from(\"no statements\")");
+        assert_eq!(rng, 83..121);
+        assert_eq!(&ans[rng], r#"kserd::Kserd::new_str("no statements")"#);
 
         // alter the linking config
         let linking_config = LinkingConfiguration {
@@ -559,14 +558,14 @@ String::from("no statements")
         let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
-String::from("no statements")
+pub extern "C" fn _some_path_intern_eval(app_data: &String) -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
 }
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 85..114);
-        assert_eq!(&ans[rng], "String::from(\"no statements\")");
+        assert_eq!(rng, 100..138);
+        assert_eq!(&ans[rng], r#"kserd::Kserd::new_str("no statements")"#);
 
         // add an item and new input
         src_code.items.push("fn a() {}".to_string());
@@ -577,16 +576,16 @@ String::from("no statements")
         let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
-String::from("no statements")
+pub extern "C" fn _some_path_intern_eval(app_data: &String) -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
 }
 fn a() {}
 fn b() {}
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 85..114);
-        assert_eq!(&ans[rng], "String::from(\"no statements\")");
+        assert_eq!(rng, 100..138);
+        assert_eq!(&ans[rng], r#"kserd::Kserd::new_str("no statements")"#);
 
         // add stmts
         src_code.stmts.push(StmtGrp(vec![
@@ -615,20 +614,20 @@ fn b() {}
         let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: &String) -> String {
+pub extern "C" fn _some_path_intern_eval(app_data: &String) -> kserd::Kserd<'static> {
 let a = 1;
 let out0 = b;
 let c = 2;
 let out1 = d;
-format!("{:?}", out1)
+kserd::AsKserd::as_kserd(&out1).to_owned()
 }
 fn a() {}
 fn b() {}
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 135..156);
-        assert_eq!(&ans[rng], "format!(\"{:?}\", out1)");
+        assert_eq!(rng, 150..192);
+        assert_eq!(&ans[rng], "kserd::AsKserd::as_kserd(&out1).to_owned()");
     }
 
     #[test]
@@ -651,39 +650,39 @@ fn b() {}
         let (s, map) = construct_source_code(&map, &linking);
 
         let ans = r##"#[no_mangle]
-pub extern "C" fn _lib_intern_eval() -> String {
-String::from("no statements")
+pub extern "C" fn _lib_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
 }
 mod foo {
 #[no_mangle]
-pub extern "C" fn _foo_intern_eval() -> String {
-String::from("no statements")
+pub extern "C" fn _foo_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
 }
 mod bar {
 #[no_mangle]
-pub extern "C" fn _foo_bar_intern_eval() -> String {
-String::from("no statements")
+pub extern "C" fn _foo_bar_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
 }
 }}
 mod test {
 #[no_mangle]
-pub extern "C" fn _test_intern_eval() -> String {
-String::from("no statements")
+pub extern "C" fn _test_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
 }
 mod inner {
 #[no_mangle]
-pub extern "C" fn _test_inner_intern_eval() -> String {
-String::from("no statements")
+pub extern "C" fn _test_inner_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
 }
 }
 mod inner2 {
 #[no_mangle]
-pub extern "C" fn _test_inner2_intern_eval() -> String {
-String::from("no statements")
+pub extern "C" fn _test_inner2_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
 }
 }}"##;
 
-        let return_stmt = "String::from(\"no statements\")";
+        let return_stmt = r#"kserd::Kserd::new_str("no statements")"#;
         assert_eq!(&s, ans);
         assert_eq!(
             &ans[map.get(Path::new("lib")).unwrap().clone()],
