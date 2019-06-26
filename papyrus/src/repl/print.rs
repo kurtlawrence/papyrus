@@ -36,21 +36,21 @@ impl<D> Repl<Print, D> {
 
                 let out_stmt = format!("[out{}]", num);
 
-                writeln!(
-                    &mut output,
+                let line = format!(
                     "{} {}: {}",
                     repl_data.cmdtree.path().color(repl_data.prompt_colour),
                     out_stmt.color(repl_data.out_colour),
-                    k.as_str_with_config(config),
-                )
-                .expect("failed writing");
+                    k.as_str_with_config(config)
+                );
+
+                output.write_line(&line);
 
                 kserd = Some((num, k));
             }
             EvalOutput::Print(print) => {
                 if print.len() > 0 {
                     // only write if there is something to write.
-                    writeln!(&mut output, "{}", print).expect("failed writing");
+                    output.write_line(&print);
                 }
             }
         }

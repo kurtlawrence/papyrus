@@ -189,6 +189,7 @@ mod tests {
         let rx = output.listen();
 
         output.push_str(&format!("{}, {}!\n", "Hello", "world"));
+        output.push_str("Testing\nmultiple\nnew\nlines");
 
         output.close();
 
@@ -201,7 +202,14 @@ mod tests {
             &[
                 oc::CurrentLine("Hello, world!".to_owned()),
                 oc::NewLine,
-                oc::CurrentLine(String::new())
+                oc::CurrentLine(String::new()),
+                oc::CurrentLine(String::from("Testing")),
+                oc::NewLine,
+                oc::CurrentLine(String::from("multiple")),
+                oc::NewLine,
+                oc::CurrentLine(String::from("new")),
+                oc::NewLine,
+                oc::CurrentLine(String::from("lines")),
             ]
         );
     }

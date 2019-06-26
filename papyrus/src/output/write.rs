@@ -1,6 +1,7 @@
 use super::*;
 use std::io;
 
+/// Write state functions.
 impl Output<Write> {
     /// Finished write state. Move to read state.
     ///
@@ -35,6 +36,13 @@ impl Output<Write> {
         self.push_str(contents);
     }
 
+    pub fn write_line(&mut self, contents: &str) {
+        for ch in contents.chars() {
+            self.push_ch(ch);
+        }
+        self.push_ch('\n');
+    }
+
     /// Erase the last line in the buffer. This does not actually _remove_
     /// the line, but removes all its contents.
     ///
@@ -62,7 +70,6 @@ impl Output<Write> {
     }
 }
 
-// FIXME Remove this once rectified
 impl io::Write for Output<Write> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let s = String::from_utf8_lossy(buf);
@@ -95,5 +102,28 @@ mod tests {
         o.write_str("Hello");
         o.erase_last_line();
         assert_eq!(o.buffer(), "");
+    }
+
+    #[test]
+    fn writing_line() {
+        let mut o = Output::new().to_write();
+
+        let rx = o.listen();
+
+        o.write_line("Hello, world!");
+
+        o.close();
+
+        let msgs = rx.iter().collect::<Vec<_>>();
+
+        assert_eq!(o.buffer(), "Hello, world!\n");
+
+        assert_eq!(
+            &msgs,
+            &[
+                OutputChange::CurrentLine("Hello, world!".to_owned()),
+                OutputChange::NewLine
+            ]
+        );
     }
 }
