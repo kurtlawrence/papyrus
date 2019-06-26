@@ -21,7 +21,9 @@ impl AnsiLineRenderer {
     pub fn update_text(&mut self, text: &str, app_resources: &mut AppResources) {
         self.display.clear();
 
-        self.id = Some(app_resources.add_text(text));
+        let words = azul::text_layout::split_text_into_words(text);
+
+        self.id = Some(app_resources.add_text(words));
 
         let words = app_resources.get_text(self.id.as_ref().unwrap()).unwrap();
 
@@ -83,17 +85,14 @@ impl ReplOutputRenderer {
         for chg in self.rx.try_iter() {
             msgs = true;
 
-            let line = match chg {
-                OutputChange::CurrentLine(l) => l,
-                OutputChange::NewLine(l) => {
-                    self.lines.push(AnsiLineRenderer::new());
-                    l
+            match chg {
+                OutputChange::CurrentLine(line) => {
+                    self.lines
+                        .last_mut()
+                        .map(|x| x.update_text(&line, app_resources));
                 }
-            };
-
-            self.lines
-                .last_mut()
-                .map(|x| x.update_text(&line, app_resources));
+                OutputChange::NewLine => self.lines.push(AnsiLineRenderer::new()),
+            }
         }
 
         msgs

@@ -1,13 +1,14 @@
 use azul::prelude::*;
 
+// TODO Make cargo run pretty the output, pad tree needs work
+// TODO Try without TextSlice, I think it is fucking things up
+// TODO Clean warnings
+// TODO Celebrate??
+
 macro_rules! cb {
     ($priv:ident, $fn:ident) => {
-        fn $priv(
-            data: &StackCheckedPointer<T>,
-            app_state_no_data: &mut AppStateNoData<T>,
-            window_event: &mut CallbackInfo<T>,
-        ) -> UpdateScreen {
-            data.invoke_mut(Self::$fn, app_state_no_data, window_event)
+        fn $priv(info: DefaultCallbackInfoUnchecked<T>) -> UpdateScreen {
+            unsafe { info.invoke_callback(Self::$fn) }
         }
     };
 }

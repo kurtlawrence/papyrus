@@ -26,12 +26,7 @@ where
     T: 'static + BorrowMut<AppValue<PadState<T, D>>>,
     D: 'static + Send + Sync,
 {
-    fn handle_input(
-        &mut self,
-        input: Input,
-        app: &mut AppStateNoData<T>,
-        _: &mut CallbackInfo<T>,
-    ) -> UpdateScreen {
+    fn handle_input(&mut self, input: Input, app: &mut AppStateNoData<T>) -> UpdateScreen {
         let redraw = match input {
             Input::Backspace => {
                 self.input_buffer.pop();
@@ -162,10 +157,14 @@ where
         app_state.add_timer(self.eval_timer_id, timer);
     }
 
-    fn check_evaluating_done(
-        app: &mut T,
-        app_resources: &mut AppResources,
-    ) -> (UpdateScreen, TerminateTimer) {
+    fn check_evaluating_done(info: TimerCallbackInfo<T>) -> (UpdateScreen, TerminateTimer) {
+        let TimerCallbackInfo {
+            state,
+            app_resources,
+        } = info;
+
+        let app = state;
+
         let pad: &mut PadState<T, D> = &mut app.borrow_mut();
 
         let (terminate, finished) = match pad.repl.take_eval() {
@@ -175,8 +174,8 @@ where
 
                     let (print, signal) = (r.repl, r.signal);
 
-					// TODO, store the kserd! Should be stored in a map that matches the filemap
-					let read = print.print().0;
+                    // TODO, store the kserd! Should be stored in a map that matches the filemap
+                    let read = print.print().0;
 
                     pad.repl.put_read(read);
 
@@ -220,8 +219,10 @@ where
         }
     }
 
-    fn redraw_completions(app: &mut T, _: &mut AppResources) -> (UpdateScreen, TerminateTimer) {
-        let pad: &mut PadState<T, D> = &mut app.borrow_mut();
+    fn redraw_completions(info: TimerCallbackInfo<T>) -> (UpdateScreen, TerminateTimer) {
+        let TimerCallbackInfo { state, .. } = info;
+
+        let pad: &mut PadState<T, D> = &mut state.borrow_mut();
 
         if pad.completion.update() {
             (Redraw, TerminateTimer::Terminate)
@@ -230,29 +231,22 @@ where
         }
     }
 
-    fn update_state_on_text_input(
-        &mut self,
-        app_state: &mut AppStateNoData<T>,
-        window_event: &mut CallbackInfo<T>,
-    ) -> UpdateScreen {
-        let kb = app_state.windows[window_event.window_id].get_keyboard_state();
+    fn update_state_on_text_input(mut info: DefaultCallbackInfo<T, Self>) -> UpdateScreen {
+        let kb = info.get_keyboard_state();
 
         if kb.ctrl_down || kb.alt_down || kb.super_down {
             None
         } else {
-            self.handle_input(Input::Char(kb.current_char?), app_state, window_event)
+            let ch = kb.current_char?;
+            info.data.handle_input(Input::Char(ch), &mut info.state)
         }
     }
 
-    fn update_state_on_vk_down(
-        &mut self,
-        app_state: &mut AppStateNoData<T>,
-        window_event: &mut CallbackInfo<T>,
-    ) -> UpdateScreen {
+    fn update_state_on_vk_down(mut info: DefaultCallbackInfo<T, Self>) -> UpdateScreen {
         use AcceleratorKey::*;
         use VirtualKeyCode::*;
 
-        let kb = app_state.windows[window_event.window_id].get_keyboard_state();
+        let kb = &info.get_keyboard_state().clone();
 
         let input = kb_seq(kb, &[Ctrl, Key(Space)], || Input::Ctrl(' '))
             .or_else(|| kb_seq(kb, &[Key(Back)], || Input::Backspace))
@@ -262,16 +256,13 @@ where
             .or_else(|| kb_seq(kb, &[Key(Tab)], || Input::Tab));
 
         input
-            .and_then(|input| self.handle_input(input, app_state, window_event))
-            .or_else(|| self.completion.on_focus_vk_down(app_state, window_event))
+            .and_then(|input| info.data.handle_input(input, &mut info.state))
+            .or_else(|| info.data.completion.on_focus_vk_down(kb))
     }
 
-    fn on_window_left_mouse_down(
-        &mut self,
-        app: &mut AppStateNoData<T>,
-        event: &mut CallbackInfo<T>,
-    ) -> UpdateScreen {
-        self.handle_input(Input::LeftMouseDown, app, event)
+    fn on_window_left_mouse_down(mut info: DefaultCallbackInfo<T, Self>) -> UpdateScreen {
+        info.data
+            .handle_input(Input::LeftMouseDown, &mut info.state)
     }
 
     cb!(priv_update_state_on_text_input, update_state_on_text_input);
@@ -289,18 +280,15 @@ impl ReplTerminal {
     {
         let ptr = StackCheckedPointer::new(state);
 
-        let text_input_cb_id = info.window.add_callback(
-            ptr.clone(),
-            DefaultCallback(PadState::priv_update_state_on_text_input),
-        );
-        let vk_down_cb_id = info.window.add_callback(
-            ptr.clone(),
-            DefaultCallback(PadState::priv_update_state_on_vk_down),
-        );
-        let window_lmd_cb_id = info.window.add_callback(
-            ptr.clone(),
-            DefaultCallback(PadState::priv_on_window_left_mouse_down),
-        );
+        let text_input_cb_id = info
+            .window
+            .add_default_callback(PadState::priv_update_state_on_text_input, ptr.clone());
+        let vk_down_cb_id = info
+            .window
+            .add_default_callback(PadState::priv_update_state_on_vk_down, ptr.clone());
+        let window_lmd_cb_id = info
+            .window
+            .add_default_callback(PadState::priv_on_window_left_mouse_down, ptr.clone());
 
         // Container Div
         let mut term_div = Dom::div()

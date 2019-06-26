@@ -8,21 +8,17 @@ where
     T: 'static + BorrowMut<AppValue<PadState<T, D>>>,
     D: 'static + Send + Sync,
 {
-    fn on_mouse_down(
-        &mut self,
-        app: &mut AppStateNoData<T>,
-        event: &mut CallbackInfo<T>,
-    ) -> UpdateScreen {
-        let (idx, _) = event.get_index_in_parent(event.hit_dom_node)?;
+    fn on_mouse_down(mut info: DefaultCallbackInfo<T, Self>) -> UpdateScreen {
+        let (idx, _) = info.get_index_in_parent(&info.hit_dom_node)?;
 
-        let repl = self.repl.brw_read()?;
+        let repl = info.data.repl.brw_read()?;
 
         let path = repl.data.mods_map().keys().nth(idx)?;
 
         let line = format!(".mod switch {}", path.display());
 
-        self.set_line_input(line)?;
-        self.read_input(app)
+        info.data.set_line_input(line)?;
+        info.data.read_input(&mut info.state)
     }
 
     cb!(priv_on_mouse_down, on_mouse_down);
@@ -43,7 +39,7 @@ impl ReplModulesTree {
 
             let md_cbid = info
                 .window
-                .add_callback(ptr, DefaultCallback(PadState::<T, D>::priv_on_mouse_down));
+                .add_default_callback(PadState::<T, D>::priv_on_mouse_down, ptr);
 
             for path in repl.data.mods_map().keys() {
                 let mut s = String::new();

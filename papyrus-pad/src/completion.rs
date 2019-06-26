@@ -187,15 +187,14 @@ impl<T> CompletionPromptState<T> {
         self.set_last(Completions::new());
     }
 
-    pub fn on_focus_vk_down(
-        &mut self,
-        app: &mut AppStateNoData<T>,
-        event: &mut CallbackInfo<T>,
-    ) -> UpdateScreen {
+    fn on_focus_vk_down_inner(info: DefaultCallbackInfo<T, Self>) -> UpdateScreen {
+        let kb = info.get_keyboard_state().clone();
+        info.data.on_focus_vk_down(&kb)
+    }
+
+    pub fn on_focus_vk_down(&mut self, kb: &KeyboardState) -> UpdateScreen {
         use AcceleratorKey::*;
         use VirtualKeyCode::*;
-
-        let kb = app.windows[event.window_id].get_keyboard_state();
 
         kb_seq(kb, &[Key(Up)], || {
             self.kb_focus = self.kb_focus.saturating_sub(1)
@@ -211,32 +210,22 @@ impl<T> CompletionPromptState<T> {
         .or_else(|| kb_seq(kb, &[Key(Escape)], || self.clear()))
     }
 
-    fn on_mouse_enter(
-        &mut self,
-        _: &mut AppStateNoData<T>,
-        event: &mut CallbackInfo<T>,
-    ) -> UpdateScreen {
-        self.last_mouse_hovered = event.get_index_in_parent(event.hit_dom_node).map(|x| x.0);
+    fn on_mouse_enter(info: DefaultCallbackInfo<T, Self>) -> UpdateScreen {
+        info.data.last_mouse_hovered = info.get_index_in_parent(&info.hit_dom_node).map(|x| x.0);
         DontRedraw
     }
 
-    fn on_mouse_leave(
-        &mut self,
-        _: &mut AppStateNoData<T>,
-        event: &mut CallbackInfo<T>,
-    ) -> UpdateScreen {
-        let (idx, _) = event.get_index_in_parent(event.hit_dom_node)?;
+    fn on_mouse_leave(info: DefaultCallbackInfo<T, Self>) -> UpdateScreen {
+        let (idx, _) = info.get_index_in_parent(&info.hit_dom_node)?;
 
-        if self.last_mouse_hovered == Some(idx) {
-            self.last_mouse_hovered = None;
-        }
+        info.data.last_mouse_hovered = None;
 
         DontRedraw
     }
 }
 
 impl<T: 'static> CompletionPromptState<T> {
-    cb!(priv_on_focus_vk_down, on_focus_vk_down);
+    cb!(priv_on_focus_vk_down, on_focus_vk_down_inner);
     cb!(priv_on_mouse_enter, on_mouse_enter);
     cb!(priv_on_mouse_leave, on_mouse_leave);
 }
@@ -259,18 +248,15 @@ impl CompletionPrompt {
         } else {
             let ptr = StackCheckedPointer::new(state);
 
-            let focus_vkdown_cb_id = info.window.add_callback(
-                ptr.clone(),
-                DefaultCallback(CompletionPromptState::priv_on_focus_vk_down),
-            );
-            let menter_cb_id = info.window.add_callback(
-                ptr.clone(),
-                DefaultCallback(CompletionPromptState::priv_on_mouse_enter),
-            );
-            let mleave_cb_id = info.window.add_callback(
-                ptr.clone(),
-                DefaultCallback(CompletionPromptState::priv_on_mouse_leave),
-            );
+            let focus_vkdown_cb_id = info
+                .window
+                .add_default_callback(CompletionPromptState::priv_on_focus_vk_down, ptr.clone());
+            let menter_cb_id = info
+                .window
+                .add_default_callback(CompletionPromptState::priv_on_mouse_enter, ptr.clone());
+            let mleave_cb_id = info
+                .window
+                .add_default_callback(CompletionPromptState::priv_on_mouse_leave, ptr.clone());
 
             let mut prompt = state
                 .last_completions
@@ -280,10 +266,7 @@ impl CompletionPrompt {
                 .map(|(idx, x)| {
                     let mut item = Dom::div()
                         .with_class("completion-prompt-item")
-                        .with_css_override(
-                            "height",
-                            CssProperty::Height(LayoutHeight::px(ITEM_HEIGHT)),
-                        )
+                        .with_css_override("height", LayoutHeight::px(ITEM_HEIGHT).into())
                         .with_tab_index(TabIndex::Auto)
                         .with_child(Dom::label(x.completion.to_owned()))
                         .with_child(
@@ -302,8 +285,8 @@ impl CompletionPrompt {
                 })
                 .collect::<Dom<T>>()
                 .with_class("completion-prompt")
-                .with_css_override("top", CssProperty::Top(LayoutTop::px(top)))
-                .with_css_override("left", CssProperty::Left(LayoutLeft::px(left)))
+                .with_css_override("top", LayoutTop::px(top).into())
+                .with_css_override("left", LayoutLeft::px(left).into())
                 .with_tab_index(TabIndex::Auto); // make focusable
 
             prompt.add_default_callback_id(FOCUS_VKDOWN, focus_vkdown_cb_id);
@@ -315,7 +298,7 @@ impl CompletionPrompt {
                         .with_class("completion-prompt-info")
                         .with_css_override(
                             "top",
-                            CssProperty::Top(LayoutTop::px(state.kb_focus as f32 * ITEM_HEIGHT)),
+                            LayoutTop::px(state.kb_focus as f32 * ITEM_HEIGHT).into(),
                         )
                         .with_child(Dom::label(item.contextstr.to_string()))
                         .with_child(Dom::label(
