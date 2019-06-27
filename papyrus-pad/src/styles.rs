@@ -6,7 +6,7 @@ pub const REPL_TERM_CSS: &'static str = r##"
 }
 
 .ansi-renderer-text {
-	color: [[ ansi_esc_color | !z0-fg-colour ]];
+	color: var(--ansi_esc_color, !z0-fg-colour);
 }
 
 .repl-terminal {
@@ -21,15 +21,15 @@ pub const REPL_TERM_CSS: &'static str = r##"
 .completion-prompt {
 	position: absolute;
 	width: 500px;
-	left: [[ left | 0px ]];
-	top: [[ top | 0px ]];
+	left: var(--left, 0px);
+	top: var(--top, 0px);
 
 	color: !z0-fg-colour;	
 	background-color: !z2-bg-colour;
 }
 
 .completion-prompt-item {
-	height: [[ height | auto ]];
+	height: var(--height, auto);
 	width: 200px;
 
 	flex-direction: row;
@@ -50,7 +50,7 @@ pub const REPL_TERM_CSS: &'static str = r##"
 
 .completion-prompt-info {
 	position: absolute;
-	top: [[ top | 0px ]];
+	top: var(--top, 0px);
 	left: 200px;
 
 	font-size: 8pt;

@@ -99,6 +99,10 @@ impl ReplOutputRenderer {
     }
 
     pub fn dom<T>(&self) -> Dom<T> {
-        self.lines.iter().map(|x| x.dom()).collect()
+        self.lines
+            .iter()
+            .map(|x| x.dom())
+            .collect::<Dom<T>>()
+            .with_class("repl-output-renderer")
     }
 }

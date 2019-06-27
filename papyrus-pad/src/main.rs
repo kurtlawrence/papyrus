@@ -95,7 +95,7 @@ fn create_window<T>(
 #[cfg(not(debug_assertions))]
 fn create_window<T>(
     app: &mut App<T>,
-    options: WindowCreateOptions<T>,
+    options: WindowCreateOptions,
 ) -> Result<Window<T>, WindowCreateError> {
     use azul_theming::*;
     use styles::*;
