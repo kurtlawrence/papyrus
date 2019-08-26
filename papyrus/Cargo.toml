@@ -37,7 +37,7 @@ syn =		    { version = "0.15",	default-features = false,   optional = false,	fea
 term_cursor =	    { version = "0.2",	default-features = false,   optional = true }
 
 [dev-dependencies]
-criterion = "0.2"
+criterion = "0.3"
 
 [[bench]]
 name = "benches"
