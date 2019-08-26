@@ -13,27 +13,28 @@ edition = "2018"
 
 [badges]
 travis-ci = { repository = "kurtlawrence/papyrus" }
+codecov =   { repository = "kurtlawrence/papyrus" }
 
 [dependencies]
 # My crates
-cmdtree = 			{ path = "/cmdtree",		default-features = false }
-cratesiover =		{ version = "2",		default-features = false,	optional = true }
-kserd = 			{ path = "/kserd/kserd",	default-features = false }
-shh = 				{ version = "1",		default-features = false }
+cmdtree =	    { version = "0.9",	default-features = false }
+cratesiover =	    { version = "2",	default-features = false,   optional = true }
+kserd =		    { version = "0.1",	default-features = false }
+shh =		    { version = "1",	default-features = false }
 
 # crates.io
-colored = 			{ version = "1",		default-features = false }
-crossbeam-channel =	{ version = "0.3",		default-features = false }
-crossbeam-utils =	{ version = "0.6",		default-features = false }
-dirs = 				{ version = "2",		default-features = false }
-fxhash = 			{ version = "0.2",		default-features = false }
-libloading =		{ version = "0.5",		default-features = false }
-linefeed = 			{ version = "0.6",		default-features = false,	optional = true }
-log = 				{ version = "0.4",		default-features = false }
-racer = 			{ version = "2.1",		default-features = false,	optional = true,	features = [ "metadata" ] }
-rustfmt-nightly =	{ version = "1.3",		default-features = false }
-syn = 				{ version = "0.15",		default-features = false,	optional = false,	features =  [ "full" ] }
-term_cursor =		{ version = "0.2",		default-features = false,	optional = true }
+colored =	    { version = "1",	default-features = false }
+crossbeam-channel = { version = "0.3",	default-features = false }
+crossbeam-utils =   { version = "0.6",	default-features = false }
+dirs =		    { version = "2",	default-features = false }
+fxhash =	    { version = "0.2",	default-features = false }
+libloading =	    { version = "0.5",	default-features = false }
+linefeed =	    { version = "0.6",	default-features = false,   optional = true }
+log =		    { version = "0.4",	default-features = false }
+racer =		    { version = "2.1",	default-features = false,   optional = true,	features = [ "metadata" ] }
+rustfmt-nightly =   { version = "1.3",	default-features = false }
+syn =		    { version = "0.15",	default-features = false,   optional = false,	features =  [ "full" ] }
+term_cursor =	    { version = "0.2",	default-features = false,   optional = true }
 
 [dev-dependencies]
 criterion = "0.2"
