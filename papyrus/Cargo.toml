@@ -17,7 +17,7 @@ codecov =   { repository = "kurtlawrence/papyrus" }
 
 [dependencies]
 # My crates
-cmdtree =	    { version = "0.9",	default-features = false }
+cmdtree =	    { version = "0.10",	default-features = false }
 cratesiover =	    { version = "2",	default-features = false,   optional = true }
 kserd =		    { version = "0.1",	default-features = false }
 shh =		    { version = "1",	default-features = false }
