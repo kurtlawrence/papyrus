@@ -29,12 +29,6 @@ mod tests {
             .unwrap()
             .contains("\nlet out0 = 2+2;"));
 
-        // // fmt
-        // assert!(fmt(&compile_dir));
-        // assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
-        // 	.unwrap()
-        // 	.contains("\n    let out0 = 2 + 2;")); // should be tabbed in (once, unless i wrap it more)
-
         // compile
         let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
 
@@ -59,12 +53,6 @@ mod tests {
         assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
             .unwrap()
             .contains("\nlet out0 = 2+2;"));
-
-        // // fmt
-        // assert!(fmt(&compile_dir));
-        // assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
-        // 	.unwrap()
-        // 	.contains("\n    let out0 = 2 + 2;")); // should be tabbed in (once, unless i wrap it more)
 
         // compile
         let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();

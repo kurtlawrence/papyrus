@@ -12,6 +12,7 @@ fn test_unclosed_delimiter() {
     assert_eq!(parse_program("let a = \""), InputResult::More);
 }
 
+#[cfg(feature = "format")] // have to turn formatting on to check this
 #[test]
 fn test_items() {
     assert_eq!(
@@ -40,6 +41,7 @@ fn test_items() {
     ); // Item::ExternCrate
 }
 
+#[cfg(feature = "format")] // have to turn formatting on to check this
 #[test]
 fn test_exprs() {
     // Expr::Binary

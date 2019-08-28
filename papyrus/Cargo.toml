@@ -32,7 +32,7 @@ libloading =	    { version = "0.5",	default-features = false }
 linefeed =	    { version = "0.6",	default-features = false,   optional = true }
 log =		    { version = "0.4",	default-features = false }
 racer =		    { version = "2.1",	default-features = false,   optional = true,	features = [ "metadata" ] }
-rustfmt-nightly =   { version = "1.3",	default-features = false }
+rustfmt-nightly =   { version = "1.4",	default-features = false,   optional = true }
 syn =		    { version = "0.15",	default-features = false,   optional = false,	features =  [ "full" ] }
 term_cursor =	    { version = "0.2",	default-features = false,   optional = true }
 
@@ -44,11 +44,13 @@ name = "benches"
 harness = false
 
 [features]
-default = [ "runnable", "racer-completion" ]
+default = [ "format", "racer-completion", "runnable" ]
+# format snippets with rustfmt, may require nightly to build
+format = [ "rustfmt-nightly" ]
+# add code completion using racer, requires nightly
+racer-completion = [ "racer" ]
 # allows to just run the repl
 runnable = [ "cratesiover", "linefeed", "term_cursor" ]
-# requires nightly
-racer-completion = [ "racer" ]
 
 [[bin]]
 name = "papyrus"

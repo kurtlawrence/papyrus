@@ -170,7 +170,7 @@ impl Completer {
     fn build<T>(rdata: &repl::ReplData<T>, _racer: bool) -> Self {
         let tree_cmplter = TreeCompleter::build(&rdata.cmdtree);
 
-        let mod_cmplter = ModulesCompleter::build(&rdata.cmdtree, rdata.file_map());
+        let mod_cmplter = ModulesCompleter::build(&rdata.cmdtree, rdata.mods_map());
 
         Self {
             tree_cmplter,
@@ -183,7 +183,7 @@ impl Completer {
 impl<T: Terminal> linefeed::Completer<T> for Completer {
     fn complete(
         &self,
-        _word: &str,
+        word: &str,
         prompter: &Prompter<T>,
         _start: usize,
         _end: usize,
@@ -192,17 +192,11 @@ impl<T: Terminal> linefeed::Completer<T> for Completer {
 
         let line = prompter.buffer();
 
-        let trees = self
-            .tree_cmplter
-            .complete(line)
-            .map(|x| Completion::simple(x.to_string()));
-        v.extend(trees);
+        let start = get_start(word, line);
 
-        let mods = self
-            .mod_cmplter
-            .complete(line)
-            .map(|x| x.map(|y| Completion::simple(y)));
-        if let Some(mods) = mods {
+        v.extend(trees_completer(&self.tree_cmplter, line, start));
+
+        if let Some(mods) = complete_mods(&self.mod_cmplter, line) {
             v.extend(mods);
         }
 
@@ -234,24 +228,11 @@ impl<T: Terminal> linefeed::Completer<T> for Completer {
 
         let line = prompter.buffer();
 
-        let start = if !word.is_empty() && line.starts_with(&format!(".{}", word)) {
-            1
-        } else {
-            0
-        };
+        let start = get_start(word, line);
 
-        let trees = self
-            .tree_cmplter
-            .complete(line)
-            .map(|x| &x.0[start..])
-            .map(|x| Completion::simple(x.to_string()));
-        v.extend(trees);
+        v.extend(trees_completer(&self.tree_cmplter, line, start));
 
-        let mods = self
-            .mod_cmplter
-            .complete(line)
-            .map(|x| x.map(|y| Completion::simple(y)));
-        if let Some(mods) = mods {
+        if let Some(mods) = complete_mods(&self.mod_cmplter, line) {
             v.extend(mods);
         }
 
@@ -285,4 +266,33 @@ impl<T: Terminal> linefeed::Completer<T> for Completer {
 
         max(max(s1, s2), s3)
     }
+}
+
+fn get_start(word: &str, line: &str) -> usize {
+    let end = word.len() + 1;
+    if !word.is_empty() && line.len() >= end && &line[..1] == "." && &line[1..end] == word {
+        1
+    } else {
+        0
+    }
+}
+
+fn trees_completer<'a>(
+    cmpltr: &'a TreeCompleter,
+    line: &'a str,
+    start: usize,
+) -> impl Iterator<Item = Completion> + 'a {
+    cmpltr
+        .complete(line)
+        .map(move |x| &x.0[start..])
+        .map(|x| Completion::simple(x.to_string()))
+}
+
+fn complete_mods<'a>(
+    cmpltr: &'a ModulesCompleter,
+    line: &'a str,
+) -> Option<impl Iterator<Item = Completion> + 'a> {
+    cmpltr
+        .complete(line)
+        .map(|x| x.map(|y| Completion::simple(y)))
 }

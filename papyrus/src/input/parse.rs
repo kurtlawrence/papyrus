@@ -78,8 +78,14 @@ pub fn parse_program(code: &str) -> InputResult {
     }
 }
 
+#[cfg(feature = "format")]
 fn fmt(s: String) -> String {
     crate::fmt::format(&s).unwrap_or(s)
+}
+
+#[cfg(not(feature = "format"))]
+fn fmt(s: String) -> String {
+    s
 }
 
 enum ParseItemResult {

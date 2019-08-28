@@ -6,7 +6,7 @@ env: RUST_BACKTRACE=1
 matrix:
   include:
     - os: linux
-      rust: 1.0.0
+      rust: 1.10.0
       script:
         - sh scripts/build-external-crate.sh
         - sh scripts/test-no-features.sh
@@ -32,6 +32,7 @@ matrix:
       script:
         - sh scripts/build-external-crate.sh
         - sh scripts/test-no-features.sh
+        - sh scripts/test-format-feature.sh
         - sh scripts/test-runnable-feature.sh
         - sh scripts/test-racer-completion-feature.sh
         - sh scripts/test-default-features.sh

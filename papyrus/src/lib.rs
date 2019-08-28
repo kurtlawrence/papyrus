@@ -60,6 +60,7 @@ pub mod cmds;
 pub mod compile;
 pub mod complete;
 /// Format rust code snippets using `rustfmt`.
+#[cfg(feature = "format")]
 pub mod fmt;
 /// Parsing of input.
 pub mod input;
