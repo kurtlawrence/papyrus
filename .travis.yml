@@ -6,7 +6,7 @@ env: RUST_BACKTRACE=1
 matrix:
   include:
     - os: linux
-      rust: 1.10.0
+      rust: 1.20.0
       script:
         - sh scripts/build-external-crate.sh
         - sh scripts/test-no-features.sh
