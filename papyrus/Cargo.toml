@@ -54,3 +54,7 @@ racer-completion = [ "racer" ]
 name = "papyrus"
 path = "src/main.rs"
 required-features = [ "runnable" ]
+
+[profile.release]
+lto = true
+codegen-units = 1
