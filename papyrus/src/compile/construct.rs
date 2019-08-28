@@ -68,7 +68,6 @@ path = "src/lib.rs"
 
 [dependencies]
 kserd =         {{ version = "0.1", default-features = false }}
-kserd_derive =  {{ version = "0.1", default-features = false }}
 {crates}
 "#,
         lib_name = lib_name,
