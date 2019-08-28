@@ -59,6 +59,9 @@ fn complete_path<'a, I: 'a + Iterator<Item = P>, P: AsRef<Path>>(
 }
 
 fn mod_starts_with<P: AsRef<Path>>(path: P, line: &str) -> bool {
+    // cop the allocation to make matching work on linux and windows
+    let line = line.replace("\\", "/");
+
     let path = path.as_ref();
 
     if line == " " {
@@ -69,7 +72,7 @@ fn mod_starts_with<P: AsRef<Path>>(path: P, line: &str) -> bool {
 
     let ends_with_slash = line.ends_with(slashes);
 
-    let line = Path::new(line);
+    let line = Path::new(&line);
 
     // can only compare up to line's parent if starts with
     // if line does not have parent then just compare the component idx

@@ -284,9 +284,9 @@ fn append_buffer<S: AsRef<str>>(
             x.assign_let_binding(i, buf);
             buf.push('\n');
         });
-        buf.push_str("kserd::AsKserd::as_kserd(&out");
+        buf.push_str("kserd::ToKserd::into_kserd(out");
         buf.push_str(&c.saturating_sub(1).to_string());
-        buf.push_str(").to_owned()\n");
+        buf.push_str(").unwrap().to_owned()\n");
     } else {
         buf.push_str("kserd::Kserd::new_str(\"no statements\")\n");
     }
@@ -317,9 +317,9 @@ fn append_buffer_length<S: AsRef<str>>(
             .enumerate()
             .map(|(i, x)| x.assign_let_binding_length(i) + 1)
             .sum::<usize>();
-        let return_str = 29 // kserd::AsKserd::as_kserd(&out
+        let return_str = 30 // kserd::ToKserd::into_kserd(out
             + c.saturating_sub(1).to_string().len()
-            + 13; // ).to_owned()\n
+            + 22; // ).unwrap().to_owned()\n
 
         (
             stmts + return_str,
@@ -619,15 +619,18 @@ let a = 1;
 let out0 = b;
 let c = 2;
 let out1 = d;
-kserd::AsKserd::as_kserd(&out1).to_owned()
+kserd::ToKserd::into_kserd(out1).unwrap().to_owned()
 }
 fn a() {}
 fn b() {}
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 150..192);
-        assert_eq!(&ans[rng], "kserd::AsKserd::as_kserd(&out1).to_owned()");
+        assert_eq!(rng, 150..202);
+        assert_eq!(
+            &ans[rng],
+            "kserd::ToKserd::into_kserd(out1).unwrap().to_owned()"
+        );
     }
 
     #[test]

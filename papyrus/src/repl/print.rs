@@ -1,5 +1,5 @@
 use super::*;
-use ::kserd::format::FormattingConfig;
+use ::kserd::fmt::FormattingConfig;
 use std::io::Write;
 
 /// Methods when repl is in `Print` state.

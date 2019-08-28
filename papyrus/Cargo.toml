@@ -19,7 +19,7 @@ codecov =   { repository = "kurtlawrence/papyrus" }
 # My crates
 cmdtree =	    { version = "0.10",	default-features = false }
 cratesiover =	    { version = "2",	default-features = false,   optional = true }
-kserd =		    { version = "0.1",	default-features = false }
+kserd =		    { version = "0.1",	default-features = false,   optional = false,	features = [ "format" ] }
 shh =		    { version = "1",	default-features = false }
 
 # crates.io

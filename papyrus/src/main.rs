@@ -19,11 +19,7 @@ use papyrus::*;
 use repl::{Read, Repl};
 
 fn main() {
-    if cfg!(windows) {
-        colored::control::set_virtual_terminal(true)
-            .map_err(|e| eprintln!("failed setting virtual terminal: {}", e))
-            .ok();
-    }
+    windows_term_hack();
 
     let repl = repl!();
 
@@ -32,6 +28,16 @@ fn main() {
     std::thread::sleep(std::time::Duration::from_millis(10)); // let output thread finish up
     println!("Thanks for using papyrus!");
 }
+
+#[cfg(windows)]
+fn windows_term_hack() {
+    colored::control::set_virtual_terminal(true)
+        .map_err(|e| eprintln!("failed setting virtual terminal: {}", e))
+        .ok();
+}
+
+#[cfg(not(windows))]
+fn windows_term_hack() {}
 
 #[cfg(feature = "racer-completion")]
 fn run_repl(repl: Repl<Read, ()>) {

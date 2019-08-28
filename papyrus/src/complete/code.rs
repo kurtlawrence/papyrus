@@ -35,7 +35,7 @@ impl CodeCompleter {
     pub fn complete(&self, injection: &str, limit: Option<usize>, cache: &CodeCache) -> Vec<Match> {
         let limit = limit.unwrap_or(std::usize::MAX);
 
-        let session = racer::Session::new(&cache.cache);
+        let session = racer::Session::new(&cache.cache, None);
 
         let (contents, pos) = self.inject(injection);
 

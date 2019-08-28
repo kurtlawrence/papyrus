@@ -47,7 +47,12 @@ pub fn format(code_snippet: &str) -> Result<String, FormatError> {
 
         let end = trimmed.len().saturating_sub(1);
 
-        let inner = &trimmed[20..end];
+        // the output of rustfmt can change...
+        // at the moment it is
+        // stdin:\n\nfn __fmt_wrapper() {
+        // 0............................^ 30 chars long (29 byte index)
+
+        let inner = &trimmed[29..end];
 
         let mut cleaned = String::with_capacity(inner.len());
 
