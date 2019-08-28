@@ -8,21 +8,21 @@ matrix:
     - os: linux
       rust: 1.0.0
       script:
-        - ./scripts/build-external-crate.sh
-        - ./scripts/test-no-features.sh
-        - ./scripts/test-runnable-feature.sh
+        - sh scripts/build-external-crate.sh
+        - sh scripts/test-no-features.sh
+        - sh scripts/test-runnable-feature.sh
     - os: linux
       rust: stable
       script:
-        - ./scripts/build-external-crate.sh
-        - ./scripts/test-no-features.sh
-        - ./scripts/test-runnable-feature.sh
+        - sh scripts/build-external-crate.sh
+        - sh scripts/test-no-features.sh
+        - sh scripts/test-runnable-feature.sh
     - os: linux
       rust: beta
       script:
-        - ./scripts/build-external-crate.sh
-        - ./scripts/test-no-features.sh
-        - ./scripts/test-runnable-feature.sh
+        - sh scripts/build-external-crate.sh
+        - sh scripts/test-no-features.sh
+        - sh scripts/test-runnable-feature.sh
     - os: linux
       rust: nightly
       addons:
@@ -30,17 +30,17 @@ matrix:
           packages:
             - libssl-dev
       script:
-        - ./scripts/build-external-crate.sh
-        - ./scripts/test-no-features.sh
-        - ./scripts/test-runnable-feature.sh
-        - ./scripts/test-racer-completion-feature.sh
-        - ./scripts/test-default-features.sh
+        - sh scripts/build-external-crate.sh
+        - sh scripts/test-no-features.sh
+        - sh scripts/test-runnable-feature.sh
+        - sh scripts/test-racer-completion-feature.sh
+        - sh scripts/test-default-features.sh
     - os: windows
       rust: stable
       script:
-        - ./scripts/build-external-crate.sh
-        - ./scripts/test-no-features.sh
-        - ./scripts/test-runnable-feature.sh
+        - sh scripts/build-external-crate.sh
+        - sh scripts/test-no-features.sh
+        - sh scripts/test-runnable-feature.sh
   allow_failures:
     - os: windows
 
