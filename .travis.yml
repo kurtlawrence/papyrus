@@ -6,17 +6,41 @@ env: RUST_BACKTRACE=1
 matrix:
   include:
     - os: linux
+      rust: 1.0.0
+      script:
+        - ./scripts/build-external-crate.sh
+        - ./scripts/test-no-features.sh
+        - ./scripts/test-runnable-feature.sh
+    - os: linux
       rust: stable
+      script:
+        - ./scripts/build-external-crate.sh
+        - ./scripts/test-no-features.sh
+        - ./scripts/test-runnable-feature.sh
     - os: linux
       rust: beta
+      script:
+        - ./scripts/build-external-crate.sh
+        - ./scripts/test-no-features.sh
+        - ./scripts/test-runnable-feature.sh
     - os: linux
       rust: nightly
       addons:
         apt:
           packages:
             - libssl-dev
+      script:
+        - ./scripts/build-external-crate.sh
+        - ./scripts/test-no-features.sh
+        - ./scripts/test-runnable-feature.sh
+        - ./scripts/test-racer-completion-feature.sh
+        - ./scripts/test-default-features.sh
     - os: windows
       rust: stable
+      script:
+        - ./scripts/build-external-crate.sh
+        - ./scripts/test-no-features.sh
+        - ./scripts/test-runnable-feature.sh
   allow_failures:
     - os: windows
 
@@ -24,14 +48,6 @@ before_cache: |
   if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
     RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
   fi
-
-script:
-  - cd test-resources/external_crate
-  - cargo build
-  - cd ../../papyrus
-  - cargo clean
-  - cargo build
-  - cargo test -- --test-threads=1
 
 after_success: |
   if [[  "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then

@@ -2,7 +2,6 @@
 **/*.rs.bk
 .vscode
 *.code-workspace
-/docs
 ROADMAP.md
 PUSHING_PROCEDURE.md
-modoc.config
+scripts/travis-ci-sim.sh
