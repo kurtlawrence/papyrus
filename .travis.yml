@@ -3,7 +3,9 @@ language: rust
 cache: cargo
 env: RUST_BACKTRACE=1
 branches:
-  only: master
+  only:
+    - master
+    - dev
 
 matrix:
   include:

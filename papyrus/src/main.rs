@@ -23,7 +23,7 @@ fn main() {
 
     let repl = repl!();
 
-    run_repl(repl);
+    repl.run(&mut ()).unwrap();
 
     std::thread::sleep(std::time::Duration::from_millis(10)); // let output thread finish up
     println!("Thanks for using papyrus!");
@@ -38,13 +38,3 @@ fn windows_term_hack() {
 
 #[cfg(not(windows))]
 fn windows_term_hack() {}
-
-#[cfg(feature = "racer-completion")]
-fn run_repl(repl: Repl<Read, ()>) {
-    repl.run_with_racer_completion(&mut ()).unwrap();
-}
-
-#[cfg(not(feature = "racer-completion"))]
-fn run_repl(repl: Repl<Read, ()>) {
-    repl.run(&mut ()).unwrap();
-}

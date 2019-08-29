@@ -16,18 +16,6 @@ impl<D> Repl<Read, D> {
     /// Run the REPL interactively.
     /// Consumes the REPL in the process and will block this thread until exited.
     pub fn run(self, app_data: &mut D) -> io::Result<()> {
-        self.run_inner(app_data, false)
-    }
-
-    /// Run the REPL interactively.
-    /// Consumes the REPL in the process and will block this thread until exited.
-    /// Racer code completion is enabled.
-    #[cfg(feature = "racer-completion")]
-    pub fn run_with_racer_completion(self, app_data: &mut D) -> io::Result<()> {
-        self.run_inner(app_data, true)
-    }
-
-    fn run_inner(self, app_data: &mut D, racer: bool) -> io::Result<()> {
         cratesiover::output_to_writer(
             "papyrus",
             env!("CARGO_PKG_VERSION"),
@@ -43,7 +31,7 @@ impl<D> Repl<Read, D> {
         loop {
             term.set_prompt(&read.prompt())?;
 
-            let completer = Completer::build(&read.data, racer);
+            let completer = Completer::build(&read.data);
             term.set_completer(Arc::new(completer));
 
             if let Some(buf) = read.data.editing_src.take() {
@@ -143,21 +131,15 @@ struct Completer {
     tree_cmplter: TreeCompleter,
     mod_cmplter: ModulesCompleter,
     #[cfg(feature = "racer-completion")]
-    code_cmplter: Option<CodeCompleter>,
+    code_cmplter: CodeCompleter,
 }
 
 impl Completer {
     #[cfg(feature = "racer-completion")]
-    fn build<T>(rdata: &repl::ReplData<T>, racer: bool) -> Self {
+    fn build<T>(rdata: &repl::ReplData<T>) -> Self {
         let tree_cmplter = TreeCompleter::build(&rdata.cmdtree);
-
         let mod_cmplter = ModulesCompleter::build(&rdata.cmdtree, rdata.mods_map());
-
-        let code_cmplter = if racer {
-            Some(CodeCompleter::build(rdata))
-        } else {
-            None
-        };
+        let code_cmplter = CodeCompleter::build(rdata);
 
         Self {
             tree_cmplter,
@@ -167,9 +149,8 @@ impl Completer {
     }
 
     #[cfg(not(feature = "racer-completion"))]
-    fn build<T>(rdata: &repl::ReplData<T>, _racer: bool) -> Self {
+    fn build<T>(rdata: &repl::ReplData<T>) -> Self {
         let tree_cmplter = TreeCompleter::build(&rdata.cmdtree);
-
         let mod_cmplter = ModulesCompleter::build(&rdata.cmdtree, rdata.mods_map());
 
         Self {
@@ -238,18 +219,16 @@ impl<T: Terminal> linefeed::Completer<T> for Completer {
 
         if !line.starts_with('.') {
             let cache = CodeCache::new();
-            let code = self.code_cmplter.as_ref().map(|x| {
-                x.complete(line, Some(10), &cache)
-                    .into_iter()
-                    .map(|x| Completion {
-                        completion: x.matchstr,
-                        display: None,
-                        suffix: Suffix::None,
-                    })
-            });
-            if let Some(code) = code {
-                v.extend(code);
-            }
+            let code = self
+                .code_cmplter
+                .complete(line, Some(10), &cache)
+                .into_iter()
+                .map(|x| Completion {
+                    completion: x.matchstr,
+                    display: None,
+                    suffix: Suffix::None,
+                });
+            v.extend(code);
         }
 
         if v.len() > 0 {
