@@ -6,7 +6,7 @@ env: RUST_BACKTRACE=1
 matrix:
   include:
     - os: linux
-      rust: 1.28.0
+      rust: 1.30.0
       script:
         - sh scripts/build-external-crate.sh
         - sh scripts/test-no-features.sh
@@ -51,6 +51,22 @@ matrix:
         - sh scripts/build-external-crate.sh
         - sh scripts/test-no-features.sh
         - sh scripts/test-runnable-feature.sh
+    - os: windows
+      rust: stable
+      before_script:
+        - (test -x $HOME/.cargo/bin/cargo-install-update || cargo install cargo-update)
+        - (test -x $HOME/.cargo/bin/mdbook || cargo install --vers "^0.3" mdbook)
+        - cargo install-update -a
+      script:
+        - mdbook build docs/book && mdbook test docs/book
+      deploy:
+        provider: pages
+        skip-cleanup: true
+        github-token: $GH_TOKEN
+        local-dir: docs/book/book
+        keep-history: false
+        on:
+          branch: master
   allow_failures:
     - os: windows
 
