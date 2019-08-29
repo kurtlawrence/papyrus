@@ -18,21 +18,13 @@ matrix:
         - sh scripts/test-no-features.sh
         - sh scripts/test-runnable-feature.sh
     - os: linux
-      rust: beta
-      script:
-        - sh scripts/build-external-crate.sh
-        - sh scripts/test-no-features.sh
-        - sh scripts/test-runnable-feature.sh
-    - os: linux
       rust: nightly
       addons:
         apt:
           packages:
             - libssl-dev
-      before_cache: |
-        if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
-          RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
-        fi
+      before_cache:
+        - RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
       script:
         - sh scripts/build-external-crate.sh
         - sh scripts/test-no-features.sh
@@ -40,19 +32,20 @@ matrix:
         - sh scripts/test-runnable-feature.sh
         - sh scripts/test-racer-completion-feature.sh
         - sh scripts/test-default-features.sh
-      after_success: |
-        if [[  "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
-          cargo tarpaulin -v --out Xml
-          bash <(curl -s https://codecov.io/bash)
-        fi
+      after_success:
+        - cd papyrus
+        - cargo tarpaulin -v --out Xml
+        - bash <(curl -s https://codecov.io/bash)
     - os: windows
       rust: stable
       script:
         - sh scripts/build-external-crate.sh
         - sh scripts/test-no-features.sh
         - sh scripts/test-runnable-feature.sh
-    - os: windows
+    - os: linux
       rust: stable
+      on:
+        branch: master
       before_script:
         - (test -x $HOME/.cargo/bin/cargo-install-update || cargo install cargo-update)
         - (test -x $HOME/.cargo/bin/mdbook || cargo install --vers "^0.3" mdbook)
