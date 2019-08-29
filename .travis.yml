@@ -2,6 +2,8 @@ sudo: required
 language: rust
 cache: cargo
 env: RUST_BACKTRACE=1
+branches:
+  only: master
 
 matrix:
   include:
@@ -44,8 +46,6 @@ matrix:
         - sh scripts/test-runnable-feature.sh
     - os: linux
       rust: stable
-      on:
-        branch: master
       before_script:
         - (test -x $HOME/.cargo/bin/cargo-install-update || cargo install cargo-update)
         - (test -x $HOME/.cargo/bin/mdbook || cargo install --vers "^0.3" mdbook)
