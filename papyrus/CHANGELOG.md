@@ -4,6 +4,7 @@
 
 - mod paths now complete
 - No longer need a terminal interface, maintains own internal buffer for output
+- Fixed bug where using as library would not compile.
 
 ## 0.8.1
 
