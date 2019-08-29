@@ -1,0 +1,197 @@
+//! Pertains to compiling a working directory into a library, then executing a function in that library.
+
+mod build;
+mod construct;
+mod execute;
+
+pub use self::build::{compile, CompilationError};
+pub use self::construct::build_compile_dir;
+pub(crate) use self::execute::exec;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pfh::*;
+    use ::kserd::Kserd;
+    use linking::{Extern, LinkingConfiguration};
+    use std::fs;
+    use std::path::PathBuf;
+
+    #[test]
+    fn nodata_build_fmt_compile_eval_test() {
+        let compile_dir = "target/testing/nodata_build_fmt_compile_eval_test";
+        let files = vec![pass_compile_eval_file()].into_iter().collect();
+        let linking_config = LinkingConfiguration::default();
+
+        // build
+        build_compile_dir(&compile_dir, &files, &linking_config).unwrap();
+        assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+            .unwrap()
+            .contains("\nlet out0 = 2+2;"));
+
+        // compile
+        let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
+
+        // eval
+        let r = exec::<_, _, std::io::Sink>(path, "_lib_intern_eval", &(), None).unwrap(); // execute library fn
+
+        assert_eq!(r, Kserd::new_num(4));
+    }
+
+    #[test]
+    fn brw_data_build_fmt_compile_eval_test() {
+        let compile_dir = "target/testing/brw_data_build_fmt_compile_eval_test";
+        let files = vec![pass_compile_eval_file()].into_iter().collect();
+        let mut linking_config = LinkingConfiguration::default();
+        linking_config.external_libs.insert(
+            Extern::new("../test-resources/external_crate/target/debug/libexternal_crate.rlib")
+                .unwrap(),
+        );
+
+        // build
+        build_compile_dir(&compile_dir, &files, &linking_config).unwrap();
+        assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+            .unwrap()
+            .contains("\nlet out0 = 2+2;"));
+
+        // compile
+        let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
+
+        // eval
+        let r = exec::<_, _, std::io::Sink>(path, "_lib_intern_eval", &(), None).unwrap(); // execute library fn
+
+        assert_eq!(r, Kserd::new_num(4));
+    }
+
+    #[test]
+    fn mut_brw_data_build_fmt_compile_eval_test() {
+        let compile_dir = "target/testing/mut_brw_data_build_fmt_compile_eval_test";
+        let files = vec![pass_compile_eval_file()].into_iter().collect();
+        let mut linking_config = LinkingConfiguration::default();
+        linking_config.external_libs.insert(
+            Extern::new("../test-resources/external_crate/target/debug/libexternal_crate.rlib")
+                .unwrap(),
+        );
+
+        // build
+        build_compile_dir(&compile_dir, &files, &linking_config).unwrap();
+        assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+            .unwrap()
+            .contains("\nlet out0 = 2+2;"));
+
+        // // fmt
+        // assert!(fmt(&compile_dir));
+        // assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+        // 	.unwrap()
+        // 	.contains("\n    let out0 = 2 + 2;")); // should be tabbed in (once, unless i wrap it more)
+
+        // compile
+        let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
+
+        // eval
+        let r = exec::<_, _, std::io::Sink>(path, "_lib_intern_eval", &(), None).unwrap(); // execute library fn
+
+        assert_eq!(r, Kserd::new_num(4));
+    }
+
+    #[test]
+    fn exec_and_redirect_test() {
+        let compile_dir = "target/testing/exec_and_redirect_test";
+        let files = vec![pass_compile_eval_file()].into_iter().collect();
+        let mut linking_config = LinkingConfiguration::default();
+        linking_config.external_libs.insert(
+            Extern::new("../test-resources/external_crate/target/debug/libexternal_crate.rlib")
+                .unwrap(),
+        );
+
+        // build
+        build_compile_dir(&compile_dir, &files, &linking_config).unwrap();
+        assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+            .unwrap()
+            .contains("\nlet out0 = 2+2;"));
+
+        // // fmt
+        // assert!(fmt(&compile_dir));
+        // assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+        // 	.unwrap()
+        // 	.contains("\n    let out0 = 2 + 2;")); // should be tabbed in (once, unless i wrap it more)
+
+        // compile
+        let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
+
+        // eval
+        let r = exec(path, "_lib_intern_eval", &(), Some(&mut std::io::sink())).unwrap(); // execute library fn
+
+        assert_eq!(r, Kserd::new_num(4));
+    }
+
+    #[test]
+    fn fail_compile_test() {
+        let compile_dir = "target/testing/fail_compile";
+        let files = vec![fail_compile_file()].into_iter().collect();
+        let linking_config = LinkingConfiguration::default();
+
+        // build
+        build_compile_dir(&compile_dir, &files, &linking_config).unwrap();
+        assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+            .unwrap()
+            .contains("\nlet out0 = 2+;"));
+
+        // compile
+        let r = compile(&compile_dir, &linking_config, |_| ());
+        assert!(r.is_err());
+        match r.unwrap_err() {
+            CompilationError::CompileError(_) => (),
+            _ => panic!("expecting CompileError"),
+        }
+    }
+
+    // TODO enable when not on nightly
+    // Maybe look into why it doesn't work on nightly?
+    // #[test]
+    // fn fail_eval_test() {
+    //     let compile_dir = "target/testing/fail_eval_test";
+    //     let files = vec![fail_eval_file()];
+    //     let linking_config = LinkingConfiguration::default();
+
+    //     // build
+    //     build_compile_dir(&compile_dir, files.iter(), &linking_config).unwrap();
+    //     assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+    //         .unwrap()
+    //         .contains("\nlet out0 = panic!(\"eval panic\");"));
+
+    //     // compile
+    //     let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
+
+    //     // eval
+    //     let r = exec::<_, _, std::io::Sink>(&path, "_lib_intern_eval", &(), None); // execute library fn
+    //     assert!(r.is_err());
+    //     assert_eq!(r, Err("a panic occured with evaluation"));
+    // }
+
+    fn pass_compile_eval_file() -> (PathBuf, SourceCode) {
+        let mut code = SourceCode::new();
+        code.stmts.push(StmtGrp(vec![Statement {
+            expr: "2+2".to_string(),
+            semi: false,
+        }]));
+        ("lib".into(), code)
+    }
+
+    fn fail_compile_file() -> (PathBuf, SourceCode) {
+        let mut code = SourceCode::new();
+        code.stmts.push(StmtGrp(vec![Statement {
+            expr: "2+".to_string(),
+            semi: false,
+        }]));
+        ("lib".into(), code)
+    }
+    fn fail_eval_file() -> (PathBuf, SourceCode) {
+        let mut code = SourceCode::new();
+        code.stmts.push(StmtGrp(vec![Statement {
+            expr: "panic!(\"eval panic\")".to_string(),
+            semi: false,
+        }]));
+        ("lib".into(), code)
+    }
+}

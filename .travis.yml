@@ -6,37 +6,61 @@ env: RUST_BACKTRACE=1
 matrix:
   include:
     - os: linux
-      rust: stable
+      rust: 1.34.0
+      script:
+        - sh scripts/build-external-crate.sh
+        - sh scripts/test-no-features.sh
+        - sh scripts/test-runnable-feature.sh
     - os: linux
-      rust: beta
+      rust: stable
+      script:
+        - sh scripts/build-external-crate.sh
+        - sh scripts/test-no-features.sh
+        - sh scripts/test-runnable-feature.sh
     - os: linux
       rust: nightly
       addons:
         apt:
           packages:
             - libssl-dev
+      before_cache:
+        - RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
+      script:
+        - sh scripts/build-external-crate.sh
+        - sh scripts/test-no-features.sh
+        - sh scripts/test-format-feature.sh
+        - sh scripts/test-runnable-feature.sh
+        - sh scripts/test-racer-completion-feature.sh
+        - sh scripts/test-default-features.sh
+      after_success:
+        - cd papyrus
+        - cargo tarpaulin -v --out Xml
+        - bash <(curl -s https://codecov.io/bash)
     - os: windows
       rust: stable
+      script:
+        - sh scripts/build-external-crate.sh
+        - sh scripts/test-no-features.sh
+        - sh scripts/test-runnable-feature.sh
+    - os: linux
+      rust: stable
+      on:
+        branch: master
+      before_script:
+        - (test -x $HOME/.cargo/bin/cargo-install-update || cargo install cargo-update)
+        - (test -x $HOME/.cargo/bin/mdbook || cargo install --vers "^0.3" mdbook)
+        - cargo install-update -a
+      script:
+        - mdbook build docs/book && mdbook test docs/book
+      deploy:
+        provider: pages
+        skip-cleanup: true
+        github-token: $GH_TOKEN
+        local-dir: docs/book/book
+        keep-history: false
+        on:
+          branch: master
   allow_failures:
     - os: windows
 
-before_cache: |
-  if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
-    RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
-  fi
 
-script:
-  - cd ..
-  - git clone https://github.com/kurtlawrence/azul.git
-  - cd papyrus/test-resources/external_crate
-  - cargo build
-  - cd ../..
-  - cargo clean
-  - cargo build
-  - cargo test -- --test-threads=1
-
-after_success: |
-  if [[  "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
-    cargo tarpaulin -v --out Xml
-    bash <(curl -s https://codecov.io/bash)
-  fi

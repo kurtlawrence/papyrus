@@ -1,0 +1,6 @@
+[book]
+authors = ["Kurt Lawrence"]
+language = "en"
+multilingual = false
+src = "src"
+title = "papyrus book"
