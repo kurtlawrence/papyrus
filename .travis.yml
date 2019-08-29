@@ -6,7 +6,7 @@ env: RUST_BACKTRACE=1
 matrix:
   include:
     - os: linux
-      rust: 1.20.0
+      rust: 1.24.0
       script:
         - sh scripts/build-external-crate.sh
         - sh scripts/test-no-features.sh
@@ -29,6 +29,10 @@ matrix:
         apt:
           packages:
             - libssl-dev
+      before_cache: |
+        if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
+          RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
+        fi
       script:
         - sh scripts/build-external-crate.sh
         - sh scripts/test-no-features.sh
@@ -36,6 +40,11 @@ matrix:
         - sh scripts/test-runnable-feature.sh
         - sh scripts/test-racer-completion-feature.sh
         - sh scripts/test-default-features.sh
+      after_success: |
+        if [[  "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
+          cargo tarpaulin -v --out Xml
+          bash <(curl -s https://codecov.io/bash)
+        fi
     - os: windows
       rust: stable
       script:
@@ -45,13 +54,4 @@ matrix:
   allow_failures:
     - os: windows
 
-before_cache: |
-  if [[ "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
-    RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
-  fi
 
-after_success: |
-  if [[  "$TRAVIS_OS_NAME" == "linux" && "$TRAVIS_RUST_VERSION" == nightly ]]; then
-    cargo tarpaulin -v --out Xml
-    bash <(curl -s https://codecov.io/bash)
-  fi

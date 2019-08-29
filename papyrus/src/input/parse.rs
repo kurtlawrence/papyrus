@@ -120,10 +120,7 @@ fn parse_item(item: Item) -> ParseItemResult {
             error!("haven't handled item variant Type");
             ParseItemResult::Error("haven't handled item variant Type. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
         }
-        Item::Existential(_) => {
-            error!("haven't handled item variant Existential");
-            ParseItemResult::Error("haven't handled item variant Existential. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
-        }
+
         Item::Enum(_) => {
             error!("haven't handled item variant Enum");
             ParseItemResult::Error("haven't handled item variant Enum. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
@@ -174,10 +171,6 @@ fn parse_expr(expr: Expr) -> Result<String, String> {
 		Expr::Box(_) => {
 			error!("haven't handled expr variant Box");
 			Err("haven't handled expr variant Box. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
-		}
-		Expr::InPlace(_) => {
-			error!("haven't handled expr variant InPlace");
-			Err("haven't handled expr variant InPlace. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
 		}
 		Expr::Array(_) => {
 			error!("haven't handled expr variant Array");
