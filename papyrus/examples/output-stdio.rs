@@ -97,7 +97,6 @@ fn read_line() -> String {
 /// This handles the writing of output changes to stdout.
 /// Notice the use of term_cursor;
 fn write_output_to_stdout(rx: Receiver) -> std::thread::JoinHandle<()> {
-
     std::thread::spawn(move || {
         let mut stdout = std::io::stdout();
 
