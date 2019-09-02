@@ -86,6 +86,8 @@ impl racer::FileLoader for PapyrusCodeFileLoader {
         use std::fs::File;
         use std::io::Read;
 
+        dbg!(path);
+
         // copied from racers implementation and special handling for lib.rs
 
         if path == Path::new(LIBRS) {

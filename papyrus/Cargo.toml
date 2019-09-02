@@ -31,6 +31,7 @@ fxhash =	    { version = "0.2",	default-features = false }
 libloading =	    { version = "0.5",	default-features = false }
 linefeed =	    { version = "0.6",	default-features = false,   optional = true }
 log =		    { version = "0.4",	default-features = false }
+mortal =	    { version = "0.2",	default-features = false,   optional = true }
 racer =		    { version = "2.1",	default-features = false,   optional = true,	features = [ "metadata" ] }
 rustfmt-nightly =   { version = "1.4",	default-features = false,   optional = true }
 syn =		    { version = "1",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }
@@ -38,6 +39,7 @@ term_cursor =	    { version = "0.2",	default-features = false,   optional = true
 
 [dev-dependencies]
 criterion = "0.3"
+term_size = "0.3"
 
 [[bench]]
 name = "benches"
@@ -50,7 +52,7 @@ format = [ "rustfmt-nightly" ]
 # add code completion using racer, requires nightly
 racer-completion = [ "racer" ]
 # allows to just run the repl
-runnable = [ "cratesiover", "linefeed", "term_cursor" ]
+runnable = [ "cratesiover", "linefeed", "mortal", "term_cursor" ]
 
 [[bin]]
 name = "papyrus"

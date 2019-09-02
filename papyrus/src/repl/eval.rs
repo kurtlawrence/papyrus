@@ -368,7 +368,8 @@ impl<D> ReplData<D> {
                 Ok(s) => {
                     if self.linking.mutable {
                         maybe_pop_input(self); // don't save mutating inputs
-                        EvalOutput::Print(Cow::Owned(format!("finished mutating block: {}", s))) // don't print as `out#`
+                        EvalOutput::Print(Cow::Owned(format!("finished mutating block: {}", s)))
+                    // don't print as `out#`
                     } else {
                         EvalOutput::Data(s)
                     }

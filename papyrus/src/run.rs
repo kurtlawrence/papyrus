@@ -6,16 +6,21 @@ use crate::prelude::*;
 #[cfg(feature = "racer-completion")]
 use linefeed::Suffix;
 use linefeed::Terminal;
-use linefeed::{Completion, DefaultTerminal, Interface, Prompter};
+use linefeed::{Completion, DefaultTerminal, Prompter};
 use repl::{Read, ReadResult, Signal};
 use std::cmp::max;
 use std::io;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use term_cursor as cursor;
 
 impl<D> Repl<Read, D> {
+    pub fn run(self, app_data: &mut D) -> io::Result<()> {
+        run(self, app_data)
+    }
+
     /// Run the REPL interactively.
     /// Consumes the REPL in the process and will block this thread until exited.
-    pub fn run(self, app_data: &mut D) -> io::Result<()> {
+    pub fn run2(self, app_data: &mut D) -> io::Result<()> {
         cratesiover::output_to_writer(
             "papyrus",
             env!("CARGO_PKG_VERSION"),
@@ -23,7 +28,7 @@ impl<D> Repl<Read, D> {
         )?;
 
         let def_term = DefaultTerminal::new()?;
-        let term = Interface::new("papyrus")?;
+        let term = linefeed::Interface::new("papyrus")?;
 
         let mut read = self;
         let mut reevaluate = None;
@@ -86,9 +91,45 @@ impl<D> Repl<Read, D> {
     }
 }
 
-fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
-    use term_cursor as cursor;
+fn run<D>(mut read: Repl<Read, D>, app_data: &mut D) -> io::Result<()> {
+    let mut interface = Interface::stdout()?;
 
+    let mut reevaluate = None;
+
+    loop {
+        if let Some(buf) = read.data.editing_src.take() {
+            if reevaluate.is_none() {
+                interface.set_input_buffer(&buf);
+            }
+        }
+
+        let input = if let Some(val) = reevaluate.take() {
+            val
+        } else {
+            read_input(&mut interface);
+        };
+    }
+}
+
+/// Handle interface input until `Enter` is reached.
+fn read_input(interface: &mut Interface) -> String {
+    use mortal::Event::*;
+    use mortal::Key::*;
+
+    let i = interface;
+
+    //     match i.read_event(None).unwrap_or(NoEvent) {
+    //         Key(k) => match k {
+    //             Char(c) => i.
+    //             _ =>
+    //         }
+    //         _ =>
+    //     };
+    //
+    String::new()
+}
+
+fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
     let term = DefaultTerminal::new()?;
 
     let mut pos = cursor::get_pos().unwrap_or((0, 0));
@@ -130,8 +171,11 @@ fn output_repl(rx: output::Receiver) -> std::io::Result<()> {
 struct Completer {
     tree_cmplter: TreeCompleter,
     mod_cmplter: ModulesCompleter,
+
     #[cfg(feature = "racer-completion")]
     code_cmplter: CodeCompleter,
+    //     #[cfg(feature = "racer-completion")]
+    //     code_cache: Arc<Mutex<CodeCache>>,
 }
 
 impl Completer {
@@ -140,11 +184,13 @@ impl Completer {
         let tree_cmplter = TreeCompleter::build(&rdata.cmdtree);
         let mod_cmplter = ModulesCompleter::build(&rdata.cmdtree, rdata.mods_map());
         let code_cmplter = CodeCompleter::build(rdata);
+        let code_cache = CodeCache::new();
 
         Self {
             tree_cmplter,
             mod_cmplter,
             code_cmplter,
+            //             code_cache,
         }
     }
 
@@ -274,4 +320,25 @@ fn complete_mods<'a>(
     cmpltr
         .complete(line)
         .map(|x| x.map(|y| Completion::simple(y)))
+}
+
+pub struct Interface {
+    term: mortal::Screen,
+    input_buf: String,
+    /// The prompt always starts at `(line, 0)` and is contrained to a single line.
+    prompt_end: (usize, usize),
+}
+
+impl Interface {
+    pub fn stdout() -> io::Result<Self> {
+        Ok(Interface {
+            term: mortal::Screen::new(mortal::PrepareConfig::default())?,
+            input_buf: String::new(),
+            prompt_end: (0, 0),
+        })
+    }
+
+    pub fn set_input_buffer(&mut self, buf: &str) {
+        self.term.write_str(buf)
+    }
 }

@@ -1,5 +1,10 @@
 # Changelog
 
+## Latest
+
+- Removed `Repl.run_with_completion()`, use `Repl.run()` with `racer-completion` feature instead.
+- docs: Update output module documentation.
+
 ## 0.9.0
 
 - mod paths now complete
