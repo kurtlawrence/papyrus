@@ -80,14 +80,20 @@ impl InputBuffer {
         }
     }
 
-    pub fn move_pos_left(&mut self) {
-        self.pos = self.pos.saturating_sub(1);
+    /// Return the number moved.
+    pub fn move_pos_left(&mut self, n: usize) -> usize {
+        let n = if self.pos < n { self.pos } else { n };
+        self.pos -= n;
+        n
     }
 
-    pub fn move_pos_right(&mut self) {
-        if self.pos < self.buf.len() {
-            self.pos += 1;
-        }
+    /// Return the number moved.
+    pub fn move_pos_right(&mut self, n: usize) -> usize {
+        let max = self.buf.len() - self.pos;
+        let n = if n > max { max } else { n };
+
+        self.pos += n;
+        n
     }
 }
 
@@ -158,14 +164,8 @@ impl<'a> Iterator for TermEventIter<'a> {
 
 pub fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, EventAction) {
     let cmd = match event {
-        Key(Left) => {
-            buf.move_pos_left();
-            EventAction::Left(1)
-        }
-        Key(Right) => {
-            buf.move_pos_right();
-            EventAction::Right(1)
-        }
+        Key(Left) => EventAction::Left(buf.move_pos_left(1) as u16),
+        Key(Right) => EventAction::Right(buf.move_pos_right(1) as u16),
         Key(Char(c)) => {
             buf.insert(c);
             EventAction::InputChange
@@ -180,10 +180,14 @@ pub fn execute_input_cmd(buf: &InputBuffer, action: EventAction) -> io::Result<(
     let stdout = stdout();
     match action {
         EventAction::Left(x) => {
-            stdout.execute(xterm::Left(x));
+            if x > 0 {
+                stdout.execute(xterm::Left(x));
+            }
         }
         EventAction::Right(x) => {
-            stdout.execute(xterm::Right(x));
+            if x > 0 {
+                stdout.execute(xterm::Right(x));
+            }
         }
         EventAction::InputChange => {
             let offset = buf.ch_pos().saturating_sub(1) as u16;
@@ -259,10 +263,10 @@ mod tests {
         assert_eq!(input.pos, 13);
 
         // can't go past end of buffer
-        input.move_pos_right();
+        input.move_pos_right(1);
         assert_eq!(input.pos, 13);
 
-        input.move_pos_left();
+        input.move_pos_left(1);
         assert_eq!(input.pos, 12);
 
         input.insert('?');
@@ -270,7 +274,7 @@ mod tests {
         assert_eq!(input.pos, 13);
 
         // can't go past start of buffer
-        (0..14).for_each(|_| input.move_pos_left());
+        input.move_pos_left(14);
         assert_eq!(input.pos, 0);
     }
 
@@ -288,7 +292,7 @@ mod tests {
         assert_eq!(&input.buffer(), "Hello, world");
         assert_eq!(input.pos, 12);
 
-        (0..14).for_each(|_| input.move_pos_left());
+        input.move_pos_left(14);
         input.backspace();
         assert_eq!(&input.buffer(), "Hello, world");
         assert_eq!(input.pos, 0);
