@@ -16,7 +16,6 @@
 //!
 //! Papyrus is in active development, see [changelog](https://github.com/kurtlawrence/papyrus) for updates
 use papyrus::*;
-use repl::{Read, Repl};
 
 fn main() {
     windows_term_hack();
