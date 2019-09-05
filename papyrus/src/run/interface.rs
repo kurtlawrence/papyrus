@@ -162,18 +162,78 @@ impl<'a> Iterator for TermEventIter<'a> {
     }
 }
 
-pub fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, EventAction) {
+pub fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, bool) {
     let cmd = match event {
-        Key(Left) => EventAction::Left(buf.move_pos_left(1) as u16),
-        Key(Right) => EventAction::Right(buf.move_pos_right(1) as u16),
+        Key(Left) => {
+            buf.move_pos_left(1);
+            false
+        }
+        Key(Right) => {
+            buf.move_pos_right(1);
+            false
+        }
         Key(Char(c)) => {
             buf.insert(c);
-            EventAction::InputChange
+            true
         }
-        _ => EventAction::NoAction,
+        _ => false,
     };
 
     (buf, cmd)
+}
+
+/// Given an initial buffer starting point in the terminal, offset the cursor to the buffer's
+/// character position. This method is indiscriminant
+/// of what is on screen.
+///
+/// # Wrapping
+/// Wrapping on a new line starts at column 0.
+pub fn set_cursor_from_input(initial: (u16, u16), buf: &InputBuffer) -> io::Result<()> {
+    let (initialx, initialy) = initial;
+    let term = xterm::terminal();
+    let width = term.terminal_size().0 as isize;
+
+    let mut lines = 0;
+    let mut chpos = (buf.ch_pos() as isize) - (width - initialx as isize);
+    while chpos >= 0 {
+        lines += 1;
+        chpos -= width;
+    }
+
+    chpos = width + chpos;
+
+    let x = chpos as u16;
+    let y = initialy + lines;
+
+    xterm::cursor().goto(x, y).map_err(|e| match e {
+        xterm::ErrorKind::IoError(e) => e,
+        _ => io::Error::new(io::ErrorKind::Other, "cursor setting failed"),
+    })
+}
+
+/// Returns where the cursor ends up.
+pub fn write_input_buffer(
+    initial: (u16, u16),
+    lines_to_clear: u16,
+    buf: &InputBuffer,
+) -> io::Result<(u16, u16)> {
+    let (x, y) = initial;
+    let mut stdout = stdout()
+        .queue(Goto(x, y))
+        .queue(Clear(ClearType::UntilNewLine));
+
+    for i in 1..=lines_to_clear {
+        stdout = stdout
+            .queue(Goto(0, y + i))
+            .queue(Clear(ClearType::UntilNewLine));
+    }
+
+    stdout
+        .queue(Goto(x, y))
+        .queue(Output(buf.buffer()))
+        .flush()?;
+
+    Ok(xterm::cursor().pos())
 }
 
 pub fn execute_input_cmd(buf: &InputBuffer, action: EventAction) -> io::Result<()> {
@@ -220,12 +280,22 @@ pub fn read_until(screen: &mut Screen, buf: InputBuffer, events: &[Event]) -> (I
 
     let mut last = Event::NoEvent;
 
+    let initial = xterm::cursor().pos();
+
+    let mut lines_to_clear = 0;
+
     let input = iter
         .inspect(|ev| last = *ev)
         .take_while(|ev| !events.contains(ev))
         .fold(buf, |buf, ev| {
-            let (buf, cmd) = apply_event_to_buf(buf, ev);
-            execute_input_cmd(&buf, cmd).ok();
+            let (buf, chg) = apply_event_to_buf(buf, ev);
+            if chg {
+                let write_to = write_input_buffer(initial, lines_to_clear, &buf).unwrap_or(initial);
+                lines_to_clear = write_to.1.saturating_sub(initial.1);
+            }
+
+            set_cursor_from_input(initial, &buf).ok();
+
             buf
         });
 
