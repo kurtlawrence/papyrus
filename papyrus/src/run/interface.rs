@@ -110,6 +110,8 @@ pub enum EventAction {
 pub fn read_terminal_event(screen: &Screen) -> io::Result<Event> {
     use mortal::{Event::*, Key::*, Signal::*};
 
+    const ESC_TIMEOUT: Option<std::time::Duration> = Some(std::time::Duration::from_millis(5));
+
     let screen = &screen.0;
 
     let ev = screen.read_event(None)?.unwrap_or(NoEvent);
@@ -121,9 +123,6 @@ pub fn read_terminal_event(screen: &Screen) -> io::Result<Event> {
             // events, but they should be fast in coming
             // so timeout and if they don't come, well just return
             // Escape
-            const ESC_TIMEOUT: Option<std::time::Duration> =
-                Some(std::time::Duration::from_millis(1));
-
             let fst = screen.read_event(ESC_TIMEOUT)?;
             let snd = screen.read_event(ESC_TIMEOUT)?;
 
@@ -171,6 +170,14 @@ pub fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, b
         Key(Right) => {
             buf.move_pos_right(1);
             false
+        }
+        Key(Backspace) => {
+            buf.backspace();
+            true
+        }
+        Key(Delete) => {
+            buf.delete();
+            true
         }
         Key(Char(c)) => {
             buf.insert(c);
