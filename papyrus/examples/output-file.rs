@@ -6,7 +6,7 @@ extern crate papyrus;
 
 use papyrus::output::{OutputChange, Receiver};
 use papyrus::repl::{EvalResult, ReadResult, Signal};
-use std::io::{stdin, StdoutLock, Write};
+use std::io::stdin;
 
 fn main() {
     // build the repl
