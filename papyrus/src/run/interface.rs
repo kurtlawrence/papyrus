@@ -3,7 +3,7 @@ use crossterm as xterm;
 use mortal::Event;
 use mortal::{Event::*, Key::*};
 use std::io::{self, stdout, Stdout, Write};
-use xterm::{Clear, ClearType, ExecutableCommand, Goto, Output, QueueableCommand};
+use xterm::{Clear, ClearType, Goto, Output, QueueableCommand};
 
 /// Terminal screen interface.
 ///
@@ -95,13 +95,73 @@ impl InputBuffer {
         self.pos += n;
         n
     }
+
+    pub fn truncate(&mut self, ch_pos: usize) {
+        self.buf.truncate(ch_pos);
+        if self.pos > self.buf.len() {
+            self.pos = self.buf.len()
+        }
+    }
 }
 
-pub enum EventAction {
-    Left(u16),
-    Right(u16),
-    InputChange,
-    NoAction,
+#[derive(Default)]
+pub struct CompletionWriter {
+    input_line: String,
+    completions: Vec<String>,
+    completion_idx: usize,
+    ch_pos: usize,
+    lines_to_clear: u16,
+}
+
+impl CompletionWriter {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn is_same_input(&self, line: &str) -> bool {
+        self.input_line == line
+    }
+
+    pub fn next_completion(&mut self) {
+        let idx = self.completion_idx + 1;
+        let idx = if idx >= self.completions.len() {
+            0
+        } else {
+            idx
+        };
+        self.completion_idx = idx;
+    }
+
+    pub fn new_completions<I: Iterator<Item = String>>(
+        &mut self,
+        completions: I,
+        input_buffer_len: usize,
+    ) {
+        self.completions.clear();
+        for c in completions {
+            self.completions.push(c)
+        }
+        self.completion_idx = 0;
+        self.ch_pos = input_buffer_len;
+    }
+
+    pub fn overwrite_completion(
+        &mut self,
+        initial: (u16, u16),
+        buf: &mut InputBuffer,
+    ) -> io::Result<()> {
+        let completion = self.completions.get(self.completion_idx);
+
+        if let Some(completion) = completion {
+            buf.truncate(self.ch_pos);
+            buf.insert_str(&completion);
+            let (_, y) = write_input_buffer(initial, self.lines_to_clear, &buf)?;
+            self.lines_to_clear = y.saturating_sub(initial.1);
+            self.input_line = buf.buffer();
+        }
+
+        Ok(())
+    }
 }
 
 /// Waits for a terminal event to occur.
@@ -243,51 +303,15 @@ pub fn write_input_buffer(
     Ok(xterm::cursor().pos())
 }
 
-pub fn execute_input_cmd(buf: &InputBuffer, action: EventAction) -> io::Result<()> {
-    let stdout = stdout();
-    match action {
-        EventAction::Left(x) => {
-            if x > 0 {
-                stdout.execute(xterm::Left(x));
-            }
-        }
-        EventAction::Right(x) => {
-            if x > 0 {
-                stdout.execute(xterm::Right(x));
-            }
-        }
-        EventAction::InputChange => {
-            let offset = buf.ch_pos().saturating_sub(1) as u16;
-            let stdout = if offset > 0 {
-                stdout.queue(xterm::Left(offset))
-            } else {
-                stdout
-            };
-
-            let stdout = stdout
-                .queue(xterm::Clear(xterm::ClearType::UntilNewLine))
-                .queue(xterm::Output(buf.buffer()));
-
-            let offset = buf.ch_len().saturating_sub(buf.ch_pos()) as u16;
-            if offset > 0 {
-                stdout.queue(xterm::Left(offset))
-            } else {
-                stdout
-            }
-            .flush()?;
-        }
-        _ => (),
-    };
-
-    Ok(())
-}
-
-pub fn read_until(screen: &mut Screen, buf: InputBuffer, events: &[Event]) -> (InputBuffer, Event) {
+pub fn read_until(
+    screen: &mut Screen,
+    initial: (u16, u16),
+    buf: InputBuffer,
+    events: &[Event],
+) -> (InputBuffer, Event) {
     let iter = TermEventIter(screen);
 
     let mut last = Event::NoEvent;
-
-    let initial = xterm::cursor().pos();
 
     let mut lines_to_clear = 0;
 

@@ -12,6 +12,8 @@ use std::sync::Arc;
 
 mod interface;
 
+use interface::{InputBuffer, Screen};
+
 impl<D> Repl<Read, D> {
     pub fn run(self, app_data: &mut D) -> io::Result<()> {
         run(self, app_data)
@@ -22,10 +24,6 @@ fn run<D>(mut read: Repl<Read, D>, app_data: &mut D) -> io::Result<()> {
     let mut screen = interface::Screen::new()?;
 
     let mut reevaluate: Option<String> = None;
-
-    const BREAK: Event = Event::Signal(mortal::Signal::Interrupt);
-    const ENTER: Event = Event::Key(Key::Enter);
-    const STOPEVENTS: &[Event] = &[BREAK, ENTER];
 
     loop {
         io::stdout().execute(crossterm::Output(read.prompt()));
@@ -41,13 +39,8 @@ fn run<D>(mut read: Repl<Read, D>, app_data: &mut D) -> io::Result<()> {
         if let Some(val) = reevaluate.take() {
             read.line_input(&val);
         } else {
-            let (input, ev) = interface::read_until(&mut screen, input_buf, STOPEVENTS);
-
-            if ev == BREAK {
+            if do_read(&mut read, &mut screen, input_buf)? {
                 break Ok(());
-            } else if ev == ENTER {
-                read.line_input(&input.buffer());
-                writeln!(&mut io::stdout(), "")?;
             }
         }
 
@@ -64,6 +57,48 @@ fn run<D>(mut read: Repl<Read, D>, app_data: &mut D) -> io::Result<()> {
                 Err(_) => break Ok(()),
             },
         }
+    }
+}
+
+/// Returns true if interrupt occurred.
+fn do_read<D>(repl: &mut Repl<Read, D>, screen: &mut Screen, buf: InputBuffer) -> io::Result<bool> {
+    use mortal::{Event::*, Key::*, Signal::*};
+    const BREAK: Event = Signal(Interrupt);
+    const ENTER: Event = Key(Enter);
+    const TAB: Event = Key(Tab);
+    const STOPEVENTS: &[Event] = &[BREAK, ENTER, TAB];
+
+    let rdata = &repl.data;
+    let tree = TreeCompleter::build(&rdata.cmdtree);
+
+    let mut i = Some(buf);
+
+    let initial = crossterm::cursor().pos();
+
+    let mut completion_writer = interface::CompletionWriter::new();
+
+    loop {
+        let (mut input, ev) = interface::read_until(screen, initial, i.take().unwrap(), STOPEVENTS);
+
+        if ev == BREAK {
+            return Ok(true);
+        } else if ev == ENTER {
+            repl.line_input(&input.buffer());
+            writeln!(&mut io::stdout(), "")?;
+            break Ok(false);
+        } else if ev == TAB {
+            let line = input.buffer();
+            if completion_writer.is_same_input(&line) {
+                completion_writer.next_completion();
+            } else {
+                let completions = tree.complete(&line).map(|x| x.0.to_string());
+                completion_writer.new_completions(completions, input.ch_len());
+            }
+
+            completion_writer.overwrite_completion(initial, &mut input)?;
+        }
+
+        i = Some(input); // prep for next loop
     }
 }
 
