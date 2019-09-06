@@ -91,8 +91,13 @@ fn do_read<D>(repl: &mut Repl<Read, D>, screen: &mut Screen, buf: InputBuffer) -
             if completion_writer.is_same_input(&line) {
                 completion_writer.next_completion();
             } else {
+                let chpos_start = {
+                    let start = TreeCompleter::word_break(&line);
+                    let chars = line[start..].chars().count();
+                    input.ch_len().saturating_sub(chars)
+                };
                 let completions = tree.complete(&line).map(|x| x.0.to_string());
-                completion_writer.new_completions(completions, input.ch_len());
+                completion_writer.new_completions(completions, chpos_start);
             }
 
             completion_writer.overwrite_completion(initial, &mut input)?;
