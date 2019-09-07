@@ -5,6 +5,8 @@ use crate::pfh::ModsMap;
 use cmdr::ActionArgComplete;
 use std::path::{Path, PathBuf};
 
+type IterRet<'a> = Box<dyn Iterator<Item = String> + 'a>;
+
 /// A completer that completes paths to modules, such as the `mod switch` action.
 pub struct ModulesCompleter {
     inner: ActionArgComplete,
@@ -30,12 +32,14 @@ impl ModulesCompleter {
     }
 
     /// Get the completions of an actions arguments if it matches the line.
-    pub fn complete<'b>(&'b self, line: &'b str) -> Option<impl Iterator<Item = String> + 'b> {
+    pub fn complete<'a>(&'a self, line: &'a str) -> IterRet<'a> {
         let actions = ["mod..switch"];
 
         self.inner
             .find(line, &actions)
             .map(|x| complete_path(x.line, self.mods.iter()))
+            .map(|x| Box::new(x) as IterRet<'a>)
+            .unwrap_or(Box::new(std::iter::empty()) as IterRet<'a>)
     }
 }
 

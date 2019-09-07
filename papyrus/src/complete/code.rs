@@ -48,7 +48,7 @@ impl CodeCompleter {
 
     /// Inject code into the current source code and return the amended code,
     /// along with the byte position to complete from.
-    pub fn inject(&self, injection: &str) -> (String, BytePos) {
+    fn inject(&self, injection: &str) -> (String, BytePos) {
         let cap = self.last_code.len() + self.split.start - self.split.end + injection.len();
         let mut s = String::with_capacity(cap);
 
@@ -71,10 +71,25 @@ pub struct CodeCache {
 
 impl CodeCache {
     /// Construct new cache.
-    pub fn new() -> Self {
-        dbg!("building new cache");
-        Self {
+    ///
+    /// Checks that Rust source code can be found for completion. If not an `Err` is returned with
+    /// a message and the code cache. The code cache will still function but there will not be
+    /// completion for the Rust library.
+    pub fn new() -> Result<Self, (Self, &'static str)> {
+        use racer::RustSrcPathError::*;
+
+        let cache = Self {
             cache: FileCache::new(PapyrusCodeFileLoader),
+        };
+
+        match racer::get_rust_src_path() {
+            Ok(_) => Ok(cache),
+            Err(Missing) => Err((cache, "rust source code does not exist")),
+            Err(DoesNotExist(_)) => Err((cache, "rust source code path does not exist")),
+            Err(NotRustSourceTree(_)) => Err((
+                cache,
+                "rust source code path does not have valid rustc source",
+            )),
         }
     }
 }
@@ -85,8 +100,6 @@ impl racer::FileLoader for PapyrusCodeFileLoader {
     fn load_file(&self, path: &Path) -> io::Result<String> {
         use std::fs::File;
         use std::io::Read;
-
-        dbg!(path);
 
         // copied from racers implementation and special handling for lib.rs
 

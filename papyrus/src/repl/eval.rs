@@ -50,6 +50,10 @@ impl<D> Repl<Evaluate, D> {
     pub fn close_channel(&mut self) {
         self.state.output.close()
     }
+
+    pub fn output(&self) -> &str {
+        self.state.output.buffer()
+    }
 }
 
 impl<D: 'static + Send + Sync> Repl<Evaluate, D> {

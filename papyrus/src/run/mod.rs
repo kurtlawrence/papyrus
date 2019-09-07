@@ -12,20 +12,41 @@ use std::sync::Arc;
 
 mod interface;
 
-use interface::{InputBuffer, Screen};
+use interface::{CItem, InputBuffer, Screen};
+
+const CODE_COMPLETIONS: Option<usize> = Some(10);
+
+#[cfg(feature = "racer-completion")]
+struct CacheWrapper(CodeCache);
+#[cfg(not(feature = "racer-completion"))]
+struct CacheWrapper;
 
 impl<D> Repl<Read, D> {
-    pub fn run(self, app_data: &mut D) -> io::Result<()> {
+    pub fn run(self, app_data: &mut D) -> io::Result<String> {
         run(self, app_data)
     }
 }
 
-fn run<D>(mut read: Repl<Read, D>, app_data: &mut D) -> io::Result<()> {
+fn run<D>(mut read: Repl<Read, D>, app_data: &mut D) -> io::Result<String> {
     let mut screen = interface::Screen::new()?;
+
+    #[cfg(feature = "racer-completion")]
+    let cache = {
+        let cache = match CodeCache::new() {
+            Ok(c) => c,
+            Err((c, msg)) => {
+                println!("warning: could not find rust src code: {}", msg);
+                c
+            }
+        };
+        CacheWrapper(cache)
+    };
+    #[cfg(not(feature = "racer-completion"))]
+    let cache = CacheWrapper;
 
     let mut reevaluate: Option<String> = None;
 
-    loop {
+    let output = loop {
         io::stdout().execute(crossterm::Output(read.prompt()));
 
         let mut input_buf = interface::InputBuffer::new();
@@ -39,8 +60,8 @@ fn run<D>(mut read: Repl<Read, D>, app_data: &mut D) -> io::Result<()> {
         if let Some(val) = reevaluate.take() {
             read.line_input(&val);
         } else {
-            if do_read(&mut read, &mut screen, input_buf)? {
-                break Ok(());
+            if do_read(&mut read, &mut screen, input_buf, &cache)? {
+                break read.output().to_owned();
             }
         }
 
@@ -54,28 +75,38 @@ fn run<D>(mut read: Repl<Read, D>, app_data: &mut D) -> io::Result<()> {
                     // prep for next read
                     interface::erase_current_line(io::stdout()).flush()?;
                 }
-                Err(_) => break Ok(()),
+                Err(r) => break r.output().to_owned(),
             },
         }
-    }
+    };
+
+    Ok(output)
 }
 
 /// Returns true if interrupt occurred.
-fn do_read<D>(repl: &mut Repl<Read, D>, screen: &mut Screen, buf: InputBuffer) -> io::Result<bool> {
+fn do_read<D>(
+    repl: &mut Repl<Read, D>,
+    screen: &mut Screen,
+    buf: InputBuffer,
+    cache: &CacheWrapper,
+) -> io::Result<bool> {
     use mortal::{Event::*, Key::*, Signal::*};
     const BREAK: Event = Signal(Interrupt);
     const ENTER: Event = Key(Enter);
     const TAB: Event = Key(Tab);
     const STOPEVENTS: &[Event] = &[BREAK, ENTER, TAB];
 
-    let rdata = &repl.data;
-    let tree = TreeCompleter::build(&rdata.cmdtree);
-
     let mut i = Some(buf);
 
     let initial = crossterm::cursor().pos();
 
     let mut completion_writer = interface::CompletionWriter::new();
+
+    let rdata = &repl.data;
+    let treecmpltr = TreeCompleter::build(&rdata.cmdtree);
+    let modscmpltr = ModulesCompleter::build(&rdata.cmdtree, rdata.mods_map());
+    #[cfg(feature = "racer-completion")]
+    let codecmpltr = CodeCompleter::build(rdata);
 
     loop {
         let (mut input, ev) = interface::read_until(screen, initial, i.take().unwrap(), STOPEVENTS);
@@ -91,13 +122,23 @@ fn do_read<D>(repl: &mut Repl<Read, D>, screen: &mut Screen, buf: InputBuffer) -
             if completion_writer.is_same_input(&line) {
                 completion_writer.next_completion();
             } else {
-                let chpos_start = {
-                    let start = TreeCompleter::word_break(&line);
-                    let chars = line[start..].chars().count();
-                    input.ch_len().saturating_sub(chars)
-                };
-                let completions = tree.complete(&line).map(|x| x.0.to_string());
-                completion_writer.new_completions(completions, chpos_start);
+                let f = |start| input.ch_len().saturating_sub(line[start..].chars().count());
+
+                let tree_chpos = f(TreeCompleter::word_break(&line));
+                let mods_chpos = f(ModulesCompleter::word_break(&line));
+                #[cfg(feature = "racer-completion")]
+                let code_chpos = f(CodeCompleter::word_break(&line));
+
+                #[cfg(feature = "racer-completion")]
+                let injection = format!("{}\n{}", repl.input_buffer(), line);
+                #[cfg(feature = "racer-completion")]
+                let completions = complete_code(&codecmpltr, &cache.0, &injection, code_chpos);
+
+                let completions = completions
+                    .chain(complete_cmdtree(&treecmpltr, &line, tree_chpos))
+                    .chain(complete_mods(&modscmpltr, &line, mods_chpos));
+
+                completion_writer.new_completions(completions);
             }
 
             completion_writer.overwrite_completion(initial, &mut input)?;
@@ -107,10 +148,47 @@ fn do_read<D>(repl: &mut Repl<Read, D>, screen: &mut Screen, buf: InputBuffer) -
     }
 }
 
+fn complete_cmdtree<'a>(
+    tree: &'a TreeCompleter,
+    line: &'a str,
+    chpos: usize,
+) -> impl Iterator<Item = CItem> + 'a {
+    tree.complete(line).map(move |x| CItem {
+        matchstr: x.0.to_owned(),
+        input_chpos: chpos,
+    })
+}
+
+fn complete_mods<'a>(
+    mods: &'a ModulesCompleter,
+    line: &'a str,
+    chpos: usize,
+) -> impl Iterator<Item = CItem> + 'a {
+    mods.complete(line).map(move |x| CItem {
+        matchstr: x,
+        input_chpos: chpos,
+    })
+}
+
+#[cfg(feature = "racer-completion")]
+fn complete_code(
+    code: &CodeCompleter,
+    cache: &CodeCache,
+    injection: &str,
+    chpos: usize,
+) -> impl Iterator<Item = CItem> {
+    code.complete(injection, CODE_COMPLETIONS, cache)
+        .into_iter()
+        .map(move |x| CItem {
+            matchstr: x.matchstr,
+            input_chpos: chpos,
+        })
+}
+
 fn do_eval<D>(
     mut repl: Repl<Evaluate, D>,
     app_data: &mut D,
-) -> Result<(Repl<Read, D>, Option<String>), ()> {
+) -> Result<(Repl<Read, D>, Option<String>), Repl<Read, D>> {
     let rx = repl.output_listen();
 
     let jh = std::thread::spawn(move || {
@@ -124,7 +202,7 @@ fn do_eval<D>(
 
     match result.signal {
         Signal::None => (),
-        Signal::Exit => return Err(()),
+        Signal::Exit => return Err(result.repl.print().0),
         Signal::ReEvaluate(val) => reevaluate = Some(val),
     }
 
@@ -136,43 +214,6 @@ fn do_eval<D>(
     Ok((read, reevaluate))
 }
 
-// struct Completer {
-//     tree_cmplter: TreeCompleter,
-//     mod_cmplter: ModulesCompleter,
-//
-//     #[cfg(feature = "racer-completion")]
-//     code_cmplter: CodeCompleter,
-//     //     #[cfg(feature = "racer-completion")]
-//     //     code_cache: Arc<Mutex<CodeCache>>,
-// }
-//
-// impl Completer {
-//     #[cfg(feature = "racer-completion")]
-//     fn build<T>(rdata: &repl::ReplData<T>) -> Self {
-//         let tree_cmplter = TreeCompleter::build(&rdata.cmdtree);
-//         let mod_cmplter = ModulesCompleter::build(&rdata.cmdtree, rdata.mods_map());
-//         let code_cmplter = CodeCompleter::build(rdata);
-//         let code_cache = CodeCache::new();
-//
-//         Self {
-//             tree_cmplter,
-//             mod_cmplter,
-//             code_cmplter,
-//             //             code_cache,
-//         }
-//     }
-//
-//     #[cfg(not(feature = "racer-completion"))]
-//     fn build<T>(rdata: &repl::ReplData<T>) -> Self {
-//         let tree_cmplter = TreeCompleter::build(&rdata.cmdtree);
-//         let mod_cmplter = ModulesCompleter::build(&rdata.cmdtree, rdata.mods_map());
-//
-//         Self {
-//             tree_cmplter,
-//             mod_cmplter,
-//         }
-//     }
-// }
 //
 // #[cfg(not(feature = "racer-completion"))]
 // impl<T: Terminal> linefeed::Completer<T> for Completer {

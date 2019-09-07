@@ -104,12 +104,16 @@ impl InputBuffer {
     }
 }
 
+pub struct CItem {
+    pub matchstr: String,
+    pub input_chpos: usize,
+}
+
 #[derive(Default)]
 pub struct CompletionWriter {
     input_line: String,
-    completions: Vec<String>,
+    completions: Vec<CItem>,
     completion_idx: usize,
-    ch_pos: usize,
     lines_to_clear: u16,
 }
 
@@ -132,17 +136,12 @@ impl CompletionWriter {
         self.completion_idx = idx;
     }
 
-    pub fn new_completions<I: Iterator<Item = String>>(
-        &mut self,
-        completions: I,
-        input_buffer_len: usize,
-    ) {
+    pub fn new_completions<I: Iterator<Item = CItem>>(&mut self, completions: I) {
         self.completions.clear();
         for c in completions {
             self.completions.push(c)
         }
         self.completion_idx = 0;
-        self.ch_pos = input_buffer_len;
     }
 
     pub fn overwrite_completion(
@@ -152,9 +151,13 @@ impl CompletionWriter {
     ) -> io::Result<()> {
         let completion = self.completions.get(self.completion_idx);
 
-        if let Some(completion) = completion {
-            buf.truncate(self.ch_pos);
-            buf.insert_str(&completion);
+        if let Some(CItem {
+            matchstr,
+            input_chpos,
+        }) = completion
+        {
+            buf.truncate(*input_chpos);
+            buf.insert_str(matchstr);
             let (_, y) = write_input_buffer(initial, self.lines_to_clear, &buf)?;
             self.lines_to_clear = y.saturating_sub(initial.1);
             self.input_line = buf.buffer();
