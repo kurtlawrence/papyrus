@@ -22,9 +22,10 @@ fn main() {
 
     let repl = repl!();
 
-    repl.run(&mut ()).unwrap();
+    let output = repl.run(&mut ()).unwrap();
 
-    std::thread::sleep(std::time::Duration::from_millis(10)); // let output thread finish up
+    println!("{}", output);
+
     println!("Thanks for using papyrus!");
 }
 
