@@ -196,137 +196,15 @@ fn do_eval<D>(
             .for_each(|x| interface::write_output_chg(x).unwrap_or(()))
     });
 
-    let mut reevaluate = None;
-
-    let result = repl.eval(app_data);
-
-    match result.signal {
-        Signal::None => (),
-        Signal::Exit => return Err(result.repl.print().0),
-        Signal::ReEvaluate(val) => reevaluate = Some(val),
-    }
-
-    let mut read = result.repl.print().0;
+    let r = repl.eval(app_data);
+    let (mut read, signal) = (r.repl.print().0, r.signal);
 
     read.close_channel();
     jh.join().unwrap();
 
-    Ok((read, reevaluate))
+    match signal {
+        Signal::None => Ok((read, None)),
+        Signal::Exit => Err(read),
+        Signal::ReEvaluate(val) => Ok((read, Some(val))),
+    }
 }
-
-//
-// #[cfg(not(feature = "racer-completion"))]
-// impl<T: Terminal> linefeed::Completer<T> for Completer {
-//     fn complete(
-//         &self,
-//         word: &str,
-//         prompter: &Prompter<T>,
-//         _start: usize,
-//         _end: usize,
-//     ) -> Option<Vec<Completion>> {
-//         let mut v = Vec::new();
-//
-//         let line = prompter.buffer();
-//
-//         let start = get_start(word, line);
-//
-//         v.extend(trees_completer(&self.tree_cmplter, line, start));
-//
-//         if let Some(mods) = complete_mods(&self.mod_cmplter, line) {
-//             v.extend(mods);
-//         }
-//
-//         if v.len() > 0 {
-//             Some(v)
-//         } else {
-//             None
-//         }
-//     }
-//
-//     fn word_start(&self, line: &str, _end: usize, _prompter: &Prompter<T>) -> usize {
-//         let s1 = TreeCompleter::word_break(line);
-//         let s2 = ModulesCompleter::word_break(line);
-//
-//         max(s1, s2)
-//     }
-// }
-//
-// #[cfg(feature = "racer-completion")]
-// impl<T: Terminal> linefeed::Completer<T> for Completer {
-//     fn complete(
-//         &self,
-//         word: &str,
-//         prompter: &Prompter<T>,
-//         _start: usize,
-//         _end: usize,
-//     ) -> Option<Vec<Completion>> {
-//         let mut v = Vec::new();
-//
-//         let line = prompter.buffer();
-//
-//         let start = get_start(word, line);
-//
-//         v.extend(trees_completer(&self.tree_cmplter, line, start));
-//
-//         if let Some(mods) = complete_mods(&self.mod_cmplter, line) {
-//             v.extend(mods);
-//         }
-//
-//         if !line.starts_with('.') {
-//             let cache = CodeCache::new();
-//             let code = self
-//                 .code_cmplter
-//                 .complete(line, Some(10), &cache)
-//                 .into_iter()
-//                 .map(|x| Completion {
-//                     completion: x.matchstr,
-//                     display: None,
-//                     suffix: Suffix::None,
-//                 });
-//             v.extend(code);
-//         }
-//
-//         if v.len() > 0 {
-//             Some(v)
-//         } else {
-//             None
-//         }
-//     }
-//
-//     fn word_start(&self, line: &str, _end: usize, _prompter: &Prompter<T>) -> usize {
-//         let s1 = TreeCompleter::word_break(line);
-//         let s2 = ModulesCompleter::word_break(line);
-//         let s3 = CodeCompleter::word_break(line);
-//
-//         max(max(s1, s2), s3)
-//     }
-// }
-//
-// fn get_start(word: &str, line: &str) -> usize {
-//     let end = word.len() + 1;
-//     if !word.is_empty() && line.len() >= end && &line[..1] == "." && &line[1..end] == word {
-//         1
-//     } else {
-//         0
-//     }
-// }
-//
-// fn trees_completer<'a>(
-//     cmpltr: &'a TreeCompleter,
-//     line: &'a str,
-//     start: usize,
-// ) -> impl Iterator<Item = Completion> + 'a {
-//     cmpltr
-//         .complete(line)
-//         .map(move |x| &x.0[start..])
-//         .map(|x| Completion::simple(x.to_string()))
-// }
-//
-// fn complete_mods<'a>(
-//     cmpltr: &'a ModulesCompleter,
-//     line: &'a str,
-// ) -> Option<impl Iterator<Item = Completion> + 'a> {
-//     cmpltr
-//         .complete(line)
-//         .map(|x| x.map(|y| Completion::simple(y)))
-// }
