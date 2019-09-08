@@ -28,6 +28,17 @@ impl<D> Repl<Read, D> {
 }
 
 fn run<D>(mut read: Repl<Read, D>, app_data: &mut D) -> io::Result<String> {
+    // set a custom panic handler to dump to a file
+    // must be done as the screen captures the io streams and will
+    // lose the panic message
+    // if removed ensure `take_hook` is removed as well.
+    let app_name = read.data.cmdtree.root_name().to_owned();
+    std::panic::set_hook(Box::new(move |info| {
+        let filename = format!("{}.crash.report", app_name);
+        let content = construct_crash_report(Vec::new(), &app_name, info).unwrap_or_default();
+        std::fs::write(filename, content).ok();
+    }));
+
     let mut screen = interface::Screen::new()?;
 
     #[cfg(feature = "racer-completion")]
@@ -80,7 +91,40 @@ fn run<D>(mut read: Repl<Read, D>, app_data: &mut D) -> io::Result<String> {
         }
     };
 
+    let _ = std::panic::take_hook(); // remove the previous set_hook
     Ok(output)
+}
+
+fn construct_crash_report(
+    mut content: Vec<u8>,
+    app_name: &str,
+    info: &std::panic::PanicInfo,
+) -> io::Result<Vec<u8>> {
+    writeln!(
+        &mut content,
+        "An unhandled error occurred in the operation of {}.",
+        app_name
+    )?;
+    writeln!(
+        &mut content,
+        "Please send this information to the required parties."
+    )?;
+
+    writeln!(&mut content, "\nPanic Payload:")?;
+    if let Some(s) = info.payload().downcast_ref::<&str>() {
+        writeln!(&mut content, "{}", s)?;
+    } else {
+        writeln!(&mut content, "Unknown panic")?;
+    }
+
+    writeln!(&mut content, "\nLocation:")?;
+    if let Some(l) = info.location() {
+        writeln!(&mut content, "{}", l)?;
+    } else {
+        writeln!(&mut content, "no location information")?;
+    }
+
+    Ok(content)
 }
 
 /// Returns true if interrupt occurred.
@@ -129,13 +173,19 @@ fn do_read<D>(
                 #[cfg(feature = "racer-completion")]
                 let code_chpos = f(CodeCompleter::word_break(&line));
 
-                #[cfg(feature = "racer-completion")]
-                let injection = format!("{}\n{}", repl.input_buffer(), line);
-                #[cfg(feature = "racer-completion")]
-                let completions = complete_code(&codecmpltr, &cache.0, &injection, code_chpos);
+                let completions = if line.starts_with(crate::CMD_PREFIX) {
+                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = CItem>>
+                } else {
+                    #[cfg(feature = "racer-completion")]
+                    let injection = format!("{}\n{}", repl.input_buffer(), line);
+                    #[cfg(feature = "racer-completion")]
+                    let c = complete_code(&codecmpltr, &cache.0, &injection, code_chpos);
 
-                #[cfg(not(feature = "racer-completion"))]
-                let completions = std::iter::empty();
+                    #[cfg(not(feature = "racer-completion"))]
+                    let c = std::iter::empty();
+
+                    Box::new(c) as Box<dyn Iterator<Item = CItem>>
+                };
 
                 let completions = completions
                     .chain(complete_cmdtree(&treecmpltr, &line, tree_chpos))
