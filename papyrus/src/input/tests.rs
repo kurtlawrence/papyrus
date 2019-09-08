@@ -211,15 +211,15 @@ fn test_exprs() {
 #[test]
 fn test_determine_result() {
     assert_eq!(
-        determine_result(".help", ".help", false),
+        determine_result(":help", ":help", false),
         InputResult::Command("help".to_string())
     );
     assert_eq!(
-        determine_result(".another", ".another", false),
+        determine_result(":another", ":another", false),
         InputResult::Command("another".to_string())
     );
     assert_eq!(
-        determine_result(".help cmd", ".help cmd", false),
+        determine_result(":help cmd", ":help cmd", false),
         InputResult::Command("help cmd".to_string())
     );
     assert_eq!(determine_result("", "", false), InputResult::Empty);

@@ -51,5 +51,5 @@ pub fn determine_result(input: &str, line: &str, treat_as_cmd: bool) -> InputRes
 }
 
 fn is_command(line: &str) -> bool {
-    line.starts_with(".") && !line.starts_with("..")
+    line.starts_with(crate::CMD_PREFIX)
 }

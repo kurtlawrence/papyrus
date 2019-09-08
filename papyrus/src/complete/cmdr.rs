@@ -21,7 +21,7 @@ impl TreeCompleter {
 
         items.iter_mut().for_each(|x| {
             if cmdr.at_root() {
-                x.completestr.insert(0, '.');
+                x.completestr.insert_str(0, crate::CMD_PREFIX);
             }
         });
 
@@ -30,7 +30,7 @@ impl TreeCompleter {
 
     /// Returns the start position of the _last_ word which is broken in context to cmdtree.
     pub fn word_break(line: &str) -> usize {
-        word_break_start(line, &[' '])
+        word_break_start(line, &[crate::CMD_PREFIX.chars().last().unwrap()])
     }
 
     /// Get the completions of the tree structure if it matches the line.
@@ -57,7 +57,7 @@ impl ActionArgComplete {
 
         items.iter_mut().for_each(|x| {
             if cmdr.at_root() {
-                x.info.completestr.insert(0, '.');
+                x.info.completestr.insert_str(0, crate::CMD_PREFIX);
             }
         });
 

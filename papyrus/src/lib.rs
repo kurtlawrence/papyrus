@@ -55,6 +55,9 @@ macro_rules! dbg_to_file {
     }};
 }
 
+/// The prefix to access commands.
+const CMD_PREFIX: &str = ":";
+
 /// Extendable commands for repl.
 pub mod cmds;
 pub mod compile;
