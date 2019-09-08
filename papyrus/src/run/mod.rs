@@ -134,6 +134,9 @@ fn do_read<D>(
                 #[cfg(feature = "racer-completion")]
                 let completions = complete_code(&codecmpltr, &cache.0, &injection, code_chpos);
 
+                #[cfg(not(feature = "racer-completion"))]
+                let completions = std::iter::empty();
+
                 let completions = completions
                     .chain(complete_cmdtree(&treecmpltr, &line, tree_chpos))
                     .chain(complete_mods(&modscmpltr, &line, mods_chpos));

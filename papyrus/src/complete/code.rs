@@ -180,7 +180,7 @@ mod tests {
 
         assert_eq!(&s, "fn apple() {} \n\n fn main() { ap }");
 
-        let matches = cc.complete("ap", None, &CodeCache::new());
+        let matches = cc.complete("ap", None, &CodeCache::new().unwrap_or_else(|e| e.0));
 
         assert_eq!(matches.get(0).map(|x| x.matchstr.as_str()), Some("apple"));
     }
