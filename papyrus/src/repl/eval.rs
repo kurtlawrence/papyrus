@@ -7,7 +7,7 @@ use crate::{
 use std::borrow::{Borrow, BorrowMut};
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex};
 
 impl<D> Repl<Evaluate, D> {
     /// Evaluates the read input, compiling and executing the code and printing all line prints until
@@ -56,17 +56,11 @@ impl<D> Repl<Evaluate, D> {
     }
 }
 
-impl<D: 'static + Send + Sync> Repl<Evaluate, D> {
+impl<D: 'static + Send> Repl<Evaluate, D> {
     /// Same as `eval` but will evaluate on another thread, not blocking this one.
     ///
-    /// An `Arc::clone` will be taken of `app_data`. `RwLock` generally takes a read
-    /// lock, making it possible to take more read locks in another thread. A write lock
-    /// will be taken when required, currently when in a mutating block or a command action
-    /// is invoked.
-    ///
-    /// > Be careful of blocking a program by taking a read lock and calling this function
-    /// when a write lock is required.
-    pub fn eval_async(self, app_data: &Arc<RwLock<D>>) -> Evaluating<D> {
+    /// An `Arc::clone` will be taken of `app_data`.
+    pub fn eval_async(self, app_data: &Arc<Mutex<D>>) -> Evaluating<D> {
         let (tx, rx) = crossbeam_channel::bounded(1);
 
         let clone = Arc::clone(app_data);
@@ -74,8 +68,8 @@ impl<D: 'static + Send + Sync> Repl<Evaluate, D> {
         std::thread::spawn(move || {
             let eval = map_variants(
                 self,
-                || clone.write().expect("failed getting write lock of data"),
-                || clone.read().expect("failed getting read lock of data"),
+                || clone.lock().expect("failed getting lock of data"),
+                || clone.lock().expect("failed getting lock of data"),
             );
 
             tx.send(eval).unwrap();

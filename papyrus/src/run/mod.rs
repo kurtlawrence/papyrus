@@ -1,14 +1,12 @@
 #[cfg(feature = "racer-completion")]
 use crate::complete::code::{CodeCache, CodeCompleter};
 use crate::complete::{cmdr::TreeCompleter, modules::ModulesCompleter};
-use crate::output;
 use crate::prelude::*;
 use crossterm::ExecutableCommand;
-use mortal::{Event, Key};
-use repl::{Evaluate, Read, ReadResult};
-use std::cmp::max;
+use mortal::Event;
+use repl::{EvalResult, Evaluate, Read, ReadResult};
 use std::io::{self, prelude::*};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 mod interface;
 
@@ -23,11 +21,21 @@ struct CacheWrapper;
 
 impl<D> Repl<Read, D> {
     pub fn run(self, app_data: &mut D) -> io::Result<String> {
-        run(self, app_data)
+        run(self, |repl| repl.eval(app_data))
+    }
+
+    pub fn run_async(self, app_data: Arc<Mutex<D>>) -> io::Result<String>
+    where
+        D: 'static + Send,
+    {
+        run(self, |repl| repl.eval_async(&app_data).wait())
     }
 }
 
-fn run<D>(mut read: Repl<Read, D>, app_data: &mut D) -> io::Result<String> {
+fn run<D, F: FnMut(Repl<Evaluate, D>) -> EvalResult<D>>(
+    mut read: Repl<Read, D>,
+    evalfn: F,
+) -> io::Result<String> {
     // set a custom panic handler to dump to a file
     // must be done as the screen captures the io streams and will
     // lose the panic message
@@ -57,6 +65,8 @@ fn run<D>(mut read: Repl<Read, D>, app_data: &mut D) -> io::Result<String> {
 
     let mut reevaluate: Option<String> = None;
 
+    let mut boxedfn = Box::new(evalfn) as Box<dyn FnMut(Repl<Evaluate, D>) -> EvalResult<D>>;
+
     let output = loop {
         io::stdout().execute(crossterm::Output(read.prompt()));
 
@@ -78,7 +88,7 @@ fn run<D>(mut read: Repl<Read, D>, app_data: &mut D) -> io::Result<String> {
 
         match read.read() {
             ReadResult::Read(repl) => read = repl,
-            ReadResult::Eval(repl) => match do_eval(repl, app_data) {
+            ReadResult::Eval(repl) => match do_eval(repl, &mut boxedfn) {
                 Ok((repl, reeval)) => {
                     read = repl;
                     reevaluate = reeval;
@@ -238,9 +248,9 @@ fn complete_code(
         })
 }
 
-fn do_eval<D>(
+fn do_eval<'a, D>(
     mut repl: Repl<Evaluate, D>,
-    app_data: &mut D,
+    evalfn: &mut Box<dyn FnMut(Repl<Evaluate, D>) -> EvalResult<D> + 'a>,
 ) -> Result<(Repl<Read, D>, Option<String>), Repl<Read, D>> {
     let rx = repl.output_listen();
 
@@ -249,7 +259,7 @@ fn do_eval<D>(
             .for_each(|x| interface::write_output_chg(x).unwrap_or(()))
     });
 
-    let r = repl.eval(app_data);
+    let r = evalfn(repl);
     let (mut read, signal) = (r.repl.print().0, r.signal);
 
     read.close_channel();
