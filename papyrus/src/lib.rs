@@ -2,7 +2,7 @@
 //! [![Latest Version](https://img.shields.io/crates/v/papyrus.svg)](https://crates.io/crates/papyrus)
 //! [![Rust Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/papyrus)
 //! [![codecov](https://codecov.io/gh/kurtlawrence/papyrus/branch/master/graph/badge.svg)](https://codecov.io/gh/kurtlawrence/papyrus)
-//! [![Rustc Version 1.30+](https://img.shields.io/badge/rustc-1.30+-blue.svg)](https://blog.rust-lang.org/2018/10/25/Rust-1.30.0.html)
+//! [![Rustc Version 1.35+](https://img.shields.io/badge/rustc-1.35+-blue.svg)](https://blog.rust-lang.org/2018/10/25/Rust-1.30.0.html)
 //!
 //! A rust REPL and script running tool.
 //!
@@ -55,6 +55,9 @@ macro_rules! dbg_to_file {
     }};
 }
 
+/// The prefix to access commands.
+const CMD_PREFIX: &str = ":";
+
 /// Extendable commands for repl.
 pub mod cmds;
 pub mod compile;
@@ -64,7 +67,6 @@ pub mod complete;
 pub mod fmt;
 /// Parsing of input.
 pub mod input;
-/// Reading and writing output.
 pub mod output;
 pub mod pfh;
 pub mod repl;

@@ -2,7 +2,7 @@
 //! [![Latest Version](https://img.shields.io/crates/v/papyrus.svg)](https://crates.io/crates/papyrus)
 //! [![Rust Documentation](https://img.shields.io/badge/api-rustdoc-blue.svg)](https://docs.rs/papyrus)
 //! [![codecov](https://codecov.io/gh/kurtlawrence/papyrus/branch/master/graph/badge.svg)](https://codecov.io/gh/kurtlawrence/papyrus)
-//! [![Rustc Version 1.30+](https://img.shields.io/badge/rustc-1.30+-blue.svg)](https://blog.rust-lang.org/2018/10/25/Rust-1.30.0.html)
+//! [![Rustc Version 1.35+](https://img.shields.io/badge/rustc-1.35+-blue.svg)](https://blog.rust-lang.org/2018/10/25/Rust-1.30.0.html)
 //!
 //! A rust REPL and script running tool.
 //!
@@ -16,16 +16,16 @@
 //!
 //! Papyrus is in active development, see [changelog](https://github.com/kurtlawrence/papyrus) for updates
 use papyrus::*;
-use repl::{Read, Repl};
 
 fn main() {
     windows_term_hack();
 
     let repl = repl!();
 
-    run_repl(repl);
+    let output = repl.run(&mut ()).unwrap();
 
-    std::thread::sleep(std::time::Duration::from_millis(10)); // let output thread finish up
+    println!("{}", output);
+
     println!("Thanks for using papyrus!");
 }
 
@@ -38,13 +38,3 @@ fn windows_term_hack() {
 
 #[cfg(not(windows))]
 fn windows_term_hack() {}
-
-#[cfg(feature = "racer-completion")]
-fn run_repl(repl: Repl<Read, ()>) {
-    repl.run_with_racer_completion(&mut ()).unwrap();
-}
-
-#[cfg(not(feature = "racer-completion"))]
-fn run_repl(repl: Repl<Read, ()>) {
-    repl.run(&mut ()).unwrap();
-}

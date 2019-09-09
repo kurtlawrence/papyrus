@@ -48,7 +48,7 @@ impl CodeCompleter {
 
     /// Inject code into the current source code and return the amended code,
     /// along with the byte position to complete from.
-    pub fn inject(&self, injection: &str) -> (String, BytePos) {
+    fn inject(&self, injection: &str) -> (String, BytePos) {
         let cap = self.last_code.len() + self.split.start - self.split.end + injection.len();
         let mut s = String::with_capacity(cap);
 
@@ -71,9 +71,25 @@ pub struct CodeCache {
 
 impl CodeCache {
     /// Construct new cache.
-    pub fn new() -> Self {
-        Self {
+    ///
+    /// Checks that Rust source code can be found for completion. If not an `Err` is returned with
+    /// a message and the code cache. The code cache will still function but there will not be
+    /// completion for the Rust library.
+    pub fn new() -> Result<Self, (Self, &'static str)> {
+        use racer::RustSrcPathError::*;
+
+        let cache = Self {
             cache: FileCache::new(PapyrusCodeFileLoader),
+        };
+
+        match racer::get_rust_src_path() {
+            Ok(_) => Ok(cache),
+            Err(Missing) => Err((cache, "rust source code does not exist")),
+            Err(DoesNotExist(_)) => Err((cache, "rust source code path does not exist")),
+            Err(NotRustSourceTree(_)) => Err((
+                cache,
+                "rust source code path does not have valid rustc source",
+            )),
         }
     }
 }
@@ -164,7 +180,7 @@ mod tests {
 
         assert_eq!(&s, "fn apple() {} \n\n fn main() { ap }");
 
-        let matches = cc.complete("ap", None, &CodeCache::new());
+        let matches = cc.complete("ap", None, &CodeCache::new().unwrap_or_else(|e| e.0));
 
         assert_eq!(matches.get(0).map(|x| x.matchstr.as_str()), Some("apple"));
     }

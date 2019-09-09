@@ -7,8 +7,8 @@ use syn::{self, Block, Item, Stmt};
 /// Returns either a `Command` value or an `InputError` value.
 pub fn parse_command(line: &str) -> InputResult {
     InputResult::Command(
-        if line.starts_with(".") {
-            &line[1..]
+        if line.starts_with(crate::CMD_PREFIX) {
+            &line[crate::CMD_PREFIX.len()..]
         } else {
             line
         }

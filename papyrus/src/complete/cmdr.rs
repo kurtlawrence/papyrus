@@ -21,7 +21,7 @@ impl TreeCompleter {
 
         items.iter_mut().for_each(|x| {
             if cmdr.at_root() {
-                x.completestr.insert(0, '.');
+                x.completestr.insert_str(0, crate::CMD_PREFIX);
             }
         });
 
@@ -57,7 +57,7 @@ impl ActionArgComplete {
 
         items.iter_mut().for_each(|x| {
             if cmdr.at_root() {
-                x.info.completestr.insert(0, '.');
+                x.info.completestr.insert_str(0, crate::CMD_PREFIX);
             }
         });
 

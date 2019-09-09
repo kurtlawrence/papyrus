@@ -5,3 +5,4 @@
 ROADMAP.md
 PUSHING_PROCEDURE.md
 scripts/travis-ci-sim.sh
+scripts/test-run-all.sh

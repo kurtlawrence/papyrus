@@ -1,6 +1,6 @@
 [package]
 name = "papyrus"
-version = "0.9.0"
+version = "0.10.0"
 authors = ["kurt <kurtlawrence92@gmail.com>"]
 description = "A rust repl and script runner"
 license = "MIT"
@@ -18,7 +18,6 @@ codecov =   { repository = "kurtlawrence/papyrus" }
 [dependencies]
 # My crates
 cmdtree =	    { version = "0.10",	default-features = false }
-cratesiover =	    { version = "2",	default-features = false,   optional = true }
 kserd =		    { version = "0.1",	default-features = false,   optional = false,	features = [ "format" ] }
 shh =		    { version = "1",	default-features = false }
 
@@ -26,18 +25,20 @@ shh =		    { version = "1",	default-features = false }
 colored =	    { version = "1",	default-features = false }
 crossbeam-channel = { version = "0.3",	default-features = false }
 crossbeam-utils =   { version = "0.6",	default-features = false }
+crossterm =	    { version = "0.10",	default-features = false,   optional = true,	features = [ "cursor", "terminal" ] }
 dirs =		    { version = "2",	default-features = false }
 fxhash =	    { version = "0.2",	default-features = false }
 libloading =	    { version = "0.5",	default-features = false }
-linefeed =	    { version = "0.6",	default-features = false,   optional = true }
 log =		    { version = "0.4",	default-features = false }
+mortal =	    { version = "0.2",	default-features = false,   optional = true }
 racer =		    { version = "2.1",	default-features = false,   optional = true,	features = [ "metadata" ] }
 rustfmt-nightly =   { version = "1.4",	default-features = false,   optional = true }
 syn =		    { version = "1",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }
-term_cursor =	    { version = "0.2",	default-features = false,   optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
+term_cursor = "0.2"
+term_size = "0.3"
 
 [[bench]]
 name = "benches"
@@ -50,7 +51,7 @@ format = [ "rustfmt-nightly" ]
 # add code completion using racer, requires nightly
 racer-completion = [ "racer" ]
 # allows to just run the repl
-runnable = [ "cratesiover", "linefeed", "term_cursor" ]
+runnable = [ "crossterm", "mortal" ]
 
 [[bin]]
 name = "papyrus"
@@ -60,3 +61,5 @@ required-features = [ "runnable" ]
 [profile.release]
 lto = true
 codegen-units = 1
+
+
