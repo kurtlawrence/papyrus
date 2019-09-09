@@ -1,11 +1,13 @@
 # Changelog
 
-## Latest
+## 0.10.0
 
 - Removed `Repl.run_with_completion()`, use `Repl.run()` with `racer-completion` feature instead.
 - docs: Update output module documentation.
 - New `runnable` interface. Foundational change to allow for more flexiblity and growth.
 - Switch command prefix `.` to `:`.
+- Add `Repl.run_async()` function that accepts an `Arc<Mutex<D>>` for data.
+- Change `eval_async` to accept `Arc<Mutex<D>>`.
 
 ## 0.9.0
 
