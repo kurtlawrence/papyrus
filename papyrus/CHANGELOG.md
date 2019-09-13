@@ -1,5 +1,9 @@
 # Changelog
 
+## Latest
+
+- docs: Add `cmds` module documentation.
+
 ## 0.10.0
 
 - Removed `Repl.run_with_completion()`, use `Repl.run()` with `racer-completion` feature instead.

@@ -51,6 +51,9 @@ impl<D> Repl<Evaluate, D> {
         self.state.output.close()
     }
 
+    /// The current output.
+    ///
+    /// The output contains colouring ANSI escape codes, the prompt, and all input.
     pub fn output(&self) -> &str {
         self.state.output.buffer()
     }

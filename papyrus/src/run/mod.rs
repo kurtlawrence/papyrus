@@ -20,10 +20,13 @@ struct CacheWrapper(CodeCache);
 struct CacheWrapper;
 
 impl<D> Repl<Read, D> {
+    /// Run the repl inside the terminal, consuming the repl. Returns the output of the REPL.
     pub fn run(self, app_data: &mut D) -> io::Result<String> {
         run(self, |repl| repl.eval(app_data))
     }
 
+    /// Run the repl inside the terminal, consuming the repl. Returns the output of the REPL.
+    /// Takes an `Arc<Mutex<D>>` for data and only locks on evaluation cycles.
     pub fn run_async(self, app_data: Arc<Mutex<D>>) -> io::Result<String>
     where
         D: 'static + Send,

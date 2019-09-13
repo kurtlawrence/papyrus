@@ -113,6 +113,9 @@ impl<D> Repl<Read, D> {
         self.state.output.set_prompt_and_trigger(&self.prompt());
     }
 
+    /// The current output.
+    ///
+    /// The output contains colouring ANSI escape codes, the prompt, and all input.
     pub fn output(&self) -> &str {
         self.state.output.buffer()
     }

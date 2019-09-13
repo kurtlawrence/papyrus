@@ -43,6 +43,7 @@ macro_rules! repl {
 }
 
 #[cfg(debug_assertions)]
+#[allow(unused_macros)]
 macro_rules! dbg_to_file {
     ($val:expr) => {{
         use std::io::Write;
@@ -58,7 +59,6 @@ macro_rules! dbg_to_file {
 /// The prefix to access commands.
 const CMD_PREFIX: &str = ":";
 
-/// Extendable commands for repl.
 pub mod cmds;
 pub mod compile;
 pub mod complete;

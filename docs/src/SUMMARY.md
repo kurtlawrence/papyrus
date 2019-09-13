@@ -1,3 +1,6 @@
 # Summary
 
-- [Output](output.md)
+- [API](api.md)
+  - [Commands](api.cmds.md)
+  - [Output](api.output.md)
+

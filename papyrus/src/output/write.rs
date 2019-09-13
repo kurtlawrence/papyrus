@@ -36,6 +36,13 @@ impl Output<Write> {
         self.push_str(contents);
     }
 
+    /// Writes the string contents to the end of the buffer, appending with a new line (`\n`)
+    /// character.
+    ///
+    /// # Line Changes
+    /// Triggers a line change event for _all_ changed lines
+    /// (say if there are new lines in the string).
+    /// Guaranteed to trigger.
     pub fn write_line(&mut self, contents: &str) {
         for ch in contents.chars() {
             self.push_ch(ch);

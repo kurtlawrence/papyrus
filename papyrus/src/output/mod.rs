@@ -267,7 +267,7 @@
 //! }
 //! ```
 //!
-//! [`Output`]: Output
+//! [`Output`]: output::Output
 //! [`Repl`]: repl::Repl
 mod any_state;
 mod read;

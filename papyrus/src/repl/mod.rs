@@ -212,6 +212,8 @@ pub enum Signal {
     /// This is usually signaled when [`EditReplace`] is instigated.
     /// Re-evaulation is signalled rather than handled as the input
     /// may be not enough to complete a full repl cycle.
+    ///
+    /// [`EditReplace`]: super::cmds::CommandResult
     ReEvaluate(String),
 }
 
