@@ -34,7 +34,7 @@
 //! #[macro_use]
 //! extern crate papyrus;
 //!
-//! use cmdtree::{Builder, BuilderChain};
+//! use papyrus::cmdtree::{Builder, BuilderChain};
 //! use papyrus::cmds::CommandResult;
 //!
 //! # #[cfg(not(feature = "runnable"))]
