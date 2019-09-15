@@ -137,10 +137,6 @@ fn parse_item(item: Item) -> ParseItemResult {
             error!("haven't handled item variant TraitAlias");
             ParseItemResult::Error("haven't handled item variant TraitAlias. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
         }
-        Item::Impl(_) => {
-            error!("haven't handled item variant Impl");
-            ParseItemResult::Error("haven't handled item variant Impl. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
-        }
         Item::Macro(_) => {
             error!("haven't handled item variant Macro");
             ParseItemResult::Error("haven't handled item variant Macro. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())

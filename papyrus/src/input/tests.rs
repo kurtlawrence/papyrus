@@ -39,6 +39,14 @@ fn test_items() {
             crates: vec![CrateType::parse_str(&"extern crate rand as r;").unwrap()]
         })
     ); // Item::ExternCrate
+    assert_eq!(
+        parse_program("impl Eq for MyStruct {}"),
+        InputResult::Program(Input {
+            items: vec!["impl Eq for MyStruct {}".to_string()],
+            stmts: vec![],
+            crates: vec![]
+        })
+    ); // Item::Impl
 }
 
 #[cfg(feature = "format")] // have to turn formatting on to check this
