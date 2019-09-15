@@ -62,4 +62,6 @@ required-features = [ "runnable" ]
 lto = true
 codegen-units = 1
 
-
+[[example]]
+name = "custom-cmds"
+required-features = [ "runnable" ]

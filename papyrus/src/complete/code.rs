@@ -1,5 +1,68 @@
 //! Completion for rust source code using [`racer`].
 //!
+//! Requires the _racer-completion_ feature.
+//!
+//! # Rust `std` lib completion.
+//! `racer` requires the Rust standard library source code if completion for the Rust standard
+//! library is wanted. [As explained here](https://github.com/racer-rust/racer#configuration) the
+//! host machine needs to have the Rust source code locally. This can be achieved with `rustup
+//! component add rust-src`.
+//!
+//! # API Usage
+//! To increase completion performance, `CodeCache` should be constructed and passed
+//! through when completing.
+//! The completion of code is done by injecting current input into the latest source code of the
+//! `ReplData`.
+//! Below is an example of `racer` code completion.
+//!
+//! ```rust
+//! use papyrus::repl::*;
+//!
+//! // define some source code
+//! let src = "#[derive(Default)]
+//! struct MyStruct {
+//!     string: String,
+//!     number: i32
+//! }
+//!
+//! impl MyStruct {
+//!     fn new() -> Self {
+//!         MyStruct::default()
+//!     }
+//!
+//!     fn number(&self) -> i32 {
+//!         self.number
+//!     }
+//! }";
+//!
+//! // create the persistent cache
+//! let cache = papyrus::complete::code::CodeCache::new().unwrap_or_else(|e| e.0);
+//!
+//! // build the repl and inject the source code.
+//! // have to eval to get source code in REPL data.
+//! let mut repl = Repl::default();
+//! repl.line_input(src);
+//! let repl = match repl.read() {
+//!     ReadResult::Eval(e) => e.eval(&mut ()).repl.print().0,
+//!     ReadResult::Read(_) => panic!("should have evaluated"),
+//! };
+//!
+//! // build the completer. uses the current REPL data to construct the source code.
+//! let cmpltr = papyrus::complete::code::CodeCompleter::build(&repl.data);
+//!
+//! // inject something to complete
+//! let completions = cmpltr.complete("MyStruct::", None, &cache);
+//! assert_eq!(completions.get(0).map(|x| x.matchstr.as_str()), Some("new"));
+//! assert_eq!(completions.get(1), None);
+//!
+//! // completions change on the context.
+//! let completions = cmpltr.complete("let mystruct = MyStruct; mystruct.", None, &cache);
+//! assert_eq!(completions.get(0).map(|x| x.matchstr.as_str()), Some("number")); // field
+//! assert_eq!(completions.get(1).map(|x| x.matchstr.as_str()), Some("number")); // function
+//! assert_eq!(completions.get(2).map(|x| x.matchstr.as_str()), Some("string")); // field
+//! assert_eq!(completions.get(3), None);
+//! ```
+//!
 //! [`racer`]: racer
 use super::*;
 use std::io;
@@ -9,7 +72,7 @@ use racer::{BytePos, FileCache, Location, Match};
 
 const LIBRS: &'static str = "lib.rs";
 
-/// Completion used for rust code in the repl.
+/// Completion used for Rust code in the REPL.
 pub struct CodeCompleter {
     last_code: String,
     split: std::ops::Range<usize>,
@@ -183,5 +246,64 @@ mod tests {
         let matches = cc.complete("ap", None, &CodeCache::new().unwrap_or_else(|e| e.0));
 
         assert_eq!(matches.get(0).map(|x| x.matchstr.as_str()), Some("apple"));
+    }
+
+    #[test]
+    fn complete_through_repl() {
+        use crate::repl::*;
+
+        let src = "#[derive(Default)]
+ struct MyStruct {
+     string: String,
+     number: i32
+ }
+
+ impl MyStruct {
+     fn new() -> Self {
+         MyStruct::default()
+     }
+
+     fn number(&self) -> i32 {
+         self.number
+     }
+ }";
+
+        let cache = CodeCache::new().unwrap_or_else(|e| e.0);
+
+        let mut repl = Repl::default();
+        repl.line_input(src);
+        let repl = match repl.read() {
+            ReadResult::Eval(e) => e.eval(&mut ()).repl.print().0,
+            ReadResult::Read(_) => panic!("should have evaluated"),
+        };
+        println!("{}", repl.output());
+
+        let cmpltr = CodeCompleter::build(&repl.data);
+
+        dbg!(&cmpltr.last_code);
+
+        let completions = cmpltr.complete("MyStruct::", None, &cache);
+
+        dbg!(&completions);
+
+        assert_eq!(completions.get(0).map(|x| x.matchstr.as_str()), Some("new"));
+        assert_eq!(completions.get(1), None);
+
+        let completions = cmpltr.complete("let mystruct = MyStruct; mystruct.", None, &cache);
+
+        dbg!(&completions);
+        assert_eq!(
+            completions.get(0).map(|x| x.matchstr.as_str()),
+            Some("number")
+        ); // field
+        assert_eq!(
+            completions.get(1).map(|x| x.matchstr.as_str()),
+            Some("number")
+        ); // function
+        assert_eq!(
+            completions.get(2).map(|x| x.matchstr.as_str()),
+            Some("string")
+        ); // field
+        assert_eq!(completions.get(3), None);
     }
 }

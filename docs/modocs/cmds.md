@@ -37,6 +37,10 @@ extern crate papyrus;
 use cmdtree::{Builder, BuilderChain};
 use papyrus::cmds::CommandResult;
 
+# #[cfg(not(feature = "runnable"))]
+# fn main() {}
+
+# #[cfg(feature = "runnable")]
 fn main() {
     // Build a REPL that will use a String as the persistent app_data.
     let mut repl = repl!(String);

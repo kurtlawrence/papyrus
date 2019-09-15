@@ -1,6 +1,10 @@
 //! [`cmdtree`] tree and action completions.
 //!
+//! `TreeCompleter` is an out-of-the-box working completer of classes and actions for an existing
+//! [`Commander`].
+//!
 //! [`cmdtree`]: cmdtree
+//! [`Commander`]: cmdtree::Commander
 
 use super::*;
 use cmdtree::completion::CompletionInfo;
@@ -8,6 +12,44 @@ use cmdtree::Commander;
 use std::borrow::Cow;
 
 /// Completion items for the [`cmdtree`] class and action structure.
+///
+/// # Example
+/// ```rust
+/// use papyrus::cmdtree::*;
+///
+/// let cmdr = Builder::default_config("example-completion")
+///             .begin_class("class-one", "class help message")
+///                 .add_action("one", "first action", |_, _| ())
+///                 .add_action("two", "second action", |_, _| ())
+///             .end_class()
+///             .into_commander()
+///             .unwrap();
+///
+/// let cmpltr = papyrus::complete::cmdr::TreeCompleter::build(&cmdr);
+///
+/// // prefixed with the command ':' character. (papyrus specific)
+/// let mut matches = cmpltr.complete(":cla");
+///
+/// let nmatch = matches.next().unwrap();
+/// assert_eq!(nmatch.0, ":class-one");
+/// assert_eq!(nmatch.1.completestr, ":class-one");
+/// assert_eq!(nmatch.1.itemtype, ItemType::Class);
+/// assert_eq!(nmatch.1.help_msg.as_str(), "class help message");
+///
+/// let nmatch = matches.next().unwrap();
+/// assert_eq!(nmatch.0, ":class-one one");
+/// assert_eq!(nmatch.1.completestr, ":class-one one");
+/// assert_eq!(nmatch.1.itemtype, ItemType::Action);
+/// assert_eq!(nmatch.1.help_msg.as_str(), "first action");
+///
+/// let nmatch = matches.next().unwrap();
+/// assert_eq!(nmatch.0, ":class-one two");
+/// assert_eq!(nmatch.1.completestr, ":class-one two");
+/// assert_eq!(nmatch.1.itemtype, ItemType::Action);
+/// assert_eq!(nmatch.1.help_msg.as_str(), "second action");
+///
+/// assert_eq!(matches.next(), None);
+/// ```
 ///
 /// [`cmdtree`]: cmdtree
 pub struct TreeCompleter {
@@ -34,6 +76,8 @@ impl TreeCompleter {
     }
 
     /// Get the completions of the tree structure if it matches the line.
+    ///
+    /// The first element is the completed string, starting from the `word_break` position.
     pub fn complete<'b>(
         &'b self,
         line: &'b str,

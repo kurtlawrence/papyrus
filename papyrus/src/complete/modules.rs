@@ -8,6 +8,29 @@ use std::path::{Path, PathBuf};
 type IterRet<'a> = Box<dyn Iterator<Item = String> + 'a>;
 
 /// A completer that completes paths to modules, such as the `mod switch` action.
+///
+/// # Example
+/// ```rust
+/// use std::{path::PathBuf, collections::BTreeMap};
+/// use papyrus::pfh::code::SourceCode;
+/// use papyrus::cmdtree::*;
+///
+/// let modsmap = vec![
+///                 (PathBuf::from("lib"), SourceCode::new()),
+///                 (PathBuf::from("amodule"), SourceCode::new()),
+///                 (PathBuf::from("amodule/under"), SourceCode::new())
+///             ].into_iter().collect::<BTreeMap<_, _>>();
+///
+/// let cmdr = papyrus::repl::ReplData::<()>::default().cmdtree;
+///
+/// let cmpltr = papyrus::complete::modules::ModulesCompleter::build(&cmdr, &modsmap);
+///
+/// let mut matches = cmpltr.complete(":mod switch amod");
+///
+/// assert_eq!(matches.next().as_ref().map(|x| x.as_str()), Some("amodule"));
+/// assert_eq!(matches.next().as_ref().map(|x| x.as_str()), Some("amodule/under"));
+/// assert_eq!(matches.next(), None);
+/// ```
 pub struct ModulesCompleter {
     inner: ActionArgComplete,
     mods: Vec<PathBuf>,
