@@ -53,7 +53,7 @@ matrix:
         - (test -x $HOME/.cargo/bin/mdbook || cargo install --vers "^0.3" mdbook)
         - cargo install-update -a
       script:
-        - cd papyrus && cargo build && cd ..
+        - cd papyrus && cargo build --no-default-features --features=runnable && cd ..
         - mdbook build docs
         - mdbook test docs -L papyrus/target/debug,papyrus/target/debug/deps
       deploy:
