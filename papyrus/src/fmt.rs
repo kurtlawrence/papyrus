@@ -1,11 +1,9 @@
 /// Code snippet formatting error.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum FormatError {
-    /// `rustfmt` command was not found.
-    ///
-    /// `rustfmt` needs to be installed.
-    NoRustfmtCommand,
     /// An `io::Error` occurred.
+    ///
+    /// This usually occurs when the stdio redirection fails.
     Io,
     /// Converting `stdout` to `str` failed.
     StrConvertFailed,
@@ -16,6 +14,13 @@ pub enum FormatError {
 /// Format a code snippet.
 ///
 /// Removes newlines from formatted code.
+///
+/// # Example
+/// ```rust
+/// let src = "fn a_b(  s: & str) -> String {   String::new(  )  }";
+/// let fmtd = papyrus::fmt::format(src).unwrap();
+/// assert_eq!(&fmtd, "fn a_b(s: &str) -> String { String::new() }");
+/// ```
 pub fn format(code_snippet: &str) -> Result<String, FormatError> {
     use rustfmt_nightly::*;
 
