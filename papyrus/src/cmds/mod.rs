@@ -167,7 +167,10 @@
 //! custom-cmds-app [out2]: "hello, world!"
 //! ```
 use super::*;
-use crate::repl::{Editing, EditingIndex, ReplData};
+use crate::{
+    code::SourceCode,
+    repl::{Editing, EditingIndex, ReplData},
+};
 use cmdtree::{BuildError, Builder, BuilderChain, Commander};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -367,7 +370,7 @@ pub(crate) fn switch_module<D>(data: &mut ReplData<D>, path: &Path) -> &'static 
 
     for x in all {
         if !data.mods_map.contains_key(&x) {
-            data.mods_map.insert(x, pfh::SourceCode::new());
+            data.mods_map.insert(x, SourceCode::new());
         }
     }
 

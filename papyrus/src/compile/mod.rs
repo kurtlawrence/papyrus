@@ -8,6 +8,9 @@ pub use self::build::{compile, CompilationError};
 pub use self::construct::build_compile_dir;
 pub(crate) use self::execute::exec;
 
+/// The library name to compile as.c
+pub const LIBRARY_NAME: &str = "papyrus_mem_code";
+
 #[cfg(test)]
 mod tests {
     use super::*;

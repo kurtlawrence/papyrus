@@ -60,6 +60,7 @@ macro_rules! dbg_to_file {
 const CMD_PREFIX: &str = ":";
 
 pub mod cmds;
+pub mod code;
 pub mod compile;
 pub mod complete;
 /// Format rust code snippets using `rustfmt`.
@@ -79,7 +80,6 @@ pub mod run;
 
 /// Re-exports of most common types and modules.
 pub mod prelude {
-    pub use crate::pfh::{code, linking};
     pub use crate::repl::{self, ReadResult, Repl, ReplData, Signal};
 }
 

@@ -1,19 +1,14 @@
 //! **p**apyrus **f**ile **h**andling
 //! Pertains to file operations and compilation.
 
-pub mod code;
 pub mod linking;
 
+use crate::code::SourceCode;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-pub use code::{CrateType, Input, SourceCode, Statement, StmtGrp};
-
 /// Mapping of modules to source code.
 pub type ModsMap = BTreeMap<PathBuf, SourceCode>;
-
-/// The library name to compile as.c
-pub const LIBRARY_NAME: &str = "papyrus_mem_code";
 
 /// Constructs the evaluation function name given the mod sequence path.
 /// Appends to the buffer.

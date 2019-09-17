@@ -1,6 +1,7 @@
 //! Pertains to everything required for a source file contents.
 use super::*;
 use crate::pfh::linking;
+use crate::pfh::*;
 use linking::LinkingConfiguration;
 use std::cmp::Ordering;
 use std::collections::HashMap;

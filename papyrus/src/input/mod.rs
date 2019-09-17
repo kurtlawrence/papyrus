@@ -1,4 +1,4 @@
-use crate::pfh::{CrateType, Input};
+use crate::code::{CrateType, Input};
 use syn::Expr;
 
 mod parse;

@@ -1,8 +1,9 @@
 use super::*;
 use crate::{
     cmds::{self, CommandResult},
+    code::{Input, SourceCode, StmtGrp},
     compile,
-    pfh::{self, Input, StmtGrp},
+    pfh::{self},
 };
 use std::borrow::{Borrow, BorrowMut};
 use std::ops::{Deref, DerefMut};
@@ -408,7 +409,7 @@ impl<D> ReplData<D> {
         }
     }
 
-    fn get_current_file_mut(&mut self) -> &mut pfh::SourceCode {
+    fn get_current_file_mut(&mut self) -> &mut SourceCode {
         self.mods_map.get_mut(&self.current_mod).expect(&format!(
             "file map does not have key: {}",
             self.current_mod.display()
