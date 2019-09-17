@@ -3,6 +3,8 @@
 ## Latest
 
 - docs: Add `cmds` module documentation.
+- docs: Add `complete` module documentation.
+- Move `code` and `linking` module to root level.
 
 ## 0.10.0
 

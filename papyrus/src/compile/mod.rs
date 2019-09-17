@@ -16,7 +16,7 @@ mod tests {
     use super::*;
     use crate::{code::*, pfh::*};
     use ::kserd::Kserd;
-    use linking::{Extern, LinkingConfiguration};
+    use crate::linking::{Extern, LinkingConfiguration};
     use std::fs;
     use std::path::PathBuf;
 
