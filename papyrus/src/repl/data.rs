@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     code::SourceCode,
-    pfh::{self, linking},
+    pfh::{self},
 };
 
 impl<Data> Default for ReplData<Data> {

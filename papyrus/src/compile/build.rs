@@ -1,5 +1,4 @@
 use super::LIBRARY_NAME;
-use crate::pfh::*;
 use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -8,7 +7,7 @@ use std::{error, fmt};
 /// Run `rustc` in the given compilation directory.
 pub fn compile<P, F>(
     compile_dir: P,
-    linking_config: &linking::LinkingConfiguration,
+    linking_config: &crate::linking::LinkingConfiguration,
     mut stderr_line_cb: F,
 ) -> Result<PathBuf, CompilationError>
 where

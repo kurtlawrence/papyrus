@@ -81,8 +81,9 @@ mod read;
 use crate::{
     cmds::CommandResult,
     input::InputResult,
+    linking::{self, LinkingConfiguration},
     output::{self, Output},
-    pfh::{self, linking::LinkingConfiguration},
+    pfh::{self},
 };
 use cmdtree::*;
 use colored::*;

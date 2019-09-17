@@ -70,6 +70,7 @@ pub mod complete;
 pub mod fmt;
 /// Parsing of input.
 pub mod input;
+pub mod linking;
 pub mod output;
 pub mod pfh;
 pub mod repl;

@@ -1,8 +1,6 @@
 //! **p**apyrus **f**ile **h**andling
 //! Pertains to file operations and compilation.
 
-pub mod linking;
-
 use crate::code::SourceCode;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
