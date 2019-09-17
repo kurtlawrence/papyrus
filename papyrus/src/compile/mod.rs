@@ -9,12 +9,12 @@ pub use self::construct::build_compile_dir;
 pub(crate) use self::execute::exec;
 
 /// The library name to compile as.c
-pub const LIBRARY_NAME: &str = "papyrus_mem_code";
+const LIBRARY_NAME: &str = "papyrus_mem_code";
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pfh::*;
+    use crate::{code::*, pfh::*};
     use ::kserd::Kserd;
     use linking::{Extern, LinkingConfiguration};
     use std::fs;

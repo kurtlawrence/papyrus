@@ -12,7 +12,7 @@ type IterRet<'a> = Box<dyn Iterator<Item = String> + 'a>;
 /// # Example
 /// ```rust
 /// use std::{path::PathBuf, collections::BTreeMap};
-/// use papyrus::pfh::code::SourceCode;
+/// use papyrus::code::SourceCode;
 /// use papyrus::cmdtree::*;
 ///
 /// let modsmap = vec![
