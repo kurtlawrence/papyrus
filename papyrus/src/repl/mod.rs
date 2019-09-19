@@ -83,7 +83,7 @@ use crate::{
     input::InputResult,
     linking::{self, LinkingConfiguration},
     output::{self, Output},
-    pfh::{self},
+    code::ModsMap
 };
 use cmdtree::*;
 use colored::*;
@@ -118,7 +118,7 @@ pub struct ReplData<Data> {
     pub cmdtree: Commander<CommandResult<Data>>,
 
     /// The modules map of relative paths.
-    pub(crate) mods_map: pfh::ModsMap,
+    pub(crate) mods_map: ModsMap,
     /// The current editing and executing mod.
     pub(crate) current_mod: PathBuf,
 

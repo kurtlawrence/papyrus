@@ -1,13 +1,12 @@
 use super::*;
 use crate::{
-    code::SourceCode,
-    pfh::{self},
+    code::{SourceCode, ModsMap},
 };
 
 impl<Data> Default for ReplData<Data> {
     fn default() -> Self {
         let lib_path = PathBuf::from("lib");
-        let mut map = pfh::ModsMap::new();
+        let mut map = ModsMap::new();
         map.insert(lib_path.clone(), SourceCode::new());
 
         let mut r = ReplData {
@@ -71,7 +70,7 @@ impl<Data> ReplData<Data> {
     }
 
     /// The current file map, mappings of modules to source code.
-    pub fn mods_map(&self) -> &pfh::ModsMap {
+    pub fn mods_map(&self) -> &ModsMap {
         &self.mods_map
     }
 

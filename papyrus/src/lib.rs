@@ -72,7 +72,6 @@ pub mod fmt;
 pub mod input;
 pub mod linking;
 pub mod output;
-pub mod pfh;
 pub mod repl;
 
 /// Running the repl. Requires `runnable` feature.

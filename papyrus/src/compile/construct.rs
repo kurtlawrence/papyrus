@@ -1,8 +1,6 @@
 use super::LIBRARY_NAME;
-use crate::code;
-use crate::code::CrateType;
+use crate::code::{self, ModsMap, CrateType};
 use crate::linking;
-use crate::pfh::ModsMap;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;

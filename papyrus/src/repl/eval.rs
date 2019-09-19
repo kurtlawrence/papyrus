@@ -1,9 +1,8 @@
 use super::*;
 use crate::{
     cmds::{self, CommandResult},
-    code::{Input, SourceCode, StmtGrp},
+    code::{self, Input, SourceCode, StmtGrp},
     compile,
-    pfh::{self},
 };
 use std::borrow::{Borrow, BorrowMut};
 use std::ops::{Deref, DerefMut};
@@ -354,7 +353,7 @@ impl<D> ReplData<D> {
                 };
 
                 let mut fn_name = String::new();
-                pfh::eval_fn_name(&pfh::into_mod_path_vec(self.current_mod()), &mut fn_name);
+                code::eval_fn_name(&code::into_mod_path_vec(self.current_mod()), &mut fn_name);
 
                 if self.linking.mutable {
                     let mut r = obtain_mut_data();

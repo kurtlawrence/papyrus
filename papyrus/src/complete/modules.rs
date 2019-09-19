@@ -1,7 +1,7 @@
 //! Complete module paths.
 
 use super::*;
-use crate::pfh::ModsMap;
+use crate::code::ModsMap;
 use cmdr::ActionArgComplete;
 use std::path::{Path, PathBuf};
 
