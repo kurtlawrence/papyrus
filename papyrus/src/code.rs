@@ -1,10 +1,11 @@
 //! Pertains to everything required for a source file contents.
 use super::*;
-use std::{
-cmp::Ordering,
-collections::{BTreeMap, HashMap},
-path::{Path, PathBuf}};
 use crate::linking::LinkingConfiguration;
+use std::{
+    cmp::Ordering,
+    collections::{BTreeMap, HashMap},
+    path::{Path, PathBuf},
+};
 
 type ReturnRange = std::ops::Range<usize>;
 type ReturnRangeMap<'a> = fxhash::FxHashMap<&'a Path, ReturnRange>;
@@ -738,47 +739,46 @@ kserd::Kserd::new_str("no statements")
         );
     }
 
-#[test]
-fn eval_fn_name_test() {
-    let path: Vec<String> = ["some", "lib", "module", "path"]
-        .iter()
-        .map(|x| x.to_string())
-        .collect();
-    let mut s = String::new();
-    eval_fn_name(&path, &mut s);
+    #[test]
+    fn eval_fn_name_test() {
+        let path: Vec<String> = ["some", "lib", "module", "path"]
+            .iter()
+            .map(|x| x.to_string())
+            .collect();
+        let mut s = String::new();
+        eval_fn_name(&path, &mut s);
 
-    let ans = "_some_lib_module_path_intern_eval";
-    assert_eq!(&s, ans);
-    assert_eq!(eval_fn_name_length(&path), ans.len());
+        let ans = "_some_lib_module_path_intern_eval";
+        assert_eq!(&s, ans);
+        assert_eq!(eval_fn_name_length(&path), ans.len());
 
-    let mut s = String::new();
-    eval_fn_name::<&str>(&[], &mut s);
+        let mut s = String::new();
+        eval_fn_name::<&str>(&[], &mut s);
 
-    let ans = "_intern_eval";
-    assert_eq!(&s, ans);
-    assert_eq!(eval_fn_name_length::<&str>(&[]), ans.len());
-}
+        let ans = "_intern_eval";
+        assert_eq!(&s, ans);
+        assert_eq!(eval_fn_name_length::<&str>(&[]), ans.len());
+    }
 
+    #[test]
+    fn into_mod_path_test() {
+        assert_eq!(
+            into_mod_path_vec(Path::new("test/mod")),
+            vec!["test".to_string(), "mod".to_owned()]
+        );
+        assert_eq!(
+            into_mod_path_vec(Path::new("test")),
+            vec!["test".to_owned()]
+        );
+        assert_eq!(
+            into_mod_path_vec(Path::new("test/mod/something")),
+            vec!["test".to_string(), "mod".to_owned(), "something".to_owned()]
+        );
+        assert_eq!(into_mod_path_vec(Path::new("")), Vec::<String>::new());
 
-#[test]
-fn into_mod_path_test() {
-    assert_eq!(
-        into_mod_path_vec(Path::new("test/mod")),
-        vec!["test".to_string(), "mod".to_owned()]
-    );
-    assert_eq!(
-        into_mod_path_vec(Path::new("test")),
-        vec!["test".to_owned()]
-    );
-    assert_eq!(
-        into_mod_path_vec(Path::new("test/mod/something")),
-        vec!["test".to_string(), "mod".to_owned(), "something".to_owned()]
-    );
-    assert_eq!(into_mod_path_vec(Path::new("")), Vec::<String>::new());
-
-    assert_eq!(
-        into_mod_path_vec(Path::new("test/inner2")),
-        vec!["test".to_owned(), "inner2".to_owned()]
-    );
-}
+        assert_eq!(
+            into_mod_path_vec(Path::new("test/inner2")),
+            vec!["test".to_owned(), "inner2".to_owned()]
+        );
+    }
 }

@@ -1,5 +1,5 @@
 use super::LIBRARY_NAME;
-use crate::code::{self, ModsMap, CrateType};
+use crate::code::{self, CrateType, ModsMap};
 use crate::linking;
 use std::fs;
 use std::io::{self, Write};

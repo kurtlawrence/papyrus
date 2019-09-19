@@ -1,7 +1,5 @@
 use super::*;
-use crate::{
-    code::{SourceCode, ModsMap},
-};
+use crate::code::{ModsMap, SourceCode};
 
 impl<Data> Default for ReplData<Data> {
     fn default() -> Self {

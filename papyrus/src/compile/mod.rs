@@ -14,9 +14,9 @@ const LIBRARY_NAME: &str = "papyrus_mem_code";
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{code::*};
-    use ::kserd::Kserd;
+    use crate::code::*;
     use crate::linking::{Extern, LinkingConfiguration};
+    use ::kserd::Kserd;
     use std::fs;
     use std::path::PathBuf;
 

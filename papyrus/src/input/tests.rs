@@ -1,5 +1,5 @@
 use super::*;
-use crate::{code::*};
+use crate::code::*;
 
 #[test]
 fn test_unclosed_delimiter() {

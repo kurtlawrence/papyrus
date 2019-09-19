@@ -80,10 +80,10 @@ mod read;
 
 use crate::{
     cmds::CommandResult,
+    code::ModsMap,
     input::InputResult,
     linking::{self, LinkingConfiguration},
     output::{self, Output},
-    code::ModsMap
 };
 use cmdtree::*;
 use colored::*;
