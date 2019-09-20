@@ -1,4 +1,46 @@
-//! Pertains to everything required for a source file contents.
+//! Source file and crate contents.
+//!
+//! Input is parsed as Rust code using the `syn` crate. `papyrus` does not differentiate the
+//! myriad of classications for the input, rather it categorises them into [`Item`]s, [`Statement`]s,
+//! and [`CrateType`]s.
+//!
+//! `papyrus` will parse a string input into a [`Input`], and these aggregate into a [`SourceCode`]
+//! structure, which flattens each input.
+//!
+//! # Examples
+//!
+//! Building some source code.
+//! ```rust
+//! use papyrus::code::*;
+//!
+//! let mut src = SourceCode::new();
+//! src.stmts.push(StmtGrp(vec![Statement {
+//! 	expr: String::from("let a = 1"),
+//! 	semi: true
+//!     },
+//!     Statement {
+//! 	expr: String::from("a"),
+//! 	semi: false
+//!     }
+//! ]));
+//! ```
+//!
+//! Crates have some more structure around them.
+//! ```rust
+//! use papyrus::code::*;
+//!
+//! let input = "extern crate a_crate as acrate;";
+//! let cr = CrateType::parse_str(input).unwrap();
+//!
+//! assert_eq!(&cr.src_line, input);
+//! assert_eq!(&cr.cargo_name, "a-crate");
+//! ```
+//!
+//! [`CrateType`]: CrateType
+//! [`Input`]: Input
+//! [`Item`]: Item
+//! [`SourceCode`]: SourceCode
+//! [`Statement`]: Statement
 use super::*;
 use crate::linking::LinkingConfiguration;
 use std::{
@@ -48,6 +90,15 @@ impl SourceCode {
 }
 
 /// Group of statements that result in an expression to evaulate.
+///
+/// # Example
+/// ```rust
+/// # use papyrus::code::*;
+/// let stmt1 = Statement { expr: "let a = 1".to_string(), semi: true };
+/// let stmt2 = Statement { expr: "a".to_string(), semi: false };
+/// let grp = StmtGrp(vec![stmt1, stmt2]);
+/// assert_eq!(&grp.src_line(), "let a = 1; a");
+/// ```
 #[derive(Clone)]
 pub struct StmtGrp(pub Vec<Statement>);
 
@@ -113,7 +164,7 @@ impl StmtGrp {
     }
 }
 
-/// Construct a single string containing all the source code in file_map.
+/// Construct a single string containing all the source code in `mods_map`.
 pub fn construct_source_code<'a>(
     mods_map: &'a ModsMap,
     linking_config: &LinkingConfiguration,
@@ -378,6 +429,17 @@ pub struct Statement {
 }
 
 /// Some definition around crate names.
+///
+/// Crates are parsed and made suitable for `Cargo.toml`. The input line is kept verbatim.
+///
+/// # Examples
+/// ```rust
+/// # use papyrus::code::CrateType;
+/// let input = "extern crate a_crate as acrate;";
+/// let cr = CrateType::parse_str(input).unwrap();
+/// assert_eq!(&cr.src_line, input);
+/// assert_eq!(&cr.cargo_name, "a-crate");
+/// ```
 #[derive(Clone, Debug, PartialEq)]
 pub struct CrateType {
     /// The source line which adds the crates.
