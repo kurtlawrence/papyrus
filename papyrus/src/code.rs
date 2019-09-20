@@ -11,6 +11,7 @@
 //!
 //! Building some source code.
 //! ```rust
+//! # extern crate papyrus;
 //! use papyrus::code::*;
 //!
 //! let mut src = SourceCode::new();
@@ -27,6 +28,7 @@
 //!
 //! Crates have some more structure around them.
 //! ```rust
+//! # extern crate papyrus;
 //! use papyrus::code::*;
 //!
 //! let input = "extern crate a_crate as acrate;";

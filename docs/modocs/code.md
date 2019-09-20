@@ -11,6 +11,7 @@ structure, which flattens each input.
 
 Building some source code.
 ```rust
+# extern crate papyrus;
 use papyrus::code::*;
 
 let mut src = SourceCode::new();
@@ -27,6 +28,7 @@ src.stmts.push(StmtGrp(vec![Statement {
 
 Crates have some more structure around them.
 ```rust
+# extern crate papyrus;
 use papyrus::code::*;
 
 let input = "extern crate a_crate as acrate;";
