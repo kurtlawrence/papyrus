@@ -26,6 +26,10 @@ extern crate papyrus;
 
 use papyrus::prelude::*;
 
+# #[cfg(not(feature = "runnable"))]
+# fn main() {}
+
+# #[cfg(feature = "runnable")]
 fn main() {
   let mut repl = repl!();
 
@@ -106,6 +110,10 @@ extern crate some_lib;
 
 use some_lib::MyStruct;
 
+# #[cfg(not(feature = "runnable"))]
+# fn main() {}
+
+# #[cfg(feature = "runnable")]
 fn main() {
   let mut app_data = MyStruct::new(20, 10);
 
