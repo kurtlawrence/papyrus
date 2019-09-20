@@ -1,6 +1,6 @@
 # Changelog
 
-## Latest
+## 0.11.0
 
 - docs: Add `cmds` module documentation.
 - docs: Add `complete` module documentation.
