@@ -23,7 +23,7 @@ loop {
 	    let evalres = e.eval(&mut ());
 	    match evalres.signal {
 		Signal::Exit => break,
-		Signal::None => (),
+		_ => (),
 	    }
 	    repl = evalres.repl.print().0;
 	}
