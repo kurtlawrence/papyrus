@@ -96,10 +96,6 @@ enum ParseItemResult {
 
 fn parse_item(item: Item) -> ParseItemResult {
     match item {
-        Item::Use(_) => {
-            error!("haven't handled item variant Use");
-            ParseItemResult::Error("haven't handled item variant Use. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
-        }
         Item::Static(_) => {
             error!("haven't handled item variant Static");
             ParseItemResult::Error("haven't handled item variant Static. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
@@ -154,11 +150,7 @@ fn parse_item(item: Item) -> ParseItemResult {
             debug!("Item parsed, its a crate: {}", s);
             ParseItemResult::ExternCrate(s)
         }
-        _ => {
-            let s = format!("{}", item.into_token_stream());
-            debug!("Item parsed: {}", s);
-            ParseItemResult::Span(s)
-        }
+        _ => ParseItemResult::Span(format!("{}", item.into_token_stream())),
     }
 }
 

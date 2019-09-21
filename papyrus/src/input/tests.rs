@@ -47,6 +47,14 @@ fn test_items() {
             crates: vec![]
         })
     ); // Item::Impl
+    assert_eq!(
+        parse_program("use something::a::crate;"),
+        InputResult::Program(Input {
+            items: vec!["use something::a::crate;".to_string()],
+            stmts: vec![],
+            crates: vec![]
+        })
+    ); // Item::Use
 }
 
 #[cfg(feature = "format")] // have to turn formatting on to check this
