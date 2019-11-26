@@ -22,42 +22,38 @@ pub enum FormatError {
 /// assert_eq!(&fmtd, "fn a_b(s: &str) -> String { String::new() }");
 /// ```
 pub fn format(code_snippet: &str) -> Result<String, FormatError> {
-    use rustfmt_nightly::*;
+    use std::{io::Write, process::*};
 
-    let mut config = Config::default();
-    config.set().emit_mode(EmitMode::Stdout);
+    let (success, outputbuf) = {
+        let mut child = Command::new("rustfmt")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|_| FormatError::RustfmtFailure)?;
 
-    let mut buf = Vec::new();
+        let stdin = child.stdin.as_mut().expect("stdin has been set");
+        write!(stdin, "fn __fmt_wrapper() {{ {} }}", code_snippet)
+            .map_err(|_| FormatError::RustfmtFailure)?;
 
-    let success = {
-        let code = format!("fn __fmt_wrapper() {{ {} }}", code_snippet);
+        let output = child
+            .wait_with_output()
+            .map_err(|_| FormatError::RustfmtFailure)?;
 
-        let mut session = Session::new(config, Some(&mut buf));
-
-        let stderr = std::io::stderr();
-        let _stderr_lock = stderr.lock();
-        let _shherr = shh::stderr().map_err(|_| FormatError::Io);
-
-        let stdout = std::io::stdout();
-        let _stdout_lock = stdout.lock();
-        let _shhout = shh::stdout().map_err(|_| FormatError::Io);
-
-        session.format(Input::Text(code)).is_ok()
+        (output.status.success(), output.stdout)
     };
 
-    if success && !buf.is_empty() {
-        let s = std::str::from_utf8(&buf).map_err(|_| FormatError::StrConvertFailed)?;
+    if success && !outputbuf.is_empty() {
+        let s = std::str::from_utf8(&outputbuf).map_err(|_| FormatError::StrConvertFailed)?;
 
         let trimmed = s.trim();
-
         let end = trimmed.len().saturating_sub(1);
 
         // the output of rustfmt can change...
         // at the moment it is
-        // stdin:\n\nfn __fmt_wrapper() {
-        // 0............................^ 30 chars long (29 byte index)
-
-        let inner = &trimmed[29..end];
+        // fn __fmt_wrapper() {
+        // 0..................^ 20 chars long
+        let inner = &trimmed[20..end];
 
         let mut cleaned = String::with_capacity(inner.len());
 

@@ -46,8 +46,15 @@ fn run<D, F: FnMut(Repl<Evaluate, D>) -> EvalResult<D>>(
     let app_name = read.data.cmdtree.root_name().to_owned();
     std::panic::set_hook(Box::new(move |info| {
         let backtrace = backtrace::Backtrace::new();
-        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
-        let filename = format!("{}.{}-{:03}.crash-report", app_name, now.as_secs(), now.subsec_millis());
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default();
+        let filename = format!(
+            "{}.{}-{:03}.crash-report",
+            app_name,
+            now.as_secs(),
+            now.subsec_millis()
+        );
         let content =
             construct_crash_report(Vec::new(), &app_name, info, backtrace).unwrap_or_default();
         std::fs::write(filename, content).ok();

@@ -5,13 +5,13 @@ use colored::Colorize;
 
 use criterion::Criterion;
 
-use papyrus::prelude::code::{Input, SourceCode, Statement, StmtGrp};
+use papyrus::code::{Input, SourceCode, Statement, StmtGrp};
 use papyrus::prelude::*;
 
 fn pfh_compile_construct(c: &mut Criterion) {
-    use papyrus::prelude::code::construct_source_code;
+    use papyrus::code::construct_source_code;
 
-    let linking = papyrus::prelude::linking::LinkingConfiguration::default();
+    let linking = papyrus::linking::LinkingConfiguration::default();
     let map = vec![
         ("lib".into(), src_code()),
         ("test".into(), src_code()),

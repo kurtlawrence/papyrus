@@ -33,9 +33,6 @@ libloading =	    { version = "0.5",	default-features = false }
 log =		    { version = "0.4",	default-features = false }
 mortal =	    { version = "0.2",	default-features = false,   optional = true }
 racer =		    { version = "2.1",	default-features = false,   optional = true,	features = [ "metadata" ] }
-# TURNING RUSTFMT OFF UNTIL BREAKING CHANGES ARE FIXED
-# Be careful updating, breaking transitive dependencies from 1.4.10
-# rustfmt-nightly =   { version = "1.4.9",	default-features = false,   optional = true }
 syn =		    { version = "1",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }
 
 [dev-dependencies]
@@ -49,8 +46,8 @@ harness = false
 
 [features]
 default = [ "format", "racer-completion", "runnable" ]
-# format snippets with rustfmt, may require nightly to build
-format = [ ] # [ "rustfmt-nightly" ]
+# format snippets with rustfmt binary
+format = [] 
 # add code completion using racer, requires nightly
 racer-completion = [ "racer" ]
 # allows to just run the repl
