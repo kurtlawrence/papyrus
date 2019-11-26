@@ -45,8 +45,11 @@ fn run<D, F: FnMut(Repl<Evaluate, D>) -> EvalResult<D>>(
     // if removed ensure `take_hook` is removed as well.
     let app_name = read.data.cmdtree.root_name().to_owned();
     std::panic::set_hook(Box::new(move |info| {
-        let filename = format!("{}.crash.report", app_name);
-        let content = construct_crash_report(Vec::new(), &app_name, info).unwrap_or_default();
+        let backtrace = backtrace::Backtrace::new();
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+        let filename = format!("{}.{}-{:03}.crash-report", app_name, now.as_secs(), now.subsec_millis());
+        let content =
+            construct_crash_report(Vec::new(), &app_name, info, backtrace).unwrap_or_default();
         std::fs::write(filename, content).ok();
     }));
 
@@ -109,35 +112,42 @@ fn run<D, F: FnMut(Repl<Evaluate, D>) -> EvalResult<D>>(
 }
 
 fn construct_crash_report(
-    mut content: Vec<u8>,
+    mut content_buf: Vec<u8>,
     app_name: &str,
     info: &std::panic::PanicInfo,
+    backtrace: backtrace::Backtrace,
 ) -> io::Result<Vec<u8>> {
+    let content = &mut content_buf;
+
     writeln!(
-        &mut content,
+        content,
         "An unhandled error occurred in the operation of {}.",
         app_name
     )?;
     writeln!(
-        &mut content,
+        content,
         "Please send this information to the required parties."
     )?;
 
-    writeln!(&mut content, "\nPanic Payload:")?;
+    writeln!(content, "\nPanic Payload:")?;
     if let Some(s) = info.payload().downcast_ref::<&str>() {
-        writeln!(&mut content, "{}", s)?;
+        writeln!(content, "{}", s)?;
+    } else if let Some(s) = info.payload().downcast_ref::<String>() {
+        writeln!(content, "{}", s)?;
     } else {
-        writeln!(&mut content, "Unknown panic")?;
+        writeln!(content, "Unknown panic")?;
     }
 
-    writeln!(&mut content, "\nLocation:")?;
+    writeln!(content, "\nLocation:")?;
     if let Some(l) = info.location() {
-        writeln!(&mut content, "{}", l)?;
+        writeln!(content, "{}", l)?;
     } else {
-        writeln!(&mut content, "no location information")?;
+        writeln!(content, "no location information")?;
     }
 
-    Ok(content)
+    writeln!(content, "\nBacktrace:\n{:?}", backtrace)?;
+
+    Ok(content_buf)
 }
 
 /// Returns true if interrupt occurred.

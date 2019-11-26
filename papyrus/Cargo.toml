@@ -1,6 +1,6 @@
 [package]
 name = "papyrus"
-version = "0.11.1"
+version = "0.11.2"
 authors = ["kurt <kurtlawrence92@gmail.com>"]
 description = "A rust repl and script runner"
 license = "MIT"
@@ -22,9 +22,10 @@ kserd =		    { version = "0.1",	default-features = false,   optional = false,	fe
 shh =		    { version = "1",	default-features = false }
 
 # crates.io
+backtrace =	    { version = "0.3",	default-features = false }
 colored =	    { version = "1",	default-features = false }
-crossbeam-channel = { version = "0.3",	default-features = false }
-crossbeam-utils =   { version = "0.6",	default-features = false }
+crossbeam-channel = { version = "0.4",	default-features = false }
+crossbeam-utils =   { version = "0.7",	default-features = false }
 crossterm =	    { version = "0.10",	default-features = false,   optional = true,	features = [ "cursor", "terminal" ] }
 dirs =		    { version = "2",	default-features = false }
 fxhash =	    { version = "0.2",	default-features = false }
@@ -32,7 +33,9 @@ libloading =	    { version = "0.5",	default-features = false }
 log =		    { version = "0.4",	default-features = false }
 mortal =	    { version = "0.2",	default-features = false,   optional = true }
 racer =		    { version = "2.1",	default-features = false,   optional = true,	features = [ "metadata" ] }
-rustfmt-nightly =   { version = "1.4",	default-features = false,   optional = true }
+# TURNING RUSTFMT OFF UNTIL BREAKING CHANGES ARE FIXED
+# Be careful updating, breaking transitive dependencies from 1.4.10
+# rustfmt-nightly =   { version = "1.4.9",	default-features = false,   optional = true }
 syn =		    { version = "1",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }
 
 [dev-dependencies]
@@ -47,7 +50,7 @@ harness = false
 [features]
 default = [ "format", "racer-completion", "runnable" ]
 # format snippets with rustfmt, may require nightly to build
-format = [ "rustfmt-nightly" ]
+format = [ ] # [ "rustfmt-nightly" ]
 # add code completion using racer, requires nightly
 racer-completion = [ "racer" ]
 # allows to just run the repl

@@ -10,6 +10,10 @@
 
 - Handle `Item::Use` when parsing input.
 
+### 0.11.2
+- Use of `backtrace` crate to dump complete backtrace with panic handling.
+- Update `crossterm` to 0.12.
+
 ## 0.10.0
 
 - Removed `Repl.run_with_completion()`, use `Repl.run()` with `racer-completion` feature instead.
