@@ -294,7 +294,7 @@ impl<D> ReplData<D> {
                 }
 
                 for _ in 0..ncrates {
-                    src.items.remove(crate_idx);
+                    src.crates.remove(crate_idx);
                 }
             }
         };
