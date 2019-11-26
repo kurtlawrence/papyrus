@@ -3,7 +3,11 @@ use crossterm as xterm;
 use mortal::Event;
 use mortal::{Event::*, Key::*};
 use std::io::{self, stdout, Stdout, Write};
-use xterm::{Clear, ClearType, Goto, Output, QueueableCommand};
+use xterm::{
+    cursor::MoveTo,
+    terminal::{Clear, ClearType},
+    ExecutableCommand, Output, QueueableCommand,
+};
 
 /// Terminal screen interface.
 ///
@@ -252,6 +256,13 @@ pub fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, b
     (buf, cmd)
 }
 
+fn map_xterm_err(xtermerr: xterm::ErrorKind, msg: &str) -> io::Error {
+    match xtermerr {
+        xterm::ErrorKind::IoError(e) => e,
+        _ => io::Error::new(io::ErrorKind::Other, msg),
+    }
+}
+
 /// Given an initial buffer starting point in the terminal, offset the cursor to the buffer's
 /// character position. This method is indiscriminant
 /// of what is on screen.
@@ -260,8 +271,9 @@ pub fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, b
 /// Wrapping on a new line starts at column 0.
 pub fn set_cursor_from_input(initial: (u16, u16), buf: &InputBuffer) -> io::Result<()> {
     let (initialx, initialy) = initial;
-    let term = xterm::terminal();
-    let width = term.terminal_size().0 as isize;
+    let width = xterm::terminal::size()
+        .map_err(|e| map_xterm_err(e, "getting cursor failed"))?
+        .0 as isize;
 
     let mut lines = 0;
     let mut chpos = (buf.ch_pos() as isize) - (width - initialx as isize);
@@ -275,10 +287,10 @@ pub fn set_cursor_from_input(initial: (u16, u16), buf: &InputBuffer) -> io::Resu
     let x = chpos as u16;
     let y = initialy + lines;
 
-    xterm::cursor().goto(x, y).map_err(|e| match e {
-        xterm::ErrorKind::IoError(e) => e,
-        _ => io::Error::new(io::ErrorKind::Other, "cursor setting failed"),
-    })
+    stdout()
+        .execute(MoveTo(x, y))
+        .map(|_| ())
+        .map_err(|e| map_xterm_err(e, "cursor setting failed"))
 }
 
 /// Returns where the cursor ends up.
@@ -288,22 +300,20 @@ pub fn write_input_buffer(
     buf: &InputBuffer,
 ) -> io::Result<(u16, u16)> {
     let (x, y) = initial;
-    let mut stdout = stdout()
-        .queue(Goto(x, y))
-        .queue(Clear(ClearType::UntilNewLine));
+    let mut stdout = stdout();
+    queue!(stdout, MoveTo(x, y), Clear(ClearType::UntilNewLine))
+        .map_err(|e| map_xterm_err(e, ""))?;
 
     for i in 1..=lines_to_clear {
-        stdout = stdout
-            .queue(Goto(0, y + i))
-            .queue(Clear(ClearType::UntilNewLine));
+        queue!(stdout, MoveTo(0, y + i), Clear(ClearType::UntilNewLine))
+            .map_err(|e| map_xterm_err(e, ""))?;
     }
 
-    stdout
-        .queue(Goto(x, y))
-        .queue(Output(buf.buffer()))
-        .flush()?;
+    queue!(stdout, MoveTo(x, y), Output(buf.buffer())).map_err(|e| map_xterm_err(e, ""))?;
 
-    Ok(xterm::cursor().pos())
+    stdout.flush()?;
+
+    xterm::cursor::position().map_err(|e| map_xterm_err(e, "failed getting cursor position"))
 }
 
 pub fn read_until(
@@ -340,18 +350,21 @@ pub fn write_output_chg(change: OutputChange) -> io::Result<()> {
     use OutputChange::*;
     let mut stdout = stdout();
     match change {
-        CurrentLine(line) => erase_current_line(stdout).queue(Output(line)).flush(),
+        CurrentLine(line) => erase_current_line(stdout)?
+            .queue(Output(line))
+            .map_err(|e| map_xterm_err(e, ""))
+            .and_then(|x| x.flush()),
         NewLine => writeln!(&mut stdout, ""),
     }
 }
 
 /// Resets position to start of line.
 /// **Does not flush, should be called afterwards.**
-pub fn erase_current_line(stdout: Stdout) -> Stdout {
-    let (_, y) = xterm::cursor().pos();
-    stdout
-        .queue(Clear(ClearType::CurrentLine))
-        .queue(Goto(0, y))
+pub fn erase_current_line(mut stdout: Stdout) -> io::Result<Stdout> {
+    let (_, y) = xterm::cursor::position().expect("failed getting cursor position");
+    queue!(stdout, Clear(ClearType::CurrentLine), MoveTo(0, y))
+        .map(|_| stdout)
+        .map_err(|e| map_xterm_err(e, &line!().to_string()))
 }
 
 #[cfg(test)]

@@ -81,7 +81,7 @@ fn run<D, F: FnMut(Repl<Evaluate, D>) -> EvalResult<D>>(
     let mut boxedfn = Box::new(evalfn) as Box<dyn FnMut(Repl<Evaluate, D>) -> EvalResult<D>>;
 
     let output = loop {
-        io::stdout().execute(crossterm::Output(read.prompt()));
+        io::stdout().execute(crossterm::Output(read.prompt())).ok();
 
         let mut input_buf = interface::InputBuffer::new();
 
@@ -107,7 +107,7 @@ fn run<D, F: FnMut(Repl<Evaluate, D>) -> EvalResult<D>>(
                     reevaluate = reeval;
 
                     // prep for next read
-                    interface::erase_current_line(io::stdout()).flush()?;
+                    interface::erase_current_line(io::stdout())?.flush()?;
                 }
                 Err(r) => break r.output().to_owned(),
             },
@@ -172,7 +172,7 @@ fn do_read<D>(
 
     let mut i = Some(buf);
 
-    let initial = crossterm::cursor().pos();
+    let initial = crossterm::cursor::position().unwrap_or((0, 0));
 
     let mut completion_writer = interface::CompletionWriter::new();
 

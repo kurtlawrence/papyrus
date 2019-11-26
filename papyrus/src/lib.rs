@@ -21,6 +21,9 @@
 #[macro_use]
 extern crate log;
 
+#[macro_use]
+extern crate crossterm;
+
 /// Build a repl instance with the default terminal.
 /// If a type is specfied (ie `repl!(String)`) then the repl will be bounded to use
 /// that data type. Otherwise the default `()` will be used.
