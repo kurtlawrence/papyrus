@@ -1,18 +1,17 @@
 # Changelog
 
+## 0.12.0
+- Handle `Item::Use` when parsing input.
+- Use of `backtrace` crate to dump complete backtrace with panic handling.
+- Update `crossterm` to 0.13.
+- Remove `rustfmt-nightly` from dependencies, using `rustfmt` binary to format code
+  - This was done as building on nightly crashed too often.
+
 ## 0.11.0
 
 - docs: Add `cmds` module documentation.
 - docs: Add `complete` module documentation.
 - Move `code` and `linking` module to root level.
-
-### 0.11.1
-
-- Handle `Item::Use` when parsing input.
-
-### 0.11.2
-- Use of `backtrace` crate to dump complete backtrace with panic handling.
-- Update `crossterm` to 0.12.
 
 ## 0.10.0
 
