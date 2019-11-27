@@ -77,7 +77,7 @@ fn prepare_read<D>(repl: &mut Repl<Read, D>) {
 
         match ei.editing {
             Editing::Crate => src.crates.get(ei.index).map(|x| &x.src_line).cloned(),
-            Editing::Item => src.items.get(ei.index).cloned(),
+            Editing::Item => src.items.get(ei.index).map(|x| x.0.clone()),
             Editing::Stmt => src.stmts.get(ei.index).map(|x| x.src_line()),
         }
     });

@@ -1,7 +1,7 @@
 use super::*;
-use crate::code::Statement;
+use crate::code::{self, Statement};
 use syn::export::ToTokens;
-use syn::{self, Block, Item, Stmt};
+use syn::{self, Block, File, Item, Stmt};
 
 /// Parses a line of input as a command.
 /// Returns either a `Command` value or an `InputError` value.
@@ -19,12 +19,42 @@ pub fn parse_command(line: &str) -> InputResult {
 /// Parses a line of input as a program.
 pub fn parse_program(code: &str) -> InputResult {
     debug!("parse program: {}", code);
+
+    let reterr = |e: syn::Error| {
+        let e = e.to_string();
+        if &e == "LexError" {
+            InputResult::More
+        } else {
+            InputResult::InputError(e)
+        }
+    };
+
+    // handle program level items such as #![feature(test)]
+    if code.starts_with("#![") {
+        return syn::parse_str::<File>(code)
+            .map(|file| {
+                let items = file
+                    .attrs
+                    .into_iter()
+                    .map(|attr| attr.into_token_stream().to_string())
+                    .map(|s| fmt(s))
+                    .map(|s| (s, true))
+                    .collect::<Vec<_>>();
+                InputResult::Program(Input {
+                    items: items,
+                    stmts: vec![],
+                    crates: vec![],
+                })
+            })
+            .unwrap_or_else(reterr);
+    }
+
     let code = format!("{{ {} }}", code); // wrap in a block so the parser can parse through it without need to guess the type!
 
-    match syn::parse_str::<Block>(&code) {
-        Ok(block) => {
+    syn::parse_str::<Block>(&code)
+        .map(|block| {
             let mut stmts = Vec::new();
-            let mut items = Vec::new();
+            let mut items: Vec<code::Item> = Vec::new();
             let mut crates = Vec::new();
             for stmt in block.stmts {
                 match stmt {
@@ -43,7 +73,7 @@ pub fn parse_program(code: &str) -> InputResult {
                                 Err(e) => error!("crate parsing failed: {}", e),
                             }
                         }
-                        ParseItemResult::Span(string) => items.push(fmt(string)),
+                        ParseItemResult::Span(string) => items.push((fmt(string), false)),
                         ParseItemResult::Error(s) => return InputResult::InputError(s),
                     },
                     Stmt::Expr(expr) => match parse_expr(expr) {
@@ -67,15 +97,8 @@ pub fn parse_program(code: &str) -> InputResult {
                 stmts: stmts,
                 crates: crates,
             })
-        }
-        Err(e) => {
-            if e.to_string() == "LexError" {
-                InputResult::More
-            } else {
-                InputResult::InputError(e.to_string())
-            }
-        }
-    }
+        })
+        .unwrap_or_else(reterr)
 }
 
 #[cfg(feature = "format")]

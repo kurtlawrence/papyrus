@@ -348,6 +348,12 @@ fn append_buffer<S: AsRef<str>>(
     linking_config: &linking::LinkingConfiguration,
     buf: &mut String,
 ) {
+    // do up top items first.
+    for item in src_code.items.iter().filter(|x| x.1) {
+        buf.push_str(item.0.as_str());
+        buf.push('\n');
+    }
+
     // wrap stmts
     buf.push_str("#[no_mangle]\npub extern \"C\" fn "); // 31 len
     eval_fn_name(mod_path, buf);
@@ -372,8 +378,8 @@ fn append_buffer<S: AsRef<str>>(
     buf.push_str("}\n");
 
     // add items
-    for item in src_code.items.iter() {
-        buf.push_str(item.as_str());
+    for item in src_code.items.iter().filter(|x| !x.1) {
+        buf.push_str(item.0.as_str());
         buf.push('\n');
     }
 }
@@ -383,9 +389,15 @@ fn append_buffer_length<S: AsRef<str>>(
     mod_path: &[S],
     linking_config: &linking::LinkingConfiguration,
 ) -> (usize, ReturnRange) {
+    let mut cap = src_code
+        .items
+        .iter()
+        .filter(|x| x.1)
+        .map(|x| x.0.len() + 1)
+        .sum();
+
     // wrap stmts
-    let mut cap =
-        31 + eval_fn_name_length(mod_path) + 1 + linking_config.construct_fn_args_length() + 29;
+    cap += 31 + eval_fn_name_length(mod_path) + 1 + linking_config.construct_fn_args_length() + 29;
 
     // add stmts
     let c = src_code.stmts.len();
@@ -411,15 +423,23 @@ fn append_buffer_length<S: AsRef<str>>(
     cap += add + 2; // }\n
 
     // add items
-    for item in src_code.items.iter() {
-        cap += item.len() + 1;
-    }
+    cap += src_code
+        .items
+        .iter()
+        .filter(|x| !x.1)
+        .map(|x| x.0.len() + 1)
+        .sum::<usize>();
 
     (cap, rng)
 }
 
 /// A single item.
-pub type Item = String;
+///
+/// Wraps as `(content, top_placement)`.
+///
+/// `top_placement` is a flag to write the item at the top of the document, required for code such
+/// as `#![feature(test)]`.
+pub type Item = (String, bool);
 
 /// Represents an inner statement.
 #[derive(Debug, PartialEq, Clone)]
@@ -658,8 +678,8 @@ kserd::Kserd::new_str("no statements")
         assert_eq!(&ans[rng], r#"kserd::Kserd::new_str("no statements")"#);
 
         // add an item and new input
-        src_code.items.push("fn a() {}".to_string());
-        src_code.items.push("fn b() {}".to_string());
+        src_code.items.push(("fn a() {}".to_string(), false));
+        src_code.items.push(("fn b() {}".to_string(), false));
 
         let mut s = String::new();
         append_buffer(&src_code, &mod_path, &linking_config, &mut s);
@@ -699,11 +719,17 @@ fn b() {}
             },
         ]));
 
+        // throw in a curve ball with an up top placement of an item
+        src_code
+            .items
+            .push(("#![feature(UP_TOP)]".to_string(), true));
+
         let mut s = String::new();
         append_buffer(&src_code, &mod_path, &linking_config, &mut s);
         let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
-        let ans = r##"#[no_mangle]
+        let ans = r##"#![feature(UP_TOP)]
+#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> kserd::Kserd<'static> {
 let a = 1;
 let out0 = b;
@@ -716,7 +742,7 @@ fn b() {}
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 150..202);
+        assert_eq!(rng, 170..222);
         assert_eq!(
             &ans[rng],
             "kserd::ToKserd::into_kserd(out1).unwrap().to_owned()"
@@ -844,5 +870,26 @@ kserd::Kserd::new_str("no statements")
             into_mod_path_vec(Path::new("test/inner2")),
             vec!["test".to_owned(), "inner2".to_owned()]
         );
+    }
+
+    #[test]
+    fn item_placement_test() {
+        let mut v = SourceCode::new();
+        v.items.push(("Test1".to_string(), false));
+        v.items.push(("Up Top".to_string(), true));
+
+        let linking = LinkingConfiguration::default();
+        let map = vec![("lib".into(), v)].into_iter().collect();
+
+        let (s, map) = construct_source_code(&map, &linking);
+
+        let ans = r##"Up Top
+#[no_mangle]
+pub extern "C" fn _lib_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+Test1
+"##;
+        assert_eq!(&s, ans);
     }
 }

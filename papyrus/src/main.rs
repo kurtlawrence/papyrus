@@ -31,9 +31,7 @@ fn main() {
 
 #[cfg(windows)]
 fn windows_term_hack() {
-    colored::control::set_virtual_terminal(true)
-        .map_err(|e| eprintln!("failed setting virtual terminal: {}", e))
-        .ok();
+    colored::control::set_virtual_terminal(true).ok();
 }
 
 #[cfg(not(windows))]

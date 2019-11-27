@@ -18,7 +18,7 @@ fn test_items() {
     assert_eq!(
         parse_program("fn b() {}"),
         InputResult::Program(Input {
-            items: vec!["fn b() {}".to_string()],
+            items: vec![("fn b() {}".to_string(), false)],
             stmts: vec![],
             crates: vec![]
         })
@@ -26,7 +26,7 @@ fn test_items() {
     assert_eq!(
         parse_program("#[derive(Debug)]\nstruct A {\n\tu: u32\n}"),
         InputResult::Program(Input {
-            items: vec!["#[derive(Debug)] struct A { u: u32, }".to_string()],
+            items: vec![("#[derive(Debug)] struct A { u: u32, }".to_string(), false)],
             stmts: vec![],
             crates: vec![]
         })
@@ -42,7 +42,7 @@ fn test_items() {
     assert_eq!(
         parse_program("impl Eq for MyStruct {}"),
         InputResult::Program(Input {
-            items: vec!["impl Eq for MyStruct {}".to_string()],
+            items: vec![("impl Eq for MyStruct {}".to_string(), false)],
             stmts: vec![],
             crates: vec![]
         })
@@ -50,7 +50,15 @@ fn test_items() {
     assert_eq!(
         parse_program("use something::a::crate;"),
         InputResult::Program(Input {
-            items: vec!["use something::a::crate;".to_string()],
+            items: vec![("use something::a::crate;".to_string(), false)],
+            stmts: vec![],
+            crates: vec![]
+        })
+    ); // Item::Use
+    assert_eq!(
+        parse_program("#![feature(test)]"),
+        InputResult::Program(Input {
+            items: vec![("#![feature(test)]".to_string(), true)],
             stmts: vec![],
             crates: vec![]
         })

@@ -6,6 +6,8 @@
 - Update `crossterm` to 0.13.
 - Remove `rustfmt-nightly` from dependencies, using `rustfmt` binary to format code
   - This was done as building on nightly crashed too often.
+- Handle inner attribute syntax such as `#![feature(test)]`.
+- Changed `Item` from `String` to `(String, bool)`.
 
 ## 0.11.0
 
