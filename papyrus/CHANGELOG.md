@@ -8,6 +8,8 @@
   - This was done as building on nightly crashed too often.
 - Handle inner attribute syntax such as `#![feature(test)]`.
 - Changed `Item` from `String` to `(String, bool)`.
+- Remove `mortal` dependency, moving to `crossterm` for input. Fixes erratic typing input and not
+    showing on windows.
 
 ## 0.11.0
 

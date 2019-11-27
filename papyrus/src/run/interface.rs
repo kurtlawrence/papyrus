@@ -1,10 +1,9 @@
 use crate::output::OutputChange;
 use crossterm as xterm;
-use mortal::Event;
-use mortal::{Event::*, Key::*};
 use std::io::{self, stdout, Stdout, Write};
 use xterm::{
     cursor::MoveTo,
+    input::{input, InputEvent, InputEvent::*, KeyEvent::*},
     terminal::{Clear, ClearType},
     ExecutableCommand, Output, QueueableCommand,
 };
@@ -13,16 +12,13 @@ use xterm::{
 ///
 /// It is as its own struct as there is specific configuration and key handling for moving around the
 /// interface.
-pub struct Screen(mortal::Screen);
+pub struct Screen(xterm::screen::RawScreen);
 
 impl Screen {
     pub fn new() -> io::Result<Self> {
-        let config = mortal::PrepareConfig {
-            block_signals: true,
-            ..Default::default()
-        };
-
-        Ok(Screen(mortal::Screen::new(config)?))
+        xterm::screen::RawScreen::into_raw_mode()
+            .map(Screen)
+            .map_err(|e| map_xterm_err(e, "failed creating raw screen interface"))
     }
 }
 
@@ -171,82 +167,25 @@ impl CompletionWriter {
     }
 }
 
-/// Waits for a terminal event to occur.
-///
-/// > Post-processes escaped input to work with WSL.
-pub fn read_terminal_event(screen: &Screen) -> io::Result<Event> {
-    use mortal::{Event::*, Key::*, Signal::*};
-
-    const ESC_TIMEOUT: Option<std::time::Duration> = Some(std::time::Duration::from_millis(5));
-
-    let screen = &screen.0;
-
-    let ev = screen.read_event(None)?.unwrap_or(NoEvent);
-
-    let res = match ev {
-        Key(Escape) => {
-            // The escape key can be prelude to arrow keys
-            // To handle this we need to get the next _two_
-            // events, but they should be fast in coming
-            // so timeout and if they don't come, well just return
-            // Escape
-            let fst = screen.read_event(ESC_TIMEOUT)?;
-            let snd = screen.read_event(ESC_TIMEOUT)?;
-
-            let ev = match (fst, snd) {
-                (Some(fst), Some(snd)) => pat_match_escaped_keys(fst, snd),
-                _ => None,
-            };
-
-            ev.unwrap_or(Key(Escape))
-        }
-        Key(Ctrl('c')) => Signal(Interrupt),
-        x => x,
-    };
-
-    Ok(res)
-}
-
-fn pat_match_escaped_keys(first: Event, second: Event) -> Option<Event> {
-    use mortal::{Event::*, Key::*};
-
-    match (first, second) {
-        (Key(Char('[')), Key(Char('A'))) => Some(Key(Up)),
-        (Key(Char('[')), Key(Char('B'))) => Some(Key(Down)),
-        (Key(Char('[')), Key(Char('C'))) => Some(Key(Right)),
-        (Key(Char('[')), Key(Char('D'))) => Some(Key(Left)),
-        _ => None,
-    }
-}
-
-pub struct TermEventIter<'a>(pub &'a mut Screen);
-
-impl<'a> Iterator for TermEventIter<'a> {
-    type Item = Event;
-    fn next(&mut self) -> Option<Event> {
-        read_terminal_event(self.0).ok()
-    }
-}
-
-pub fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, bool) {
+pub fn apply_event_to_buf(mut buf: InputBuffer, event: InputEvent) -> (InputBuffer, bool) {
     let cmd = match event {
-        Key(Left) => {
+        Keyboard(Left) => {
             buf.move_pos_left(1);
             false
         }
-        Key(Right) => {
+        Keyboard(Right) => {
             buf.move_pos_right(1);
             false
         }
-        Key(Backspace) => {
+        Keyboard(Backspace) => {
             buf.backspace();
             true
         }
-        Key(Delete) => {
+        Keyboard(Delete) => {
             buf.delete();
             true
         }
-        Key(Char(c)) => {
+        Keyboard(Char(c)) => {
             buf.insert(c);
             true
         }
@@ -317,33 +256,48 @@ pub fn write_input_buffer(
 }
 
 pub fn read_until(
-    screen: &mut Screen,
+    _screen: &mut Screen,
     initial: (u16, u16),
-    buf: InputBuffer,
-    events: &[Event],
-) -> (InputBuffer, Event) {
-    let iter = TermEventIter(screen);
+    mut buf: InputBuffer,
+    events: &[InputEvent],
+) -> (InputBuffer, InputEvent) {
+    // we keep the screen as a required input to ensure RawScreen is not dropped
+    use std::time::Duration;
 
-    let mut last = Event::NoEvent;
+    const SLEEP: Duration = Duration::from_millis(5);
+
+    let mut reader = input().read_async();
+
+    let mut last: InputEvent;
 
     let mut lines_to_clear = 0;
 
-    let input = iter
-        .inspect(|ev| last = *ev)
-        .take_while(|ev| !events.contains(ev))
-        .fold(buf, |buf, ev| {
-            let (buf, chg) = apply_event_to_buf(buf, ev);
-            if chg {
-                let write_to = write_input_buffer(initial, lines_to_clear, &buf).unwrap_or(initial);
-                lines_to_clear = write_to.1.saturating_sub(initial.1);
+    loop {
+        if let Some(ev) = reader.next() {
+            last = ev.clone();
+
+            if events.contains(&ev) {
+                break;
             }
 
-            set_cursor_from_input(initial, &buf).ok();
+            buf = {
+                let (buf, chg) = apply_event_to_buf(buf, ev);
+                if chg {
+                    let write_to =
+                        write_input_buffer(initial, lines_to_clear, &buf).unwrap_or(initial);
+                    lines_to_clear = write_to.1.saturating_sub(initial.1);
+                }
 
-            buf
-        });
+                set_cursor_from_input(initial, &buf).ok();
 
-    (input, last)
+                buf
+            };
+        } else {
+            std::thread::sleep(SLEEP);
+        }
+    }
+
+    (buf, last)
 }
 
 pub fn write_output_chg(change: OutputChange) -> io::Result<()> {

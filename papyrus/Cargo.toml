@@ -31,7 +31,6 @@ dirs =		    { version = "2",	default-features = false }
 fxhash =	    { version = "0.2",	default-features = false }
 libloading =	    { version = "0.5",	default-features = false }
 log =		    { version = "0.4",	default-features = false }
-mortal =	    { version = "0.2",	default-features = false,   optional = true }
 racer =		    { version = "2.1",	default-features = false,   optional = true,	features = [ "metadata" ] }
 syn =		    { version = "1",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }
 
@@ -51,7 +50,7 @@ format = []
 # add code completion using racer, requires nightly
 racer-completion = [ "racer" ]
 # allows to just run the repl
-runnable = [ "crossterm", "mortal" ]
+runnable = [ "crossterm" ]
 
 [[bin]]
 name = "papyrus"

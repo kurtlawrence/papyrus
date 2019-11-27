@@ -2,8 +2,7 @@
 use crate::complete::code::{CodeCache, CodeCompleter};
 use crate::complete::{cmdr::TreeCompleter, modules::ModulesCompleter};
 use crate::prelude::*;
-use crossterm::ExecutableCommand;
-use mortal::Event;
+use crossterm::{input::InputEvent, ExecutableCommand};
 use repl::{EvalResult, Evaluate, Read, ReadResult};
 use std::io::{self, prelude::*};
 use std::sync::{Arc, Mutex};
@@ -164,11 +163,10 @@ fn do_read<D>(
     buf: InputBuffer,
     cache: &CacheWrapper,
 ) -> io::Result<bool> {
-    use mortal::{Event::*, Key::*, Signal::*};
-    const BREAK: Event = Signal(Interrupt);
-    const ENTER: Event = Key(Enter);
-    const TAB: Event = Key(Tab);
-    const STOPEVENTS: &[Event] = &[BREAK, ENTER, TAB];
+    use crossterm::input::{InputEvent::*, KeyEvent::*};
+    const ENTER: InputEvent = Keyboard(Enter);
+    const TAB: InputEvent = Keyboard(Tab);
+    const STOPEVENTS: &[InputEvent] = &[ENTER, TAB];
 
     let mut i = Some(buf);
 
@@ -185,9 +183,7 @@ fn do_read<D>(
     loop {
         let (mut input, ev) = interface::read_until(screen, initial, i.take().unwrap(), STOPEVENTS);
 
-        if ev == BREAK {
-            return Ok(true);
-        } else if ev == ENTER {
+        if ev == ENTER {
             repl.line_input(&input.buffer());
             writeln!(&mut io::stdout(), "")?;
             break Ok(false);
