@@ -11,7 +11,7 @@ use xterm::{
 
 /// Terminal screen interface.
 ///
-/// Its own struct as there is specific configuration and key handling for moving around the
+/// It is as its own struct as there is specific configuration and key handling for moving around the
 /// interface.
 pub struct Screen(mortal::Screen);
 
