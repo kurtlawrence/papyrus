@@ -21,6 +21,7 @@
 #[macro_use]
 extern crate log;
 
+#[cfg(feature = "runnable")]
 #[macro_use]
 extern crate crossterm;
 
