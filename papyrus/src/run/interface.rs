@@ -265,11 +265,8 @@ pub fn read_until(
     use std::time::Duration;
 
     const SLEEP: Duration = Duration::from_millis(5);
-
     let mut reader = input().read_async();
-
     let mut last: InputEvent;
-
     let mut lines_to_clear = 0;
 
     loop {

@@ -185,7 +185,7 @@ fn do_read<D>(
 
         if ev == ENTER {
             repl.line_input(&input.buffer());
-            writeln!(&mut io::stdout(), "")?;
+            write!(&mut io::stdout(), "\n\r")?;
             break Ok(false);
         } else if ev == TAB {
             let line = input.buffer();
