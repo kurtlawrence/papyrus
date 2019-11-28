@@ -74,6 +74,10 @@ pub fn parse_program(code: &str) -> InputResult {
                             }
                         }
                         ParseItemResult::Span(string) => items.push((fmt(string), false)),
+                        ParseItemResult::MacroBlock(string, semi) => stmts.push(Statement {
+                            expr: fmt(string),
+                            semi,
+                        }), // macro item are plopped in as exprs
                         ParseItemResult::Error(s) => return InputResult::InputError(s),
                     },
                     Stmt::Expr(expr) => match parse_expr(expr) {
@@ -114,11 +118,12 @@ fn fmt(s: String) -> String {
 enum ParseItemResult {
     Span(String),
     ExternCrate(String),
+    MacroBlock(String, bool),
     Error(String),
 }
 
 fn parse_item(item: Item) -> ParseItemResult {
-    match item {
+    match &item {
         Item::Static(_) => {
             error!("haven't handled item variant Static");
             ParseItemResult::Error("haven't handled item variant Static. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
@@ -156,10 +161,6 @@ fn parse_item(item: Item) -> ParseItemResult {
             error!("haven't handled item variant TraitAlias");
             ParseItemResult::Error("haven't handled item variant TraitAlias. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
         }
-        Item::Macro(_) => {
-            error!("haven't handled item variant Macro");
-            ParseItemResult::Error("haven't handled item variant Macro. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
-        }
         Item::Macro2(_) => {
             error!("haven't handled item variant Macro2");
             ParseItemResult::Error("haven't handled item variant Macro2. Raise a request here https://github.com/kurtlawrence/papyrus/issues".to_string())
@@ -173,7 +174,11 @@ fn parse_item(item: Item) -> ParseItemResult {
             debug!("Item parsed, its a crate: {}", s);
             ParseItemResult::ExternCrate(s)
         }
-        _ => ParseItemResult::Span(format!("{}", item.into_token_stream())),
+        Item::Macro(m) => {
+            let semi = m.semi_token.is_some();
+            ParseItemResult::MacroBlock(item.into_token_stream().to_string(), semi)
+        }
+        _ => ParseItemResult::Span(item.into_token_stream().to_string()),
     }
 }
 
