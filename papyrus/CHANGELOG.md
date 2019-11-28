@@ -10,6 +10,7 @@
 - Changed `Item` from `String` to `(String, bool)`.
 - Remove `mortal` dependency, moving to `crossterm` for input. Fixes erratic typing input and not
     showing on windows.
+- Bug fixes
 
 ## 0.11.0
 

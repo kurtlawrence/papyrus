@@ -22,11 +22,12 @@ fn main() {
 
     let repl = repl!();
 
-    let output = repl.run(&mut ()).unwrap();
+    let output = repl.run(&mut ());
 
-    println!("{}", output);
-
-    println!("Thanks for using papyrus!");
+    match output {
+        Ok(_) => println!("Thanks for using papyrus!"),
+        Err(e) => println!("papyrus crashed! {}", e),
+    }
 }
 
 #[cfg(windows)]
