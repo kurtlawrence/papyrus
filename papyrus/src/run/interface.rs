@@ -3,7 +3,7 @@ use crossterm as xterm;
 use std::io::{self, stdout, Stdout, Write};
 use xterm::{
     cursor::MoveTo,
-    input::{input, InputEvent, InputEvent::*, KeyEvent::*},
+    input::{input, AsyncReader, InputEvent, InputEvent::*, KeyEvent::*},
     terminal::{Clear, ClearType},
     ExecutableCommand, Output, QueueableCommand,
 };
@@ -12,12 +12,12 @@ use xterm::{
 ///
 /// It is as its own struct as there is specific configuration and key handling for moving around the
 /// interface.
-pub struct Screen(xterm::screen::RawScreen);
+pub struct Screen(xterm::screen::RawScreen, AsyncReader);
 
 impl Screen {
     pub fn new() -> io::Result<Self> {
         xterm::screen::RawScreen::into_raw_mode()
-            .map(Screen)
+            .map(|screen| Screen(screen, input().read_async()))
             .map_err(|e| map_xterm_err(e, "failed creating raw screen interface"))
     }
 }
@@ -256,7 +256,7 @@ pub fn write_input_buffer(
 }
 
 pub fn read_until(
-    _screen: &mut Screen,
+    screen: &mut Screen,
     initial: (u16, u16),
     mut buf: InputBuffer,
     events: &[InputEvent],
@@ -265,7 +265,7 @@ pub fn read_until(
     use std::time::Duration;
 
     const SLEEP: Duration = Duration::from_millis(5);
-    let mut reader = input().read_async();
+    let reader = &mut screen.1;
     let mut last: InputEvent;
     let mut lines_to_clear = 0;
 

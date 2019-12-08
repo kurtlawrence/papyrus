@@ -4,6 +4,7 @@
 - Handle `Item::Macro`.
 - Updated linking documentation.
 - Code improvements
+- Terminal interface input events are buffered so multiline stdin is handled correctly.
 
 ## 0.12.0
 - Handle `Item::Use` when parsing input.
