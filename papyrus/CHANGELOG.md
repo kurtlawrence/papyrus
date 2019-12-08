@@ -3,6 +3,7 @@
 ## Version
 - Handle `Item::Macro`.
 - Updated linking documentation.
+- Code improvements
 
 ## 0.12.0
 - Handle `Item::Use` when parsing input.

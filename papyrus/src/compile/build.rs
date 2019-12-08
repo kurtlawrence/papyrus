@@ -31,7 +31,7 @@ where
         args.push(format!(
             "{}={}",
             external.lib_name(),
-            external.lib_path().display().to_string()
+            external.lib_path().display()
         ));
     }
 
