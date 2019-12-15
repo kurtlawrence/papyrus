@@ -1,11 +1,5 @@
 # Changelog
 
-## Version
-- Handle `Item::Macro`.
-- Updated linking documentation.
-- Code improvements
-- Terminal interface input events are buffered so multiline stdin is handled correctly.
-
 ## 0.12.0
 - Handle `Item::Use` when parsing input.
 - Use of `backtrace` crate to dump complete backtrace with panic handling.
@@ -17,6 +11,13 @@
 - Remove `mortal` dependency, moving to `crossterm` for input. Fixes erratic typing input and not
     showing on windows.
 - Bug fixes
+
+### 0.12.1
+- Handle `Item::Macro`.
+- Updated linking documentation.
+- Code improvements
+- Terminal interface input events are buffered so multiline stdin is handled correctly.
+- Update `crossterm` dependency to 0.14.
 
 ## 0.11.0
 

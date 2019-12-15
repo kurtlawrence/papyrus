@@ -1,24 +1,53 @@
 use crate::output::OutputChange;
+use crossbeam_channel::{unbounded, Receiver};
 use crossterm as xterm;
 use std::io::{self, stdout, Stdout, Write};
 use xterm::{
     cursor::MoveTo,
-    input::{input, AsyncReader, InputEvent, InputEvent::*, KeyEvent::*},
+    event::{
+        Event::{self, *},
+        KeyCode::*,
+        KeyEvent, KeyModifiers,
+    },
+    style::Print,
     terminal::{Clear, ClearType},
-    ExecutableCommand, Output, QueueableCommand,
+    ExecutableCommand, QueueableCommand,
 };
 
 /// Terminal screen interface.
 ///
 /// It is as its own struct as there is specific configuration and key handling for moving around the
 /// interface.
-pub struct Screen(xterm::screen::RawScreen, AsyncReader);
+pub struct Screen(Receiver<Event>);
 
 impl Screen {
     pub fn new() -> io::Result<Self> {
-        xterm::screen::RawScreen::into_raw_mode()
-            .map(|screen| Screen(screen, input().read_async()))
-            .map_err(|e| map_xterm_err(e, "failed creating raw screen interface"))
+        xterm::terminal::enable_raw_mode().map_err(|e| map_xterm_err(e, "enabling raw mode"))?;
+        let (tx, rx) = unbounded();
+        std::thread::Builder::new()
+            .name("terminal-event-buffer".into())
+            .spawn(move || loop {
+                match xterm::event::poll(std::time::Duration::from_millis(0)) {
+                    Ok(true) => {
+                        if xterm::event::read()
+                            .ok()
+                            .and_then(|ev| tx.send(ev).ok())
+                            .is_none()
+                        {
+                            break;
+                        }
+                    }
+                    Ok(false) => {}
+                    Err(_) => break,
+                }
+            })?;
+        Ok(Screen(rx))
+    }
+}
+
+impl Drop for Screen {
+    fn drop(&mut self) {
+        xterm::terminal::disable_raw_mode().ok();
     }
 }
 
@@ -167,25 +196,42 @@ impl CompletionWriter {
     }
 }
 
-pub fn apply_event_to_buf(mut buf: InputBuffer, event: InputEvent) -> (InputBuffer, bool) {
+pub fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, bool) {
+    const NOMOD: KeyModifiers = KeyModifiers::empty();
+    macro_rules! nomod {
+        ($code:ident) => {
+            KeyEvent {
+                modifiers: NOMOD,
+                code: $code,
+            }
+        };
+    }
+
     let cmd = match event {
-        Keyboard(Left) => {
+        Key(nomod!(Left)) => {
             buf.move_pos_left(1);
             false
         }
-        Keyboard(Right) => {
+        Key(nomod!(Right)) => {
             buf.move_pos_right(1);
             false
         }
-        Keyboard(Backspace) => {
+        Key(nomod!(Backspace)) => {
             buf.backspace();
             true
         }
-        Keyboard(Delete) => {
+        Key(nomod!(Delete)) => {
             buf.delete();
             true
         }
-        Keyboard(Char(c)) => {
+        Key(KeyEvent {
+            modifiers: NOMOD,
+            code: Char(c),
+        })
+        | Key(KeyEvent {
+            modifiers: KeyModifiers::SHIFT,
+            code: Char(c),
+        }) => {
             buf.insert(c);
             true
         }
@@ -248,7 +294,7 @@ pub fn write_input_buffer(
             .map_err(|e| map_xterm_err(e, ""))?;
     }
 
-    queue!(stdout, MoveTo(x, y), Output(buf.buffer())).map_err(|e| map_xterm_err(e, ""))?;
+    queue!(stdout, MoveTo(x, y), Print(buf.buffer())).map_err(|e| map_xterm_err(e, ""))?;
 
     stdout.flush()?;
 
@@ -259,18 +305,15 @@ pub fn read_until(
     screen: &mut Screen,
     initial: (u16, u16),
     mut buf: InputBuffer,
-    events: &[InputEvent],
-) -> (InputBuffer, InputEvent) {
+    events: &[Event],
+) -> (InputBuffer, Event) {
     // we keep the screen as a required input to ensure RawScreen is not dropped
-    use std::time::Duration;
-
-    const SLEEP: Duration = Duration::from_millis(5);
-    let reader = &mut screen.1;
-    let mut last: InputEvent;
+    let reader = &mut screen.0;
+    let mut last: Event;
     let mut lines_to_clear = 0;
 
     loop {
-        if let Some(ev) = reader.next() {
+        if let Ok(ev) = reader.recv() {
             last = ev.clone();
 
             if events.contains(&ev) {
@@ -290,7 +333,11 @@ pub fn read_until(
                 buf
             };
         } else {
-            std::thread::sleep(SLEEP);
+            last = Event::Key(KeyEvent {
+                modifiers: KeyModifiers::CONTROL,
+                code: xterm::event::KeyCode::Char('c'),
+            });
+            break;
         }
     }
 
@@ -302,7 +349,7 @@ pub fn write_output_chg(change: OutputChange) -> io::Result<()> {
     let mut stdout = stdout();
     match change {
         CurrentLine(line) => erase_current_line(stdout)?
-            .queue(Output(line))
+            .queue(Print(line))
             .map_err(|e| map_xterm_err(e, ""))
             .and_then(|x| x.flush()),
         NewLine => writeln!(&mut stdout, ""),

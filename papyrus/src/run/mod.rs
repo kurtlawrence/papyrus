@@ -2,7 +2,7 @@
 use crate::complete::code::{CodeCache, CodeCompleter};
 use crate::complete::{cmdr::TreeCompleter, modules::ModulesCompleter};
 use crate::prelude::*;
-use crossterm::{input::InputEvent, ExecutableCommand};
+use crossterm::{event::Event, ExecutableCommand};
 use repl::{EvalResult, Evaluate, Read, ReadResult};
 use std::io::{self, prelude::*};
 use std::sync::{Arc, Mutex};
@@ -80,7 +80,9 @@ fn run<D, F: FnMut(Repl<Evaluate, D>) -> EvalResult<D>>(
     let mut boxedfn = Box::new(evalfn) as Box<dyn FnMut(Repl<Evaluate, D>) -> EvalResult<D>>;
 
     let output = loop {
-        io::stdout().execute(crossterm::Output(read.prompt())).ok();
+        io::stdout()
+            .execute(crossterm::style::Print(read.prompt()))
+            .ok();
 
         let mut input_buf = interface::InputBuffer::new();
 
@@ -163,10 +165,16 @@ fn do_read<D>(
     buf: InputBuffer,
     cache: &CacheWrapper,
 ) -> io::Result<bool> {
-    use crossterm::input::{InputEvent::*, KeyEvent::*};
-    const ENTER: InputEvent = Keyboard(Enter);
-    const TAB: InputEvent = Keyboard(Tab);
-    const STOPEVENTS: &[InputEvent] = &[ENTER, TAB];
+    use crossterm::event::{Event::*, KeyCode::*, KeyEvent, KeyModifiers};
+    const ENTER: Event = Key(KeyEvent {
+        modifiers: KeyModifiers::empty(),
+        code: Enter,
+    });
+    const TAB: Event = Key(KeyEvent {
+        modifiers: KeyModifiers::empty(),
+        code: Tab,
+    });
+    const STOPEVENTS: &[Event] = &[ENTER, TAB];
 
     let mut i = Some(buf);
 
