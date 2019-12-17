@@ -47,7 +47,7 @@ mod tests {
         let files = vec![pass_compile_eval_file()].into_iter().collect();
         let mut linking_config = LinkingConfiguration::default();
         linking_config.external_libs.insert(
-            Extern::new("../test-resources/external_crate/target/debug/libexternal_crate.rlib")
+            Extern::new("test-resources/external_crate/target/debug/libexternal_crate.rlib")
                 .unwrap(),
         );
 
@@ -72,7 +72,7 @@ mod tests {
         let files = vec![pass_compile_eval_file()].into_iter().collect();
         let mut linking_config = LinkingConfiguration::default();
         linking_config.external_libs.insert(
-            Extern::new("../test-resources/external_crate/target/debug/libexternal_crate.rlib")
+            Extern::new("test-resources/external_crate/target/debug/libexternal_crate.rlib")
                 .unwrap(),
         );
 
@@ -103,7 +103,7 @@ mod tests {
         let files = vec![pass_compile_eval_file()].into_iter().collect();
         let mut linking_config = LinkingConfiguration::default();
         linking_config.external_libs.insert(
-            Extern::new("../test-resources/external_crate/target/debug/libexternal_crate.rlib")
+            Extern::new("test-resources/external_crate/target/debug/libexternal_crate.rlib")
                 .unwrap(),
         );
 

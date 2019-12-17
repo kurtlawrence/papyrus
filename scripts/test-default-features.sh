@@ -1,7 +1,3 @@
-# Assume working directory is project root
 set -e
-
-cd papyrus
-cargo build
+./scripts/build-external-crate.sh
 cargo test -- --test-threads=1
-cd ..

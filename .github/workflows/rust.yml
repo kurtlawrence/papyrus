@@ -17,10 +17,5 @@ jobs:
         toolchain: nightly
         override: true
         components: rustfmt
-    - name: Build external crate
-      run: |
-        cd test-resources/external_crate
-        cargo build
-        cd ../..
     - name: Run test
-      run: cargo test -- --test-threads=1
+      run: ./scripts/test-default-features.sh
