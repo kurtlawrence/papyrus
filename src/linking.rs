@@ -76,12 +76,9 @@
 //! Papyrus links using an `rlib` file, but it is shown that you can also build multiple library files.
 //! If you build this project you should find a `libsome_lib.rlib` sitting in your build directory.
 //! Papyrus uses this to link when compiling.
-//! The `papyrus` dependency also requires a `crate-type` specification. **THIS IS VERY IMPORTANT
-//! AND EASY TO MISS!**.
+//! The `papyrus` dependency also requires a `crate-type` specification.
 //! If not specified, references to `papyrus` in the _library_ will cause compilation errors when
-//! running the REPL. The error messages will be along the lines of "can't find crate".
-//!
-//! > **REMEMBER** Add the `crate-type = [ "rlib" ]` for the papyrus _dependency_.
+//! running the REPL.
 //!
 //! ### REPL
 //!
@@ -150,7 +147,7 @@
 //! Papyrus uses `AssertUnwindSafe` wrappers to make this work, however it makes `app_data` vulnerable to breaking
 //! invariant states if a panic is triggered.
 //!
-//! The developer should keep this in mind when implementing a linked REPL.
+//! The developer should keep this in mind when implementing a linked REPL. 
 //! Some guidelines:
 //!
 //! 1. Keep the app_data that is being transfered simple.
