@@ -6,13 +6,15 @@ jobs:
   all-features:
     strategy:
       matrix:
+        name: [default-features]
         os: [ubuntu-latest, windows-latest]
         include:
-          - script: test-default-features.sh
+          - name: default-features
+            script: test-default-features.sh
             rust: nightly
             rust-components: rustfmt
                
-    name: ${{ matrix.script }} on ${{ matrix.os }}
+    name: ${{ matrix.name }} on ${{ matrix.os }}
     
     runs-on: ${{ matrix.os }}
     
