@@ -1,5 +1,8 @@
 # Changelog
 
+## Version
+- Restructure of repository
+
 ## 0.12.0
 - Handle `Item::Use` when parsing input.
 - Use of `backtrace` crate to dump complete backtrace with panic handling.
