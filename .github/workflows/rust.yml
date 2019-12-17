@@ -16,7 +16,6 @@ jobs:
         profile: minimal
         toolchain: nightly
         override: true
-    - name: Build external crate
-      run: cd test-resources/external_crate && cargo build && cd ../..
+    - uses: ./.github/actions/build-external-crate
     - name: Run tests
       run: cargo test -- --test-threads=1
