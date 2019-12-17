@@ -1,0 +1,66 @@
+[package]
+name = "papyrus"
+version = "0.12.1"
+authors = ["kurt <kurtlawrence92@gmail.com>"]
+description = "A rust repl and script runner"
+license = "MIT"
+homepage = "https://github.com/kurtlawrence/papyrus"
+repository = "https://github.com/kurtlawrence/papyrus"
+documentation = "https://docs.rs/papyrus/"
+readme = "../README.md"
+keywords = [ "repl", "script" ]
+edition = "2018"
+
+[badges]
+travis-ci = { repository = "kurtlawrence/papyrus" }
+codecov =   { repository = "kurtlawrence/papyrus" }
+
+[dependencies]
+# My crates
+cmdtree =	    { version = "0.10",	default-features = false }
+kserd =		    { version = "0.1",	default-features = false,   optional = false,	features = [ "format" ] }
+shh =		    { version = "1",	default-features = false }
+
+# crates.io
+backtrace =	    { version = "0.3",	default-features = false }
+colored =	    { version = "1",	default-features = false }
+crossbeam-channel = { version = "0.4",	default-features = false }
+crossbeam-utils =   { version = "0.7",	default-features = false }
+crossterm =	    { version = "0.14",	default-features = false,   optional = true }
+dirs =		    { version = "2",	default-features = false }
+fxhash =	    { version = "0.2",	default-features = false }
+libloading =	    { version = "0.5",	default-features = false }
+log =		    { version = "0.4",	default-features = false }
+racer =		    { version = "2.1",	default-features = false,   optional = true,	features = [ "metadata" ] }
+syn =		    { version = "1",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }
+
+[dev-dependencies]
+criterion = "0.3"
+term_cursor = "0.2"
+term_size = "0.3"
+
+[[bench]]
+name = "benches"
+harness = false
+
+[features]
+default = [ "format", "racer-completion", "runnable" ]
+# format snippets with rustfmt binary
+format = [] 
+# add code completion using racer, requires nightly
+racer-completion = [ "racer" ]
+# allows to just run the repl
+runnable = [ "crossterm" ]
+
+[[bin]]
+name = "papyrus"
+path = "src/main.rs"
+required-features = [ "runnable" ]
+
+[profile.release]
+lto = true
+codegen-units = 1
+
+[[example]]
+name = "custom-cmds"
+required-features = [ "runnable" ]

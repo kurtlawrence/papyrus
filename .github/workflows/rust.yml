@@ -1,0 +1,154 @@
+name: Rust Tests
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '00 07 * * 0'
+
+jobs:
+  run-tests:
+    strategy:
+      matrix:
+        name: [default-features, no-features, all-features, format, racer-completion, runnable]
+        os: [ubuntu-latest, windows-latest]
+        rust: [nightly, stable, 1.34.0]
+        include:
+          - name: default-features
+            rust: nightly
+            rust-components: rustfmt
+            cmd: cargo test
+          - name: no-features
+            cmd: cargo test --no-default-features
+          - name: all-features
+            rust: nightly
+            rust-components: rustfmt
+            cmd: cargo test --all-features
+          - name: format
+            rust-components: rustfmt
+            cmd: cargo test --no-default-features --features="format"
+          - name: racer-completion
+            rust: nightly
+            cmd: cargo test --no-default-features --features="racer-completion"
+          - name: runnable
+            cmd: cargo test --no-default-features --features="runnable"
+        exclude:
+          - name: default-features
+            rust: stable
+          - name: default-features
+            rust: 1.34.0
+          - name: all-features
+            rust: stable
+          - name: all-features
+            rust: 1.34.0
+          - name: racer-completion
+            rust: stable
+          - name: racer-completion
+            rust: 1.34.0
+               
+    name: ${{ matrix.name }} with ${{ matrix.rust }} on ${{ matrix.os }}
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+      
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: ${{ matrix.rust }}
+        override: true
+        components: ${{ matrix.rust-components }}
+      
+    - name: Cache cargo registry
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-${{ matrix.rust }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Cache cargo index
+      uses: actions/cache@v1
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-${{ matrix.rust }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+      
+    - name: Cache cargo build
+      uses: actions/cache@v1
+      with:
+        path: target
+        key: ${{ runner.os }}-${{ matrix.rust }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+     
+    - name: Build external crate test dependency
+      run: |
+        cd test-resources/external_crate
+        cargo build
+        cd ../..
+        
+    - name: Run tests
+      run: ${{ matrix.cmd }}
+
+# SORT OUT DEPLOYMENT FOR CODE COVERAGE
+#   code-coverage:
+#     runs-on: [ubuntu-latest]
+#     needs: [run-tests]
+    
+#     steps:
+#     - name: Checkout
+#       uses: actions/checkout@v1
+      
+#     - name: Install Rust
+#       uses: actions-rs/toolchain@v1
+#       with:
+#         profile: minimal
+#         toolchain: nightly
+#         override: true
+    
+#     - name: Cache cargo registry
+#       uses: actions/cache@v1
+#       with:
+#         path: ~/.cargo/registry
+#         key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+        
+#     - name: Cache cargo index
+#       uses: actions/cache@v1
+#       with:
+#         path: ~/.cargo/git
+#         key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+      
+#     - name: Cache cargo build
+#       uses: actions/cache@v1
+#       with:
+#         path: target
+#         key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+        
+#     - name: Install tarpaulin
+#       run: cargo install cargo-tarpaulin
+        
+#     - name: Run tarpaulin and push
+#       run: |
+#         cargo tarpaulin -v --out Xml
+#         bash <(curl -s https://codecov.io/bash)
+
+# SORT OUT DEPLOYMENT TO GH PAGES
+#   - os: linux
+#       rust: stable
+#       before_script:
+#         - (test -x $HOME/.cargo/bin/cargo-install-update || cargo install cargo-update)
+#         - (test -x $HOME/.cargo/bin/mdbook || cargo install --vers "^0.3" mdbook)
+#         - cargo install-update -a
+#       script:
+#         - cd papyrus && cargo build --no-default-features --features=runnable && cd ..
+#         - mdbook build docs
+#         - mdbook test docs -L papyrus/target/debug,papyrus/target/debug/deps
+#       deploy:
+#         provider: pages
+#         skip-cleanup: true
+#         github-token: $GH_TOKEN
+#         local-dir: docs/book
+#         keep-history: false
+#         on:
+#           branch: master
+  
+  

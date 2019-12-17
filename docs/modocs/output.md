@@ -267,5 +267,5 @@ fn main() {
 }
 ```
 
-[`Output`]: Output
+[`Output`]: output::Output
 [`Repl`]: repl::Repl
