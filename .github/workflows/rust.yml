@@ -17,4 +17,5 @@ jobs:
         toolchain: nightly
         override: true
     - name: Default Features
+      run: cd test-resources/external_crate && cargo build && cd ../..
       run: cargo test -- --test-threads=1
