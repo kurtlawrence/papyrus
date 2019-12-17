@@ -18,8 +18,8 @@ jobs:
         override: true
     - name: Build external crate
       run: |
-        cd test-resources/external-crate
+        cd ./test-resources/external-crate
         cargo build
-        cd ../..
+        cd ./../..
     - name: Run test
       run: cargo test -- --test-threads=1
