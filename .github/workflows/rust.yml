@@ -16,6 +16,7 @@ jobs:
         profile: minimal
         toolchain: nightly
         override: true
+        components: rustfmt
     - name: Build external crate
       run: |
         cd test-resources/external_crate
