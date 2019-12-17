@@ -16,11 +16,15 @@ jobs:
             cmd: cargo test
           - name: no-features
             cmd: cargo test --no-default-features
+        exclude:
+          - name: default-features
+            rust: stable
+          - name: default-features
+            rust: 1.34.0
                
     name: ${{ matrix.name }} with ${{ matrix.rust }} on ${{ matrix.os }}
     
     runs-on: ${{ matrix.os }}
-    if: (matrix.cmd != '')
     
     steps:
     - name: Checkout
