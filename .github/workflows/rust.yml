@@ -7,8 +7,11 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        script: [test-default-features.sh]
-    
+        include:
+          - script: test-default-features.sh
+            rust: nightly
+            rust-components: rustfmt
+               
     name: ${{ matrix.script }} on ${{ matrix.os }}
     
     runs-on: ${{ matrix.os }}
@@ -21,9 +24,9 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly
+        toolchain: ${{ matrix.rust }}
         override: true
-        components: rustfmt
+        components: ${{ matrix.rust-components }}
       
     - name: Cache cargo registry
       uses: actions/cache@v1
@@ -45,4 +48,4 @@ jobs:
         
     - name: Run tests
       shell: bash
-      run: ./scripts/test-default-features.sh
+      run: ./scripts/${{ matrix.script }}
