@@ -1,0 +1,8 @@
+name: build-external-crate
+description: Build the external crate for testing dependency
+
+runs:
+  main:
+    - cd test-resources/external-crate
+    - cargo build
+    - cd ../..
