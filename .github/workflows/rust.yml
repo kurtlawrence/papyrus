@@ -9,21 +9,18 @@ jobs:
         name: [default-features, no-features]
         os: [ubuntu-latest, windows-latest]
         rust: [nightly, stable, 1.34.0]
-        run: [false]
         include:
           - name: default-features
             rust: nightly
-            run: true
             rust-components: rustfmt
             cmd: cargo test
           - name: no-features
-            run: true
             cmd: cargo test --no-default-features
                
     name: ${{ matrix.name }} with ${{ matrix.rust }} on ${{ matrix.os }}
     
     runs-on: ${{ matrix.os }}
-    if: matrix.run
+    if: matrix.cmd != ''
     
     steps:
     - name: Checkout
