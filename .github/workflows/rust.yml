@@ -20,7 +20,7 @@ jobs:
     name: ${{ matrix.name }} with ${{ matrix.rust }} on ${{ matrix.os }}
     
     runs-on: ${{ matrix.os }}
-    if: matrix.cmd != ''
+    if: (matrix.cmd != '')
     
     steps:
     - name: Checkout
