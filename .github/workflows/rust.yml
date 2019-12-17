@@ -3,7 +3,7 @@ name: Rust
 on: [push, pull_request]
 
 jobs:
-  all-features:
+  run-tests:
     strategy:
       matrix:
         name: [default-features, no-features, all-features, format, racer-completion, runnable]
