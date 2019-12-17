@@ -23,7 +23,7 @@ jobs:
     name: ${{ matrix.name }} with ${{ matrix.rust }} on ${{ matrix.os }}
     
     runs-on: ${{ matrix.os }}
-    if: ${{ matrix.run }}
+    if: matrix.run
     
     steps:
     - name: Checkout
