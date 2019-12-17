@@ -4,14 +4,26 @@ on: [push, pull_request]
 
 jobs:
   all-features:
-    name: All features on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
+        script: [test-default-features.sh]
+    
+    name: ${{ matrix.script }} on ${{ matrix.os }}
+    
+    runs-on: ${{ matrix.os }}
+    
     steps:
     - name: Checkout
       uses: actions/checkout@v1
+      
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+        components: rustfmt
       
     - name: Cache cargo registry
       uses: actions/cache@v1
@@ -30,14 +42,6 @@ jobs:
       with:
         path: target
         key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-      
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly
-        override: true
-        components: rustfmt
         
     - name: Run tests
       shell: bash
