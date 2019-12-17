@@ -15,7 +15,6 @@ jobs:
             rust-components: rustfmt
             cmd: cargo test
           - name: no-features
-            rust: stable || 1.34.0
             cmd: cargo test --no-default-features
                
     name: ${{ matrix.name }} with ${{ matrix.rust }} on ${{ matrix.os }}
