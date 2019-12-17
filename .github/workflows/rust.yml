@@ -111,3 +111,25 @@ jobs:
       run: |
         cargo tarpaulin -v --out Xml
         bash <(curl -s https://codecov.io/bash)
+
+# SORT OUT DEPLOYMENT TO GH PAGES
+#   - os: linux
+#       rust: stable
+#       before_script:
+#         - (test -x $HOME/.cargo/bin/cargo-install-update || cargo install cargo-update)
+#         - (test -x $HOME/.cargo/bin/mdbook || cargo install --vers "^0.3" mdbook)
+#         - cargo install-update -a
+#       script:
+#         - cd papyrus && cargo build --no-default-features --features=runnable && cd ..
+#         - mdbook build docs
+#         - mdbook test docs -L papyrus/target/debug,papyrus/target/debug/deps
+#       deploy:
+#         provider: pages
+#         skip-cleanup: true
+#         github-token: $GH_TOKEN
+#         local-dir: docs/book
+#         keep-history: false
+#         on:
+#           branch: master
+  
+  
