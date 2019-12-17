@@ -1,0 +1,9 @@
+name: Rust Format
+
+on:
+  push:
+  pull_request:
+  schedule:
+    cron: '00 07 * * 0'
+
+
