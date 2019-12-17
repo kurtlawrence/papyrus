@@ -1,6 +1,10 @@
-name: Rust
+name: Rust Tests
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '00 07 * * 0'
 
 jobs:
   run-tests:
