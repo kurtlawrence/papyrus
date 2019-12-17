@@ -6,13 +6,15 @@ jobs:
   all-features:
     strategy:
       matrix:
-        name: [default-features]
+        name: [default-features, no-features]
         os: [ubuntu-latest, windows-latest]
         include:
           - name: default-features
-            script: test-default-features.sh
+            cmd: cargo test
             rust: nightly
             rust-components: rustfmt
+          - name: no-features
+            cmd: cargo test --no-default-features
                
     name: ${{ matrix.name }} on ${{ matrix.os }}
     
@@ -47,7 +49,12 @@ jobs:
       with:
         path: target
         key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+     
+    - name: Build external crate test dependency
+      run: |
+        cd test-resources/external_crate
+        cargo build
+        cd ../..
         
     - name: Run tests
-      shell: bash
-      run: ./scripts/${{ matrix.script }}
+      run: ${{ matrix.cmd }}
