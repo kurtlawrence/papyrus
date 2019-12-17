@@ -17,7 +17,7 @@ jobs:
         toolchain: nightly
         override: true
     - name: Build external crate
-      run:
+      run: |
         cd test-resources/external-crate
         cargo build
         cd ../..
