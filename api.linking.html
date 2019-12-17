@@ -1,0 +1,356 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Linking - papyrus book</title>
+        
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div id="sidebar-scrollbox" class="sidebar-scrollbox">
+                <ol class="chapter"><li class="expanded "><a href="api.html"><strong aria-hidden="true">1.</strong> API</a></li><li><ol class="section"><li class="expanded "><a href="api.code.html"><strong aria-hidden="true">1.1.</strong> Code</a></li><li class="expanded "><a href="api.cmds.html"><strong aria-hidden="true">1.2.</strong> Commands</a></li><li class="expanded "><a href="api.output.html"><strong aria-hidden="true">1.3.</strong> Output</a></li><li class="expanded "><a href="api.linking.html" class="active"><strong aria-hidden="true">1.4.</strong> Linking</a></li><li class="expanded "><a href="api.repl.html"><strong aria-hidden="true">1.5.</strong> REPL</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">papyrus book</h1>
+
+                        <div class="right-buttons">
+                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1><a class="header" href="#linking" id="linking">Linking</a></h1>
+<p>Linking an external crate and sharing data.</p>
+<p>When running a REPL you might want to link an external crate.
+The specific use case is a developer wants to link the crate they are working on
+into the REPL for the user to be able to use.
+A developer might also want to make data available to the REPL.
+Papyrus has this functionality but makes some assumptions that the developer will
+need to be aware of, detailed below.</p>
+<h2><a class="header" href="#worked-example" id="worked-example">Worked Example</a></h2>
+<p>A REPL instance should always be created by invoking the macro <code>repl!()</code>.
+In the examples below this will be elided for as the documentation won't compile with the macros.
+The macro accepts a type ascription (such as <code>u32</code>, <code>String</code>, <code>MyStruct</code>, etc.) which defines the generic data constraint of the REPL.
+When an evaluation call is made, a mutable reference of the same type will be required to be passed through.
+Papyrus uses this data to pass it (across an FFI boundary) for the REPL to access.</p>
+<p>To show the functionality of linking, let's work on a crate called <code>some-lib</code>.</p>
+<h3><a class="header" href="#file-setup" id="file-setup">File Setup</a></h3>
+<p><em><strong>main.rs</strong></em>:</p>
+<pre><pre class="playpen"><code class="language-rust no_run">#[macro_use]
+extern crate papyrus;
+
+use papyrus::prelude::*;
+
+<span class="boring">#[cfg(not(feature = &quot;runnable&quot;))]
+</span><span class="boring">fn main() {}
+</span>
+<span class="boring">#[cfg(feature = &quot;runnable&quot;)]
+</span>fn main() {
+  let mut repl = repl!();
+
+  repl.run(&amp;mut ());
+}
+</code></pre></pre>
+<p><em><strong>lib.rs</strong></em>:</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span>pub struct MyStruct {
+  pub a: i32,
+  pub b: i32,
+}
+
+impl MyStruct {
+  pub fn new(a: i32, b: i32) -&gt; Self {
+    MyStruct { a, b }
+  }
+
+  pub fn add_contents(&amp;self) -&gt; i32 {
+    self.a + self.b
+  }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p><em><strong>Cargo.toml</strong></em>:</p>
+<pre><code class="language-toml">[package]
+name = &quot;some-lib&quot;
+
+...
+
+[lib]
+name = &quot;some_lib&quot;
+crate-type = [&quot;rlib&quot; ]
+path = &quot;src/lib.rs&quot; # you may need path to the library
+
+[dependencies]
+papyrus = { version = &quot;*&quot;, crate-type = [ &quot;rlib&quot; ] }
+...
+</code></pre>
+<p>Notice that you will have to specify the <em>library</em> with a certain <code>crate-type</code>.
+Papyrus links using an <code>rlib</code> file, but it is shown that you can also build multiple library files.
+If you build this project you should find a <code>libsome_lib.rlib</code> sitting in your build directory.
+Papyrus uses this to link when compiling.
+The <code>papyrus</code> dependency also requires a <code>crate-type</code> specification.
+If not specified, references to <code>papyrus</code> in the <em>library</em> will cause compilation errors when
+running the REPL.</p>
+<h3><a class="header" href="#repl" id="repl">REPL</a></h3>
+<p>Run this project (<code>cargo run</code>). It should spool up fine and prompt you with <code>papyrus=&gt;</code>.
+Now you can try to use the linked crate.</p>
+<pre><code class="language-sh">papyrus=&gt; some_lib::MyStruct::new(20, 30).add_contents()
+papyrus [out0]: 50
+</code></pre>
+<h2><a class="header" href="#behind-the-scenes" id="behind-the-scenes">Behind the scenes</a></h2>
+<ul>
+<li>Papyrus takes the crate name you specify and will add this as <code>extern crate CRATE_NAME;</code> to the source file.</li>
+<li>When setting the external crate name, the <code>rlib</code> library is found and copied into the compilation directory.
+<ul>
+<li>Papyrus uses <code>std::env::current_exe()</code> to find the executing folder, and searches for the <code>rlib</code> file in that folder (<code>libCRATE_NAME.rlib</code>)</li>
+<li>Specify the path to the <code>rlib</code> library if it is located in a different folder</li>
+</ul>
+</li>
+<li>When compiling the REPL code, a rustc flag is set, linking the <code>rlib</code> such that <code>extern crate CRATE_NAME;</code> works.</li>
+</ul>
+<h2><a class="header" href="#passing-mystruct-data-through" id="passing-mystruct-data-through">Passing <code>MyStruct</code> data through</a></h2>
+<p>Keep the example before, but alter the <code>main.rs</code> file.</p>
+<p><em><strong>main.rs</strong></em>:</p>
+<pre><code class="language-rust ignore">#[macro_use]
+extern crate papyrus;
+extern crate some_lib;
+
+use some_lib::MyStruct;
+
+<span class="boring">#[cfg(not(feature = &quot;runnable&quot;))]
+</span><span class="boring">fn main() {}
+</span>
+<span class="boring">#[cfg(feature = &quot;runnable&quot;)]
+</span>fn main() {
+  let mut app_data = MyStruct::new(20, 10);
+
+  let mut repl = repl!(some_lib::MyStruct);
+
+  repl.data = repl
+    .data
+    .with_extern_crate(&quot;some_lib&quot;, None)
+    .expect(&quot;failed creating repl data&quot;);
+
+  repl.run(&amp;mut app_data);
+}
+</code></pre>
+<p>Run this project (<code>cargo run</code>).
+It should spool up fine and prompt you with <code>papyrus=&gt;</code>.
+Now you can try to use the linked data.
+The linked data is in a variable <code>app_data</code>. It is borrowed or mutably borrowed depending on the
+REPL state.</p>
+<pre><code class="language-sh">papyrus=&gt; app_data.add_contents()
+papyrus [out0]: 50
+</code></pre>
+<h2><a class="header" href="#notes" id="notes">Notes</a></h2>
+<h3><a class="header" href="#panics" id="panics">Panics</a></h3>
+<p>To avoid crashing the application on a panic, <code>catch_unwind</code> is employed.
+This function requires data that crosses the boundary be <code>UnwindSafe</code>, making <code>&amp;</code> and <code>&amp;mut</code> not valid data types.
+Papyrus uses <code>AssertUnwindSafe</code> wrappers to make this work, however it makes <code>app_data</code> vulnerable to breaking
+invariant states if a panic is triggered.</p>
+<p>The developer should keep this in mind when implementing a linked REPL. 
+Some guidelines:</p>
+<ol>
+<li>Keep the app_data that is being transfered simple.</li>
+<li>Develop wrappers that only pass through a <em>clone</em> of the data.</li>
+</ol>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="api.output.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="api.repl.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="api.output.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="api.repl.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+        
+        
+        <script type="text/javascript">
+            window.playpen_copyable = true;
+        </script>
+        
+
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>
