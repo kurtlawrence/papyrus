@@ -8,14 +8,21 @@ jobs:
       matrix:
         name: [default-features, no-features]
         os: [ubuntu-latest, windows-latest]
+        build: [nightly, stable, msrv]
         include:
+          - build: nightly
+            rust: nightly
+          - build: stable
+            rust: stable
+          - build: msrv
+            rust: 1.34.0
           - name: default-features
             cmd: cargo test
-            rust: nightly
+            build: nightly
             rust-components: rustfmt
           - name: no-features
             cmd: cargo test --no-default-features
-            rust: stable
+            build: stable || msrv
                
     name: ${{ matrix.name }} on ${{ matrix.os }}
     
