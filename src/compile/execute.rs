@@ -7,7 +7,7 @@ use std::path::Path;
 /// function signature!
 type DataFunc<D> = unsafe fn(D) -> Kserd<'static>;
 
-type ExecResult = Result<Kserd<'static>, &'static str>;
+type ExecResult = Result<(Kserd<'static>, Library), &'static str>;
 
 pub(crate) fn exec<P: AsRef<Path>, D, W: Write + Send>(
     library_file: P,
@@ -33,7 +33,7 @@ fn exec_no_redirect<P: AsRef<Path>, Data>(
     let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe { func(app_data) }));
 
     match res {
-        Ok(kserd) => Ok(kserd),
+        Ok(kserd) => Ok((kserd, lib)),
         Err(_) => Err("a panic occured with evaluation"),
     }
 }
@@ -74,7 +74,7 @@ fn exec_and_redirect<P: AsRef<Path>, Data, W: Write + Send>(
     let res = res.map_err(|_| "crossbeam scoping failed")?;
 
     match res {
-        Ok(kserd) => Ok(kserd),
+        Ok(kserd) => Ok((kserd, lib)),
         Err(_) => Err("a panic occured with evaluation"),
     }
 }

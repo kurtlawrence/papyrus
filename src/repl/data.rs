@@ -20,6 +20,8 @@ impl<Data> Default for ReplData<Data> {
             redirect_on_execution: true,
             editing: None,
             editing_src: None,
+            loadedlibs: VecDeque::new(),
+            loaded_libs_size_limit: 0,
         };
 
         r.with_cmdtree_builder(Builder::new("papyrus"))

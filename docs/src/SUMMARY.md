@@ -5,5 +5,4 @@
   - [Commands](api.cmds.md)
   - [Output](api.output.md)
   - [Linking](api.linking.md)
-  - [REPL](api.repl.md)
 

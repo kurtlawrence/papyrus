@@ -366,13 +366,16 @@ impl<D> ReplData<D> {
                 }
             };
             match exec_res {
-                Ok(s) => {
+                Ok((kserd, lib)) => {
+                    // store vec, maybe
+                    add_to_limit_vec(&mut self.loadedlibs, lib, self.loaded_libs_size_limit);
+
                     if self.linking.mutable {
                         maybe_pop_input(self); // don't save mutating inputs
-                        EvalOutput::Print(Cow::Owned(format!("finished mutating block: {}", s)))
+                        EvalOutput::Print(Cow::Owned(format!("finished mutating block: {}", kserd)))
                     // don't print as `out#`
                     } else {
-                        EvalOutput::Data(s)
+                        EvalOutput::Data(kserd)
                     }
                 }
                 Err(e) => {
@@ -432,4 +435,39 @@ fn rename_lib_file<P: AsRef<Path>>(compiled_lib: P) -> io::Result<PathBuf> {
     }
     std::fs::rename(&compiled_lib, &lib_path)?;
     Ok(lib_path)
+}
+
+fn add_to_limit_vec<T>(store: &mut VecDeque<T>, item: T, limit: usize) {
+    match (limit, store.len()) {
+        (0, 0) => (),             // do nothing, lib will drop after this
+        (0, _x) => store.clear(), // zero limit and store has something, clear them
+        (limit, _) => {
+            let limit = limit - 1; // limit will be gt zero
+            store.truncate(limit); // truncate to limit - 1 length, as we will add new lib in
+            store.push_front(item); // we keep the newest versions at front of queue
+        }
+    }
+}
+
+#[test]
+fn vec_limited_testing() {
+    let mut vec: VecDeque<i32> = VecDeque::new();
+    vec.push_front(-3);
+    vec.push_front(-2);
+
+    add_to_limit_vec(&mut vec, 0, 3);
+    assert_eq!(&vec, &[0, -2, -3]);
+
+    add_to_limit_vec(&mut vec, 3, 3);
+    assert_eq!(&vec, &[3, 0, -2]);
+
+    add_to_limit_vec(&mut vec, -1, 0);
+    assert!(vec.is_empty());
+    add_to_limit_vec(&mut vec, -1, 0);
+    assert!(vec.is_empty());
+
+    add_to_limit_vec(&mut vec, 0, 1);
+    add_to_limit_vec(&mut vec, 1, 1);
+    add_to_limit_vec(&mut vec, 2, 1);
+    assert_eq!(&vec, &[2]);
 }

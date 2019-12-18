@@ -38,7 +38,7 @@ mod tests {
         // eval
         let r = exec::<_, _, std::io::Sink>(path, "_lib_intern_eval", &(), None).unwrap(); // execute library fn
 
-        assert_eq!(r, Kserd::new_num(4));
+        assert_eq!(r.0, Kserd::new_num(4));
     }
 
     #[test]
@@ -63,7 +63,7 @@ mod tests {
         // eval
         let r = exec::<_, _, std::io::Sink>(path, "_lib_intern_eval", &(), None).unwrap(); // execute library fn
 
-        assert_eq!(r, Kserd::new_num(4));
+        assert_eq!(r.0, Kserd::new_num(4));
     }
 
     #[test]
@@ -94,7 +94,7 @@ mod tests {
         // eval
         let r = exec::<_, _, std::io::Sink>(path, "_lib_intern_eval", &(), None).unwrap(); // execute library fn
 
-        assert_eq!(r, Kserd::new_num(4));
+        assert_eq!(r.0, Kserd::new_num(4));
     }
 
     #[test]
@@ -125,7 +125,7 @@ mod tests {
         // eval
         let r = exec(path, "_lib_intern_eval", &(), Some(&mut std::io::sink())).unwrap(); // execute library fn
 
-        assert_eq!(r, Kserd::new_num(4));
+        assert_eq!(r.0, Kserd::new_num(4));
     }
 
     #[test]
