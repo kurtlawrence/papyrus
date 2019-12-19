@@ -2,9 +2,7 @@ use super::*;
 
 impl<D> Default for Repl<Read, D> {
     fn default() -> Self {
-        let mut data = ReplData::default();
-
-        data.redirect_on_execution = false;
+        let data = ReplData::default();
 
         let mut r = Repl {
             state: Read {

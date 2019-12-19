@@ -147,7 +147,7 @@
 //! Papyrus uses `AssertUnwindSafe` wrappers to make this work, however it makes `app_data` vulnerable to breaking
 //! invariant states if a panic is triggered.
 //!
-//! The developer should keep this in mind when implementing a linked REPL. 
+//! The developer should keep this in mind when implementing a linked REPL.
 //! Some guidelines:
 //!
 //! 1. Keep the app_data that is being transfered simple.

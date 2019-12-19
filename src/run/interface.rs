@@ -78,11 +78,6 @@ impl InputBuffer {
         self.buf.len()
     }
 
-    pub fn clear(&mut self) {
-        self.buf.clear();
-        self.pos = 0;
-    }
-
     pub fn insert(&mut self, ch: char) {
         self.buf.insert(self.pos, ch);
         self.pos += 1;
