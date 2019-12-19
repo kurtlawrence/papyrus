@@ -4,7 +4,7 @@ mod build;
 mod construct;
 mod execute;
 
-pub use self::build::{compile, CompilationError};
+pub use self::build::{compile, unshackle_library_file, CompilationError};
 pub use self::construct::build_compile_dir;
 pub(crate) use self::execute::exec;
 

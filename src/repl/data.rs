@@ -80,6 +80,16 @@ impl<Data> ReplData<Data> {
         &self.linking
     }
 
+    /// Clears the cached loaded libraries.
+    ///
+    /// This can be used to clear resources. Loaded libraries are stored up to the
+    /// [`loaded_libs_size_limit`] but can be cleared earlier if need be.
+    ///
+    /// [`loaded_libs_size_limit`]: ReplData
+    pub fn clear_loaded_libs(&mut self) {
+        self.loadedlibs.clear()
+    }
+
     /// Not meant to used by developer. Use the macros instead.
     /// [See _linking_ module](../pfh/linking.html)
     pub unsafe fn set_data_type(mut self, data_type: &str) -> Self {
