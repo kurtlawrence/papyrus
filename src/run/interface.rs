@@ -1,3 +1,4 @@
+use super::map_xterm_err;
 use crate::output::OutputChange;
 use crossbeam_channel::{unbounded, Receiver};
 use crossterm as xterm;
@@ -22,7 +23,6 @@ pub struct Screen(Receiver<Event>);
 
 impl Screen {
     pub fn new() -> io::Result<Self> {
-        xterm::terminal::enable_raw_mode().map_err(|e| map_xterm_err(e, "enabling raw mode"))?;
         let (tx, rx) = unbounded();
         std::thread::Builder::new()
             .name("terminal-event-buffer".into())
@@ -42,12 +42,6 @@ impl Screen {
                 }
             })?;
         Ok(Screen(rx))
-    }
-}
-
-impl Drop for Screen {
-    fn drop(&mut self) {
-        xterm::terminal::disable_raw_mode().ok();
     }
 }
 
@@ -241,13 +235,6 @@ pub fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, b
     (buf, cmd)
 }
 
-fn map_xterm_err(xtermerr: xterm::ErrorKind, msg: &str) -> io::Error {
-    match xtermerr {
-        xterm::ErrorKind::IoError(e) => e,
-        _ => io::Error::new(io::ErrorKind::Other, msg),
-    }
-}
-
 /// Given an initial buffer starting point in the terminal, offset the cursor to the buffer's
 /// character position. This method is indiscriminant
 /// of what is on screen.
@@ -307,7 +294,6 @@ pub fn read_until(
     mut buf: InputBuffer,
     events: &[Event],
 ) -> (InputBuffer, Event) {
-    // we keep the screen as a required input to ensure RawScreen is not dropped
     let reader = &mut screen.0;
     let mut last: Event;
     let mut lines_to_clear = 0;
