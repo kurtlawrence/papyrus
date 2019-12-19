@@ -17,7 +17,6 @@ impl<Data> Default for ReplData<Data> {
             out_colour: Color::BrightGreen,
             compilation_dir: default_compile_dir(),
             linking: LinkingConfiguration::default(),
-            redirect_on_execution: true,
             editing: None,
             editing_src: None,
             loadedlibs: VecDeque::new(),

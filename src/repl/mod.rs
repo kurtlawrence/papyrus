@@ -61,10 +61,6 @@ pub struct ReplData<Data> {
     /// The external crate linking configuration,
     linking: LinkingConfiguration,
 
-    /// Flag if output is to be redirected. Generally redirection is needed,
-    /// `DefaultTerminal` however will not require it (fucks linux).
-    redirect_on_execution: bool,
-
     /// Flag for editing a statement, item, or crate.
     ///
     /// If a value is set when an evaluation starts, the input buffer

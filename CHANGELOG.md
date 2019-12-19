@@ -2,6 +2,11 @@
 
 ## Version
 - Restructure of repository
+- Libraries can now be cached and not dropped once evaluation is finished.
+- Removed ability to redirect output of evaluation.
+  - This functionality is broken and requires 
+    a. More testing
+    b. Better use case
 
 ## 0.12.0
 - Handle `Item::Use` when parsing input.

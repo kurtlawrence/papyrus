@@ -6,7 +6,6 @@ use crate::{
 };
 use std::borrow::{Borrow, BorrowMut};
 use std::ops::{Deref, DerefMut};
-use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 impl<D> Repl<Evaluate, D> {
@@ -333,26 +332,17 @@ impl<D> ReplData<D> {
                 // happen
                 let lib_file = compile::unshackle_library_file(lib_file);
 
-                // FIXME If removing the true this won't work through terminals
-                // Need to trial it in linux though as I remember it breaking a lot...
-                // If it is all good, I should be able to just redirect _all_ output
-                let redirect_wtr = if self.redirect_on_execution {
-                    Some(writer)
-                } else {
-                    None
-                };
-
                 let mut fn_name = String::new();
                 code::eval_fn_name(&code::into_mod_path_vec(self.current_mod()), &mut fn_name);
 
                 if self.linking.mutable {
                     let mut r = obtain_mut_data();
                     let app_data: &mut D = r.borrow_mut();
-                    compile::exec(&lib_file, &fn_name, app_data, redirect_wtr)
+                    compile::exec(&lib_file, &fn_name, app_data)
                 } else {
                     let r = obtain_brw_data();
                     let app_data: &D = r.borrow();
-                    compile::exec(&lib_file, &fn_name, app_data, redirect_wtr)
+                    compile::exec(&lib_file, &fn_name, app_data)
                 }
             };
             match exec_res {
