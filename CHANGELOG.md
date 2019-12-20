@@ -3,6 +3,7 @@
 ## Version
 - Restructure of repository
 - Fix unintended indenting on unix when using `println!` macro
+- Fix drawing issues when input would overflow into other lines
 - Libraries can now be cached and not dropped once evaluation is finished.
 - Removed ability to redirect output of evaluation.
   - This functionality is broken and requires 
