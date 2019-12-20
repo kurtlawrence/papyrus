@@ -6,7 +6,6 @@ use crate::{
 };
 use std::borrow::{Borrow, BorrowMut};
 use std::ops::{Deref, DerefMut};
-use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 impl<D> Repl<Evaluate, D> {
@@ -328,29 +327,10 @@ impl<D> ReplData<D> {
         if has_stmts {
             // execute
             let exec_res = {
-                // Has to be done to make linux builds work
-                // see:
-                //		https://github.com/nagisa/rust_libloading/issues/5
-                //		https://github.com/nagisa/rust_libloading/issues/41
-                //		https://github.com/nagisa/rust_libloading/issues/49
-                //
-                // Basically the api function `dlopen` will keep loaded libraries in memory to avoid
-                // continuously allocating memory. It only does not release the library when thread_local data
-                // is hanging around, and it seems `println!()` is something that does this.
-                // Hence to avoid not having the library not updated with a new `new()` call, a different lib
-                // name is passed to the function.
-                // This is very annoying as it has needless fs interactions and a growing fs footprint but
-                // what can you do ¯\_(ツ)_/¯
-                let lib_file = rename_lib_file(lib_file).expect("failed renaming library file");
-
-                // FIXME If removing the true this won't work through terminals
-                // Need to trial it in linux though as I remember it breaking a lot...
-                // If it is all good, I should be able to just redirect _all_ output
-                let redirect_wtr = if self.redirect_on_execution {
-                    Some(writer)
-                } else {
-                    None
-                };
+                // once compilation succeeds and we are going to evaluate it (which libloads) we
+                // first rename the files to avoid locking for the next compilation that might
+                // happen
+                let lib_file = compile::unshackle_library_file(lib_file);
 
                 let mut fn_name = String::new();
                 code::eval_fn_name(&code::into_mod_path_vec(self.current_mod()), &mut fn_name);
@@ -358,21 +338,24 @@ impl<D> ReplData<D> {
                 if self.linking.mutable {
                     let mut r = obtain_mut_data();
                     let app_data: &mut D = r.borrow_mut();
-                    compile::exec(&lib_file, &fn_name, app_data, redirect_wtr)
+                    compile::exec(&lib_file, &fn_name, app_data)
                 } else {
                     let r = obtain_brw_data();
                     let app_data: &D = r.borrow();
-                    compile::exec(&lib_file, &fn_name, app_data, redirect_wtr)
+                    compile::exec(&lib_file, &fn_name, app_data)
                 }
             };
             match exec_res {
-                Ok(s) => {
+                Ok((kserd, lib)) => {
+                    // store vec, maybe
+                    add_to_limit_vec(&mut self.loadedlibs, lib, self.loaded_libs_size_limit);
+
                     if self.linking.mutable {
                         maybe_pop_input(self); // don't save mutating inputs
-                        EvalOutput::Print(Cow::Owned(format!("finished mutating block: {}", s)))
+                        EvalOutput::Print(Cow::Owned(format!("finished mutating block: {}", kserd)))
                     // don't print as `out#`
                     } else {
-                        EvalOutput::Data(s)
+                        EvalOutput::Data(kserd)
                     }
                 }
                 Err(e) => {
@@ -416,20 +399,37 @@ impl<D> ReplData<D> {
     }
 }
 
-/// Renames the library into a distinct file name by incrementing a counter.
-/// Could fail if the number of libs grows enormous, greater than `u64`. This would mean, with
-/// `u64 = 18,446,744,073,709,551,615`, even with 1KB files (prolly not) this would be
-/// 18,446,744,073 TB. User will probably know something is up.
-fn rename_lib_file<P: AsRef<Path>>(compiled_lib: P) -> io::Result<PathBuf> {
-    let no_parent = PathBuf::new();
-    let mut idx: u64 = 0;
-    let parent = compiled_lib.as_ref().parent().unwrap_or(&no_parent);
-    let name = |i| format!("papyrus.mem-code.lib.{}", i);
-    let mut lib_path = parent.join(&name(idx));
-    while lib_path.exists() {
-        idx += 1;
-        lib_path = parent.join(&name(idx));
+fn add_to_limit_vec<T>(store: &mut VecDeque<T>, item: T, limit: usize) {
+    match (limit, store.len()) {
+        (0, 0) => (),             // do nothing, lib will drop after this
+        (0, _x) => store.clear(), // zero limit and store has something, clear them
+        (limit, _) => {
+            let limit = limit - 1; // limit will be gt zero
+            store.truncate(limit); // truncate to limit - 1 length, as we will add new lib in
+            store.push_front(item); // we keep the newest versions at front of queue
+        }
     }
-    std::fs::rename(&compiled_lib, &lib_path)?;
-    Ok(lib_path)
+}
+
+#[test]
+fn vec_limited_testing() {
+    let mut vec: VecDeque<i32> = VecDeque::new();
+    vec.push_front(-3);
+    vec.push_front(-2);
+
+    add_to_limit_vec(&mut vec, 0, 3);
+    assert_eq!(&vec, &[0, -2, -3]);
+
+    add_to_limit_vec(&mut vec, 3, 3);
+    assert_eq!(&vec, &[3, 0, -2]);
+
+    add_to_limit_vec(&mut vec, -1, 0);
+    assert!(vec.is_empty());
+    add_to_limit_vec(&mut vec, -1, 0);
+    assert!(vec.is_empty());
+
+    add_to_limit_vec(&mut vec, 0, 1);
+    add_to_limit_vec(&mut vec, 1, 1);
+    add_to_limit_vec(&mut vec, 2, 1);
+    assert_eq!(&vec, &[2]);
 }

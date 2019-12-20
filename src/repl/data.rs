@@ -17,9 +17,10 @@ impl<Data> Default for ReplData<Data> {
             out_colour: Color::BrightGreen,
             compilation_dir: default_compile_dir(),
             linking: LinkingConfiguration::default(),
-            redirect_on_execution: true,
             editing: None,
             editing_src: None,
+            loadedlibs: VecDeque::new(),
+            loaded_libs_size_limit: 0,
         };
 
         r.with_cmdtree_builder(Builder::new("papyrus"))
@@ -76,6 +77,16 @@ impl<Data> ReplData<Data> {
     /// Not mutable as it could lead to undefined behaviour if changed.
     pub fn linking(&self) -> &LinkingConfiguration {
         &self.linking
+    }
+
+    /// Clears the cached loaded libraries.
+    ///
+    /// This can be used to clear resources. Loaded libraries are stored up to the
+    /// [`loaded_libs_size_limit`] but can be cleared earlier if need be.
+    ///
+    /// [`loaded_libs_size_limit`]: ReplData
+    pub fn clear_loaded_libs(&mut self) {
+        self.loadedlibs.clear()
     }
 
     /// Not meant to used by developer. Use the macros instead.

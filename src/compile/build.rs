@@ -67,6 +67,44 @@ where
     }
 }
 
+/// Function to rename the output library file and remove the associated dependency.
+///
+/// In relation to [#44](https://github.com/kurtlawrence/papyrus/issues/44), loading a library will
+/// effectively lock a library file. This is especially pervasive in windows where the `.dll` locks
+/// in both the target directory and the inner `deps` folder. The locking makes subsequent
+/// compilations fail with io errors.
+///
+/// To separate the locking from the loading, the compiled library is renamed _then_ loaded. This
+/// function renames the specified library with a random UUID. It also deletes the similarly name
+/// library in the `deps` folder. _If there is no `deps` folder, or no library inside the folder,
+/// the deletion silently fails_. This step is required for Windows but the behaviour is kept
+/// standard across platforms.
+pub fn unshackle_library_file<P: AsRef<Path>>(libpath: P) -> PathBuf {
+    let libpath = libpath.as_ref();
+    let lib = libpath.file_name().expect("there should be a file name");
+    let depsfile = libpath
+        .parent()
+        .expect("there will be parent")
+        .join("deps")
+        .join(lib);
+    if depsfile.exists() {
+        std::fs::remove_file(depsfile).ok(); // allow deps files removal to fail
+    }
+    rename_lib_file(libpath).unwrap_or_else(|_| libpath.to_owned())
+}
+
+fn rename_lib_file<P: AsRef<Path>>(compiled_lib: P) -> io::Result<PathBuf> {
+    let no_parent = PathBuf::new();
+    let parent = compiled_lib.as_ref().parent().unwrap_or(&no_parent);
+    let name = || format!("papyrus.{}.lib", uuid::Uuid::new_v4().to_hyphenated());
+    let mut lib_path = parent.join(&name());
+    while lib_path.exists() {
+        lib_path = parent.join(&name());
+    }
+    std::fs::rename(&compiled_lib, &lib_path)?;
+    Ok(lib_path)
+}
+
 /// Error type for compilation.
 #[derive(Debug)]
 pub enum CompilationError {

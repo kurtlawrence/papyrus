@@ -19,13 +19,11 @@ codecov =   { repository = "kurtlawrence/papyrus" }
 # My crates
 cmdtree =	    { version = "0.10",	default-features = false }
 kserd =		    { version = "0.1",	default-features = false,   optional = false,	features = [ "format" ] }
-shh =		    { version = "1",	default-features = false }
 
 # crates.io
 backtrace =	    { version = "0.3",	default-features = false }
 colored =	    { version = "1",	default-features = false }
 crossbeam-channel = { version = "0.4",	default-features = false }
-crossbeam-utils =   { version = "0.7",	default-features = false }
 crossterm =	    { version = "0.14",	default-features = false,   optional = true }
 dirs =		    { version = "2",	default-features = false }
 fxhash =	    { version = "0.2",	default-features = false }
@@ -33,6 +31,7 @@ libloading =	    { version = "0.5",	default-features = false }
 log =		    { version = "0.4",	default-features = false }
 racer =		    { version = "2.1",	default-features = false,   optional = true,	features = [ "metadata" ] }
 syn =		    { version = "1",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }
+uuid =		    { version = "0.8",	default-features = false,   optional = false,	features = [ "v4" ] }
 
 [dev-dependencies]
 criterion = "0.3"
