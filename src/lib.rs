@@ -56,7 +56,15 @@ macro_rules! dbg_to_file {
             .append(true)
             .open("_dbg_to_file_output")
             .expect("failed to create/open _dbg_to_file_output file");
-        writeln!(file, "[{}:{}] {:?}", file!(), line!(), $val).unwrap();
+        writeln!(
+            file,
+            "[{}:{}] {} = {:?}",
+            file!(),
+            line!(),
+            stringify!($val),
+            $val
+        )
+        .unwrap();
     }};
 }
 

@@ -2,6 +2,7 @@
 
 ## Version
 - Restructure of repository
+- Fix unintended indenting on unix when using `println!` macro
 
 ## 0.12.0
 - Handle `Item::Use` when parsing input.

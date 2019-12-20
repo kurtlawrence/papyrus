@@ -4,7 +4,7 @@ use crossbeam_channel::{unbounded, Receiver};
 use crossterm as xterm;
 use std::io::{self, stdout, Stdout, Write};
 use xterm::{
-    cursor::MoveTo,
+    cursor::*,
     event::{
         Event::{self, *},
         KeyCode::*,
@@ -12,7 +12,7 @@ use xterm::{
     },
     style::Print,
     terminal::{Clear, ClearType},
-    ExecutableCommand, QueueableCommand,
+    QueueableCommand,
 };
 
 /// Terminal screen interface.
@@ -60,11 +60,6 @@ impl InputBuffer {
 
     pub fn buffer(&self) -> String {
         self.buf.iter().collect()
-    }
-
-    /// Character index of cursor.
-    pub fn ch_pos(&self) -> usize {
-        self.pos
     }
 
     /// Number of characters.
@@ -181,16 +176,21 @@ impl CompletionWriter {
         {
             buf.truncate(*input_chpos);
             buf.insert_str(matchstr);
-            let (_, y) = write_input_buffer(initial, self.lines_to_clear, &buf)?;
-            self.lines_to_clear = y.saturating_sub(initial.1);
-            self.input_line = buf.buffer();
+            let buf = buf.buffer();
+            overwrite_text(initial.0 + 1, self.lines_to_clear, &buf).ok();
+            self.lines_to_clear = lines_covered(
+                initial.0.saturating_sub(1) as usize,
+                term_width_nofail(),
+                &buf,
+            ) as u16;
+            self.input_line = buf;
         }
 
         Ok(())
     }
 }
 
-pub fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, bool) {
+fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, bool) {
     const NOMOD: KeyModifiers = KeyModifiers::empty();
     macro_rules! nomod {
         ($code:ident) => {
@@ -235,57 +235,22 @@ pub fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, b
     (buf, cmd)
 }
 
-/// Given an initial buffer starting point in the terminal, offset the cursor to the buffer's
-/// character position. This method is indiscriminant
-/// of what is on screen.
-///
-/// # Wrapping
-/// Wrapping on a new line starts at column 0.
-pub fn set_cursor_from_input(initial: (u16, u16), buf: &InputBuffer) -> io::Result<()> {
-    let (initialx, initialy) = initial;
-    let width = xterm::terminal::size()
-        .map_err(|e| map_xterm_err(e, "getting cursor failed"))?
-        .0 as isize;
-
-    let mut lines = 0;
-    let mut chpos = (buf.ch_pos() as isize) - (width - initialx as isize);
-    while chpos >= 0 {
-        lines += 1;
-        chpos -= width;
-    }
-
-    chpos = width + chpos;
-
-    let x = chpos as u16;
-    let y = initialy + lines;
-
-    stdout()
-        .execute(MoveTo(x, y))
-        .map(|_| ())
-        .map_err(|e| map_xterm_err(e, "cursor setting failed"))
-}
-
-/// Returns where the cursor ends up.
-pub fn write_input_buffer(
-    initial: (u16, u16),
-    lines_to_clear: u16,
-    buf: &InputBuffer,
-) -> io::Result<(u16, u16)> {
-    let (x, y) = initial;
+fn overwrite_text(initialx: u16, lines_covered: u16, text: &str) -> xterm::Result<()> {
     let mut stdout = stdout();
-    queue!(stdout, MoveTo(x, y), Clear(ClearType::UntilNewLine))
-        .map_err(|e| map_xterm_err(e, ""))?;
-
-    for i in 1..=lines_to_clear {
-        queue!(stdout, MoveTo(0, y + i), Clear(ClearType::UntilNewLine))
-            .map_err(|e| map_xterm_err(e, ""))?;
+    // still moves up if lines covered is zero, unsure if crossterm bug and might be changed
+    if lines_covered > 0 {
+        for _ in 0..lines_covered {
+            queue!(stdout, Clear(ClearType::CurrentLine), MoveUp(1))?;
+        }
     }
+    queue!(
+        stdout,
+        MoveToColumn(initialx),
+        Clear(ClearType::UntilNewLine),
+        Print(text)
+    )?;
 
-    queue!(stdout, MoveTo(x, y), Print(buf.buffer())).map_err(|e| map_xterm_err(e, ""))?;
-
-    stdout.flush()?;
-
-    xterm::cursor::position().map_err(|e| map_xterm_err(e, "failed getting cursor position"))
+    stdout.flush().map_err(|e| xterm::ErrorKind::IoError(e))
 }
 
 pub fn read_until(
@@ -295,8 +260,13 @@ pub fn read_until(
     events: &[Event],
 ) -> (InputBuffer, Event) {
     let reader = &mut screen.0;
-    let mut last: Event;
-    let mut lines_to_clear = 0;
+    let mut last = Event::Key(KeyEvent {
+        modifiers: KeyModifiers::CONTROL,
+        code: xterm::event::KeyCode::Char('c'),
+    });
+    let initialcol = initial.0.saturating_sub(1) as usize;
+    let mut prev_lines_covered =
+        lines_covered(initialcol, term_width_nofail(), &buf.buffer()).saturating_sub(1);
 
     loop {
         if let Ok(ev) = reader.recv() {
@@ -307,22 +277,18 @@ pub fn read_until(
             }
 
             buf = {
+                // update the buffer
                 let (buf, chg) = apply_event_to_buf(buf, ev);
                 if chg {
-                    let write_to =
-                        write_input_buffer(initial, lines_to_clear, &buf).unwrap_or(initial);
-                    lines_to_clear = write_to.1.saturating_sub(initial.1);
+                    let buf = buf.buffer();
+                    overwrite_text(initial.0 + 1, prev_lines_covered as u16, &buf).ok();
+                    // for some reason this is plus one, again maybe xterm bug?
+                    prev_lines_covered =
+                        lines_covered(initialcol, term_width_nofail(), &buf).saturating_sub(1);
                 }
-
-                set_cursor_from_input(initial, &buf).ok();
-
                 buf
             };
         } else {
-            last = Event::Key(KeyEvent {
-                modifiers: KeyModifiers::CONTROL,
-                code: xterm::event::KeyCode::Char('c'),
-            });
             break;
         }
     }
@@ -349,6 +315,31 @@ pub fn erase_current_line(mut stdout: Stdout) -> io::Result<Stdout> {
     queue!(stdout, Clear(ClearType::CurrentLine), MoveTo(0, y))
         .map(|_| stdout)
         .map_err(|e| map_xterm_err(e, &line!().to_string()))
+}
+
+/// Determines the number of lines a text will cover, from the starting postion and a given cell
+/// width.
+/// Panics if width is zero.
+fn lines_covered(starting: usize, width: usize, text: &str) -> usize {
+    assert!(width > 0, "width must be greater than zero");
+
+    let chars = text.chars().count();
+
+    if chars == 0 {
+        return 0;
+    }
+
+    let lines = chars / width + 1;
+    let md = chars % width;
+    if md >= width.saturating_sub(starting) {
+        lines + 1
+    } else {
+        lines
+    }
+}
+
+fn term_width_nofail() -> usize {
+    crossterm::terminal::size().unwrap_or((80, 0)).0 as usize
 }
 
 #[cfg(test)]
@@ -401,5 +392,18 @@ mod tests {
         input.delete();
         assert_eq!(&input.buffer(), "ello, world");
         assert_eq!(input.pos, 0);
+    }
+
+    #[test]
+    fn test_line_covering() {
+        assert_eq!(lines_covered(0, 3, "Hello"), 2);
+        assert_eq!(lines_covered(0, 1, ""), 0);
+        assert_eq!(lines_covered(3, 3, "hello"), 3);
+        assert_eq!(lines_covered(5, 3, "hello"), 3);
+        assert_eq!(lines_covered(0, 5, "hello"), 1);
+        assert_eq!(lines_covered(1, 5, "hello"), 2);
+        assert_eq!(lines_covered(2, 3, "hell"), 2);
+        assert_eq!(lines_covered(2, 3, "hello"), 3);
+        assert_eq!(lines_covered(0, 3, "HelloHelloHello"), 6);
     }
 }
