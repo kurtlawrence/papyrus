@@ -173,11 +173,8 @@ impl CompletionWriter {
             buf.insert_str(matchstr);
             let buf = buf.buffer();
             overwrite_text(initial.0 + 1, self.lines_to_clear, &buf).ok();
-            self.lines_to_clear = lines_covered(
-                initial.0.saturating_sub(1) as usize,
-                term_width_nofail(),
-                &buf,
-            ) as u16;
+            self.lines_to_clear =
+                lines_covered(initial.0 as usize, term_width_nofail(), &buf) as u16;
             self.input_line = buf;
         }
 
@@ -279,7 +276,8 @@ pub fn read_until(
                     overwrite_text(initial.0 + 1, prev_lines_covered as u16, &buf).ok();
                     // for some reason this is plus one, again maybe xterm bug?
                     prev_lines_covered =
-                        lines_covered(initialcol, term_width_nofail(), &buf).saturating_sub(1);
+                        lines_covered(initial.0 as usize, term_width_nofail(), &buf)
+                            .saturating_sub(1);
                 }
                 buf
             };
@@ -326,8 +324,10 @@ fn lines_covered(starting: usize, width: usize, text: &str) -> usize {
 
     let lines = chars / width + 1;
     let md = chars % width;
-    if md >= width.saturating_sub(starting) {
+    if md > width.saturating_sub(starting) {
         lines + 1
+    } else if md == 0 && starting == 0 {
+        lines - 1 // on boundary
     } else {
         lines
     }
@@ -399,6 +399,6 @@ mod tests {
         assert_eq!(lines_covered(1, 5, "hello"), 2);
         assert_eq!(lines_covered(2, 3, "hell"), 2);
         assert_eq!(lines_covered(2, 3, "hello"), 3);
-        assert_eq!(lines_covered(0, 3, "HelloHelloHello"), 6);
+        assert_eq!(lines_covered(0, 3, "HelloHelloHello"), 5);
     }
 }
