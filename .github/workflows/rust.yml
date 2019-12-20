@@ -2,6 +2,7 @@ name: Rust Tests
 
 on:
   push:
+    branches: [ master ]
   pull_request:
   schedule:
     - cron: '00 07 * * 0'
