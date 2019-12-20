@@ -285,8 +285,10 @@ fn do_eval<'a, D>(
     let rx = repl.output_listen();
 
     let jh = std::thread::spawn(move || {
-        rx.iter()
-            .for_each(|x| interface::write_output_chg(x).unwrap_or(()))
+        let mut covered_lines = 0;
+        for chg in rx.iter() {
+            covered_lines = interface::write_output_chg(covered_lines, chg).unwrap_or(0);
+        }
     });
 
     let r = evalfn(repl);

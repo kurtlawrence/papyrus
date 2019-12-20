@@ -12,7 +12,6 @@ use xterm::{
     },
     style::Print,
     terminal::{Clear, ClearType},
-    QueueableCommand,
 };
 
 /// Terminal screen interface.
@@ -289,23 +288,29 @@ pub fn read_until(
     (buf, last)
 }
 
-pub fn write_output_chg(change: OutputChange) -> io::Result<()> {
+/// Returns the number of lines the written text accounts for
+pub fn write_output_chg(current_lines_covered: u16, change: OutputChange) -> io::Result<u16> {
     use OutputChange::*;
     let mut stdout = stdout();
     match change {
-        CurrentLine(line) => erase_current_line(stdout)?
-            .queue(Print(line))
-            .map_err(|e| map_xterm_err(e, ""))
-            .and_then(|x| x.flush()),
-        NewLine => writeln!(&mut stdout, ""),
+        CurrentLine(line) => {
+            for _ in 1..current_lines_covered {
+                queue!(stdout, Clear(ClearType::CurrentLine), MoveUp(1))
+                    .map_err(|e| map_xterm_err(e, "Clear a line"))?;
+            }
+            let mut stdout = erase_current_line(stdout)?;
+            queue!(stdout, Print(&line)).map_err(|e| map_xterm_err(e, "printing a line"))?;
+            stdout.flush()?;
+            Ok(lines_covered(0, term_width_nofail(), &line) as u16)
+        }
+        NewLine => writeln!(&mut stdout, "").map(|_| 1),
     }
 }
 
 /// Resets position to start of line.
 /// **Does not flush, should be called afterwards.**
 pub fn erase_current_line(mut stdout: Stdout) -> io::Result<Stdout> {
-    let (_, y) = xterm::cursor::position().expect("failed getting cursor position");
-    queue!(stdout, Clear(ClearType::CurrentLine), MoveTo(0, y))
+    queue!(stdout, Clear(ClearType::CurrentLine), MoveToColumn(0))
         .map(|_| stdout)
         .map_err(|e| map_xterm_err(e, &line!().to_string()))
 }
