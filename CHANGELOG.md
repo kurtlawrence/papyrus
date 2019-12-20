@@ -9,6 +9,8 @@
   - This functionality is broken and requires 
     a. More testing
     b. Better use case
+- Fixed the high cpu usage regression
+- Increase requirement of MSRV to 1.36
 
 ## 0.12.0
 - Handle `Item::Use` when parsing input.
