@@ -102,16 +102,18 @@ fn run<D, F: FnMut(Repl<Evaluate, D>) -> EvalResult<D>>(
 
         match read.read() {
             ReadResult::Read(repl) => read = repl,
-            ReadResult::Eval(repl) => match do_eval(repl, &mut boxedfn) {
-                Ok((repl, reeval)) => {
-                    read = repl;
-                    reevaluate = reeval;
+            ReadResult::Eval(repl) => {
+                match do_eval(repl, &mut boxedfn) {
+                    Ok((repl, reeval)) => {
+                        read = repl;
+                        reevaluate = reeval;
 
-                    // prep for next read
-                    interface::erase_current_line(io::stdout())?.flush()?;
+                        // prep for next read
+                        interface::erase_current_line(io::stdout())?.flush()?;
+                    }
+                    Err(r) => break r.output().to_owned(),
                 }
-                Err(r) => break r.output().to_owned(),
-            },
+            }
         }
     };
 
@@ -176,6 +178,8 @@ fn do_read<D>(
     });
     const STOPEVENTS: &[Event] = &[ENTER, TAB];
 
+    crossterm::terminal::enable_raw_mode().map_err(|e| map_xterm_err(e, "enabling raw mode"))?;
+
     let mut i = Some(buf);
 
     let initial = crossterm::cursor::position().unwrap_or((0, 0));
@@ -194,6 +198,8 @@ fn do_read<D>(
         if ev == ENTER {
             repl.line_input(&input.buffer());
             write!(&mut io::stdout(), "\n\r")?;
+            crossterm::terminal::disable_raw_mode()
+                .map_err(|e| map_xterm_err(e, "disabling raw mode"))?;
             break Ok(false);
         } else if ev == TAB {
             let line = input.buffer();
@@ -279,8 +285,10 @@ fn do_eval<'a, D>(
     let rx = repl.output_listen();
 
     let jh = std::thread::spawn(move || {
-        rx.iter()
-            .for_each(|x| interface::write_output_chg(x).unwrap_or(()))
+        let mut covered_lines = 0;
+        for chg in rx.iter() {
+            covered_lines = interface::write_output_chg(covered_lines, chg).unwrap_or(0);
+        }
     });
 
     let r = evalfn(repl);
@@ -293,5 +301,12 @@ fn do_eval<'a, D>(
         Signal::None => Ok((read, None)),
         Signal::Exit => Err(read),
         Signal::ReEvaluate(val) => Ok((read, Some(val))),
+    }
+}
+
+fn map_xterm_err(xtermerr: crossterm::ErrorKind, msg: &str) -> io::Error {
+    match xtermerr {
+        crossterm::ErrorKind::IoError(e) => e,
+        _ => io::Error::new(io::ErrorKind::Other, msg),
     }
 }
