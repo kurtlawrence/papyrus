@@ -7,7 +7,7 @@ license = "MIT"
 homepage = "https://github.com/kurtlawrence/papyrus"
 repository = "https://github.com/kurtlawrence/papyrus"
 documentation = "https://docs.rs/papyrus/"
-readme = "../README.md"
+readme = "README.md"
 keywords = [ "repl", "script" ]
 edition = "2018"
 
