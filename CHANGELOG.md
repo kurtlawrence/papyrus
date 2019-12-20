@@ -1,6 +1,6 @@
 # Changelog
 
-## Version
+## 0.13.0
 - Restructure of repository
 - Fix unintended indenting on unix when using `println!` macro
 - Fix drawing issues when input would overflow into other lines
