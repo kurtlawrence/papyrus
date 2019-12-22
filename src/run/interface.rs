@@ -26,7 +26,7 @@ impl Screen {
         std::thread::Builder::new()
             .name("terminal-event-buffer".into())
             .spawn(move || loop {
-                match xterm::event::poll(std::time::Duration::from_millis(1)) {
+                match xterm::event::poll(std::time::Duration::from_millis(5)) {
                     Ok(true) => {
                         if xterm::event::read()
                             .ok()

@@ -12,6 +12,9 @@
 - Fixed the high cpu usage regression
 - Increase requirement of MSRV to 1.36
 
+### 0.13.1
+- Up the event waiting duration from 1 millisecond to 5
+
 ## 0.12.0
 - Handle `Item::Use` when parsing input.
 - Use of `backtrace` crate to dump complete backtrace with panic handling.
