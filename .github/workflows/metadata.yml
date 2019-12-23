@@ -1,0 +1,28 @@
+name: Metadata Checks
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  schedule:
+    - cron: '00 07 * * 0'
+
+jobs:
+  cargo docs:             
+    name: Cargo doc
+    runs-on: [ubuntu-latest]
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+      
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+        components: [rustfmt]
+        
+    - name: Cargo Doc
+      run: cargo doc -p papyrus
