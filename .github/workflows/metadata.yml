@@ -8,7 +8,7 @@ on:
     - cron: '00 07 * * 0'
 
 jobs:
-  cargo docs:             
+  cargo-doc-check:             
     name: Cargo doc
     runs-on: [ubuntu-latest]
     
