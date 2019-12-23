@@ -22,7 +22,25 @@ jobs:
         profile: minimal
         toolchain: nightly
         override: true
-        components: [rustfmt]
+        components: rustfmt
         
     - name: Cargo Doc
       run: cargo doc -p papyrus
+      
+  format-check:
+    name: format-check
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1      
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt -- --check
