@@ -267,5 +267,5 @@ fn main() {
 }
 ```
 
-[`Output`]: output::Output
-[`Repl`]: repl::Repl
+[`Output`]: crate::output::Output
+[`Repl`]: crate::repl::Repl

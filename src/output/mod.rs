@@ -267,8 +267,8 @@
 //! }
 //! ```
 //!
-//! [`Output`]: output::Output
-//! [`Repl`]: repl::Repl
+//! [`Output`]: crate::output::Output
+//! [`Repl`]: crate::repl::Repl
 mod any_state;
 mod read;
 mod write;
