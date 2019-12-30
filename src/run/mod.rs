@@ -96,6 +96,7 @@ fn run<D, F: FnMut(Repl<Evaluate, D>) -> EvalResult<D>>(
             read.line_input(&val);
         } else {
             if do_read(&mut read, &mut screen, input_buf, &cache)? {
+                crossterm::terminal::disable_raw_mode().ok();
                 break read.output().to_owned();
             }
         }
@@ -176,7 +177,11 @@ fn do_read<D>(
         modifiers: KeyModifiers::empty(),
         code: Tab,
     });
-    const STOPEVENTS: &[Event] = &[ENTER, TAB];
+    const BREAK: Event = Key(KeyEvent {
+        modifiers: KeyModifiers::CONTROL,
+        code: Char('c'),
+    });
+    const STOPEVENTS: &[Event] = &[ENTER, TAB, BREAK];
 
     crossterm::terminal::enable_raw_mode().map_err(|e| map_xterm_err(e, "enabling raw mode"))?;
 
@@ -235,6 +240,8 @@ fn do_read<D>(
             }
 
             completion_writer.overwrite_completion(initial, &mut input)?;
+        } else if ev == BREAK {
+            break Ok(true);
         }
 
         i = Some(input); // prep for next loop
