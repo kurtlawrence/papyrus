@@ -11,7 +11,7 @@
 //!
 //! Stdio could be construed as the more simple case, but actually entails some more complexity due to
 //! the dual nature of input and output in the terminal, whereas if input is separated from the output
-//! rendering the [separated rendering](##separated-rendering) example can be implemented.
+//! rendering the [separated rendering](#separated-rendering) example can be implemented.
 //!
 //! This tutorial works through the example at
 //! [`papyrus/examples/output-stdio.rs`](https://github.com/kurtlawrence/papyrus/blob/master/papyrus/examples/output-stdio.rs).

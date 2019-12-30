@@ -1,3 +1,6 @@
+//! The REPL API.
+//!
+//! The REPL uses a state machine to control what methods can be applied to it.
 mod any_state;
 mod data;
 mod eval;

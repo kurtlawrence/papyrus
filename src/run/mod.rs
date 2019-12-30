@@ -221,9 +221,10 @@ fn do_read<D>(
                     Box::new(std::iter::empty()) as Box<dyn Iterator<Item = CItem>>
                 } else {
                     #[cfg(feature = "racer-completion")]
-                    let injection = format!("{}\n{}", repl.input_buffer(), line);
-                    #[cfg(feature = "racer-completion")]
-                    let c = complete_code(&codecmpltr, &cache.0, &injection, code_chpos);
+                    let c = {
+                        let injection = format!("{}\n{}", repl.input_buffer(), line);
+                        complete_code(&codecmpltr, &cache.0, &injection, code_chpos)
+                    };
 
                     #[cfg(not(feature = "racer-completion"))]
                     let c = std::iter::empty();
