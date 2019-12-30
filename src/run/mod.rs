@@ -96,7 +96,6 @@ fn run<D, F: FnMut(Repl<Evaluate, D>) -> EvalResult<D>>(
             read.line_input(&val);
         } else {
             if do_read(&mut read, &mut screen, input_buf, &cache)? {
-                crossterm::terminal::disable_raw_mode().ok();
                 break read.output().to_owned();
             }
         }
@@ -241,6 +240,8 @@ fn do_read<D>(
 
             completion_writer.overwrite_completion(initial, &mut input)?;
         } else if ev == BREAK {
+            crossterm::terminal::disable_raw_mode()
+                .map_err(|e| map_xterm_err(e, "disabling raw mode"))?;
             break Ok(true);
         }
 
