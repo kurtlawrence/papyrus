@@ -62,6 +62,7 @@ fn cargotoml_contents<'a, I: Iterator<Item = &'a CrateType>>(lib_name: &str, cra
         r#"[package]
 name = "{lib_name}"
 version = "0.1.0"
+edition = "2018"
 
 [lib]
 name = "{lib_name}"
@@ -69,7 +70,7 @@ crate-type = [ "cdylib" ]
 path = "src/lib.rs"
 
 [dependencies]
-kserd =         {{ version = "0.1", default-features = false }}
+kserd = {{ version = "0.1", default-features = false }}
 {crates}
 "#,
         lib_name = lib_name,

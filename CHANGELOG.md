@@ -1,5 +1,9 @@
 # Changelog
 
+## VERSION
+- Fix completion overwriting lines before bug #59
+- Add `persistent_module_code` on the `LinkingConfiguration`, this is used to solve bug #57
+
 ## 0.13.0
 - Restructure of repository
 - Fix unintended indenting on unix when using `println!` macro

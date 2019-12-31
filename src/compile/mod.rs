@@ -189,6 +189,7 @@ mod tests {
         }]));
         ("lib".into(), code)
     }
+
     fn fail_eval_file() -> (PathBuf, SourceCode) {
         let mut code = SourceCode::new();
         code.stmts.push(StmtGrp(vec![Statement {
@@ -196,5 +197,48 @@ mod tests {
             semi: false,
         }]));
         ("lib".into(), code)
+    }
+
+    #[test]
+    fn output_externally_linked_type_as_kserd() {
+        let compile_dir = "target/testing/output_externally_linked_type_as_kserd";
+        let files = vec![{
+            let mut code = SourceCode::new();
+            code.crates
+                .push(CrateType::parse_str("extern crate rand;").unwrap());
+            code.stmts.push(StmtGrp(vec![Statement {
+                expr: "rand::random::<u8>()".into(),
+                semi: false,
+            }]));
+            code.stmts.push(StmtGrp(vec![Statement {
+                expr: "2+2".into(),
+                semi: false,
+            }]));
+            ("lib".into(), code)
+        }]
+        .into_iter()
+        .collect();
+        let mut linking_config = LinkingConfiguration::default();
+        linking_config.external_libs.insert(
+            Extern::new("test-resources/external_kserd/target/debug/libexternal_kserd.rlib")
+                .unwrap(),
+        );
+        linking_config
+            .persistent_module_code
+            .push_str("use external_kserd::{kserd, rand};");
+
+        // build
+        build_compile_dir(&compile_dir, &files, &linking_config).unwrap();
+        let filestr = fs::read_to_string(&format!("{}/src/lib.rs", compile_dir)).unwrap();
+        assert!(filestr.contains("\nlet out0 = rand::random::<u8>();"));
+        assert!(filestr.contains("\nlet out1 = 2+2;"));
+
+        // compile
+        let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();
+
+        // eval
+        let r = exec::<_, _>(path, "_lib_intern_eval", &()).unwrap(); // execute library fn
+
+        assert_eq!(r.0, Kserd::new_num(4));
     }
 }

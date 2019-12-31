@@ -87,6 +87,12 @@ jobs:
         cargo build
         cd ../..
         
+    - name: Build external kserd test dependency
+      run: |
+        cd test-resources/external_kserd
+        cargo build
+        cd ../..
+        
     - name: Run tests
       run: ${{ matrix.cmd }}
 

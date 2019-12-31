@@ -1,0 +1,12 @@
+[package]
+name = "external_kserd"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+name = "external_kserd"
+crate-type = ["rlib"]
+
+[dependencies]
+kserd = { version = "0.1", default-features = false }
+rand = "*"

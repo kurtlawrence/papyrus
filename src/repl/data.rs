@@ -79,6 +79,15 @@ impl<Data> ReplData<Data> {
         &self.linking
     }
 
+    /// A mutable reference to the persistent module code.
+    ///
+    /// This code gets written to each module and can be used to create generic imports. It is also
+    /// specifically used to solve _dependency duplication_ if an external library is being linked.
+    /// Dependency duplication is discussed in the [_linking_ module](crate::linking).
+    pub fn persistent_module_code(&mut self) -> &mut String {
+        &mut self.linking.persistent_module_code
+    }
+
     /// Clears the cached loaded libraries.
     ///
     /// This can be used to clear resources. Loaded libraries are stored up to the
