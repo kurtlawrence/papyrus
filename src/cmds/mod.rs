@@ -134,13 +134,13 @@
 //!     })
 //!     .begin_class("case", "change case of app_data")
 //! 	.add_action("upper", "make app_data uppercase", |_, _|
-//! 	    CommandResult::<String>::app_data_fn(|app_data, _| {
+//! 	    CommandResult::<String>::app_data_fn(|app_data, _repldata, _| {
 //! 		*app_data = app_data.to_uppercase();
 //!                 String::new()
 //! 	    })
 //! 	)
 //!         .add_action("lower", "make app_data lowercase", |_, _|
-//! 	    CommandResult::<String>::app_data_fn(|app_data, _| {
+//! 	    CommandResult::<String>::app_data_fn(|app_data, _repldata, _| {
 //! 		*app_data = app_data.to_lowercase();
 //!                 String::new()
 //!             })
@@ -183,10 +183,12 @@ pub use cmdtree::Builder as CommandBuilder;
 /// Use [`CommandResult::repl_data_fn`](CommandResult::repl_data_fn) for convenience.
 pub type ReplDataAction<D> = Box<dyn Fn(&mut ReplData<D>, &mut dyn Write) -> String>;
 
-/// The action to take. Passes through a mutable reference to the data `D`.
+/// The action to take. Passes through a mutable reference to the data `D` _and_ the `ReplData<D>`.
+///
+/// > _Mutably borrows_ `D` such that a lock must be taken. Use only when necessary.
 ///
 /// Use [`CommandResult::app_data_fn`](CommandResult::app_data_fn) for convenience.
-pub type AppDataAction<D> = Box<dyn Fn(&mut D, &mut dyn Write) -> String>;
+pub type AppDataAction<D> = Box<dyn Fn(&mut D, &mut ReplData<D>, &mut dyn Write) -> String>;
 
 /// The result of a [`cmdtree action`].
 /// This result is handed in the repl's evaluating stage, and can alter `ReplData` or the data `D`.
@@ -203,7 +205,7 @@ pub enum CommandResult<D> {
     SwitchModule(PathBuf),
     /// Take an action on the `ReplData`.
     ActionOnReplData(ReplDataAction<D>),
-    /// Take an action on `Data`.
+    /// Take an action on data `D` and/or `ReplData`.
     ActionOnAppData(AppDataAction<D>),
     /// A blank variant with no action.
     Empty,
@@ -211,14 +213,20 @@ pub enum CommandResult<D> {
 
 impl<D> CommandResult<D> {
     /// Convenience function boxing an action on app data.
-    pub fn app_data_fn<F: 'static + Fn(&mut D, &mut dyn Write) -> String>(func: F) -> Self {
+    ///
+    /// > _Mutably borrows_ `D` such that a lock must be taken. Use only when necessary.
+    pub fn app_data_fn<F>(func: F) -> Self
+    where
+        F: 'static + Fn(&mut D, &mut ReplData<D>, &mut dyn Write) -> String,
+    {
         CommandResult::ActionOnAppData(Box::new(func))
     }
 
     /// Convenience function boxing an action on repl data.
-    pub fn repl_data_fn<F: 'static + Fn(&mut ReplData<D>, &mut dyn Write) -> String>(
-        func: F,
-    ) -> Self {
+    pub fn repl_data_fn<F>(func: F) -> Self
+    where
+        F: 'static + Fn(&mut ReplData<D>, &mut dyn Write) -> String,
+    {
         CommandResult::ActionOnReplData(Box::new(func))
     }
 }
