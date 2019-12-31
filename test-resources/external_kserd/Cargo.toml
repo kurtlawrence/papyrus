@@ -9,3 +9,4 @@ crate-type = ["rlib"]
 
 [dependencies]
 kserd = { version = "0.1", default-features = false }
+rand = "*"
