@@ -359,7 +359,7 @@ fn append_buffer<S: AsRef<str>>(
     eval_fn_name(mod_path, buf);
     buf.push('(');
     linking_config.construct_fn_args(buf);
-    buf.push_str(") -> kserd::Kserd<'static> {\n"); // 29 len
+    buf.push_str(") -> papyrus_kserd::Kserd<'static> {\n"); // 37 len
 
     // add stmts
     let c = src_code.stmts.len();
@@ -397,7 +397,7 @@ fn append_buffer_length<S: AsRef<str>>(
         .sum();
 
     // wrap stmts
-    cap += 31 + eval_fn_name_length(mod_path) + 1 + linking_config.construct_fn_args_length() + 29;
+    cap += 31 + eval_fn_name_length(mod_path) + 1 + linking_config.construct_fn_args_length() + 37;
 
     // add stmts
     let c = src_code.stmts.len();
@@ -631,13 +631,13 @@ mod tests {
         let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
-pub extern "C" fn _intern_eval() -> kserd::Kserd<'static> {
+pub extern "C" fn _intern_eval() -> papyrus_kserd::Kserd<'static> {
 kserd::Kserd::new_str("no statements")
 }
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 73..111);
+        assert_eq!(rng, 81..119);
         assert_eq!(&ans[rng], r#"kserd::Kserd::new_str("no statements")"#);
 
         // alter mod path
@@ -648,13 +648,13 @@ kserd::Kserd::new_str("no statements")
         let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval() -> kserd::Kserd<'static> {
+pub extern "C" fn _some_path_intern_eval() -> papyrus_kserd::Kserd<'static> {
 kserd::Kserd::new_str("no statements")
 }
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 83..121);
+        assert_eq!(rng, 91..129);
         assert_eq!(&ans[rng], r#"kserd::Kserd::new_str("no statements")"#);
 
         // alter the linking config
@@ -668,13 +668,13 @@ kserd::Kserd::new_str("no statements")
         let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: &String) -> kserd::Kserd<'static> {
+pub extern "C" fn _some_path_intern_eval(app_data: &String) -> papyrus_kserd::Kserd<'static> {
 kserd::Kserd::new_str("no statements")
 }
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 100..138);
+        assert_eq!(rng, 108..146);
         assert_eq!(&ans[rng], r#"kserd::Kserd::new_str("no statements")"#);
 
         // add an item and new input
@@ -686,7 +686,7 @@ kserd::Kserd::new_str("no statements")
         let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: &String) -> kserd::Kserd<'static> {
+pub extern "C" fn _some_path_intern_eval(app_data: &String) -> papyrus_kserd::Kserd<'static> {
 kserd::Kserd::new_str("no statements")
 }
 fn a() {}
@@ -694,7 +694,7 @@ fn b() {}
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 100..138);
+        assert_eq!(rng, 108..146);
         assert_eq!(&ans[rng], r#"kserd::Kserd::new_str("no statements")"#);
 
         // add stmts
@@ -730,7 +730,7 @@ fn b() {}
 
         let ans = r##"#![feature(UP_TOP)]
 #[no_mangle]
-pub extern "C" fn _some_path_intern_eval(app_data: &String) -> kserd::Kserd<'static> {
+pub extern "C" fn _some_path_intern_eval(app_data: &String) -> papyrus_kserd::Kserd<'static> {
 let a = 1;
 let out0 = b;
 let c = 2;
@@ -742,7 +742,7 @@ fn b() {}
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 170..222);
+        assert_eq!(rng, 178..230);
         assert_eq!(
             &ans[rng],
             "kserd::ToKserd::into_kserd(out1).unwrap().to_owned()"
@@ -769,34 +769,34 @@ fn b() {}
         let (s, map) = construct_source_code(&map, &linking);
 
         let ans = r##"#[no_mangle]
-pub extern "C" fn _lib_intern_eval() -> kserd::Kserd<'static> {
+pub extern "C" fn _lib_intern_eval() -> papyrus_kserd::Kserd<'static> {
 kserd::Kserd::new_str("no statements")
 }
 mod foo {
 #[no_mangle]
-pub extern "C" fn _foo_intern_eval() -> kserd::Kserd<'static> {
+pub extern "C" fn _foo_intern_eval() -> papyrus_kserd::Kserd<'static> {
 kserd::Kserd::new_str("no statements")
 }
 mod bar {
 #[no_mangle]
-pub extern "C" fn _foo_bar_intern_eval() -> kserd::Kserd<'static> {
+pub extern "C" fn _foo_bar_intern_eval() -> papyrus_kserd::Kserd<'static> {
 kserd::Kserd::new_str("no statements")
 }
 }}
 mod test {
 #[no_mangle]
-pub extern "C" fn _test_intern_eval() -> kserd::Kserd<'static> {
+pub extern "C" fn _test_intern_eval() -> papyrus_kserd::Kserd<'static> {
 kserd::Kserd::new_str("no statements")
 }
 mod inner {
 #[no_mangle]
-pub extern "C" fn _test_inner_intern_eval() -> kserd::Kserd<'static> {
+pub extern "C" fn _test_inner_intern_eval() -> papyrus_kserd::Kserd<'static> {
 kserd::Kserd::new_str("no statements")
 }
 }
 mod inner2 {
 #[no_mangle]
-pub extern "C" fn _test_inner2_intern_eval() -> kserd::Kserd<'static> {
+pub extern "C" fn _test_inner2_intern_eval() -> papyrus_kserd::Kserd<'static> {
 kserd::Kserd::new_str("no statements")
 }
 }}"##;
@@ -885,7 +885,7 @@ kserd::Kserd::new_str("no statements")
 
         let ans = r##"Up Top
 #[no_mangle]
-pub extern "C" fn _lib_intern_eval() -> kserd::Kserd<'static> {
+pub extern "C" fn _lib_intern_eval() -> papyrus_kserd::Kserd<'static> {
 kserd::Kserd::new_str("no statements")
 }
 Test1
