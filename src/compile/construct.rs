@@ -70,7 +70,7 @@ crate-type = [ "cdylib" ]
 path = "src/lib.rs"
 
 [dependencies]
-kserd =         {{ version = "0.1", default-features = false }}
+papyrus-kserd = {{ package = "kserd", version = "0.1", default-features = false }}
 {crates}
 "#,
         lib_name = lib_name,
