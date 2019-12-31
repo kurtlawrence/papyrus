@@ -35,13 +35,13 @@ fn custom_cmds() -> Builder<CommandResult<String>> {
         })
         .begin_class("case", "change case of app_data")
         .add_action("upper", "make app_data uppercase", |_, _| {
-            CommandResult::<String>::app_data_fn(|app_data, _| {
+            CommandResult::<String>::app_data_fn(|app_data, _repldata, _| {
                 *app_data = app_data.to_uppercase();
                 String::new()
             })
         })
         .add_action("lower", "make app_data lowercase", |_, _| {
-            CommandResult::<String>::app_data_fn(|app_data, _| {
+            CommandResult::<String>::app_data_fn(|app_data, _repldata, _| {
                 *app_data = app_data.to_lowercase();
                 String::new()
             })

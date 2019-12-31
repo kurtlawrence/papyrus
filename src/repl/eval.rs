@@ -202,7 +202,7 @@ impl<D> ReplData<D> {
                 CommandResult::ActionOnAppData(action) => {
                     let mut r = obtain_mut_app_data();
                     let app_data: &mut D = r.borrow_mut();
-                    let s = action(app_data, writer);
+                    let s = action(app_data, self, writer);
                     Cow::Owned(s)
                 }
                 CommandResult::Empty => Cow::Borrowed(""),
