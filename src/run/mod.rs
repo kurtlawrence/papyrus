@@ -3,6 +3,7 @@ use crate::complete::code::{CodeCache, CodeCompleter};
 use crate::complete::{cmdr::TreeCompleter, modules::ModulesCompleter};
 use crate::prelude::*;
 use crossterm::{event::Event, ExecutableCommand};
+use kserd::{fmt::FormattingConfig, Kserd};
 use repl::{EvalResult, Evaluate, Read, ReadResult};
 use std::io::{self, prelude::*};
 use std::sync::{Arc, Mutex};
@@ -18,26 +19,119 @@ struct CacheWrapper(CodeCache);
 #[cfg(not(feature = "racer-completion"))]
 struct CacheWrapper;
 
-impl<D> Repl<Read, D> {
-    /// Run the repl inside the terminal, consuming the repl. Returns the output of the REPL.
-    pub fn run(self, app_data: &mut D) -> io::Result<String> {
-        run(self, |repl| repl.eval(app_data))
+/// Get the terminal width, if possible.
+pub fn terminal_width() -> Option<usize> {
+    crossterm::terminal::size().map(|x| x.0 as usize).ok()
+}
+
+/// Creates a `FormattingConfig` that has a width based on the terminal width.
+///
+/// If the terminal width is less than 120, the size limit width is `terminal-width - 2`. If the
+/// terminal width is greater than 120, the size limit is `max(80% * terminal-width, 120)`.
+///
+/// This is the function used by the REPL main entry point.
+pub fn fmt_based_on_terminal_width() -> FormattingConfig {
+    terminal_width()
+        .map(|width| {
+            let mut fmt = FormattingConfig::default();
+            if width <= 120 {
+                fmt.width_limit = Some(width.saturating_sub(2));
+            } else {
+                fmt.width_limit = Some(std::cmp::max((width * 4) / 5, 120));
+            }
+            fmt
+        })
+        .unwrap_or_default()
+}
+
+/// A container for callbacks when running the REPL.
+///
+/// These callbacks are mostly around setting up formatting and feeding evaluation results to the
+/// caller.
+pub struct RunCallbacks<'a, D, T, U> {
+    evalfn: Box<dyn FnMut(Repl<Evaluate, D>) -> EvalResult<D> + 'a>,
+    fmtrfn: Option<T>,
+    resultfn: Option<U>,
+}
+
+impl<'a, D>
+    RunCallbacks<'a, D, fn() -> FormattingConfig, fn(usize, Kserd<'static>, &Repl<Read, D>)>
+{
+    /// New callback using a synchronous model of data ownership. (eg `eval`).
+    pub fn new(app_data: &'a mut D) -> Self {
+        Self {
+            evalfn: Box::new(move |repl| repl.eval(app_data)),
+            fmtrfn: None,
+            resultfn: None,
+        }
     }
 
-    /// Run the repl inside the terminal, consuming the repl. Returns the output of the REPL.
-    /// Takes an `Arc<Mutex<D>>` for data and only locks on evaluation cycles.
-    pub fn run_async(self, app_data: Arc<Mutex<D>>) -> io::Result<String>
+    /// New callback using asynchronous model of data ownership. (eg `eval_async`).
+    pub fn new_async(app_data: Arc<Mutex<D>>) -> Self
     where
-        D: 'static + Send,
+        D: Send + 'static,
     {
-        run(self, |repl| repl.eval_async(&app_data).wait())
+        Self {
+            evalfn: Box::new(move |repl| repl.eval_async(&app_data).wait()),
+            fmtrfn: None,
+            resultfn: None,
+        }
     }
 }
 
-fn run<D, F: FnMut(Repl<Evaluate, D>) -> EvalResult<D>>(
+impl<'a, D, T, U> RunCallbacks<'a, D, T, U> {
+    /// Specify code to be run which dictates the formatting configuration to use.
+    pub fn with_fmtrfn<F>(self, f: F) -> RunCallbacks<'a, D, F, U>
+    where
+        F: FnMut() -> FormattingConfig,
+    {
+        let RunCallbacks {
+            evalfn, resultfn, ..
+        } = self;
+        RunCallbacks {
+            evalfn,
+            fmtrfn: Some(f),
+            resultfn,
+        }
+    }
+
+    /// Specify code to be run after evaluation has succeeded and a `Kserd` result is returned.
+    ///
+    /// The closure supplies the statement index `usize` and the result `Kserd`, along with the
+    /// `Repl`.
+    pub fn with_resultfn<F>(self, f: F) -> RunCallbacks<'a, D, T, F>
+    where
+        F: FnMut(usize, Kserd<'static>, &Repl<Read, D>),
+    {
+        let RunCallbacks { evalfn, fmtrfn, .. } = self;
+        RunCallbacks {
+            evalfn,
+            fmtrfn,
+            resultfn: Some(f),
+        }
+    }
+}
+
+/// Available with the `runnable` feature and when the REPL is in the `Read` state.
+impl<D> Repl<Read, D> {
+    /// Run the repl inside the terminal, consuming the repl. Returns the output of the REPL.
+    pub fn run<T, U>(self, run_callbacks: RunCallbacks<D, T, U>) -> io::Result<String>
+    where
+        T: FnMut() -> kserd::fmt::FormattingConfig,
+        U: FnMut(usize, kserd::Kserd<'static>, &Repl<Read, D>),
+    {
+        run(self, run_callbacks)
+    }
+}
+
+fn run<D, FmtrFn, ResultFn>(
     mut read: Repl<Read, D>,
-    evalfn: F,
-) -> io::Result<String> {
+    mut runcb: RunCallbacks<D, FmtrFn, ResultFn>,
+) -> io::Result<String>
+where
+    FmtrFn: FnMut() -> kserd::fmt::FormattingConfig,
+    ResultFn: FnMut(usize, kserd::Kserd<'static>, &Repl<Read, D>),
+{
     // set a custom panic handler to dump to a file
     // must be done as the screen captures the io streams and will
     // lose the panic message
@@ -77,8 +171,6 @@ fn run<D, F: FnMut(Repl<Evaluate, D>) -> EvalResult<D>>(
 
     let mut reevaluate: Option<String> = None;
 
-    let mut boxedfn = Box::new(evalfn) as Box<dyn FnMut(Repl<Evaluate, D>) -> EvalResult<D>>;
-
     let output = loop {
         io::stdout()
             .execute(crossterm::style::Print(read.prompt()))
@@ -103,7 +195,7 @@ fn run<D, F: FnMut(Repl<Evaluate, D>) -> EvalResult<D>>(
         match read.read() {
             ReadResult::Read(repl) => read = repl,
             ReadResult::Eval(repl) => {
-                match do_eval(repl, &mut boxedfn) {
+                match do_eval(repl, &mut runcb) {
                     Ok((repl, reeval)) => {
                         read = repl;
                         reevaluate = reeval;
@@ -287,10 +379,14 @@ fn complete_code(
         })
 }
 
-fn do_eval<'a, D>(
+fn do_eval<D, FmtrFn, ResultFn>(
     mut repl: Repl<Evaluate, D>,
-    evalfn: &mut Box<dyn FnMut(Repl<Evaluate, D>) -> EvalResult<D> + 'a>,
-) -> Result<(Repl<Read, D>, Option<String>), Repl<Read, D>> {
+    runcb: &mut RunCallbacks<D, FmtrFn, ResultFn>,
+) -> Result<(Repl<Read, D>, Option<String>), Repl<Read, D>>
+where
+    FmtrFn: FnMut() -> kserd::fmt::FormattingConfig,
+    ResultFn: FnMut(usize, kserd::Kserd<'static>, &Repl<Read, D>),
+{
     let rx = repl.output_listen();
 
     let jh = std::thread::spawn(move || {
@@ -300,8 +396,21 @@ fn do_eval<'a, D>(
         }
     });
 
-    let r = evalfn(repl);
-    let (mut read, signal) = (r.repl.print().0, r.signal);
+    let r = (runcb.evalfn)(repl);
+
+    // prepare the formatter for output
+    let fmt = runcb.fmtrfn.as_mut().map(|f| f()).unwrap_or_default();
+
+    let (mut read, signal) = {
+        let (repl, signal) = (r.repl, r.signal);
+        let (repl, result) = repl.print_with_formatting(fmt);
+        if let Some((idx, kserd)) = result {
+            if let Some(f) = &mut runcb.resultfn {
+                f(idx, kserd, &repl);
+            }
+        }
+        (repl, signal)
+    };
 
     read.close_channel();
     jh.join().unwrap();

@@ -33,7 +33,9 @@
 //! fn main() {
 //!   let mut repl = repl!();
 //!
-//!   repl.run(&mut ());
+//!   let d = &mut ();
+//!
+//!   repl.run(papyrus::run::RunCallbacks::new(d));
 //! }
 //! ```
 //!

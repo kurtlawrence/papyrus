@@ -36,6 +36,7 @@
 //!
 //! use papyrus::cmdtree::{Builder, BuilderChain};
 //! use papyrus::cmds::CommandResult;
+//! use papyrus::run::RunCallbacks;
 //!
 //! # #[cfg(not(feature = "runnable"))]
 //! # fn main() {}
@@ -52,7 +53,7 @@
 //!     let mut app_data = String::new();
 //!
 //!     // Run the REPL and collect all the output.
-//!     let output = repl.run(&mut app_data).unwrap();
+//!     let output = repl.run(RunCallbacks::new(&mut app_data)).unwrap();
 //!
 //!     // Print the output.
 //!     println!("{}", output);

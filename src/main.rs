@@ -23,7 +23,12 @@ fn main() {
 
     let repl = repl!();
 
-    let output = repl.run(&mut ());
+    let app_data = &mut ();
+
+    let run_callbacks =
+        run::RunCallbacks::new(app_data).with_fmtrfn(run::fmt_based_on_terminal_width);
+
+    let output = repl.run(run_callbacks);
 
     match output {
         Ok(_) => println!("Thanks for using papyrus!"),
