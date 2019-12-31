@@ -669,7 +669,7 @@ kserd::Kserd::new_str("no statements")
         assert_eq!(&ans[rng], r#"kserd::Kserd::new_str("no statements")"#);
 
         // alter the linking config
-        let linking_config = LinkingConfiguration {
+        let mut linking_config = LinkingConfiguration {
             data_type: Some("String".to_string()),
             ..Default::default()
         };
@@ -735,11 +735,17 @@ fn b() {}
             .items
             .push(("#![feature(UP_TOP)]".to_string(), true));
 
+        // alter the linking to have persistent module code, it should be _below_ up top items
+        linking_config
+            .persistent_module_code
+            .push_str("some-injected-persistent-code");
+
         let mut s = String::new();
         append_buffer(&src_code, &mod_path, &linking_config, &mut s);
         let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
 
         let ans = r##"#![feature(UP_TOP)]
+some-injected-persistent-code
 #[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> kserd::Kserd<'static> {
 let a = 1;
@@ -753,7 +759,7 @@ fn b() {}
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 170..222);
+        assert_eq!(rng, 200..252);
         assert_eq!(
             &ans[rng],
             "kserd::ToKserd::into_kserd(out1).unwrap().to_owned()"
