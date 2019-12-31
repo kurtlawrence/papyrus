@@ -204,6 +204,11 @@ mod tests {
         let compile_dir = "target/testing/output_externally_linked_type_as_kserd";
         let files = vec![{
             let mut code = SourceCode::new();
+            code.crates.push(CrateType::parse_str("extern crate rand;").unwrap());
+            code.stmts.push(StmtGrp(vec![Statement {
+                expr: "rand::random::<u8>()".into(),
+                semi: false,
+            }]));
             code.stmts.push(StmtGrp(vec![Statement {
                 expr: "2+2".into(),
                 semi: false,
@@ -220,9 +225,12 @@ mod tests {
 
         // build
         build_compile_dir(&compile_dir, &files, &linking_config).unwrap();
-        assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
-            .unwrap()
-            .contains("\nlet out0 = 2+2;"));
+        let filestr = fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
+            .unwrap();
+        assert!(filestr
+            .contains("\nlet out0 = rand::random::<u8>();"));
+        assert!(filestr
+            .contains("\nlet out1 = 2+2;"));
 
         // compile
         let path = compile(&compile_dir, &linking_config, |_| ()).unwrap();

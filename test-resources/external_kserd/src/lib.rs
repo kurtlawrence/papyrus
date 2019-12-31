@@ -1,4 +1,5 @@
 pub use kserd;
+pub use rand;
 
 use kserd::*;
 use rand::random;
