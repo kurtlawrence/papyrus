@@ -1,5 +1,8 @@
 # Changelog
 
+## VERSION
+- Fix completion overwriting lines before bug #59
+
 ## 0.13.0
 - Restructure of repository
 - Fix unintended indenting on unix when using `println!` macro
