@@ -2,7 +2,10 @@ use super::map_xterm_err;
 use crate::output::OutputChange;
 use crossbeam_channel::{unbounded, Receiver};
 use crossterm as xterm;
-use std::io::{self, stdout, Stdout, Write};
+use std::{
+    fmt,
+    io::{self, stdout, Stdout, Write},
+};
 use xterm::{
     cursor::*,
     event::{
@@ -116,6 +119,15 @@ impl InputBuffer {
     }
 }
 
+impl fmt::Display for InputBuffer {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for ch in &self.buf {
+            write!(f, "{}", ch)?;
+        }
+        Ok(())
+    }
+}
+
 pub struct CItem {
     pub matchstr: String,
     pub input_chpos: usize,
@@ -126,7 +138,6 @@ pub struct CompletionWriter {
     input_line: String,
     completions: Vec<CItem>,
     completion_idx: usize,
-    lines_to_clear: u16,
 }
 
 impl CompletionWriter {
@@ -168,12 +179,17 @@ impl CompletionWriter {
             input_chpos,
         }) = completion
         {
+            let prev_lines_covered =
+                lines_covered(initial.0 as usize, term_width_nofail(), buf.ch_len());
             buf.truncate(*input_chpos);
             buf.insert_str(matchstr);
             let buf = buf.buffer();
-            overwrite_text(initial.0 + 1, self.lines_to_clear, &buf).ok();
-            self.lines_to_clear =
-                lines_covered(initial.0 as usize, term_width_nofail(), &buf) as u16;
+            overwrite_text(
+                initial.0 + 1,
+                prev_lines_covered.saturating_sub(1) as u16,
+                &buf,
+            )
+            .ok();
             self.input_line = buf;
         }
 
@@ -226,7 +242,11 @@ fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, bool)
     (buf, cmd)
 }
 
-fn overwrite_text(initialx: u16, lines_covered: u16, text: &str) -> xterm::Result<()> {
+fn overwrite_text<T: fmt::Display + Clone>(
+    initialx: u16,
+    lines_covered: u16,
+    text: T,
+) -> xterm::Result<()> {
     let mut stdout = stdout();
     // still moves up if lines covered is zero, unsure if crossterm bug and might be changed
     if lines_covered > 0 {
@@ -255,31 +275,26 @@ pub fn read_until(
         modifiers: KeyModifiers::CONTROL,
         code: xterm::event::KeyCode::Char('c'),
     });
-    let initialcol = initial.0.saturating_sub(1) as usize;
-    let mut prev_lines_covered =
-        lines_covered(initialcol, term_width_nofail(), &buf.buffer()).saturating_sub(1);
 
     loop {
         if let Ok(ev) = reader.recv() {
             last = ev.clone();
-
             if events.contains(&ev) {
                 break;
             }
 
-            buf = {
-                // update the buffer
-                let (buf, chg) = apply_event_to_buf(buf, ev);
-                if chg {
-                    let buf = buf.buffer();
-                    overwrite_text(initial.0 + 1, prev_lines_covered as u16, &buf).ok();
-                    // for some reason this is plus one, again maybe xterm bug?
-                    prev_lines_covered =
-                        lines_covered(initial.0 as usize, term_width_nofail(), &buf)
-                            .saturating_sub(1);
-                }
-                buf
-            };
+            let prev_lines_covered =
+                lines_covered(initial.0 as usize, term_width_nofail(), buf.ch_len());
+            let (newbuf, chg) = apply_event_to_buf(buf, ev);
+            if chg {
+                overwrite_text(
+                    initial.0 + 1,
+                    prev_lines_covered.saturating_sub(1) as u16,
+                    &newbuf,
+                )
+                .ok();
+            }
+            buf = newbuf
         } else {
             break;
         }
@@ -301,7 +316,7 @@ pub fn write_output_chg(current_lines_covered: u16, change: OutputChange) -> io:
             let mut stdout = erase_current_line(stdout)?;
             queue!(stdout, Print(&line)).map_err(|e| map_xterm_err(e, "printing a line"))?;
             stdout.flush()?;
-            Ok(lines_covered(0, term_width_nofail(), &line) as u16)
+            Ok(lines_covered(0, term_width_nofail(), line.chars().count()) as u16)
         }
         NewLine => writeln!(&mut stdout, "").map(|_| 1),
     }
@@ -318,10 +333,10 @@ pub fn erase_current_line(mut stdout: Stdout) -> io::Result<Stdout> {
 /// Determines the number of lines a text will cover, from the starting postion and a given cell
 /// width.
 /// Panics if width is zero.
-fn lines_covered(starting: usize, width: usize, text: &str) -> usize {
+fn lines_covered(starting: usize, width: usize, ch_count: usize) -> usize {
     assert!(width > 0, "width must be greater than zero");
 
-    let chars = text.chars().count();
+    let chars = ch_count;
 
     if chars == 0 {
         return 0;
@@ -396,14 +411,14 @@ mod tests {
 
     #[test]
     fn test_line_covering() {
-        assert_eq!(lines_covered(0, 3, "Hello"), 2);
-        assert_eq!(lines_covered(0, 1, ""), 0);
-        assert_eq!(lines_covered(3, 3, "hello"), 3);
-        assert_eq!(lines_covered(5, 3, "hello"), 3);
-        assert_eq!(lines_covered(0, 5, "hello"), 1);
-        assert_eq!(lines_covered(1, 5, "hello"), 2);
-        assert_eq!(lines_covered(2, 3, "hell"), 2);
-        assert_eq!(lines_covered(2, 3, "hello"), 3);
-        assert_eq!(lines_covered(0, 3, "HelloHelloHello"), 5);
+        assert_eq!(lines_covered(0, 3, "Hello".chars().count()), 2);
+        assert_eq!(lines_covered(0, 1, "".chars().count()), 0);
+        assert_eq!(lines_covered(3, 3, "hello".chars().count()), 3);
+        assert_eq!(lines_covered(5, 3, "hello".chars().count()), 3);
+        assert_eq!(lines_covered(0, 5, "hello".chars().count()), 1);
+        assert_eq!(lines_covered(1, 5, "hello".chars().count()), 2);
+        assert_eq!(lines_covered(2, 3, "hell".chars().count()), 2);
+        assert_eq!(lines_covered(2, 3, "hello".chars().count()), 3);
+        assert_eq!(lines_covered(0, 3, "HelloHelloHello".chars().count()), 5);
     }
 }

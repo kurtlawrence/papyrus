@@ -176,7 +176,11 @@ fn do_read<D>(
         modifiers: KeyModifiers::empty(),
         code: Tab,
     });
-    const STOPEVENTS: &[Event] = &[ENTER, TAB];
+    const BREAK: Event = Key(KeyEvent {
+        modifiers: KeyModifiers::CONTROL,
+        code: Char('c'),
+    });
+    const STOPEVENTS: &[Event] = &[ENTER, TAB, BREAK];
 
     crossterm::terminal::enable_raw_mode().map_err(|e| map_xterm_err(e, "enabling raw mode"))?;
 
@@ -217,9 +221,10 @@ fn do_read<D>(
                     Box::new(std::iter::empty()) as Box<dyn Iterator<Item = CItem>>
                 } else {
                     #[cfg(feature = "racer-completion")]
-                    let injection = format!("{}\n{}", repl.input_buffer(), line);
-                    #[cfg(feature = "racer-completion")]
-                    let c = complete_code(&codecmpltr, &cache.0, &injection, code_chpos);
+                    let c = {
+                        let injection = format!("{}\n{}", repl.input_buffer(), line);
+                        complete_code(&codecmpltr, &cache.0, &injection, code_chpos)
+                    };
 
                     #[cfg(not(feature = "racer-completion"))]
                     let c = std::iter::empty();
@@ -235,6 +240,10 @@ fn do_read<D>(
             }
 
             completion_writer.overwrite_completion(initial, &mut input)?;
+        } else if ev == BREAK {
+            crossterm::terminal::disable_raw_mode()
+                .map_err(|e| map_xterm_err(e, "disabling raw mode"))?;
+            break Ok(true);
         }
 
         i = Some(input); // prep for next loop
