@@ -152,6 +152,25 @@
 //!
 //! 1. Keep the app_data that is being transfered simple.
 //! 2. Develop wrappers that only pass through a _clone_ of the data.
+//!
+//! ## Dependency Duplication
+//! When linking an external library, the `deps` folder is linked to ensure that the dependencies that
+//! the library is built with link properly. There are specific use cases where the rust compiler will
+//! be unable to determine what dependencies to use. This happens when:
+//! - The library has a dependency `depx`
+//! - The REPL is asked to use a dependency `depx`
+//! - The library and REPL both use the _exact same dependency structure_ for `depx`
+//!   - This means that `depx` is the same version, and has the same feature set enabled
+//! - The library and REPL both _use_ the dependency in code
+//!
+//! As an example, the use of the `rand` crate might cause compilation issues to arise if the linked
+//! external library also relies of `rand`. The exact cause is having both crates in the dependency
+//! graph that rustc cannot discern between. The compilation error is however a good indication that
+//! the external library needs to be supplying these transitive dependencies for the REPL's use, as the
+//! REPL is really using the external library as a dependency (just in an indirect manner).
+//! Usually an error message such as `error[E0523]: found two different crates with name `rand` that
+//! are not distinguished by differing -C metadata. This will result in symbol conflicts between the
+//! two.` would be encountered.
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -182,6 +201,12 @@ pub struct LinkingConfiguration {
     ///
     /// The set contains the library names, such as `rand`.
     pub external_libs: HashSet<Extern>,
+
+    /// Code to append to the top of a module.
+    ///
+    /// It is sometimes necessary to have injected code, especially to solve dependency duplication
+    /// issues. See [`the _linking_ module for a description`](crate::linking).
+    pub persistent_module_code: String,
 }
 
 impl Default for LinkingConfiguration {
@@ -190,6 +215,7 @@ impl Default for LinkingConfiguration {
             data_type: None,
             mutable: false,
             external_libs: HashSet::new(),
+            persistent_module_code: String::new(),
         }
     }
 }

@@ -354,6 +354,12 @@ fn append_buffer<S: AsRef<str>>(
         buf.push('\n');
     }
 
+    // inject persistent module code
+    if !linking_config.persistent_module_code.is_empty() {
+        buf.push_str(&linking_config.persistent_module_code);
+        buf.push('\n');
+    }
+
     // wrap stmts
     buf.push_str("#[no_mangle]\npub extern \"C\" fn "); // 31 len
     eval_fn_name(mod_path, buf);
@@ -395,6 +401,11 @@ fn append_buffer_length<S: AsRef<str>>(
         .filter(|x| x.1)
         .map(|x| x.0.len() + 1)
         .sum();
+
+    // persistent module code
+    if !linking_config.persistent_module_code.is_empty() {
+        cap += linking_config.persistent_module_code.len() + 1;
+    }
 
     // wrap stmts
     cap += 31 + eval_fn_name_length(mod_path) + 1 + linking_config.construct_fn_args_length() + 29;
