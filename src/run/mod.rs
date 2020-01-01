@@ -4,7 +4,7 @@ use crate::complete::{cmdr::TreeCompleter, modules::ModulesCompleter};
 use crate::prelude::*;
 use crossterm::{event::Event, ExecutableCommand};
 use kserd::{fmt::FormattingConfig, Kserd};
-use repl::{EvalResult, Evaluate, Read, ReadResult};
+use repl::{EvalResult, Evaluate, Print, Read, ReadResult};
 use std::io::{self, prelude::*};
 use std::sync::{Arc, Mutex};
 
@@ -26,19 +26,21 @@ pub fn terminal_width() -> Option<usize> {
 
 /// Creates a `FormattingConfig` that has a width based on the terminal width.
 ///
-/// If the terminal width is less than 120, the size limit width is `terminal-width - 2`. If the
-/// terminal width is greater than 120, the size limit is `max(80% * terminal-width, 120)`.
+/// If the terminal width is less than 120, the size limit width is `terminal-width - prompt - 2`. If the
+/// terminal width is greater than 120, the size limit is `max(80% * terminal-width, 120) - prompt`.
 ///
 /// This is the function used by the REPL main entry point.
-pub fn fmt_based_on_terminal_width() -> FormattingConfig {
+pub fn fmt_based_on_terminal_width<D>(repl: &Repl<Print, D>) -> FormattingConfig {
     terminal_width()
         .map(|width| {
             let mut fmt = FormattingConfig::default();
-            if width <= 120 {
-                fmt.width_limit = Some(width.saturating_sub(2));
+            let width = if width <= 120 {
+                width.saturating_sub(2)
             } else {
-                fmt.width_limit = Some(std::cmp::max((width * 4) / 5, 120));
+                std::cmp::max((width * 4) / 5, 120)
             }
+            .saturating_sub(repl.prompt(false).chars().count());
+            fmt.width_limit = Some(width);
             fmt
         })
         .unwrap_or_default()
@@ -55,7 +57,12 @@ pub struct RunCallbacks<'a, D, T, U> {
 }
 
 impl<'a, D>
-    RunCallbacks<'a, D, fn() -> FormattingConfig, fn(usize, Kserd<'static>, &Repl<Read, D>)>
+    RunCallbacks<
+        'a,
+        D,
+        fn(&Repl<Print, D>) -> FormattingConfig,
+        fn(usize, Kserd<'static>, &Repl<Read, D>),
+    >
 {
     /// New callback using a synchronous model of data ownership. (eg `eval`).
     pub fn new(app_data: &'a mut D) -> Self {
@@ -83,7 +90,7 @@ impl<'a, D, T, U> RunCallbacks<'a, D, T, U> {
     /// Specify code to be run which dictates the formatting configuration to use.
     pub fn with_fmtrfn<F>(self, f: F) -> RunCallbacks<'a, D, F, U>
     where
-        F: FnMut() -> FormattingConfig,
+        F: FnMut(&Repl<Print, D>) -> FormattingConfig,
     {
         let RunCallbacks {
             evalfn, resultfn, ..
@@ -117,7 +124,7 @@ impl<D> Repl<Read, D> {
     /// Run the repl inside the terminal, consuming the repl. Returns the output of the REPL.
     pub fn run<T, U>(self, run_callbacks: RunCallbacks<D, T, U>) -> io::Result<String>
     where
-        T: FnMut() -> kserd::fmt::FormattingConfig,
+        T: FnMut(&Repl<Print, D>) -> kserd::fmt::FormattingConfig,
         U: FnMut(usize, kserd::Kserd<'static>, &Repl<Read, D>),
     {
         run(self, run_callbacks)
@@ -129,7 +136,7 @@ fn run<D, FmtrFn, ResultFn>(
     mut runcb: RunCallbacks<D, FmtrFn, ResultFn>,
 ) -> io::Result<String>
 where
-    FmtrFn: FnMut() -> kserd::fmt::FormattingConfig,
+    FmtrFn: FnMut(&Repl<Print, D>) -> kserd::fmt::FormattingConfig,
     ResultFn: FnMut(usize, kserd::Kserd<'static>, &Repl<Read, D>),
 {
     // set a custom panic handler to dump to a file
@@ -173,7 +180,7 @@ where
 
     let output = loop {
         io::stdout()
-            .execute(crossterm::style::Print(read.prompt()))
+            .execute(crossterm::style::Print(read.prompt(true)))
             .ok();
 
         let mut input_buf = interface::InputBuffer::new();
@@ -384,7 +391,7 @@ fn do_eval<D, FmtrFn, ResultFn>(
     runcb: &mut RunCallbacks<D, FmtrFn, ResultFn>,
 ) -> Result<(Repl<Read, D>, Option<String>), Repl<Read, D>>
 where
-    FmtrFn: FnMut() -> kserd::fmt::FormattingConfig,
+    FmtrFn: FnMut(&Repl<Print, D>) -> kserd::fmt::FormattingConfig,
     ResultFn: FnMut(usize, kserd::Kserd<'static>, &Repl<Read, D>),
 {
     let rx = repl.output_listen();
@@ -399,7 +406,11 @@ where
     let r = (runcb.evalfn)(repl);
 
     // prepare the formatter for output
-    let fmt = runcb.fmtrfn.as_mut().map(|f| f()).unwrap_or_default();
+    let fmt = runcb
+        .fmtrfn
+        .as_mut()
+        .map(|f| f(&r.repl))
+        .unwrap_or_default();
 
     let (mut read, signal) = {
         let (repl, signal) = (r.repl, r.signal);

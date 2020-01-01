@@ -21,7 +21,7 @@ fn main() {
             let stdout = stdout();
             let mut lock = stdout.lock();
             erase_console_line(&mut lock);
-            write!(&mut lock, "{}", read.prompt()).unwrap();
+            write!(&mut lock, "{}", read.prompt(true)).unwrap();
             lock.flush().unwrap();
         }
 
