@@ -26,7 +26,7 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ~/.cargo
-          key: ${{ runner.os }}-coverage-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-coverage-cargo
      
       - name: Build external crate test dependency
         run: |
