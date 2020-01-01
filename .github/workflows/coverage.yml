@@ -1,0 +1,72 @@
+name: Coverage
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  schedule:
+    - cron: '00 07 * * 0'
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: rustfmt
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-coverage-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+        
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-coverage-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: ${{ runner.os }}-coverage-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+     
+      - name: Build external crate test dependency
+        run: |
+          cd test-resources/external_crate
+          cargo build
+          cd ../..
+        
+      - name: Build external kserd test dependency
+        run: |
+          cd test-resources/external_kserd
+          cargo build
+          cd ../..
+        
+      - name: Run Tests
+        run: |
+           cargo clean
+           cargo build --all-features
+           cargo test --all-features
+            
+      - name: Install tarpaulin
+        run: |
+          sudo apt-get install libssl-dev
+          cd ..
+          wget https://github.com/xd009642/tarpaulin/releases/download/0.10.0/cargo-tarpaulin-0.10.0-travis.tar.gz
+          tar xf cargo-tarpaulin-0.10.0-travis.tar.gz
+          cd papyrus
+          
+      - name: Generate and Upload Coverage
+        run: |
+          ../cargo-tarpaulin tarpaulin -v --out Xml
+          bash <(curl -s https://codecov.io/bash)
