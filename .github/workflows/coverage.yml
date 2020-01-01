@@ -27,12 +27,6 @@ jobs:
         with:
           path: ~/.cargo
           key: ${{ runner.os }}-coverage-cargo-${{ hashFiles('**/Cargo.lock') }}
-      
-      - name: Cache cargo build
-        uses: actions/cache@v1
-        with:
-          path: target
-          key: ${{ runner.os }}-coverage-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
      
       - name: Build external crate test dependency
         run: |
@@ -52,6 +46,8 @@ jobs:
           cargo install cargo-tarpaulin
           
       - name: Generate and Upload Coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
           cargo tarpaulin -v --out Xml
           bash <(curl -s https://codecov.io/bash)
