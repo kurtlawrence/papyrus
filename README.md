@@ -5,7 +5,7 @@
 [![Rustc Version
 1.36+](https://img.shields.io/badge/rustc-1.36+-blue.svg)](https://blog.rust-lang.org/2019/07/04/Rust-1.36.0.html)
 
-A rust REPL and script running tool.
+# Papyrus - A rust REPL and script running tool
 
 See the [rs docs](https://docs.rs/papyrus/).
 Look at progress and contribute on [github.](https://github.com/kurtlawrence/papyrus)
@@ -15,4 +15,12 @@ papyrus=> 2+2
 papyrus [out0]: 4
 ```
 
-Papyrus is in active development, see [changelog](https://github.com/kurtlawrence/papyrus) for updates
+Papyrus is in active development, see [changelog](https://github.com/kurtlawrence/papyrus) for updates.
+
+## Installation
+* `rustup toolchain add nightly`
+* `cargo +nightly install papyrus`
+
+## Usage
+* To start, run `papyrus`.
+* To exit, use the command `:exit`.
