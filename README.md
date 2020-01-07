@@ -11,11 +11,12 @@ See the [rs docs](https://docs.rs/papyrus/) and the
 Look at progress and contribute on [github.](https://github.com/kurtlawrence/papyrus)
 
 
-
 ```sh
 papyrus=> 2+2
 papyrus [out0]: 4
 ```
+
+
 
 Papyrus is in active development, see [changelog](https://github.com/kurtlawrence/papyrus) for updates.
 
