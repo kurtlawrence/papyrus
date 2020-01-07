@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         name: [default-features, no-features, all-features, format, racer-completion, runnable]
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         rust: [nightly, stable, 1.36.0]
         include:
           - name: default-features

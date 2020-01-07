@@ -18,6 +18,8 @@ where
     let lib_file = compile_dir.join("target/debug/");
     let lib_file = if cfg!(windows) {
         lib_file.join(format!("{}.dll", LIBRARY_NAME))
+    } else if cfg!(target_os = "macos") {
+        lib_file.join(format!("lib{}.dylib", LIBRARY_NAME))
     } else {
         lib_file.join(format!("lib{}.so", LIBRARY_NAME))
     };

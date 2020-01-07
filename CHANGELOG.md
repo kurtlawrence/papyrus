@@ -5,6 +5,7 @@
 - Add `persistent_module_code` on the `LinkingConfiguration`, this is used to solve bug #57
 - **Breaking Change:** `AppDataAction` now expects closure that has access to `&mut ReplData` - #60
 - **Breaking Change:** Add functionality to inject callbacks when running a REPL - #58
+- Output `.dylib` on MacOS - #66
 
 ## 0.13.0
 - Restructure of repository
