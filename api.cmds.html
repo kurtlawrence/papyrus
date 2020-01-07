@@ -1,0 +1,370 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Commands - papyrus book</title>
+        
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div id="sidebar-scrollbox" class="sidebar-scrollbox">
+                <ol class="chapter"><li class="expanded "><a href="api.html"><strong aria-hidden="true">1.</strong> API</a></li><li><ol class="section"><li class="expanded "><a href="api.code.html"><strong aria-hidden="true">1.1.</strong> Code</a></li><li class="expanded "><a href="api.cmds.html" class="active"><strong aria-hidden="true">1.2.</strong> Commands</a></li><li class="expanded "><a href="api.output.html"><strong aria-hidden="true">1.3.</strong> Output</a></li><li class="expanded "><a href="api.linking.html"><strong aria-hidden="true">1.4.</strong> Linking</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">papyrus book</h1>
+
+                        <div class="right-buttons">
+                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1><a class="header" href="#cmds" id="cmds">Cmds</a></h1>
+<p>Extendable commands for REPL.</p>
+<p>The REPL makes use of the crate <a href="https://crates.io/crates/cmdtree"><code>cmdtree</code></a> to handle commands
+that can provide additional functionality over just a Rust REPL.
+A command is prefixed by a colon (<code>:</code>) and a number of defaults. To see the commands that are
+included, type <code>:help</code>.</p>
+<h1><a class="header" href="#common-commands" id="common-commands">Common Commands</a></h1>
+<p>There are three common commands, <code>help</code>, <code>cancel</code> or <code>c</code>, and <code>exit</code>, which can be invoked in any
+class.</p>
+<table><thead><tr><th>cmd</th><th>action</th></tr></thead><tbody>
+<tr><td><code>help</code></td><td>displays help information for the current class</td></tr>
+<tr><td><code>cancel</code></td><td>moves the class back to the command root</td></tr>
+<tr><td><code>exit</code></td><td>quit the REPL</td></tr>
+</tbody></table>
+<p>Other commands are context based off the command tree, they can be invoked with something similar
+to <code>a nested command action</code> syntax.</p>
+<h1><a class="header" href="#extending-commands" id="extending-commands">Extending Commands</a></h1>
+<h2><a class="header" href="#setup" id="setup">Setup</a></h2>
+<p>This tutorial works through the example at
+<a href="https://github.com/kurtlawrence/papyrus/blob/master/papyrus/examples/custom-cmds.rs"><code>papyrus/examples/custom-cmds.rs</code></a>.</p>
+<p>To begin, start a binary project with the following scaffolding in the main source code. We define
+a <code>custom_cmds</code> function that will be used to build our custom commands. To highlight the
+versatility of commands, the REPL is configured to have a persistent app data through a <code>String</code>.
+Notice also the method to alter the prompt name through the <code>Builder::new</code> method.</p>
+<pre><pre class="playpen"><code class="language-rust no_run">#[macro_use]
+extern crate papyrus;
+
+use papyrus::cmdtree::{Builder, BuilderChain};
+use papyrus::cmds::CommandResult;
+
+<span class="boring">#[cfg(not(feature = &quot;runnable&quot;))]
+</span><span class="boring">fn main() {}
+</span>
+<span class="boring">#[cfg(feature = &quot;runnable&quot;)]
+</span>fn main() {
+    // Build a REPL that will use a String as the persistent app_data.
+    let mut repl = repl!(String);
+
+    // Inject our custom commands.
+    repl.data.with_cmdtree_builder(custom_cmds()).unwrap();
+
+    // Create the persistent data.
+    let mut app_data = String::new();
+
+    // Run the REPL and collect all the output.
+    let output = repl.run(papyrus::run::RunCallbacks::new(&amp;mut app_data)).unwrap();
+
+    // Print the output.
+    println!(&quot;{}&quot;, output);
+}
+
+// Define our custom commands.
+// The CommandResult takes the same type as the app_data,
+// in this instance it is a String. We could define it as
+// a generic type but then it loses resolution to interact with
+// the app_data through commands.
+fn custom_cmds() -&gt; Builder&lt;CommandResult&lt;String&gt;&gt; {
+    // The string defines the name and the prompt that will be used.
+    Builder::new(&quot;custom-cmds-app&quot;)
+}
+</code></pre></pre>
+<h2><a class="header" href="#echo" id="echo">Echo</a></h2>
+<p>Let's begin with a simple echo command. This command takes the data after the command and prints it
+to screen. All these commands will be additions to the <code>Builder::new</code>.
+Adding the following action with <code>add_action</code> method, the arguments are written to the <code>Write</code>able
+<code>writer</code>. The REPL provides the writer and so captures the output. <code>args</code> is passed through as a
+slice of string slices, <code>cmdtree</code> provides this, and are always split on word boundaries.
+Finally, <code>CommandResult::Empty</code> is returned which <code>papyrus</code> further processes. <code>Empty</code> won't do
+anything but the API provides alternatives.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate papyrus;
+</span><span class="boring">use papyrus::cmdtree::BuilderChain;
+</span><span class="boring">use papyrus::cmds::CommandResult;
+</span><span class="boring">type Builder = papyrus::cmdtree::Builder&lt;CommandResult&lt;String&gt;&gt;;
+</span>Builder::new(&quot;custom-cmds-app&quot;)
+    .add_action(&quot;echo&quot;, &quot;repeat back input after command&quot;, |writer, args| {
+	writeln!(writer, &quot;{}&quot;, args.join(&quot; &quot;)).ok();
+	CommandResult::Empty
+    })
+    .unwrap()
+<span class="boring">;
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>Now when the binary is run the REPL runs as usual. If <code>:help</code> is entered you should see the
+following output.</p>
+<pre><code class="language-text">[lib] custom-cmds-app=&gt; :help
+help -- prints the help messages
+cancel | c -- returns to the root class
+exit -- sends the exit signal to end the interactive loop
+Classes:
+    edit -- Edit previous input
+    mod -- Handle modules
+Actions:
+    echo -- repeat back input after command
+    mut -- Begin a mutable block of code
+[lib] custom-cmds-app=&gt;
+</code></pre>
+<p>The <code>echo</code> command exists as a root level action, with the help message displayed. Try calling
+<code>:echo Hello, world!</code> and see what it does!</p>
+<h2><a class="header" href="#alter-app-data" id="alter-app-data">Alter app data</a></h2>
+<p>To extend what the commands can do, lets create a command set that can convert the persistent app
+data case.
+The actual actions are nested under a 'class' named <code>case</code>. This means to invoke the action, one
+would call it through <code>:case upper</code> or <code>:case lower</code>.</p>
+<pre><pre class="playpen"><code class="language-rust">
+<span class="boring">#![allow(unused_variables)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate papyrus;
+</span><span class="boring">use papyrus::cmdtree::BuilderChain;
+</span><span class="boring">use papyrus::cmds::CommandResult;
+</span><span class="boring">type Builder = papyrus::cmdtree::Builder&lt;CommandResult&lt;String&gt;&gt;;
+</span>Builder::new(&quot;custom-cmds-app&quot;)
+    .add_action(&quot;echo&quot;, &quot;repeat back input after command&quot;, |writer, args| {
+	writeln!(writer, &quot;{}&quot;, args.join(&quot; &quot;)).ok();
+	CommandResult::Empty
+    })
+    .begin_class(&quot;case&quot;, &quot;change case of app_data&quot;)
+	.add_action(&quot;upper&quot;, &quot;make app_data uppercase&quot;, |_, _|
+	    CommandResult::&lt;String&gt;::app_data_fn(|app_data, _repldata, _| {
+		*app_data = app_data.to_uppercase();
+                String::new()
+	    })
+	)
+        .add_action(&quot;lower&quot;, &quot;make app_data lowercase&quot;, |_, _|
+	    CommandResult::&lt;String&gt;::app_data_fn(|app_data, _repldata, _| {
+		*app_data = app_data.to_lowercase();
+                String::new()
+            })
+        )
+    .end_class()
+    .unwrap()
+<span class="boring">;
+</span><span class="boring">}
+</span></code></pre></pre>
+<p>An example output is below. To inject some data into the persistent app data, a mutable code block
+must be entered first.</p>
+<pre><code class="language-text">[lib] papyrus=&gt; :mut
+beginning mut block
+[lib] custom-cmds-app-mut=&gt; app_data.push_str(&quot;Hello, world!&quot;)
+finished mutating block: ()
+[lib] custom-cmds-app=&gt; app_data.as_str()
+custom-cmds-app [out0]: &quot;Hello, world!&quot;
+[lib] custom-cmds-app=&gt; :case upper
+[lib] custom-cmds-app=&gt; app_data.as_str()
+custom-cmds-app [out1]: &quot;HELLO, WORLD!&quot;
+[lib] custom-cmds-app=&gt; :case lower
+[lib] custom-cmds-app=&gt; app_data.as_str()
+custom-cmds-app [out2]: &quot;hello, world!&quot;
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="api.code.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="api.output.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="api.code.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="api.output.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+        
+        
+        <script type="text/javascript">
+            window.playpen_copyable = true;
+        </script>
+        
+
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>
