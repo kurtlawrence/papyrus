@@ -201,7 +201,7 @@ fn test_default_compile_dir() {
     assert!(dir.ends_with(".papyrus/"));
     if cfg!(windows) {
         assert!(dir.starts_with("C:\\Users\\"));
-    } else if cfg!(target_os = "macos"){
+    } else if cfg!(target_os = "macos") {
         assert!(dir.starts_with("/Users/"));
     } else {
         assert!(dir.starts_with("/home/"));
