@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>API - papyrus book</title>
+        <title>Introduction - papyrus book</title>
         
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
@@ -81,7 +81,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div id="sidebar-scrollbox" class="sidebar-scrollbox">
-                <ol class="chapter"><li class="expanded "><a href="api.html"><strong aria-hidden="true">1.</strong> API</a></li><li><ol class="section"><li class="expanded "><a href="api.code.html"><strong aria-hidden="true">1.1.</strong> Code</a></li><li class="expanded "><a href="api.cmds.html"><strong aria-hidden="true">1.2.</strong> Commands</a></li><li class="expanded "><a href="api.output.html"><strong aria-hidden="true">1.3.</strong> Output</a></li><li class="expanded "><a href="api.linking.html"><strong aria-hidden="true">1.4.</strong> Linking</a></li></ol></li></ol>
+                <ol class="chapter"><li class="expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="expanded "><a href="api.html"><strong aria-hidden="true">2.</strong> API</a></li><li><ol class="section"><li class="expanded "><a href="api.code.html"><strong aria-hidden="true">2.1.</strong> Code</a></li><li class="expanded "><a href="api.cmds.html"><strong aria-hidden="true">2.2.</strong> Commands</a></li><li class="expanded "><a href="api.output.html"><strong aria-hidden="true">2.3.</strong> Output</a></li><li class="expanded "><a href="api.linking.html"><strong aria-hidden="true">2.4.</strong> Linking</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -148,11 +148,68 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#api" id="api">API</a></h1>
-<p><code>papyrus</code> offers a broad API to enable embedding and customisation. Each module which provides this
-functionality has documentation and there are
-<a href="https://github.com/kurtlawrence/papyrus/tree/master/papyrus/examples">examples</a>
-that can be used as a guide.</p>
+                        <h1><a class="header" href="#introduction" id="introduction">Introduction</a></h1>
+<p><a href="https://github.com/kurtlawrence/papyrus/actions"><img src="https://github.com/kurtlawrence/papyrus/workflows/Rust%20Tests/badge.svg" alt="Build Status" /></a>
+<a href="https://crates.io/crates/papyrus"><img src="https://img.shields.io/crates/v/papyrus.svg" alt="Latest Version" /></a>
+<a href="https://docs.rs/papyrus"><img src="https://img.shields.io/badge/api-rustdoc-blue.svg" alt="Rust Documentation" /></a>
+<a href="https://codecov.io/gh/kurtlawrence/papyrus"><img src="https://codecov.io/gh/kurtlawrence/papyrus/branch/master/graph/badge.svg" alt="codecov" /></a>
+<a href="https://blog.rust-lang.org/2019/07/04/Rust-1.36.0.html"><img src="https://img.shields.io/badge/rustc-1.36+-blue.svg" alt="Rustc Version 1.36+" /></a></p>
+<h2><a class="header" href="#papyrus---a-rust-repl-and-script-running-tool" id="papyrus---a-rust-repl-and-script-running-tool"><em>Papyrus</em> - A rust REPL and script running tool.</a></h2>
+<p>See the <a href="https://docs.rs/papyrus/">rs docs</a> and the
+<a href="https://kurtlawrence.github.io/papyrus/">guide</a>.
+Look at progress and contribute on <a href="https://github.com/kurtlawrence/papyrus">github.</a></p>
+<pre><code class="language-sh">papyrus=&gt; 2+2
+papyrus [out0]: 4
+</code></pre>
+<p>Papyrus is in active development, see <a href="https://github.com/kurtlawrence/papyrus">changelog</a> for updates.</p>
+<h2><a class="header" href="#overview" id="overview">Overview</a></h2>
+<p>Papyrus creates a Rust REPL in your terminal. Code can be typed in, line by line with feedback on
+the evaluation, or code can be injected via stdin handles. 
+Each code snippet is evaluated on an expression based system, so terminating with a semi-colon
+requires more input.</p>
+<h3><a class="header" href="#example" id="example">Example</a></h3>
+<pre><code class="language-sh">[lib] papyrus=&gt; 2+2
+papyrus [out0]: 4
+[lib] papyrus=&gt; println!(&quot;Hello, world!&quot;);
+[lib] papyrus.&gt; out0 * out0
+Hello, world!
+papyrus [out1]: 16
+[lib] papyrus=&gt; :help
+help -- prints the help messages
+cancel | c -- returns to the root class
+exit -- sends the exit signal to end the interactive loop
+Classes:
+  edit -- Edit previous input
+  mod -- Handle modules
+Actions:
+  mut -- Begin a mutable block of code
+[lib] papyrus=&gt; :exit
+[lib] papyrus=&gt; Thanks for using papyrus!
+</code></pre>
+<h2><a class="header" href="#installation" id="installation">Installation</a></h2>
+<p>Papyrus can be installed from <code>crates.io</code> or building from source on github.
+The default installation feature set requires a <code>nightly</code> toolchain, but <code>stable</code> can be used with
+fewer features enabled.</p>
+<p>To install with all features:</p>
+<pre><code class="language-sh">rustup toolchain add nightly
+cargo +nightly install papyrus
+</code></pre>
+<p>To install on stable without racer completion:</p>
+<pre><code class="language-sh">cargo +stable install papyrus --no-default-features --features=&quot;format,runnable&quot;
+</code></pre>
+<h2><a class="header" href="#requirements" id="requirements">Requirements</a></h2>
+<h3><a class="header" href="#features" id="features">Features</a></h3>
+<p>Papyrus has features sets:</p>
+<ul>
+<li><em>format</em>: format code snippets using <code>rustfmt</code></li>
+<li><em>racer-completion</em>: enable code completion using <a href="https://github.com/racer-rust/racer"><code>racer</code></a>.
+<strong>Requires a nightly compiler</strong></li>
+<li><em>runnable</em>: papyrus can be <em>run</em>, without needing to manually handle repl states and output</li>
+</ul>
+<p>All features are enabled by default.</p>
+<h3><a class="header" href="#cargo" id="cargo">Cargo</a></h3>
+<p>Papyrus leverages installed binaries of both <code>cargo</code> and <code>rustc</code>. This requirement may lift in the
+future but for now, any user wanting to use Papyrus will need an installation of Rust.</p>
 
                     </main>
 
@@ -161,7 +218,7 @@ that can be used as a guide.</p>
                         
 
                         
-                            <a rel="next" href="api.code.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="api.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -175,7 +232,7 @@ that can be used as a guide.</p>
                 
 
                 
-                    <a href="api.code.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a href="api.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
