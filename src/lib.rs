@@ -10,14 +10,23 @@
 //! [guide](https://kurtlawrence.github.io/papyrus/).
 //! Look at progress and contribute on [github.](https://github.com/kurtlawrence/papyrus)
 //!
-//!
-//!
 //! ```sh
 //! papyrus=> 2+2
 //! papyrus [out0]: 4
 //! ```
 //!
-//! Papyrus is in active development, see [changelog](https://github.com/kurtlawrence/papyrus) for updates
+//! Papyrus is in active development, see [changelog](https://github.com/kurtlawrence/papyrus) for updates.
+//!
+//! ## Overview
+//!
+//! ## Installation
+//! Papyrus can be installed from `crates.io` or building from source on github.
+//! The default installation feature set requires a `nightly` toolchain, but `stable` can be used with
+//! fewer features enabled.
+//!
+//!
+//! ## Requirements
+//! Papyrus has
 
 #![warn(missing_docs)]
 #![deny(intra_doc_link_resolution_failure)]
