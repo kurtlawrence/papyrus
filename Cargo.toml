@@ -12,7 +12,6 @@ keywords = [ "repl", "script" ]
 edition = "2018"
 
 [badges]
-travis-ci = { repository = "kurtlawrence/papyrus" }
 codecov =   { repository = "kurtlawrence/papyrus" }
 
 [dependencies]
