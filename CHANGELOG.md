@@ -6,6 +6,7 @@
 - **Breaking Change:** `AppDataAction` now expects closure that has access to `&mut ReplData` - #60
 - **Breaking Change:** Add functionality to inject callbacks when running a REPL - #58
 - Output `.dylib` on MacOS - #66
+- Update to `kserd` 0.3
 
 ## 0.13.0
 - Restructure of repository
