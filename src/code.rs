@@ -377,7 +377,7 @@ fn append_buffer<S: AsRef<str>>(
         });
         buf.push_str("kserd::ToKserd::into_kserd(out");
         buf.push_str(&c.saturating_sub(1).to_string());
-        buf.push_str(").unwrap().to_owned()\n");
+        buf.push_str(").unwrap().into_owned()\n");
     } else {
         buf.push_str("kserd::Kserd::new_str(\"no statements\")\n");
     }
@@ -421,7 +421,7 @@ fn append_buffer_length<S: AsRef<str>>(
             .sum::<usize>();
         let return_str = 30 // kserd::ToKserd::into_kserd(out
             + c.saturating_sub(1).to_string().len()
-            + 22; // ).unwrap().to_owned()\n
+            + 24; // ).unwrap().into_owned()\n
 
         (
             stmts + return_str,
@@ -752,17 +752,17 @@ let a = 1;
 let out0 = b;
 let c = 2;
 let out1 = d;
-kserd::ToKserd::into_kserd(out1).unwrap().to_owned()
+kserd::ToKserd::into_kserd(out1).unwrap().into_owned()
 }
 fn a() {}
 fn b() {}
 "##;
         assert_eq!(&s, ans);
         assert_eq!(len, ans.len());
-        assert_eq!(rng, 200..252);
+        assert_eq!(rng, 200..254);
         assert_eq!(
             &ans[rng],
-            "kserd::ToKserd::into_kserd(out1).unwrap().to_owned()"
+            "kserd::ToKserd::into_kserd(out1).unwrap().into_owned()"
         );
     }
 

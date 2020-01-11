@@ -8,5 +8,5 @@ name = "external_kserd"
 crate-type = ["rlib"]
 
 [dependencies]
-kserd = { version = "0.1", default-features = false }
+kserd = { version = "0.3", default-features = false }
 rand = "*"
