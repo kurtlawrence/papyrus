@@ -31,13 +31,13 @@ pub fn determine_result(input: &str, line: &str, treat_as_cmd: bool) -> InputRes
         return InputResult::Empty; // if line is empty this could result. do not remove
     }
 
-    let res = if treat_as_cmd || is_command(line) {
+    if treat_as_cmd || is_command(line) {
         parse_command(line)
     } else {
         // check if the final statement ends with a semi
         match parse_program(input) {
             InputResult::Program(input) => {
-                if input.stmts.len() > 0 && input.stmts.last().unwrap().semi {
+                if input.stmts.last().map(|x| x.semi).unwrap_or(false) {
                     InputResult::More
                 } else {
                     InputResult::Program(input)
@@ -45,9 +45,7 @@ pub fn determine_result(input: &str, line: &str, treat_as_cmd: bool) -> InputRes
             }
             x => x,
         }
-    };
-
-    res
+    }
 }
 
 fn is_command(line: &str) -> bool {

@@ -14,14 +14,14 @@
 //! # extern crate papyrus;
 //! use papyrus::code::*;
 //!
-//! let mut src = SourceCode::new();
+//! let mut src = SourceCode::default();
 //! src.stmts.push(StmtGrp(vec![Statement {
-//! 	expr: String::from("let a = 1"),
-//! 	semi: true
+//!     expr: String::from("let a = 1"),
+//!         semi: true
 //!     },
 //!     Statement {
-//! 	expr: String::from("a"),
-//! 	semi: false
+//!         expr: String::from("a"),
+//!         semi: false
 //!     }
 //! ]));
 //! ```
@@ -80,9 +80,8 @@ pub struct SourceCode {
     pub crates: Vec<CrateType>,
 }
 
-impl SourceCode {
-    /// Construct new `SourceCode`.
-    pub fn new() -> Self {
+impl Default for SourceCode {
+    fn default() -> Self {
         Self {
             items: Vec::new(),
             stmts: Vec::new(),
@@ -136,7 +135,7 @@ impl StmtGrp {
             buf.push('\n');
         }
 
-        if stmts.len() > 0 {
+        if !stmts.is_empty() {
             buf.push_str("let out");
             buf.push_str(&input_num.to_string());
             buf.push_str(" = ");
@@ -156,7 +155,7 @@ impl StmtGrp {
             }
         }
 
-        cap += if stmts.len() > 0 {
+        cap += if !stmts.is_empty() {
             7 + input_num.to_string().len() + 3 + stmts[stmts.len() - 1].expr.len() + 1
         } else {
             0
@@ -490,7 +489,7 @@ impl CrateType {
             .replace(";", "")
             .replace("_", "-")
             .trim()
-            .split("\n")
+            .split('\n')
             .nth(0)
             .expect("string should have one line")
             .to_string();
@@ -498,7 +497,7 @@ impl CrateType {
             Ok(CrateType {
                 src_line: string.to_string(),
                 cargo_name: line
-                    .split(" ")
+                    .split(' ')
                     .nth(2)
                     .expect("should always have trailing item")
                     .to_string(),
@@ -516,11 +515,11 @@ mod tests {
     #[test]
     fn file_map_with_lvls_test() {
         let map = vec![
-            ("one".into(), SourceCode::new()),
-            ("one/two".into(), SourceCode::new()),
-            ("one/two/three".into(), SourceCode::new()),
-            ("lib".into(), SourceCode::new()),
-            ("two".into(), SourceCode::new()),
+            ("one".into(), SourceCode::default()),
+            ("one/two".into(), SourceCode::default()),
+            ("one/two/three".into(), SourceCode::default()),
+            ("lib".into(), SourceCode::default()),
+            ("two".into(), SourceCode::default()),
         ]
         .into_iter()
         .collect();
@@ -633,7 +632,7 @@ mod tests {
     fn construct_test() {
         use linking::LinkingConfiguration;
 
-        let mut src_code = SourceCode::new();
+        let mut src_code = SourceCode::default();
         let mod_path: &[&str] = &[];
         let linking_config = LinkingConfiguration::default();
 
@@ -769,7 +768,7 @@ fn b() {}
     #[test]
     fn construct_src_test() {
         // purely tests module adding
-        let v = SourceCode::new();
+        let v = SourceCode::default();
 
         let linking = LinkingConfiguration::default();
         let map = vec![
@@ -891,7 +890,7 @@ kserd::Kserd::new_str("no statements")
 
     #[test]
     fn item_placement_test() {
-        let mut v = SourceCode::new();
+        let mut v = SourceCode::default();
         v.items.push(("Test1".to_string(), false));
         v.items.push(("Up Top".to_string(), true));
 

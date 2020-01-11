@@ -20,7 +20,7 @@ impl Output<Read> {
     }
 
     /// Finished read state, move to write.
-    pub fn to_write(self) -> Output<Write> {
+    pub fn into_write(self) -> Output<Write> {
         let Output {
             buf, lines_pos, tx, ..
         } = self;

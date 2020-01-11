@@ -261,7 +261,7 @@ fn overwrite_text<T: fmt::Display + Clone>(
         Print(text)
     )?;
 
-    stdout.flush().map_err(|e| xterm::ErrorKind::IoError(e))
+    stdout.flush().map_err(xterm::ErrorKind::IoError)
 }
 
 pub fn read_until(
@@ -276,28 +276,24 @@ pub fn read_until(
         code: xterm::event::KeyCode::Char('c'),
     });
 
-    loop {
-        if let Ok(ev) = reader.recv() {
-            last = ev.clone();
-            if events.contains(&ev) {
-                break;
-            }
-
-            let prev_lines_covered =
-                lines_covered(initial.0 as usize, term_width_nofail(), buf.ch_len());
-            let (newbuf, chg) = apply_event_to_buf(buf, ev);
-            if chg {
-                overwrite_text(
-                    initial.0 + 1,
-                    prev_lines_covered.saturating_sub(1) as u16,
-                    &newbuf,
-                )
-                .ok();
-            }
-            buf = newbuf
-        } else {
+    while let Ok(ev) = reader.recv() {
+        last = ev;
+        if events.contains(&ev) {
             break;
         }
+
+        let prev_lines_covered =
+            lines_covered(initial.0 as usize, term_width_nofail(), buf.ch_len());
+        let (newbuf, chg) = apply_event_to_buf(buf, ev);
+        if chg {
+            overwrite_text(
+                initial.0 + 1,
+                prev_lines_covered.saturating_sub(1) as u16,
+                &newbuf,
+            )
+            .ok();
+        }
+        buf = newbuf
     }
 
     (buf, last)
@@ -318,7 +314,7 @@ pub fn write_output_chg(current_lines_covered: u16, change: OutputChange) -> io:
             stdout.flush()?;
             Ok(lines_covered(0, term_width_nofail(), line.chars().count()) as u16)
         }
-        NewLine => writeln!(&mut stdout, "").map(|_| 1),
+        NewLine => writeln!(&mut stdout).map(|_| 1),
     }
 }
 

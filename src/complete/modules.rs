@@ -16,9 +16,9 @@ type IterRet<'a> = Box<dyn Iterator<Item = String> + 'a>;
 /// use papyrus::cmdtree::*;
 ///
 /// let modsmap = vec![
-///                 (PathBuf::from("lib"), SourceCode::new()),
-///                 (PathBuf::from("amodule"), SourceCode::new()),
-///                 (PathBuf::from("amodule/under"), SourceCode::new())
+///                 (PathBuf::from("lib"), SourceCode::default()),
+///                 (PathBuf::from("amodule"), SourceCode::default()),
+///                 (PathBuf::from("amodule/under"), SourceCode::default())
 ///             ].into_iter().collect::<BTreeMap<_, _>>();
 ///
 /// let cmdr = papyrus::repl::ReplData::<()>::default().cmdtree;

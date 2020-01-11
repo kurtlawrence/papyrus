@@ -37,11 +37,11 @@ pub fn parse_program(code: &str) -> InputResult {
                     .attrs
                     .into_iter()
                     .map(|attr| attr.into_token_stream().to_string())
-                    .map(|s| fmt(s))
+                    .map(fmt)
                     .map(|s| (s, true))
                     .collect::<Vec<_>>();
                 InputResult::Program(Input {
-                    items: items,
+                    items,
                     stmts: vec![],
                     crates: vec![],
                 })
@@ -97,9 +97,9 @@ pub fn parse_program(code: &str) -> InputResult {
                 }
             }
             InputResult::Program(Input {
-                items: items,
-                stmts: stmts,
-                crates: crates,
+                items,
+                stmts,
+                crates,
             })
         })
         .unwrap_or_else(reterr)

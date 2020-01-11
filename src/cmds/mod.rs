@@ -86,8 +86,8 @@
 //! # type Builder = papyrus::cmdtree::Builder<CommandResult<String>>;
 //! Builder::new("custom-cmds-app")
 //!     .add_action("echo", "repeat back input after command", |writer, args| {
-//! 	writeln!(writer, "{}", args.join(" ")).ok();
-//! 	CommandResult::Empty
+//!     writeln!(writer, "{}", args.join(" ")).ok();
+//!     CommandResult::Empty
 //!     })
 //!     .unwrap()
 //! # ;
@@ -128,22 +128,22 @@
 //! # type Builder = papyrus::cmdtree::Builder<CommandResult<String>>;
 //! Builder::new("custom-cmds-app")
 //!     .add_action("echo", "repeat back input after command", |writer, args| {
-//! 	writeln!(writer, "{}", args.join(" ")).ok();
-//! 	CommandResult::Empty
+//!     writeln!(writer, "{}", args.join(" ")).ok();
+//!     CommandResult::Empty
 //!     })
 //!     .begin_class("case", "change case of app_data")
-//! 	.add_action("upper", "make app_data uppercase", |_, _|
-//! 	    CommandResult::<String>::app_data_fn(|app_data, _repldata, _| {
-//! 		*app_data = app_data.to_uppercase();
-//!                 String::new()
-//! 	    })
-//! 	)
+//!     .add_action("upper", "make app_data uppercase", |_, _|
+//!     CommandResult::<String>::app_data_fn(|app_data, _repldata, _| {
+//!         *app_data = app_data.to_uppercase();
+//!         String::new()
+//!         })
+//!     )
 //!         .add_action("lower", "make app_data lowercase", |_, _|
-//! 	    CommandResult::<String>::app_data_fn(|app_data, _repldata, _| {
-//! 		*app_data = app_data.to_lowercase();
-//!                 String::new()
-//!             })
-//!         )
+//!     CommandResult::<String>::app_data_fn(|app_data, _repldata, _| {
+//!         *app_data = app_data.to_lowercase();
+//!         String::new()
+//!         })
+//!     )
 //!     .end_class()
 //!     .unwrap()
 //! # ;
@@ -167,10 +167,7 @@
 //! custom-cmds-app [out2]: "hello, world!"
 //! ```
 use super::*;
-use crate::{
-    code::SourceCode,
-    repl::{Editing, EditingIndex, ReplData},
-};
+use crate::repl::{Editing, EditingIndex, ReplData};
 use cmdtree::{BuildError, Builder, BuilderChain, Commander};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -293,7 +290,6 @@ fn make_all_parents(path: &Path) -> Vec<PathBuf> {
     let components: Vec<_> = path.iter().collect();
 
     (1..components.len())
-        .into_iter()
         .map(|idx| components[0..idx].iter().collect::<PathBuf>())
         .collect()
 }
@@ -335,9 +331,7 @@ fn edit_alter_priv<D, W: Write>(args: &[&str], mut wtr: W, t: Editing) -> Comman
 fn edit_replace_priv<D, W: Write>(args: &[&str], mut wtr: W, t: Editing) -> CommandResult<D> {
     if let Some(idx) = args.get(0) {
         match parse_idx(idx, t) {
-            Ok(ei) => {
-                CommandResult::EditReplace(ei, args[1..].iter().map(|x| *x).collect::<String>())
-            }
+            Ok(ei) => CommandResult::EditReplace(ei, args[1..].iter().copied().collect::<String>()),
             Err(e) => {
                 writeln!(wtr, "failed parsing {} as number: {}", idx, e).ok();
                 CommandResult::Empty
@@ -377,9 +371,7 @@ pub(crate) fn switch_module<D>(data: &mut ReplData<D>, path: &Path) -> &'static 
     all.push(path.to_path_buf());
 
     for x in all {
-        if !data.mods_map.contains_key(&x) {
-            data.mods_map.insert(x, SourceCode::new());
-        }
+        data.mods_map.entry(x).or_default();
     }
 
     data.current_mod = path.to_path_buf();

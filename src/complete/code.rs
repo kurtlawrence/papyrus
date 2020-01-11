@@ -70,7 +70,7 @@ use std::path::Path;
 
 use racer::{BytePos, FileCache, Location, Match};
 
-const LIBRS: &'static str = "lib.rs";
+const LIBRS: &str = "lib.rs";
 
 /// Completion used for Rust code in the REPL.
 pub struct CodeCompleter {

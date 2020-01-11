@@ -193,24 +193,25 @@ where
 
         if let Some(val) = reevaluate.take() {
             read.line_input(&val);
-        } else {
-            if do_read(&mut read, &mut screen, input_buf, &cache)? {
-                break read.output().to_owned();
-            }
+        } else if do_read(&mut read, &mut screen, input_buf, &cache)? {
+            break read.output().to_owned();
         }
 
         match read.read() {
             ReadResult::Read(repl) => read = repl,
             ReadResult::Eval(repl) => {
                 match do_eval(repl, &mut runcb) {
-                    Ok((repl, reeval)) => {
+                    (repl, Signal::Exit) => break repl.output().to_owned(),
+                    (repl, signal) => {
+                        let mut reeval = None;
+                        if let Signal::ReEvaluate(s) = signal {
+                            reeval = Some(s);
+                        }
                         read = repl;
                         reevaluate = reeval;
-
                         // prep for next read
                         interface::erase_current_line(io::stdout())?.flush()?;
                     }
-                    Err(r) => break r.output().to_owned(),
                 }
             }
         }
@@ -389,7 +390,7 @@ fn complete_code(
 fn do_eval<D, FmtrFn, ResultFn>(
     mut repl: Repl<Evaluate, D>,
     runcb: &mut RunCallbacks<D, FmtrFn, ResultFn>,
-) -> Result<(Repl<Read, D>, Option<String>), Repl<Read, D>>
+) -> (Repl<Read, D>, Signal)
 where
     FmtrFn: FnMut(&Repl<Print, D>) -> kserd::fmt::FormattingConfig,
     ResultFn: FnMut(usize, kserd::Kserd<'static>, &Repl<Read, D>),
@@ -426,11 +427,7 @@ where
     read.close_channel();
     jh.join().unwrap();
 
-    match signal {
-        Signal::None => Ok((read, None)),
-        Signal::Exit => Err(read),
-        Signal::ReEvaluate(val) => Ok((read, Some(val))),
-    }
+    (read, signal)
 }
 
 fn map_xterm_err(xtermerr: crossterm::ErrorKind, msg: &str) -> io::Error {

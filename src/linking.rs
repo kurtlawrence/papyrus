@@ -245,7 +245,7 @@ impl Default for LinkingConfiguration {
 impl LinkingConfiguration {
     /// Set the data type. Must be fully qualified from the crate level.
     ///
-    /// ## Unsafety
+    /// # Safety
     /// This **must** match the type that is passed through.
     pub unsafe fn with_data(mut self, type_name: &str) -> Self {
         self.data_type = Some(type_name.to_string());
@@ -255,13 +255,14 @@ impl LinkingConfiguration {
     /// Constructs the function arguments signature.
     /// Appends result to buffer.
     pub fn construct_fn_args(&self, buf: &mut String) {
-        self.data_type.as_ref().map(|d| {
+        if let Some(d) = &self.data_type {
+            // matches pfh::compile::execute::DataFunc definition.
             buf.push_str("app_data: &"); // 11 len
             if self.mutable {
                 buf.push_str("mut ");
             }
             buf.push_str(d);
-        }); // matches pfh::compile::execute::DataFunc definition.
+        }
     }
 
     /// Calculates the length of the function arguments signature.
@@ -329,10 +330,9 @@ impl Extern {
                     s
                 }
             })
-            .ok_or(io::Error::new(
-                io::ErrorKind::Other,
-                "failed getting executable name",
-            ))?;
+            .ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "failed getting executable name")
+            })?;
 
         let path = get_rlib_path(name)?;
 
@@ -351,13 +351,12 @@ impl Extern {
             ));
         }
 
-        let lib = path
-            .file_name()
-            .and_then(|s| s.to_str())
-            .ok_or(io::Error::new(
+        let lib = path.file_name().and_then(|s| s.to_str()).ok_or_else(|| {
+            io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!("{} does not have file name", path.display()),
-            ))?;
+            )
+        })?;
 
         if !lib.starts_with("lib") || !lib.ends_with(".rlib") {
             return Err(io::Error::new(
@@ -366,7 +365,7 @@ impl Extern {
             ));
         }
 
-        if lib[3..lib.len() - 5].len() == 0 {
+        if lib[3..lib.len() - 5].is_empty() {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "library has empty name",
@@ -395,7 +394,7 @@ impl Extern {
 
     /// The alias, is there is one.
     pub fn alias(&self) -> Option<&'static str> {
-        self.alias.clone()
+        self.alias
     }
 
     /// The canoncialized library path (in `lib*.rlib` format).
@@ -449,14 +448,15 @@ fn get_rlib_path(crate_name: &str) -> io::Result<PathBuf> {
     let lib_name = format!("lib{}.rlib", crate_name);
     let exe = std::env::current_exe()?;
     fs::read_dir(exe.parent().expect("files should always have a parent"))?
-        .into_iter()
         .filter(|entry| entry.is_ok())
         .map(|entry| entry.expect("filtered some").path())
         .find(|path| path.ends_with(&lib_name))
-        .ok_or(io::Error::new(
-            io::ErrorKind::NotFound,
-            format!("did not find file: '{}'", lib_name),
-        ))
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("did not find file: '{}'", lib_name),
+            )
+        })
 }
 
 #[cfg(test)]

@@ -7,6 +7,8 @@
 - **Breaking Change:** Add functionality to inject callbacks when running a REPL - #58
 - Output `.dylib` on MacOS - #66
 - Update to `kserd` 0.3
+- **Breaking Change:** Renaming of `to_*` to `into_*` in various places.
+- **Breaking Change:** Removed `SourceCode::new` in-lieu of `Default` impl.
 
 ## 0.13.0
 - Restructure of repository
