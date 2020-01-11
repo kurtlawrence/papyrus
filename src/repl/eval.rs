@@ -392,10 +392,10 @@ impl<D> ReplData<D> {
     }
 
     fn get_current_file_mut(&mut self) -> &mut SourceCode {
-        self.mods_map.get_mut(&self.current_mod).expect(&format!(
-            "file map does not have key: {}",
-            self.current_mod.display()
-        ))
+        let cmod = &self.current_mod;
+        self.mods_map
+            .get_mut(cmod)
+            .unwrap_or_else(|| panic!("file map does not have key: {}", cmod.display()))
     }
 }
 

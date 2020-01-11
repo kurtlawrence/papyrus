@@ -392,7 +392,7 @@ fn complete_code(
 fn do_eval<D, FmtrFn, ResultFn>(
     mut repl: Repl<Evaluate, D>,
     runcb: &mut RunCallbacks<D, FmtrFn, ResultFn>,
-) -> (Repl<Read, D>, Signal) 
+) -> (Repl<Read, D>, Signal)
 where
     FmtrFn: FnMut(&Repl<Print, D>) -> kserd::fmt::FormattingConfig,
     ResultFn: FnMut(usize, kserd::Kserd<'static>, &Repl<Read, D>),
@@ -430,7 +430,6 @@ where
     jh.join().unwrap();
 
     (read, signal)
-
 }
 
 fn map_xterm_err(xtermerr: crossterm::ErrorKind, msg: &str) -> io::Error {

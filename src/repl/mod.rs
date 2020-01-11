@@ -191,7 +191,7 @@ pub enum Editing {
 
 /// `$HOME/.papyrus`
 fn default_compile_dir() -> PathBuf {
-    dirs::home_dir().unwrap_or(PathBuf::new()).join(".papyrus/")
+    dirs::home_dir().unwrap_or_default().join(".papyrus/")
 }
 
 #[test]
