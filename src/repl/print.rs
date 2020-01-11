@@ -56,7 +56,7 @@ impl<D> Repl<Print, D> {
 
         let mut r = Repl {
             state: Read {
-                output: output.to_read(),
+                output: output.into_read(),
             },
             data: repl_data,
             data_mrker,

@@ -124,7 +124,7 @@ where
         InputResult::Command(cmds) => {
             let r = data.handle_command(&cmds, &mut output, obtain_mut_data);
             keep_mutating = data.linking.mutable; // a command can alter the mutating state, needs to persist
-            r.map(|x| EvalOutput::Print(x))
+            r.map(EvalOutput::Print)
         }
         InputResult::Program(input) => {
             Ok(data.handle_program(input, &mut output, obtain_mut_data, obtain_brw_data))
@@ -228,7 +228,7 @@ impl<D> ReplData<D> {
     {
         let (nitems, ncrates) = (input.items.len(), input.crates.len());
 
-        let has_stmts = input.stmts.len() > 0;
+        let has_stmts = !input.stmts.is_empty();
 
         let (lstmts, litem, lcrates) = {
             let src = self.current_src();

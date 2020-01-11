@@ -100,6 +100,11 @@ impl<Data> ReplData<Data> {
 
     /// Not meant to used by developer. Use the macros instead.
     /// [See _linking_ module](../pfh/linking.html)
+    ///
+    /// # Safety
+    /// Incorrect matching of type will cause undefined behaviour when the REPL evaluates. It will
+    /// most likely segfault. Use is not recommended, rather there are macros that correctly map
+    /// the type across which are intended for use.
     pub unsafe fn set_data_type(mut self, data_type: &str) -> Self {
         self.linking = self.linking.with_data(data_type);
         self

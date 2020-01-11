@@ -6,7 +6,7 @@ impl Output<Write> {
     /// Finished write state. Move to read state.
     ///
     /// The input buffer is initialised as empty.
-    pub fn to_read(self) -> Output<Read> {
+    pub fn into_read(self) -> Output<Read> {
         let Output {
             buf, lines_pos, tx, ..
         } = self;
