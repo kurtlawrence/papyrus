@@ -226,8 +226,8 @@ anything but the API provides alternatives.</p>
 </span><span class="boring">type Builder = papyrus::cmdtree::Builder&lt;CommandResult&lt;String&gt;&gt;;
 </span>Builder::new(&quot;custom-cmds-app&quot;)
     .add_action(&quot;echo&quot;, &quot;repeat back input after command&quot;, |writer, args| {
-	writeln!(writer, &quot;{}&quot;, args.join(&quot; &quot;)).ok();
-	CommandResult::Empty
+    writeln!(writer, &quot;{}&quot;, args.join(&quot; &quot;)).ok();
+    CommandResult::Empty
     })
     .unwrap()
 <span class="boring">;
@@ -263,22 +263,22 @@ would call it through <code>:case upper</code> or <code>:case lower</code>.</p>
 </span><span class="boring">type Builder = papyrus::cmdtree::Builder&lt;CommandResult&lt;String&gt;&gt;;
 </span>Builder::new(&quot;custom-cmds-app&quot;)
     .add_action(&quot;echo&quot;, &quot;repeat back input after command&quot;, |writer, args| {
-	writeln!(writer, &quot;{}&quot;, args.join(&quot; &quot;)).ok();
-	CommandResult::Empty
+    writeln!(writer, &quot;{}&quot;, args.join(&quot; &quot;)).ok();
+    CommandResult::Empty
     })
     .begin_class(&quot;case&quot;, &quot;change case of app_data&quot;)
-	.add_action(&quot;upper&quot;, &quot;make app_data uppercase&quot;, |_, _|
-	    CommandResult::&lt;String&gt;::app_data_fn(|app_data, _repldata, _| {
-		*app_data = app_data.to_uppercase();
-                String::new()
-	    })
-	)
+    .add_action(&quot;upper&quot;, &quot;make app_data uppercase&quot;, |_, _|
+    CommandResult::&lt;String&gt;::app_data_fn(|app_data, _repldata, _| {
+        *app_data = app_data.to_uppercase();
+        String::new()
+        })
+    )
         .add_action(&quot;lower&quot;, &quot;make app_data lowercase&quot;, |_, _|
-	    CommandResult::&lt;String&gt;::app_data_fn(|app_data, _repldata, _| {
-		*app_data = app_data.to_lowercase();
-                String::new()
-            })
-        )
+    CommandResult::&lt;String&gt;::app_data_fn(|app_data, _repldata, _| {
+        *app_data = app_data.to_lowercase();
+        String::new()
+        })
+    )
     .end_class()
     .unwrap()
 <span class="boring">;

@@ -163,14 +163,14 @@ structure, which flattens each input.</p>
 </span><span class="boring">extern crate papyrus;
 </span>use papyrus::code::*;
 
-let mut src = SourceCode::new();
+let mut src = SourceCode::default();
 src.stmts.push(StmtGrp(vec![Statement {
-	expr: String::from(&quot;let a = 1&quot;),
-	semi: true
+    expr: String::from(&quot;let a = 1&quot;),
+        semi: true
     },
     Statement {
-	expr: String::from(&quot;a&quot;),
-	semi: false
+        expr: String::from(&quot;a&quot;),
+        semi: false
     }
 ]));
 <span class="boring">}
