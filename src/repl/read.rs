@@ -9,7 +9,7 @@ impl<D> Default for Repl<Read, D> {
                 output: Output::default(),
             },
 
-            data: data,
+            data,
             more: false,
             data_mrker: PhantomData,
         };

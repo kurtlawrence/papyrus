@@ -314,7 +314,7 @@ pub fn write_output_chg(current_lines_covered: u16, change: OutputChange) -> io:
             stdout.flush()?;
             Ok(lines_covered(0, term_width_nofail(), line.chars().count()) as u16)
         }
-        NewLine => writeln!(&mut stdout, "").map(|_| 1),
+        NewLine => writeln!(&mut stdout).map(|_| 1),
     }
 }
 

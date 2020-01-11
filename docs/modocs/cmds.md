@@ -86,8 +86,8 @@ anything but the API provides alternatives.
 # type Builder = papyrus::cmdtree::Builder<CommandResult<String>>;
 Builder::new("custom-cmds-app")
     .add_action("echo", "repeat back input after command", |writer, args| {
-	writeln!(writer, "{}", args.join(" ")).ok();
-	CommandResult::Empty
+    writeln!(writer, "{}", args.join(" ")).ok();
+    CommandResult::Empty
     })
     .unwrap()
 # ;
@@ -128,22 +128,22 @@ would call it through `:case upper` or `:case lower`.
 # type Builder = papyrus::cmdtree::Builder<CommandResult<String>>;
 Builder::new("custom-cmds-app")
     .add_action("echo", "repeat back input after command", |writer, args| {
-	writeln!(writer, "{}", args.join(" ")).ok();
-	CommandResult::Empty
+    writeln!(writer, "{}", args.join(" ")).ok();
+    CommandResult::Empty
     })
     .begin_class("case", "change case of app_data")
-	.add_action("upper", "make app_data uppercase", |_, _|
-	    CommandResult::<String>::app_data_fn(|app_data, _repldata, _| {
-		*app_data = app_data.to_uppercase();
-                String::new()
-	    })
-	)
+    .add_action("upper", "make app_data uppercase", |_, _|
+    CommandResult::<String>::app_data_fn(|app_data, _repldata, _| {
+        *app_data = app_data.to_uppercase();
+        String::new()
+        })
+    )
         .add_action("lower", "make app_data lowercase", |_, _|
-	    CommandResult::<String>::app_data_fn(|app_data, _repldata, _| {
-		*app_data = app_data.to_lowercase();
-                String::new()
-            })
-        )
+    CommandResult::<String>::app_data_fn(|app_data, _repldata, _| {
+        *app_data = app_data.to_lowercase();
+        String::new()
+        })
+    )
     .end_class()
     .unwrap()
 # ;

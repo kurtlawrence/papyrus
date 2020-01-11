@@ -41,7 +41,7 @@ pub fn parse_program(code: &str) -> InputResult {
                     .map(|s| (s, true))
                     .collect::<Vec<_>>();
                 InputResult::Program(Input {
-                    items: items,
+                    items,
                     stmts: vec![],
                     crates: vec![],
                 })
@@ -97,9 +97,9 @@ pub fn parse_program(code: &str) -> InputResult {
                 }
             }
             InputResult::Program(Input {
-                items: items,
-                stmts: stmts,
-                crates: crates,
+                items,
+                stmts,
+                crates,
             })
         })
         .unwrap_or_else(reterr)
