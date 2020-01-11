@@ -37,7 +37,7 @@ pub fn determine_result(input: &str, line: &str, treat_as_cmd: bool) -> InputRes
         // check if the final statement ends with a semi
         match parse_program(input) {
             InputResult::Program(input) => {
-                if input.stmts.len() > 0 && input.stmts.last().unwrap().semi {
+                if input.stmts.last().map(|x| x.semi).unwrap_or(false) {
                     InputResult::More
                 } else {
                     InputResult::Program(input)

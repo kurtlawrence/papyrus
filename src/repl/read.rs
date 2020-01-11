@@ -65,7 +65,7 @@ impl<D> Repl<Read, D> {
         } else {
             self.more = false;
             ReadResult::Eval(self.move_state(|s| Evaluate {
-                output: s.output.to_write(),
+                output: s.output.into_write(),
                 result,
             }))
         }

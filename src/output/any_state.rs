@@ -8,14 +8,14 @@ impl<S> Output<S> {
 
     /// Get the contents of the line at index `idx`.
     pub fn line(&self, idx: usize) -> Option<&str> {
+        use std::cmp::Ordering::*;
+
         let lines_len = self.lines_pos.len();
 
-        let end = if idx < lines_len {
-            self.lines_pos.get(idx).cloned()
-        } else if idx == lines_len {
-            Some(self.buf.len())
-        } else {
-            None
+        let end = match idx.cmp(&lines_len) {
+            Less => self.lines_pos.get(idx).cloned(),
+            Equal => Some(self.buf.len()),
+            Greater => None,
         };
 
         end.map(|end| {

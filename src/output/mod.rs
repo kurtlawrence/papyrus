@@ -91,70 +91,68 @@
 //! These functions can be used in a main function that handles the repl states.
 //!
 //! ```rust,ignore
-//! fn main() {
-//!     // build the repl
-//!     let repl = repl!();
+//! // build the repl
+//! let repl = repl!();
 //!
-//!     // alias the state in the variable name.
-//!     let mut read = repl;
+//! // alias the state in the variable name.
+//! let mut read = repl;
 //!
-//!     loop {
-//!         // write the prompt, erase line first.
-//!         {
-//!             let stdout = stdout();
-//!             let mut lock = stdout.lock();
-//!             erase_console_line(&mut lock);
-//!             write!(&mut lock, "{}", read.prompt()).unwrap();
-//!             lock.flush().unwrap();
+//! loop {
+//!     // write the prompt, erase line first.
+//!     {
+//!         let stdout = stdout();
+//!         let mut lock = stdout.lock();
+//!         erase_console_line(&mut lock);
+//!         write!(&mut lock, "{}", read.prompt()).unwrap();
+//!         lock.flush().unwrap();
+//!     }
+//!
+//!     // read line from stdin
+//!     let line_input = read_line();
+//!
+//!     // set this as the repl input
+//!     read.line_input(&line_input);
+//!
+//!     // handle the input and get a result from it
+//!     let read_res = read.read();
+//!
+//!     match read_res {
+//!         ReadResult::Read(repl) => {
+//!             // The repl is still in a read state, continue reading
+//!             read = repl;
 //!         }
+//!         ReadResult::Eval(mut eval) => {
+//!            // The repl is ready for evaluating
 //!
-//!         // read line from stdin
-//!         let line_input = read_line();
+//!            // as we want to update as input comes in,
+//!            // we need to listen to output changes
+//!            let rx = eval.output_listen();
 //!
-//!         // set this as the repl input
-//!         read.line_input(&line_input);
+//!            // start the output thread
+//!            let output_thread_jh = write_output_to_stdout(rx);
 //!
-//!         // handle the input and get a result from it
-//!         let read_res = read.read();
+//!            // evaluate using a unit value for data
+//!            let EvalResult { repl, signal } = eval.eval(&mut ());
 //!
-//!         match read_res {
-//!             ReadResult::Read(repl) => {
-//!                 // The repl is still in a read state, continue reading
-//!                 read = repl;
-//!             }
-//!             ReadResult::Eval(mut eval) => {
-//!                 // The repl is ready for evaluating
+//!            // handle the signal, other values are elided but would be
+//!            // handled in a more complete implementation
+//!            match signal {
+//!                Signal::Exit => break,
+//!                _ => (),
+//!            }
 //!
-//!                 // as we want to update as input comes in,
-//!                 // we need to listen to output changes
-//!                 let rx = eval.output_listen();
+//!            let (mut repl, _) = repl.print();
 //!
-//!                 // start the output thread
-//!                 let output_thread_jh = write_output_to_stdout(rx);
+//!            // we have printed everything it is time to close the channel
+//!            // it is worth testing what happens if you don't, and it should
+//!            // highlight the reason for requiring the listening channels.
+//!            repl.close_channel();
 //!
-//!                 // evaluate using a unit value for data
-//!                 let EvalResult { repl, signal } = eval.eval(&mut ());
+//!            // we wait for the output thread to finish to let it write out
+//!            // the remaining lines
+//!            output_thread_jh.join().unwrap();
 //!
-//!                 // handle the signal, other values are elided but would be
-//!                 // handled in a more complete implementation
-//!                 match signal {
-//!                     Signal::Exit => break,
-//!                     _ => (),
-//!                 }
-//!
-//!                 let (mut repl, _) = repl.print();
-//!
-//!                 // we have printed everything it is time to close the channel
-//!                 // it is worth testing what happens if you don't, and it should
-//!                 // highlight the reason for requiring the listening channels.
-//!                 repl.close_channel();
-//!
-//!                 // we wait for the output thread to finish to let it write out
-//!                 // the remaining lines
-//!                 output_thread_jh.join().unwrap();
-//!
-//!                 read = repl;
-//!             }
+//!            read = repl;
 //!         }
 //!     }
 //! }
@@ -217,51 +215,49 @@
 //! These functions can be used in a main function that handles the repl states.
 //!
 //! ```rust,ignore
-//! fn main() {
-//!     // build the repl
-//!     let repl = repl!();
+//! // build the repl
+//! let repl = repl!();
 //!
-//!     // alias the state in the variable name.
-//!     let mut read = repl;
+//! // alias the state in the variable name.
+//! let mut read = repl;
 //!
-//!     // as we want to update as input comes in,
-//!     // we need to listen to output changes
-//!     let rx = read.output_listen();
+//! // as we want to update as input comes in,
+//! // we need to listen to output changes
+//! let rx = read.output_listen();
 //!
-//!     // start the output thread
-//!     write_outoput_to_file(rx);
+//! // start the output thread
+//! write_outoput_to_file(rx);
 //!
-//!     loop {
-//!         // read line from stdin
-//!         let line_input = read_line();
+//! loop {
+//!     // read line from stdin
+//!     let line_input = read_line();
 //!
-//!         // set this as the repl input
-//!         read.line_input(&line_input);
+//!     // set this as the repl input
+//!     read.line_input(&line_input);
 //!
-//!         // handle the input and get a result from it
-//!         let read_res = read.read();
+//!     // handle the input and get a result from it
+//!     let read_res = read.read();
 //!
-//!         read = match read_res {
-//!             ReadResult::Read(repl) => {
-//!                 // The repl is still in a read state, continue reading
-//!                 repl
+//!     read = match read_res {
+//!         ReadResult::Read(repl) => {
+//!             // The repl is still in a read state, continue reading
+//!             repl
+//!         }
+//!         ReadResult::Eval(eval) => {
+//!             // The repl is ready for evaluating
+//!
+//!             // evaluate using a unit value for data
+//!             let EvalResult { repl, signal } = eval.eval(&mut ());
+//!
+//!             // handle the signal, other values are elided but would be
+//!             // handled in a more complete implementation
+//!             match signal {
+//!                 Signal::Exit => break,
+//!                 _ => (),
 //!             }
-//!             ReadResult::Eval(eval) => {
-//!                 // The repl is ready for evaluating
 //!
-//!                 // evaluate using a unit value for data
-//!                 let EvalResult { repl, signal } = eval.eval(&mut ());
-//!
-//!                 // handle the signal, other values are elided but would be
-//!                 // handled in a more complete implementation
-//!                 match signal {
-//!                     Signal::Exit => break,
-//!                     _ => (),
-//!                 }
-//!
-//!                 let (repl, _) = repl.print();
-//!                 repl
-//!             }
+//!             let (repl, _) = repl.print();
+//!             repl
 //!         }
 //!     }
 //! }
@@ -455,7 +451,7 @@ mod tests {
         // line changes. This behaviour is inconsistent, especially if using the writeln!
         // macro, where the expectation is just a single new line...
 
-        let mut output = Output::new().to_write();
+        let mut output = Output::new().into_write();
 
         let rx = output.listen();
 
@@ -489,7 +485,7 @@ mod tests {
     fn line_listening_consistenty() {
         // check that rebuilding a buffer using line change events matches
 
-        let mut output = Output::new().to_write();
+        let mut output = Output::new().into_write();
 
         let rx = output.listen();
 

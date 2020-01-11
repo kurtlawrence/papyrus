@@ -60,7 +60,7 @@ impl Output<Write> {
     /// ```rust
     /// # use papyrus::output::Output;
     ///
-    /// let mut o = Output::new().to_write();
+    /// let mut o = Output::new().into_write();
     ///
     /// o.write_str("Hello\nworld");
     /// o.erase_last_line();
@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn erase_last_line() {
-        let mut o = Output::new().to_write();
+        let mut o = Output::new().into_write();
 
         o.write_str("Hello\nworld");
         o.erase_last_line();
@@ -103,7 +103,7 @@ mod tests {
         o.erase_last_line();
         assert_eq!(o.buffer(), "Hello\n");
 
-        let mut o = Output::new().to_write();
+        let mut o = Output::new().into_write();
 
         o.write_str("Hello");
         o.erase_last_line();
@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn writing_line() {
-        let mut o = Output::new().to_write();
+        let mut o = Output::new().into_write();
 
         let rx = o.listen();
 
