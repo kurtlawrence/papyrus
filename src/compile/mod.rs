@@ -173,7 +173,7 @@ mod tests {
     // }
 
     fn pass_compile_eval_file() -> (PathBuf, SourceCode) {
-        let mut code = SourceCode::new();
+        let mut code = SourceCode::default();
         code.stmts.push(StmtGrp(vec![Statement {
             expr: "2+2".to_string(),
             semi: false,
@@ -182,7 +182,7 @@ mod tests {
     }
 
     fn fail_compile_file() -> (PathBuf, SourceCode) {
-        let mut code = SourceCode::new();
+        let mut code = SourceCode::default();
         code.stmts.push(StmtGrp(vec![Statement {
             expr: "2+".to_string(),
             semi: false,
@@ -191,7 +191,7 @@ mod tests {
     }
 
     fn fail_eval_file() -> (PathBuf, SourceCode) {
-        let mut code = SourceCode::new();
+        let mut code = SourceCode::default();
         code.stmts.push(StmtGrp(vec![Statement {
             expr: "panic!(\"eval panic\")".to_string(),
             semi: false,
@@ -203,7 +203,7 @@ mod tests {
     fn output_externally_linked_type_as_kserd() {
         let compile_dir = "target/testing/output_externally_linked_type_as_kserd";
         let files = vec![{
-            let mut code = SourceCode::new();
+            let mut code = SourceCode::default();
             code.crates
                 .push(CrateType::parse_str("extern crate rand;").unwrap());
             code.stmts.push(StmtGrp(vec![Statement {

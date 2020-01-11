@@ -37,7 +37,7 @@ pub fn parse_program(code: &str) -> InputResult {
                     .attrs
                     .into_iter()
                     .map(|attr| attr.into_token_stream().to_string())
-                    .map(|s| fmt(s))
+                    .map(fmt)
                     .map(|s| (s, true))
                     .collect::<Vec<_>>();
                 InputResult::Program(Input {

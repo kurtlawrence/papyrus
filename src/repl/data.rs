@@ -5,7 +5,7 @@ impl<Data> Default for ReplData<Data> {
     fn default() -> Self {
         let lib_path = PathBuf::from("lib");
         let mut map = ModsMap::new();
-        map.insert(lib_path.clone(), SourceCode::new());
+        map.insert(lib_path.clone(), SourceCode::default());
 
         let mut r = ReplData {
             cmdtree: Builder::new("papyrus")

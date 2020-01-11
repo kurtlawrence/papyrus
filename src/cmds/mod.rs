@@ -378,7 +378,7 @@ pub(crate) fn switch_module<D>(data: &mut ReplData<D>, path: &Path) -> &'static 
 
     for x in all {
         if !data.mods_map.contains_key(&x) {
-            data.mods_map.insert(x, SourceCode::new());
+            data.mods_map.insert(x, SourceCode::default());
         }
     }
 
