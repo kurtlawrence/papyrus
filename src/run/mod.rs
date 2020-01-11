@@ -193,10 +193,8 @@ where
 
         if let Some(val) = reevaluate.take() {
             read.line_input(&val);
-        } else {
-            if do_read(&mut read, &mut screen, input_buf, &cache)? {
-                break read.output().to_owned();
-            }
+        } else if do_read(&mut read, &mut screen, input_buf, &cache)? {
+            break read.output().to_owned();
         }
 
         match read.read() {

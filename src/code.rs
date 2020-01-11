@@ -16,12 +16,12 @@
 //!
 //! let mut src = SourceCode::default();
 //! src.stmts.push(StmtGrp(vec![Statement {
-//! 	expr: String::from("let a = 1"),
-//! 	semi: true
+//!     expr: String::from("let a = 1"),
+//!         semi: true
 //!     },
 //!     Statement {
-//! 	expr: String::from("a"),
-//! 	semi: false
+//!         expr: String::from("a"),
+//!         semi: false
 //!     }
 //! ]));
 //! ```

@@ -256,8 +256,8 @@ impl LinkingConfiguration {
     /// Appends result to buffer.
     pub fn construct_fn_args(&self, buf: &mut String) {
         if let Some(d) = &self.data_type {
-           // matches pfh::compile::execute::DataFunc definition.
-           buf.push_str("app_data: &"); // 11 len
+            // matches pfh::compile::execute::DataFunc definition.
+            buf.push_str("app_data: &"); // 11 len
             if self.mutable {
                 buf.push_str("mut ");
             }
@@ -330,10 +330,9 @@ impl Extern {
                     s
                 }
             })
-            .ok_or_else(|| io::Error::new(
-                io::ErrorKind::Other,
-                "failed getting executable name",
-            ))?;
+            .ok_or_else(|| {
+                io::Error::new(io::ErrorKind::Other, "failed getting executable name")
+            })?;
 
         let path = get_rlib_path(name)?;
 
@@ -352,13 +351,12 @@ impl Extern {
             ));
         }
 
-        let lib = path
-            .file_name()
-            .and_then(|s| s.to_str())
-            .ok_or_else( || io::Error::new(
+        let lib = path.file_name().and_then(|s| s.to_str()).ok_or_else(|| {
+            io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!("{} does not have file name", path.display()),
-            ))?;
+            )
+        })?;
 
         if !lib.starts_with("lib") || !lib.ends_with(".rlib") {
             return Err(io::Error::new(
@@ -453,10 +451,12 @@ fn get_rlib_path(crate_name: &str) -> io::Result<PathBuf> {
         .filter(|entry| entry.is_ok())
         .map(|entry| entry.expect("filtered some").path())
         .find(|path| path.ends_with(&lib_name))
-        .ok_or_else(|| io::Error::new(
-            io::ErrorKind::NotFound,
-            format!("did not find file: '{}'", lib_name),
-        ))
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("did not find file: '{}'", lib_name),
+            )
+        })
 }
 
 #[cfg(test)]
