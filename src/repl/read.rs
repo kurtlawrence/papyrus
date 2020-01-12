@@ -49,8 +49,6 @@ impl<D> Repl<Read, D> {
     pub fn read(mut self) -> ReadResult<D> {
         let treat_as_cmd = !self.data.cmdtree.at_root();
 
-        dbg_to_file!(self.state.output.input_buffer());
-
         let result = crate::input::determine_result(
             self.state.output.input_buffer(),
             self.state.output.input_buf_line(),
