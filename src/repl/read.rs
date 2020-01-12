@@ -20,6 +20,7 @@ impl<D> Default for Repl<Read, D> {
     }
 }
 
+/// > **These methods are available when the REPL is in the [`Read`] state.**
 impl<D> Repl<Read, D> {
     /// Overwrite the current line in the input buffer.
     ///
@@ -47,6 +48,8 @@ impl<D> Repl<Read, D> {
     /// This may move the repl into an evaluating state.
     pub fn read(mut self) -> ReadResult<D> {
         let treat_as_cmd = !self.data.cmdtree.at_root();
+
+        dbg_to_file!(self.state.output.input_buffer());
 
         let result = crate::input::determine_result(
             self.state.output.input_buffer(),
@@ -123,12 +126,12 @@ mod tests {
         repl.line_input("{");
         repl = repl.read().unwrap_read();
 
-        assert_eq!(repl.input_buffer(), "{");
+        assert_eq!(repl.input_buffer(), "{\n");
 
         repl.line_input("test");
-        assert_eq!(repl.input_buffer(), "{test");
+        assert_eq!(repl.input_buffer(), "{\ntest");
 
         repl.line_input("");
-        assert_eq!(repl.input_buffer(), "{");
+        assert_eq!(repl.input_buffer(), "{\n");
     }
 }

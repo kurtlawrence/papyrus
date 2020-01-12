@@ -142,7 +142,7 @@ pub struct EvalResult<D> {
 /// Return signals from evaluating.
 /// Sometimes there are extra signals that result from evaluating,
 /// such as the signal to exit the repl. These signals are enumerated here.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Signal {
     /// No signal was sent.
     None,

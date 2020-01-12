@@ -1,6 +1,6 @@
 use super::*;
 
-/// These methods are available in _any_ REPL state.
+/// > **These methods are available in _any_ REPL state.**
 impl<S, D> Repl<S, D> {
     pub(super) fn move_state<N, F: FnOnce(S) -> N>(self, state_chg: F) -> Repl<N, D> {
         let Repl {

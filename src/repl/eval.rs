@@ -8,6 +8,7 @@ use std::borrow::{Borrow, BorrowMut};
 use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, Mutex};
 
+/// > **These methods are available when the REPL is in the [`Evaluate`] state.**
 impl<D> Repl<Evaluate, D> {
     /// Evaluates the read input, compiling and executing the code and printing all line prints until
     /// a result is found. This result gets passed back as a print ready repl.
@@ -40,29 +41,13 @@ impl<D> Repl<Evaluate, D> {
         map_variants(self, func, func)
     }
 
-    /// Begin listening to line change events on the output.
-    pub fn output_listen(&mut self) -> output::Receiver {
-        self.state.output.listen()
-    }
-
-    /// Close the sender side of the output channel.
-    pub fn close_channel(&mut self) {
-        self.state.output.close()
-    }
-
-    /// The current output.
-    ///
-    /// The output contains colouring ANSI escape codes, the prompt, and all input.
-    pub fn output(&self) -> &str {
-        self.state.output.buffer()
-    }
-}
-
-impl<D: 'static + Send> Repl<Evaluate, D> {
     /// Same as `eval` but will evaluate on another thread, not blocking this one.
     ///
     /// An `Arc::clone` will be taken of `app_data`.
-    pub fn eval_async(self, app_data: &Arc<Mutex<D>>) -> Evaluating<D> {
+    pub fn eval_async(self, app_data: &Arc<Mutex<D>>) -> Evaluating<D>
+    where
+        D: 'static + Send,
+    {
         let (tx, rx) = crossbeam_channel::bounded(1);
 
         let clone = Arc::clone(app_data);
@@ -78,6 +63,23 @@ impl<D: 'static + Send> Repl<Evaluate, D> {
         });
 
         Evaluating { jh: rx }
+    }
+
+    /// Begin listening to line change events on the output.
+    pub fn output_listen(&mut self) -> output::Receiver {
+        self.state.output.listen()
+    }
+
+    /// Close the sender side of the output channel.
+    pub fn close_channel(&mut self) {
+        self.state.output.close()
+    }
+
+    /// The current output.
+    ///
+    /// The output contains colouring ANSI escape codes, the prompt, and all input.
+    pub fn output(&self) -> &str {
+        self.state.output.buffer()
     }
 }
 

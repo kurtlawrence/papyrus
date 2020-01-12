@@ -48,6 +48,7 @@ impl Output<Read> {
     /// and stacks the buffers.
     pub fn new_line(&mut self) {
         self.push_ch('\n');
+        self.state.buf.push('\n');
         self.state.start = self.state.buf.len();
         self.state.lines_idx = self.lines_len();
         self.state.prompt_start = self.buf.len();
@@ -95,4 +96,18 @@ impl Output<Read> {
         self.set_prompt(prompt);
         self.send_line_chg();
     }
+}
+
+#[test]
+fn multiline_input_consistency() {
+    let mut o = Output::new();
+    o.replace_line_input("Hello\nWorld");
+    let expected = "Hello\nWorld";
+    assert_eq!(o.input_buffer(), expected);
+
+    let mut o = Output::new();
+    o.replace_line_input("Hello");
+    o.new_line();
+    o.replace_line_input("World");
+    assert_eq!(o.input_buffer(), expected);
 }

@@ -1,7 +1,7 @@
 use super::*;
 use ::kserd::fmt::FormattingConfig;
 
-/// Methods when repl is in `Print` state.
+/// > **These methods are available when the REPL is in the [`Print`] state.**
 impl<D> Repl<Print, D> {
     /// Prints the result if successful as `[out#]` or the failure message if any.
     /// Uses the default formatter for the `Kserd` data.
