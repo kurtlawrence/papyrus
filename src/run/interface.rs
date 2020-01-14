@@ -14,9 +14,11 @@ use xterm::{
         KeyEvent, KeyModifiers,
     },
     style::Print,
-    terminal::{enable_raw_mode, Clear, ClearType},
+    terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
     Result as XResult,
 };
+
+const TAB_WIDTH: usize = 8;
 
 pub struct Screen(pub(super) Receiver<Event>);
 
@@ -46,10 +48,10 @@ impl Screen {
     pub fn begin_interface_input<'a>(
         &'a mut self,
         preallocated_buf: &'a mut InputBuffer,
-    ) -> XResult<InputInterface<'a>> {
+    ) -> XResult<Interface<'a>> {
         enable_raw_mode()?;
         preallocated_buf.clear();
-        Ok(InputInterface {
+        Ok(Interface {
             screen: self,
             stdout: io::stdout(),
             buf: preallocated_buf,
@@ -59,7 +61,7 @@ impl Screen {
     }
 }
 
-pub struct InputInterface<'a> {
+pub struct Interface<'a> {
     screen: &'a mut Screen,
     stdout: Stdout,
     buf: &'a mut InputBuffer,
@@ -67,7 +69,15 @@ pub struct InputInterface<'a> {
     prev_lines_covered: u16,
 }
 
-impl<'a> InputInterface<'a> {
+impl<'a> Interface<'a> {
+    pub fn buffer(&self) -> String {
+        self.buf.buffer(self.prompt_len..)
+    }
+
+    pub fn buf_ch_len(&self) -> usize {
+        self.buf.len().saturating_sub(self.prompt_len)
+    }
+
     pub fn set_prompt(&mut self, prompt: &str) {
         self.buf.move_start();
         for _ in 0..self.prompt_len {
@@ -87,10 +97,41 @@ impl<'a> InputInterface<'a> {
         self.write("\n");
     }
 
+    pub fn truncate(&mut self, ch_pos: usize) {
+        self.buf.truncate(ch_pos + self.prompt_len);
+    }
+
     pub fn flush_buffer(&mut self) -> XResult<()> {
         overwrite_text(0, self.prev_lines_covered, &self.buf)?;
         self.prev_lines_covered = self.buf.covered_lines(term_width_nofail()) as u16;
         Ok(())
+    }
+
+    pub fn read_until(&mut self, events: &[Event]) -> XResult<Event> {
+        let mut last = Event::Key(KeyEvent {
+            modifiers: KeyModifiers::CONTROL,
+            code: xterm::event::KeyCode::Char('c'),
+        });
+
+        while let Ok(ev) = self.screen.0.recv() {
+            last = ev;
+            if events.contains(&ev) {
+                break;
+            }
+
+            let chg = apply_event_to_buf(&mut self.buf, ev);
+            if chg {
+                self.flush_buffer()?;
+            }
+        }
+
+        Ok(last)
+    }
+}
+
+impl<'a> Drop for Interface<'a> {
+    fn drop(&mut self) {
+        disable_raw_mode().ok();
     }
 }
 
@@ -113,12 +154,15 @@ impl InputBuffer {
         self.pos = 0;
     }
 
-    pub fn buffer(&self) -> String {
-        self.buf.iter().collect()
+    pub fn buffer<T>(&self, range: T) -> String
+    where
+        T: std::slice::SliceIndex<[char], Output = [char]>,
+    {
+        self.buf[range].iter().collect()
     }
 
     /// Number of characters.
-    pub fn ch_len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.buf.len()
     }
 
@@ -194,8 +238,8 @@ impl InputBuffer {
                 }
                 '\r' => counter = 0,
                 '\t' => {
-                    let r = counter % 4;
-                    counter += 4 - r;
+                    let r = counter % TAB_WIDTH;
+                    counter += TAB_WIDTH - r;
                 }
                 _ => counter += 1,
             }
@@ -260,11 +304,7 @@ impl CompletionWriter {
         self.completion_idx = 0;
     }
 
-    pub fn overwrite_completion(
-        &mut self,
-        initial: (u16, u16),
-        buf: &mut InputBuffer,
-    ) -> io::Result<()> {
+    pub fn overwrite_completion(&mut self, interface: &mut Interface) -> XResult<()> {
         let completion = self.completions.get(self.completion_idx);
 
         if let Some(CItem {
@@ -272,25 +312,17 @@ impl CompletionWriter {
             input_chpos,
         }) = completion
         {
-            let prev_lines_covered =
-                lines_covered(initial.0 as usize, term_width_nofail(), buf.ch_len());
-            buf.truncate(*input_chpos);
-            buf.insert_str(matchstr);
-            let buf = buf.buffer();
-            overwrite_text(
-                initial.0 + 1,
-                prev_lines_covered.saturating_sub(1) as u16,
-                &buf,
-            )
-            .ok();
-            self.input_line = buf;
+            interface.truncate(*input_chpos);
+            interface.write(matchstr);
+            interface.flush_buffer()?;
+            self.input_line = interface.buffer();
         }
 
         Ok(())
     }
 }
 
-fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, bool) {
+fn apply_event_to_buf(buf: &mut InputBuffer, event: Event) -> bool {
     const NOMOD: KeyModifiers = KeyModifiers::empty();
     macro_rules! nomod {
         ($code:ident) => {
@@ -301,7 +333,7 @@ fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, bool)
         };
     }
 
-    let cmd = match event {
+    let modified = match event {
         Key(nomod!(Left)) => {
             buf.move_pos_left(1);
             false
@@ -332,7 +364,7 @@ fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, bool)
         _ => false,
     };
 
-    (buf, cmd)
+    modified
 }
 
 fn overwrite_text<T: fmt::Display + Clone>(
@@ -355,41 +387,6 @@ fn overwrite_text<T: fmt::Display + Clone>(
     )?;
 
     stdout.flush().map_err(xterm::ErrorKind::IoError)
-}
-
-pub fn read_until(
-    screen: &mut Screen,
-    initial: (u16, u16),
-    mut buf: InputBuffer,
-    events: &[Event],
-) -> (InputBuffer, Event) {
-    let reader = &mut screen.0;
-    let mut last = Event::Key(KeyEvent {
-        modifiers: KeyModifiers::CONTROL,
-        code: xterm::event::KeyCode::Char('c'),
-    });
-
-    while let Ok(ev) = reader.recv() {
-        last = ev;
-        if events.contains(&ev) {
-            break;
-        }
-
-        let prev_lines_covered =
-            lines_covered(initial.0 as usize, term_width_nofail(), buf.ch_len());
-        let (newbuf, chg) = apply_event_to_buf(buf, ev);
-        if chg {
-            overwrite_text(
-                initial.0 + 1,
-                prev_lines_covered.saturating_sub(1) as u16,
-                &newbuf,
-            )
-            .ok();
-        }
-        buf = newbuf
-    }
-
-    (buf, last)
 }
 
 /// Returns the number of lines the written text accounts for
@@ -456,7 +453,7 @@ mod tests {
         let mut input = InputBuffer::new();
 
         "Hello, world!".chars().for_each(|c| input.insert(c));
-        assert_eq!(&input.buffer(), "Hello, world!");
+        assert_eq!(&input.buffer(..), "Hello, world!");
         assert_eq!(input.pos, 13);
 
         // can't go past end of buffer
@@ -467,7 +464,7 @@ mod tests {
         assert_eq!(input.pos, 12);
 
         input.insert('?');
-        assert_eq!(&input.buffer(), "Hello, world?!");
+        assert_eq!(&input.buffer(..), "Hello, world?!");
         assert_eq!(input.pos, 13);
 
         // can't go past start of buffer
@@ -482,20 +479,20 @@ mod tests {
         "Hello, world!".chars().for_each(|c| input.insert(c));
 
         input.delete();
-        assert_eq!(&input.buffer(), "Hello, world!");
+        assert_eq!(&input.buffer(..), "Hello, world!");
         assert_eq!(input.pos, 13);
 
         input.backspace();
-        assert_eq!(&input.buffer(), "Hello, world");
+        assert_eq!(&input.buffer(..), "Hello, world");
         assert_eq!(input.pos, 12);
 
         input.move_pos_left(14);
         input.backspace();
-        assert_eq!(&input.buffer(), "Hello, world");
+        assert_eq!(&input.buffer(..), "Hello, world");
         assert_eq!(input.pos, 0);
 
         input.delete();
-        assert_eq!(&input.buffer(), "ello, world");
+        assert_eq!(&input.buffer(..), "ello, world");
         assert_eq!(input.pos, 0);
     }
 

@@ -13,7 +13,7 @@ mod interface;
 #[cfg(test)]
 mod tests;
 
-use interface::{CItem, InputBuffer, Screen};
+use interface::{CItem, InputBuffer, Interface, Screen};
 
 const CODE_COMPLETIONS: Option<usize> = Some(10);
 
@@ -193,13 +193,9 @@ where
 
         interface.flush_buffer()?;
 
-        // TODO
-        drop(interface);
-
         if let Some(val) = reevaluate.take() {
             read.line_input(&val);
-        // TODO
-        } else if do_read(&mut read, &mut screen, InputBuffer::new(), &cache)? {
+        } else if do_read(&mut read, &mut interface, &cache)? {
             break read.output().to_owned();
         }
 
@@ -269,10 +265,9 @@ fn construct_crash_report(
 /// Returns true if interrupt occurred.
 fn do_read<D>(
     repl: &mut Repl<Read, D>,
-    screen: &mut Screen,
-    buf: InputBuffer,
+    interface: &mut Interface,
     cache: &CacheWrapper,
-) -> io::Result<bool> {
+) -> xterm::Result<bool> {
     use crossterm::event::{Event::*, KeyCode::*, KeyEvent, KeyModifiers};
     const ENTER: Event = Key(KeyEvent {
         modifiers: KeyModifiers::empty(),
@@ -296,12 +291,6 @@ fn do_read<D>(
     });
     const STOPEVENTS: &[Event] = &[ENTER, TAB, BREAK, ENTER_VERBATIM_MODE, STOP_VERBATIM_MODE];
 
-    crossterm::terminal::enable_raw_mode().map_err(|e| map_xterm_err(e, "enabling raw mode"))?;
-
-    let mut i = Some(buf);
-
-    let initial = crossterm::cursor::position().unwrap_or((0, 0));
-
     let mut completion_writer = interface::CompletionWriter::new();
     let mut verbatim_mode = false;
     let rdata = &repl.data;
@@ -313,20 +302,25 @@ fn do_read<D>(
     let result = loop {
         colour_term_on_verbatim(verbatim_mode);
 
-        let (mut input, ev) = interface::read_until(screen, initial, i.take().unwrap(), STOPEVENTS);
+        let ev = interface.read_until(STOPEVENTS)?;
 
         match (ev, verbatim_mode) {
             (ENTER, false) | (STOP_VERBATIM_MODE, true) => {
-                repl.line_input(&input.buffer());
-                write!(&mut io::stdout(), "\n\r")?;
+                repl.line_input(&interface.buffer());
+                interface.writeln("");
+                interface.flush_buffer()?;
                 break Ok(false);
             }
             (TAB, false) => {
-                let line = input.buffer();
+                let line = interface.buffer();
                 if completion_writer.is_same_input(&line) {
                     completion_writer.next_completion();
                 } else {
-                    let f = |start| input.ch_len().saturating_sub(line[start..].chars().count());
+                    let f = |start| {
+                        interface
+                            .buf_ch_len()
+                            .saturating_sub(line[start..].chars().count())
+                    };
 
                     let tree_chpos = f(TreeCompleter::word_break(&line));
                     let mods_chpos = f(ModulesCompleter::word_break(&line));
@@ -355,20 +349,23 @@ fn do_read<D>(
                     completion_writer.new_completions(completions);
                 }
 
-                completion_writer.overwrite_completion(initial, &mut input)?;
+                completion_writer.overwrite_completion(interface)?;
             }
             (BREAK, _) => break Ok(true),
             (ENTER_VERBATIM_MODE, false) => verbatim_mode = true,
-            (ENTER, true) => input.insert('\n'),
-            (TAB, true) => input.insert('\t'),
+            (ENTER, true) => {
+                interface.writeln("");
+                interface.flush_buffer()?;
+            }
+            (TAB, true) => {
+                interface.write("\t");
+                interface.flush_buffer()?;
+            }
             _ => (), // do nothing otherwise
         }
-
-        i = Some(input); // prep for next loop
     };
 
     colour_term_on_verbatim(false);
-    crossterm::terminal::disable_raw_mode().map_err(|e| map_xterm_err(e, "disabling raw mode"))?;
     result
 }
 
