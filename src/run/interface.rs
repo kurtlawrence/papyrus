@@ -14,14 +14,11 @@ use xterm::{
         KeyEvent, KeyModifiers,
     },
     style::Print,
-    terminal::{Clear, ClearType},
+    terminal::{enable_raw_mode, Clear, ClearType},
+    Result as XResult,
 };
 
-/// Terminal screen interface.
-///
-/// It is as its own struct as there is specific configuration and key handling for moving around the
-/// interface.
-pub struct Screen(Receiver<Event>);
+pub struct Screen(pub(super) Receiver<Event>);
 
 impl Screen {
     pub fn new() -> io::Result<Self> {
@@ -45,8 +42,59 @@ impl Screen {
             })?;
         Ok(Screen(rx))
     }
+
+    pub fn begin_interface_input<'a>(
+        &'a mut self,
+        preallocated_buf: &'a mut InputBuffer,
+    ) -> XResult<InputInterface<'a>> {
+        enable_raw_mode()?;
+        preallocated_buf.clear();
+        Ok(InputInterface {
+            screen: self,
+            stdout: io::stdout(),
+            buf: preallocated_buf,
+            prev_lines_covered: 0,
+            prompt_len: 0,
+        })
+    }
 }
 
+pub struct InputInterface<'a> {
+    screen: &'a mut Screen,
+    stdout: Stdout,
+    buf: &'a mut InputBuffer,
+    prompt_len: usize,
+    prev_lines_covered: u16,
+}
+
+impl<'a> InputInterface<'a> {
+    pub fn set_prompt(&mut self, prompt: &str) {
+        self.buf.move_start();
+        for _ in 0..self.prompt_len {
+            self.buf.delete();
+        }
+        self.prompt_len = prompt.chars().count();
+        self.buf.insert_str(prompt);
+        self.buf.move_end();
+    }
+
+    pub fn write<T: fmt::Display>(&mut self, text: T) {
+        self.buf.insert_str(&text.to_string());
+    }
+
+    pub fn writeln<T: fmt::Display>(&mut self, text: T) {
+        self.write(text);
+        self.write("\n");
+    }
+
+    pub fn flush_buffer(&mut self) -> XResult<()> {
+        overwrite_text(0, self.prev_lines_covered, &self.buf)?;
+        self.prev_lines_covered = self.buf.covered_lines(term_width_nofail()) as u16;
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
 pub struct InputBuffer {
     buf: Vec<char>,
     pos: usize,
@@ -58,6 +106,11 @@ impl InputBuffer {
             buf: Vec::new(),
             pos: 0,
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.buf.clear();
+        self.pos = 0;
     }
 
     pub fn buffer(&self) -> String {
@@ -95,6 +148,14 @@ impl InputBuffer {
         }
     }
 
+    pub fn move_start(&mut self) {
+        self.pos = 0;
+    }
+
+    pub fn move_end(&mut self) {
+        self.pos = self.buf.len();
+    }
+
     /// Return the number moved.
     pub fn move_pos_left(&mut self, n: usize) -> usize {
         let n = if self.pos < n { self.pos } else { n };
@@ -117,12 +178,44 @@ impl InputBuffer {
             self.pos = self.buf.len()
         }
     }
+
+    pub fn covered_lines(&self, width: usize) -> usize {
+        let mut lines = 0;
+        let mut counter = 0;
+        let mut in_esc_seq = false;
+        for ch in self.buf.iter().copied() {
+            match ch {
+                'm' if in_esc_seq => in_esc_seq = false,
+                '\u{1b}' if !in_esc_seq => in_esc_seq = true,
+                _ if in_esc_seq => (),
+                '\n' => {
+                    lines += 1;
+                    counter = 0
+                }
+                '\r' => counter = 0,
+                '\t' => {
+                    let r = counter % 4;
+                    counter += 4 - r;
+                }
+                _ => counter += 1,
+            }
+
+            if counter >= width {
+                lines += 1;
+                counter = 0;
+            }
+        }
+        lines
+    }
 }
 
 impl fmt::Display for InputBuffer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for ch in &self.buf {
+        for ch in self.buf.iter().copied() {
             write!(f, "{}", ch)?;
+            if ch == '\n' {
+                write!(f, "\r")?;
+            }
         }
         Ok(())
     }
@@ -356,6 +449,7 @@ fn term_width_nofail() -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use colored::*;
 
     #[test]
     fn test_input_movement() {
@@ -416,5 +510,84 @@ mod tests {
         assert_eq!(lines_covered(2, 3, "hell".chars().count()), 2);
         assert_eq!(lines_covered(2, 3, "hello".chars().count()), 3);
         assert_eq!(lines_covered(0, 3, "HelloHelloHello".chars().count()), 5);
+
+        let mut inputbuf = InputBuffer::new();
+
+        inputbuf.insert_str(&"red".bright_red().on_bright_blue().to_string());
+        assert_eq!(inputbuf.covered_lines(1), 3);
+        assert_eq!(inputbuf.covered_lines(2), 1);
+        assert_eq!(inputbuf.covered_lines(3), 1);
+        assert_eq!(inputbuf.covered_lines(4), 0);
+    }
+
+    #[test]
+    fn verify_terminal_output() {
+        verify_terminal_output_inner().expect("should all pass!");
+    }
+
+    fn verify_terminal_output_inner() -> XResult<()> {
+        use crate::repl::Repl;
+        use crossterm::{terminal::*, *};
+
+        let pos = || cursor::position().unwrap();
+
+        // setup terminal
+        let (origcols, origrows) = size()?;
+        let mut screen = Screen::new()?;
+        let mut inputbuf = InputBuffer::new();
+        let mut input = screen.begin_interface_input(&mut inputbuf)?;
+
+        let repl: Repl<_, ()> = Repl::default();
+        let prompt = repl.prompt(true);
+        let stdout = &mut io::stdout();
+
+        input.writeln("---");
+        input.writeln("This tests assumptions about cursor movement and clearing of lines. If these assumptions hold true then robust TUI can be created.");
+        input.flush_buffer()?;
+
+        let position = pos();
+        dbg!(&position);
+        assert_eq!(position.0, 0, "Cursor should be sitting at column zero");
+
+        let pos1 = pos();
+        for _ in 0..=origcols {
+            input.write("a");
+        }
+        input.flush_buffer()?;
+        let pos2 = pos();
+        dbg!(pos1, pos2);
+        assert_eq!(
+            pos2.0, 1,
+            "expecting remainder cursor position will be at column 1"
+        );
+
+        // reset to new line -- test that colouring doesn't screw things up
+        input.writeln("");
+        for _ in 0..=origcols {
+            input.write("a".bright_red());
+        }
+        input.flush_buffer();
+        dbg!(input.buf.to_string());
+        assert_eq!(
+            pos().0,
+            1,
+            "cusor should be at column 1, all red a's above it"
+        );
+        // retry with another colour
+        for _ in 0..origcols {
+            input.write("b".bright_blue());
+        }
+        input.flush_buffer();
+        dbg!(input.buf.to_string());
+        assert_eq!(
+            pos().0,
+            1,
+            "cusor should be at column 1, all red a's above it"
+        );
+
+        // Ensure to reset terminal state
+        disable_raw_mode()?;
+
+        Ok(())
     }
 }
