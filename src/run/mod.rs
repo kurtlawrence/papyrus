@@ -300,7 +300,7 @@ fn do_read<D>(
     let codecmpltr = CodeCompleter::build(rdata);
 
     let result = loop {
-        colour_term_on_verbatim(verbatim_mode);
+        colour_term_on_verbatim(verbatim_mode)?;
 
         let ev = interface.read_until(STOPEVENTS)?;
 
@@ -365,7 +365,7 @@ fn do_read<D>(
         }
     };
 
-    colour_term_on_verbatim(false);
+    colour_term_on_verbatim(false)?;
     result
 }
 

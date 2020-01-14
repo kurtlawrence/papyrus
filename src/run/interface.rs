@@ -119,7 +119,7 @@ impl<'a> Interface<'a> {
                 break;
             }
 
-            let chg = apply_event_to_buf(&mut self.buf, ev);
+            let chg = apply_event_to_buf(&mut self.buf, ev, self.prompt_len);
             if chg {
                 self.flush_buffer()?;
             }
@@ -322,7 +322,7 @@ impl CompletionWriter {
     }
 }
 
-fn apply_event_to_buf(buf: &mut InputBuffer, event: Event) -> bool {
+fn apply_event_to_buf(buf: &mut InputBuffer, event: Event, prompt_limit: usize) -> bool {
     const NOMOD: KeyModifiers = KeyModifiers::empty();
     macro_rules! nomod {
         ($code:ident) => {
@@ -334,7 +334,7 @@ fn apply_event_to_buf(buf: &mut InputBuffer, event: Event) -> bool {
     }
 
     let modified = match event {
-        Key(nomod!(Left)) => {
+        Key(nomod!(Left)) if buf.pos > prompt_limit => {
             buf.move_pos_left(1);
             false
         }
@@ -342,7 +342,7 @@ fn apply_event_to_buf(buf: &mut InputBuffer, event: Event) -> bool {
             buf.move_pos_right(1);
             false
         }
-        Key(nomod!(Backspace)) => {
+        Key(nomod!(Backspace)) if buf.pos > prompt_limit => {
             buf.backspace();
             true
         }

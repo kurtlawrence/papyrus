@@ -85,6 +85,27 @@ fn verbatim_mode_tab_input() {
     assert_eq!(result, expected);
 }
 
+#[test]
+fn backspace_past_start() {
+    colour_off();
+    let (tx, rx) = unbounded();
+    let tx = Tx(tx);
+    let jh = fire_off_run(rx);
+
+    tx.text("12345");
+    for _ in 0..10 {
+        tx.backspace();
+    }
+    tx.enter();
+
+    let result = finish_repl(jh, tx);
+    println!("{}", result);
+    let expected = "[lib] papyrus=> 
+[lib] papyrus=> :exit
+[lib] papyrus=> ";
+    assert_eq!(result, expected);
+}
+
 struct Tx(Sender<Event>);
 
 impl Tx {
@@ -125,6 +146,16 @@ impl Tx {
             .send(Event::Key(KeyEvent::new(
                 KeyCode::Char(ch),
                 KeyModifiers::CONTROL,
+            )))
+            .unwrap();
+        self
+    }
+
+    fn backspace(&self) -> &Self {
+        self.0
+            .send(Event::Key(KeyEvent::new(
+                KeyCode::Backspace,
+                KeyModifiers::empty(),
             )))
             .unwrap();
         self
