@@ -79,6 +79,11 @@ impl<'a> Interface<'a> {
         self.buf.len().saturating_sub(self.prompt_len)
     }
 
+    /// This _does not_ include prompt length.
+    pub fn buf_pos(&self) -> usize {
+        self.buf.pos.saturating_sub(self.prompt_len)
+    }
+
     /// Set the buffer character position to the end. **Does not alter terminal in anyway.**
     pub fn mv_bufpos_end(&mut self) {
         self.buf.move_end()
@@ -113,7 +118,8 @@ impl<'a> Interface<'a> {
     /// If terminal cursor needs to be elsewhere it is best to save and restore position.
     pub fn flush_buffer(&mut self) -> XResult<()> {
         overwrite_text(0, self.prev_lines_covered, &self.buf)?;
-        self.prev_lines_covered = self.buf.covered_lines(term_width_nofail()) as u16;
+        self.prev_lines_covered =
+            self.buf.cursor_delta(self.buf.len(), term_width_nofail()).1 as u16;
         Ok(())
     }
 
@@ -138,18 +144,23 @@ impl<'a> Interface<'a> {
                 break;
             }
 
-            let bufpos = self.buf.pos;
-            let prompt_limit = self.prompt_len;
+            let bufpos = self.buf_pos();
             let modified = match ev {
-                Key(nomod!(Left)) if bufpos > prompt_limit => {
-                    self.buf.move_pos_left(1);
+                Key(nomod!(Left)) if bufpos > 0 => {
+                    let n = self.buf.move_pos_left(1);
+                    if n > 0 {
+                        execute!(self.stdout, MoveLeft(n as u16))?;
+                    }
                     false
                 }
                 Key(nomod!(Right)) => {
-                    self.buf.move_pos_right(1);
+                    let n = self.buf.move_pos_right(1);
+                    if n > 0 {
+                        execute!(self.stdout, MoveRight(n as u16))?;
+                    }
                     false
                 }
-                Key(nomod!(Backspace)) if bufpos > prompt_limit => {
+                Key(nomod!(Backspace)) if bufpos > 0 => {
                     self.buf.backspace();
                     true
                 }
@@ -171,25 +182,22 @@ impl<'a> Interface<'a> {
                 _ => false,
             };
 
-            // so now the buffer position may have moved, and/or buffer has changed
-            // we have the starting buffer position, and get the delta position which is where
-            // the cursor _should_ end up. If flushing the buffer the terminal cursor is going to
-            // end up in who-knows-where, but knowing the delta it should be possible to
-            // store/restore position and move with that delta.
-
-            let newpos = self.buf.pos;
-            queue!(self.stdout, SavePosition)?;
             if modified {
-                self.flush_buffer()?; // this will change terminal cursor
+                // flushing will update prev lines changed and terminal cursor to end of buffer
+                // we get the cursor delta with the current buffer position to find out what needs
+                // to be moved!
+                self.flush_buffer()?;
+                let (col, rows) = self.buf.cursor_delta(self.buf.pos, term_width_nofail());
+                let uprows = self.prev_lines_covered;
+                queue!(self.stdout, MoveToColumn(col as u16 + 1))?;
+                if uprows > 0 {
+                    queue!(self.stdout, MoveUp(uprows))?;
+                }
+                if rows > 0 {
+                    queue!(self.stdout, MoveDown(rows as u16))?;
+                }
+                self.stdout.flush()?;
             }
-            queue!(self.stdout, RestorePosition)?;
-            match newpos.cmp(&bufpos) {
-                Ordering::Less => queue!(self.stdout, MoveLeft((bufpos - newpos) as u16))?,
-                Ordering::Equal => (),
-                Ordering::Greater => queue!(self.stdout, MoveRight((newpos - bufpos) as u16))?,
-            };
-
-            self.stdout.flush()?;
         }
 
         Ok(last)
@@ -290,33 +298,36 @@ impl InputBuffer {
         }
     }
 
-    pub fn covered_lines(&self, width: usize) -> usize {
-        let mut lines = 0;
-        let mut counter = 0;
+    /// Starting for column 0, calculates the cursor movement given the current buffer to `ch_pos`.
+    /// Returns _(column, row)_.
+    /// Ignores escape sequences.
+    pub fn cursor_delta(&self, ch_pos: usize, width: usize) -> (usize, usize) {
+        let mut rows = 0;
+        let mut columns = 0;
         let mut in_esc_seq = false;
-        for ch in self.buf.iter().copied() {
+        for ch in self.buf[..ch_pos].iter().copied() {
             match ch {
                 'm' if in_esc_seq => in_esc_seq = false,
                 '\u{1b}' if !in_esc_seq => in_esc_seq = true,
                 _ if in_esc_seq => (),
                 '\n' => {
-                    lines += 1;
-                    counter = 0
+                    rows += 1;
+                    columns = 0
                 }
-                '\r' => counter = 0,
+                '\r' => columns = 0,
                 '\t' => {
-                    let r = counter % TAB_WIDTH;
-                    counter += TAB_WIDTH - r;
+                    let r = columns % TAB_WIDTH;
+                    columns += TAB_WIDTH - r;
                 }
-                _ => counter += 1,
+                _ => columns += 1,
             }
 
-            if counter >= width {
-                lines += 1;
-                counter = 0;
+            if columns >= width {
+                rows += 1;
+                columns = 0;
             }
         }
-        lines
+        (columns, rows)
     }
 }
 
@@ -533,11 +544,16 @@ mod tests {
 
         let mut inputbuf = InputBuffer::new();
 
+        inputbuf.insert('\n');
+        assert_eq!(inputbuf.cursor_delta(0, 1), (0, 0));
+        assert_eq!(inputbuf.cursor_delta(1, 1), (0, 1));
+
+        inputbuf.clear();
         inputbuf.insert_str(&"red".bright_red().on_bright_blue().to_string());
-        assert_eq!(inputbuf.covered_lines(1), 3);
-        assert_eq!(inputbuf.covered_lines(2), 1);
-        assert_eq!(inputbuf.covered_lines(3), 1);
-        assert_eq!(inputbuf.covered_lines(4), 0);
+        assert_eq!(inputbuf.cursor_delta(inputbuf.len(), 1), (0, 3));
+        assert_eq!(inputbuf.cursor_delta(inputbuf.pos, 2), (1, 1));
+        assert_eq!(inputbuf.cursor_delta(inputbuf.len(), 3), (0, 1));
+        assert_eq!(inputbuf.cursor_delta(inputbuf.pos, 4), (3, 0));
     }
 
     #[test]

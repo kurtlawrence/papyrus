@@ -1,8 +1,11 @@
-use super::{run, Screen};
+use super::{run, InputBuffer, Screen};
 use crate::run::RunCallbacks;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use crossterm as xterm;
-use std::thread::JoinHandle;
+use std::{
+    io::{self, Write},
+    thread::JoinHandle,
+};
 use xterm::{event::*, Result};
 
 macro_rules! assert_eq {
@@ -122,6 +125,10 @@ fn test_cursor_moving() {
     slp(100);
     assert_eq!(col(), 24, "cursor should only progress with inserted text");
 
+    tx.left(100);
+    slp(100);
+    assert_eq!(col(), 16, "col be at prompt start");
+
     tx.right(100);
     slp(100);
     assert_eq!(col(), 30);
@@ -177,83 +184,109 @@ fn test_input_inside_line() {
     assert_eq!(result, expected);
 }
 
+// INTERFACE INTEGRATION TESTS ------------------------------------------------
+#[test]
+fn interface_integration() {
+    let (tx, rx) = unbounded();
+    let tx = Tx(tx);
+    let mut inputbuf = InputBuffer::new();
+    let mut screen = Screen(rx);
+    writeln!(io::stdout()).unwrap();
+    slp(150);
+    let mut interface = screen.begin_interface_input(&mut inputbuf).unwrap();
+
+    // Use <C-+> to send the end signal
+    let end: &[Event] = &[Event::Key(KeyEvent::new(
+        KeyCode::Char('+'),
+        KeyModifiers::CONTROL,
+    ))];
+
+    tx.text("Hello").ctrl('+');
+    interface.read_until(end);
+    slp(100);
+    assert_eq!(col(), 5);
+    assert_eq!(interface.buf_pos(), 5);
+
+    tx.text("\n").ctrl('+');
+    interface.read_until(end);
+    slp(100);
+    assert_eq!(col(), 0);
+    assert_eq!(interface.buf_pos(), 6);
+
+    tx.text("Hello\nWorld!").ctrl('+');
+    interface.read_until(end);
+    slp(100);
+    assert_eq!(col(), 6, "end of 'World!'");
+    assert_eq!(interface.buf_pos(), 18);
+}
+
 struct Tx(Sender<Event>);
 
 impl Tx {
+    fn send(&self, ev: Event) {
+        self.0.send(ev).ok();
+    }
+
     fn text(&self, text: &str) -> &Self {
         for ch in text.chars() {
-            self.0
-                .send(Event::Key(KeyEvent::new(
-                    KeyCode::Char(ch),
-                    KeyModifiers::empty(),
-                )))
-                .unwrap();
+            self.send(Event::Key(KeyEvent::new(
+                KeyCode::Char(ch),
+                KeyModifiers::empty(),
+            )));
         }
         self
     }
 
     fn enter(&self) -> &Self {
-        self.0
-            .send(Event::Key(KeyEvent::new(
-                KeyCode::Enter,
-                KeyModifiers::empty(),
-            )))
-            .unwrap();
+        self.send(Event::Key(KeyEvent::new(
+            KeyCode::Enter,
+            KeyModifiers::empty(),
+        )));
         self
     }
 
     fn tab(&self) -> &Self {
-        self.0
-            .send(Event::Key(KeyEvent::new(
-                KeyCode::Tab,
-                KeyModifiers::empty(),
-            )))
-            .unwrap();
+        self.send(Event::Key(KeyEvent::new(
+            KeyCode::Tab,
+            KeyModifiers::empty(),
+        )));
         self
     }
 
     fn ctrl(&self, ch: char) -> &Self {
-        self.0
-            .send(Event::Key(KeyEvent::new(
-                KeyCode::Char(ch),
-                KeyModifiers::CONTROL,
-            )))
-            .unwrap();
+        self.send(Event::Key(KeyEvent::new(
+            KeyCode::Char(ch),
+            KeyModifiers::CONTROL,
+        )));
         self
     }
 
     fn backspace(&self, n: usize) -> &Self {
         for _ in 0..n {
-            self.0
-                .send(Event::Key(KeyEvent::new(
-                    KeyCode::Backspace,
-                    KeyModifiers::empty(),
-                )))
-                .unwrap();
+            self.send(Event::Key(KeyEvent::new(
+                KeyCode::Backspace,
+                KeyModifiers::empty(),
+            )));
         }
         self
     }
 
     fn left(&self, n: usize) -> &Self {
         for _ in 0..n {
-            self.0
-                .send(Event::Key(KeyEvent::new(
-                    KeyCode::Left,
-                    KeyModifiers::empty(),
-                )))
-                .unwrap();
+            self.send(Event::Key(KeyEvent::new(
+                KeyCode::Left,
+                KeyModifiers::empty(),
+            )));
         }
         self
     }
 
     fn right(&self, n: usize) -> &Self {
         for _ in 0..n {
-            self.0
-                .send(Event::Key(KeyEvent::new(
-                    KeyCode::Right,
-                    KeyModifiers::empty(),
-                )))
-                .unwrap();
+            self.send(Event::Key(KeyEvent::new(
+                KeyCode::Right,
+                KeyModifiers::empty(),
+            )));
         }
         self
     }
@@ -262,7 +295,7 @@ impl Tx {
 impl Drop for Tx {
     fn drop(&mut self) {
         self.text(":exit").enter();
-        slp(50);
+        slp(200);
     }
 }
 
