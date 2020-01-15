@@ -314,6 +314,7 @@ fn do_read<D>(
         match (ev, verbatim_mode) {
             (ENTER, false) | (STOP_VERBATIM_MODE, true) => {
                 repl.line_input(&interface.buffer());
+                interface.mv_bufpos_end();
                 interface.writeln("");
                 interface.flush_buffer()?;
                 break Ok(false);

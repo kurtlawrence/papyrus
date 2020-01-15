@@ -79,6 +79,11 @@ impl<'a> Interface<'a> {
         self.buf.len().saturating_sub(self.prompt_len)
     }
 
+    /// Set the buffer character position to the end. **Does not alter terminal in anyway.**
+    pub fn mv_bufpos_end(&mut self) {
+        self.buf.move_end()
+    }
+
     pub fn set_prompt(&mut self, prompt: &str) {
         self.buf.move_start();
         for _ in 0..self.prompt_len {
@@ -89,11 +94,11 @@ impl<'a> Interface<'a> {
         self.buf.move_end();
     }
 
-    pub fn write<T: fmt::Display>(&mut self, text: T) {
-        self.buf.insert_str(&text.to_string());
+    pub fn write(&mut self, text: &str) {
+        self.buf.insert_str(text);
     }
 
-    pub fn writeln<T: fmt::Display>(&mut self, text: T) {
+    pub fn writeln(&mut self, text: &str) {
         self.write(text);
         self.write("\n");
     }
@@ -102,6 +107,10 @@ impl<'a> Interface<'a> {
         self.buf.truncate(ch_pos + self.prompt_len);
     }
 
+    /// Flushing will draw on the screen, clearing previously written stuff.
+    /// Terminal cursor will end up at the _end_ of the output.
+    ///
+    /// If terminal cursor needs to be elsewhere it is best to save and restore position.
     pub fn flush_buffer(&mut self) -> XResult<()> {
         overwrite_text(0, self.prev_lines_covered, &self.buf)?;
         self.prev_lines_covered = self.buf.covered_lines(term_width_nofail()) as u16;
@@ -133,11 +142,11 @@ impl<'a> Interface<'a> {
             let prompt_limit = self.prompt_len;
             let modified = match ev {
                 Key(nomod!(Left)) if bufpos > prompt_limit => {
-                    let n = self.buf.move_pos_left(1);
+                    self.buf.move_pos_left(1);
                     false
                 }
                 Key(nomod!(Right)) => {
-                    let n = self.buf.move_pos_right(1);
+                    self.buf.move_pos_right(1);
                     false
                 }
                 Key(nomod!(Backspace)) if bufpos > prompt_limit => {
@@ -384,7 +393,7 @@ fn overwrite_text<T: fmt::Display + Clone>(
     initialx: u16,
     lines_covered: u16,
     text: T,
-) -> xterm::Result<()> {
+) -> XResult<()> {
     let mut stdout = stdout();
     // still moves up if lines covered is zero, unsure if crossterm bug and might be changed
     if lines_covered > 0 {
@@ -399,7 +408,8 @@ fn overwrite_text<T: fmt::Display + Clone>(
         Print(text)
     )?;
 
-    stdout.flush().map_err(xterm::ErrorKind::IoError)
+    stdout.flush()?;
+    Ok(())
 }
 
 /// Returns the number of lines the written text accounts for
@@ -574,7 +584,7 @@ mod tests {
         // reset to new line -- test that colouring doesn't screw things up
         input.writeln("");
         for _ in 0..=origcols {
-            input.write("a".bright_red());
+            input.write(&"a".bright_red().to_string());
         }
         input.flush_buffer();
         dbg!(input.buf.to_string());
@@ -585,7 +595,7 @@ mod tests {
         );
         // retry with another colour
         for _ in 0..origcols {
-            input.write("b".bright_blue());
+            input.write(&"b".bright_blue().to_string());
         }
         input.flush_buffer();
         dbg!(input.buf.to_string());

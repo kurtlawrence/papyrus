@@ -93,11 +93,7 @@ fn backspace_past_start() {
     let tx = Tx(tx);
     let jh = fire_off_run(rx);
 
-    tx.text("12345");
-    for _ in 0..10 {
-        tx.backspace();
-    }
-    tx.enter();
+    tx.text("12345").backspace(10).enter();
 
     let result = finish_repl(jh, tx);
     println!("{}", result);
@@ -137,6 +133,45 @@ fn test_cursor_moving() {
     let result = finish_repl(jh, tx);
     println!("{}", result);
     let expected = "[lib] papyrus=> let apple = 1;
+[lib] papyrus.> :exit
+[lib] papyrus=> ";
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn test_input_inside_line() {
+    colour_off();
+    let (tx, rx) = unbounded();
+    let tx = Tx(tx);
+    let jh = fire_off_run(rx);
+
+    tx.text("let apple = 1;");
+    slp(100);
+    assert_eq!(
+        col(),
+        30,
+        "cursor position should be after 'let apple = 1;'"
+    );
+
+    tx.left(5);
+    slp(50);
+    assert_eq!(col(), 25);
+
+    tx.backspace(5);
+    slp(100);
+    assert_eq!(col(), 20);
+
+    tx.text("banana");
+    slp(100);
+    assert_eq!(col(), 26);
+
+    tx.enter();
+    slp(100);
+    assert_eq!(col(), 16, "cursor should be after prompt");
+
+    let result = finish_repl(jh, tx);
+    println!("{}", result);
+    let expected = "[lib] papyrus=> let banana = 1;
 [lib] papyrus.> :exit
 [lib] papyrus=> ";
     assert_eq!(result, expected);
@@ -187,13 +222,15 @@ impl Tx {
         self
     }
 
-    fn backspace(&self) -> &Self {
-        self.0
-            .send(Event::Key(KeyEvent::new(
-                KeyCode::Backspace,
-                KeyModifiers::empty(),
-            )))
-            .unwrap();
+    fn backspace(&self, n: usize) -> &Self {
+        for _ in 0..n {
+            self.0
+                .send(Event::Key(KeyEvent::new(
+                    KeyCode::Backspace,
+                    KeyModifiers::empty(),
+                )))
+                .unwrap();
+        }
         self
     }
 
