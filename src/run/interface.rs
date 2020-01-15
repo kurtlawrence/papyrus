@@ -3,6 +3,7 @@ use crate::output::OutputChange;
 use crossbeam_channel::{unbounded, Receiver};
 use crossterm as xterm;
 use std::{
+    cmp::Ordering,
     fmt,
     io::{self, stdout, Stdout, Write},
 };
@@ -108,6 +109,15 @@ impl<'a> Interface<'a> {
     }
 
     pub fn read_until(&mut self, events: &[Event]) -> XResult<Event> {
+        const NOMOD: KeyModifiers = KeyModifiers::empty();
+        macro_rules! nomod {
+            ($code:ident) => {
+                KeyEvent {
+                    modifiers: NOMOD,
+                    code: $code,
+                }
+            };
+        }
         let mut last = Event::Key(KeyEvent {
             modifiers: KeyModifiers::CONTROL,
             code: xterm::event::KeyCode::Char('c'),
@@ -119,10 +129,58 @@ impl<'a> Interface<'a> {
                 break;
             }
 
-            let chg = apply_event_to_buf(&mut self.buf, ev, self.prompt_len);
-            if chg {
-                self.flush_buffer()?;
+            let bufpos = self.buf.pos;
+            let prompt_limit = self.prompt_len;
+            let modified = match ev {
+                Key(nomod!(Left)) if bufpos > prompt_limit => {
+                    let n = self.buf.move_pos_left(1);
+                    false
+                }
+                Key(nomod!(Right)) => {
+                    let n = self.buf.move_pos_right(1);
+                    false
+                }
+                Key(nomod!(Backspace)) if bufpos > prompt_limit => {
+                    self.buf.backspace();
+                    true
+                }
+                Key(nomod!(Delete)) => {
+                    self.buf.delete();
+                    true
+                }
+                Key(KeyEvent {
+                    modifiers: NOMOD,
+                    code: Char(c),
+                })
+                | Key(KeyEvent {
+                    modifiers: KeyModifiers::SHIFT,
+                    code: Char(c),
+                }) => {
+                    self.buf.insert(c); // slightly more performant
+                    true
+                }
+                _ => false,
+            };
+
+            // so now the buffer position may have moved, and/or buffer has changed
+            // we have the starting buffer position, and get the delta position which is where
+            // the cursor _should_ end up. If flushing the buffer the terminal cursor is going to
+            // end up in who-knows-where, but knowing the delta it should be possible to
+            // store/restore position and move with that delta.
+
+            let newpos = self.buf.pos;
+            queue!(self.stdout, SavePosition)?;
+            if modified {
+                self.flush_buffer()?; // this will change terminal cursor
             }
+            queue!(self.stdout, RestorePosition)?;
+            match newpos.cmp(&bufpos) {
+                Ordering::Less => queue!(self.stdout, MoveLeft((bufpos - newpos) as u16))?,
+                Ordering::Equal => (),
+                Ordering::Greater => queue!(self.stdout, MoveRight((newpos - bufpos) as u16))?,
+            };
+
+            self.stdout.flush()?;
         }
 
         Ok(last)
@@ -320,51 +378,6 @@ impl CompletionWriter {
 
         Ok(())
     }
-}
-
-fn apply_event_to_buf(buf: &mut InputBuffer, event: Event, prompt_limit: usize) -> bool {
-    const NOMOD: KeyModifiers = KeyModifiers::empty();
-    macro_rules! nomod {
-        ($code:ident) => {
-            KeyEvent {
-                modifiers: NOMOD,
-                code: $code,
-            }
-        };
-    }
-
-    let modified = match event {
-        Key(nomod!(Left)) if buf.pos > prompt_limit => {
-            buf.move_pos_left(1);
-            false
-        }
-        Key(nomod!(Right)) => {
-            buf.move_pos_right(1);
-            false
-        }
-        Key(nomod!(Backspace)) if buf.pos > prompt_limit => {
-            buf.backspace();
-            true
-        }
-        Key(nomod!(Delete)) => {
-            buf.delete();
-            true
-        }
-        Key(KeyEvent {
-            modifiers: NOMOD,
-            code: Char(c),
-        })
-        | Key(KeyEvent {
-            modifiers: KeyModifiers::SHIFT,
-            code: Char(c),
-        }) => {
-            buf.insert(c);
-            true
-        }
-        _ => false,
-    };
-
-    modified
 }
 
 fn overwrite_text<T: fmt::Display + Clone>(

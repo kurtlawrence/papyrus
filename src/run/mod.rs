@@ -298,9 +298,16 @@ fn do_read<D>(
     let modscmpltr = ModulesCompleter::build(&rdata.cmdtree, rdata.mods_map());
     #[cfg(feature = "racer-completion")]
     let codecmpltr = CodeCompleter::build(rdata);
+    let prompt = repl.prompt(true);
+    let verbatim_prompt = format!("{}\u{1b}[44m ", &prompt[..prompt.len() - 1]);
 
     let result = loop {
-        colour_term_on_verbatim(verbatim_mode)?;
+        if verbatim_mode {
+            interface.set_prompt(&verbatim_prompt);
+        } else {
+            interface.set_prompt(&prompt);
+        }
+        interface.flush_buffer()?;
 
         let ev = interface.read_until(STOPEVENTS)?;
 
@@ -365,7 +372,6 @@ fn do_read<D>(
         }
     };
 
-    colour_term_on_verbatim(false)?;
     result
 }
 

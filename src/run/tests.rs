@@ -20,6 +20,7 @@ macro_rules! assert_eq {
     }}
 }
 
+// REPL INTEGRATION TESTS -----------------------------------------------------
 #[test]
 fn entry_and_exit() {
     colour_off();
@@ -106,6 +107,41 @@ fn backspace_past_start() {
     assert_eq!(result, expected);
 }
 
+#[test]
+fn test_cursor_moving() {
+    colour_off();
+    let (tx, rx) = unbounded();
+    let tx = Tx(tx);
+    let jh = fire_off_run(rx);
+
+    tx.text("let appe = 1;");
+    slp(100);
+    assert_eq!(col(), 29, "cursor position should be after 'let appe = 1;'");
+
+    tx.left(6);
+    slp(50);
+    assert_eq!(col(), 23);
+
+    tx.text("l");
+    slp(100);
+    assert_eq!(col(), 24, "cursor should only progress with inserted text");
+
+    tx.right(100);
+    slp(100);
+    assert_eq!(col(), 30);
+
+    tx.enter();
+    slp(100);
+    assert_eq!(col(), 16, "cursor should be after prompt");
+
+    let result = finish_repl(jh, tx);
+    println!("{}", result);
+    let expected = "[lib] papyrus=> let apple = 1;
+[lib] papyrus.> :exit
+[lib] papyrus=> ";
+    assert_eq!(result, expected);
+}
+
 struct Tx(Sender<Event>);
 
 impl Tx {
@@ -158,6 +194,30 @@ impl Tx {
                 KeyModifiers::empty(),
             )))
             .unwrap();
+        self
+    }
+
+    fn left(&self, n: usize) -> &Self {
+        for _ in 0..n {
+            self.0
+                .send(Event::Key(KeyEvent::new(
+                    KeyCode::Left,
+                    KeyModifiers::empty(),
+                )))
+                .unwrap();
+        }
+        self
+    }
+
+    fn right(&self, n: usize) -> &Self {
+        for _ in 0..n {
+            self.0
+                .send(Event::Key(KeyEvent::new(
+                    KeyCode::Right,
+                    KeyModifiers::empty(),
+                )))
+                .unwrap();
+        }
         self
     }
 }
