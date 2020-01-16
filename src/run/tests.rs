@@ -49,7 +49,7 @@ fn cusor_positions() {
     let tx = Tx(tx);
     let jh = fire_off_run(rx);
 
-    slp(100);
+    slp();
     assert_eq!(
         col(),
         16,
@@ -57,7 +57,7 @@ fn cusor_positions() {
     );
 
     tx.text("let apple = 1;").enter().text("app").tab();
-    slp(100);
+    slp();
     assert_eq!(
         col(),
         21,
@@ -75,7 +75,7 @@ fn verbatim_mode_tab_input() {
     let jh = fire_off_run(rx);
 
     tx.ctrl('o').tab();
-    slp(100);
+    slp();
 
     assert_eq!(col(), 24, "tab size 8");
     tx.ctrl('d').enter();
@@ -114,27 +114,27 @@ fn test_cursor_moving() {
     let jh = fire_off_run(rx);
 
     tx.text("let appe = 1;");
-    slp(100);
+    slp();
     assert_eq!(col(), 29, "cursor position should be after 'let appe = 1;'");
 
     tx.left(6);
-    slp(50);
+    slp();
     assert_eq!(col(), 23);
 
     tx.text("l");
-    slp(100);
+    slp();
     assert_eq!(col(), 24, "cursor should only progress with inserted text");
 
     tx.left(100);
-    slp(100);
+    slp();
     assert_eq!(col(), 16, "col be at prompt start");
 
     tx.right(100);
-    slp(100);
+    slp();
     assert_eq!(col(), 30);
 
     tx.enter();
-    slp(100);
+    slp();
     assert_eq!(col(), 16, "cursor should be after prompt");
 
     let result = finish_repl(jh, tx);
@@ -153,7 +153,7 @@ fn test_input_inside_line() {
     let jh = fire_off_run(rx);
 
     tx.text("let apple = 1;");
-    slp(100);
+    slp();
     assert_eq!(
         col(),
         30,
@@ -161,19 +161,19 @@ fn test_input_inside_line() {
     );
 
     tx.left(5);
-    slp(50);
+    slp();
     assert_eq!(col(), 25);
 
     tx.backspace(5);
-    slp(100);
+    slp();
     assert_eq!(col(), 20);
 
     tx.text("banana");
-    slp(100);
+    slp();
     assert_eq!(col(), 26);
 
     tx.enter();
-    slp(100);
+    slp();
     assert_eq!(col(), 16, "cursor should be after prompt");
 
     let result = finish_repl(jh, tx);
@@ -192,7 +192,7 @@ fn interface_integration() {
     let mut inputbuf = InputBuffer::new();
     let mut screen = Screen(rx);
     writeln!(io::stdout()).unwrap();
-    slp(150);
+    slp();
     let mut interface = screen.begin_interface_input(&mut inputbuf).unwrap();
 
     // Use <C-+> to send the end signal
@@ -203,19 +203,19 @@ fn interface_integration() {
 
     tx.text("Hello").ctrl('+');
     interface.read_until(end);
-    slp(100);
+    slp();
     assert_eq!(col(), 5);
     assert_eq!(interface.buf_pos(), 5);
 
     tx.text("\n").ctrl('+');
     interface.read_until(end);
-    slp(100);
+    slp();
     assert_eq!(col(), 0);
     assert_eq!(interface.buf_pos(), 6);
 
     tx.text("Hello\nWorld!").ctrl('+');
     interface.read_until(end);
-    slp(100);
+    slp();
     assert_eq!(col(), 6, "end of 'World!'");
     assert_eq!(interface.buf_pos(), 18);
 
@@ -226,7 +226,7 @@ fn interface_integration() {
     //       ^
     tx.left(100).ctrl('+');
     interface.read_until(end);
-    slp(150);
+    slp();
     assert_eq!(col(), 0, "will be at first column");
     assert_eq!(
         interface.buf_pos(),
@@ -316,7 +316,7 @@ impl Tx {
 impl Drop for Tx {
     fn drop(&mut self) {
         self.text(":exit").enter();
-        slp(200);
+        slp();
     }
 }
 
@@ -324,8 +324,8 @@ fn col() -> u16 {
     xterm::cursor::position().unwrap().0
 }
 
-fn slp(millis: u64) {
-    std::thread::sleep(std::time::Duration::from_millis(millis));
+fn slp() {
+    std::thread::sleep(std::time::Duration::from_millis(200));
 }
 
 fn colour_off() {
