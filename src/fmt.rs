@@ -60,6 +60,13 @@ pub fn format(code_snippet: &str) -> Result<String, FormatError> {
 }
 
 fn reduce_indent(s: &str) -> String {
+    #[derive(Copy, Clone, PartialEq, Eq)]
+    enum LitType {
+        Literal,
+        Str,
+        None,
+    };
+    use LitType::*;
     const LITERALS: [(&str, &str); 6] = [
         (r##"r#""##, r##""#"##),
         (r###"r##""###, r###""#"###),
@@ -68,22 +75,34 @@ fn reduce_indent(s: &str) -> String {
         (r######"r#####""######, r######""#####"######),
         (r#######"r######""#######, r#######""######"#######),
     ];
-    let mut in_literal = false;
+    let mut literal = None;
     let mut idx = 0;
     let mut reduced = String::with_capacity(s.len());
     for line in s.lines() {
-        if in_literal {
-            reduced.push_str(line);
-            if line.contains(LITERALS[idx].1) {
-                in_literal = false;
+        match literal {
+            Str => {
+                reduced.push_str(line);
+                if odd_quotations(line) {
+                    literal = None;
+                }
             }
-        } else {
-            reduced.push_str(&line[4..]);
-            for (i, l) in LITERALS.iter().enumerate() {
-                if line.contains(l.0) && !line.contains(l.1) {
-                    idx = i;
-                    in_literal = true;
-                    break;
+            Literal => {
+                reduced.push_str(line);
+                if line.contains(LITERALS[idx].1) {
+                    literal = None;
+                }
+            }
+            None => {
+                reduced.push_str(&line[4..]);
+                for (i, l) in LITERALS.iter().enumerate() {
+                    if line.contains(l.0) && !line.contains(l.1) {
+                        idx = i;
+                        literal = Literal;
+                        break;
+                    }
+                }
+                if literal == None && odd_quotations(line) {
+                    literal = Str;
                 }
             }
         }
@@ -91,6 +110,22 @@ fn reduce_indent(s: &str) -> String {
     }
     reduced.pop();
     reduced
+}
+
+/// Counts quotations and returns if odd or not, indicating if there is unmatched string.
+/// Ignores escaped quotes. (so string contains sequence `\"`).
+fn odd_quotations(s: &str) -> bool {
+    let mut odd = false;
+    let mut escaped = false;
+    for ch in s.chars() {
+        match ch {
+            '\\' => escaped = true,
+            '\"' if !escaped => odd = !odd,
+            _ if escaped => escaped = false,
+            _ => (),
+        }
+    }
+    odd
 }
 
 #[cfg(test)]
@@ -136,6 +171,18 @@ mod tests {
     }
 
     #[test]
+    fn test_odd_quotations() {
+        assert_eq!(odd_quotations(""), false);
+        assert_eq!(odd_quotations("no quoates"), false);
+        assert_eq!(odd_quotations(r#""this is a matched string""#), false);
+        assert_eq!(odd_quotations(r#""This has \"String\" string""#), false);
+        assert_eq!(odd_quotations(r#""This is missing closing quote"#), true);
+        assert_eq!(odd_quotations(r#""This has \"escaped\" and missing"#), true);
+        assert_eq!(odd_quotations(r#""one "two "three"#), true);
+        assert_eq!(odd_quotations(r#""one", "two""#), false);
+    }
+
+    #[test]
     fn test_multiline_literal_str() {
         let s = r##"   let s =  r#"Hello
     World
@@ -150,5 +197,13 @@ mod tests {
     What
         Up"#;"##)
         );
+
+        let s = r#""Hello
+World
+    This
+        Indent""#;
+        let fmtd = format(s);
+        let ans = fmtd.as_ref().map(|x| x.as_str());
+        assert_eq!(ans, Ok(s));
     }
 }

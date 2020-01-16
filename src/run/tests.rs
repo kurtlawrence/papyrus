@@ -218,6 +218,27 @@ fn interface_integration() {
     slp(100);
     assert_eq!(col(), 6, "end of 'World!'");
     assert_eq!(interface.buf_pos(), 18);
+
+    // Current output:
+    // Hello
+    // Hello
+    // World!
+    //       ^
+    tx.left(100).ctrl('+');
+    interface.read_until(end);
+    slp(150);
+    assert_eq!(col(), 0, "will be at first column");
+    assert_eq!(
+        interface.buf_pos(),
+        12,
+        "should be at end of 'Hello\\nHello\\n'"
+    );
+
+    // Current:
+    // Hello
+    // Hello
+    // World!
+    // ^
 }
 
 struct Tx(Sender<Event>);

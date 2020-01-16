@@ -138,6 +138,8 @@ impl<'a> Interface<'a> {
             code: xterm::event::KeyCode::Char('c'),
         });
 
+        let width = term_width_nofail();
+
         while let Ok(ev) = self.screen.0.recv() {
             last = ev;
             if events.contains(&ev) {
@@ -147,9 +149,12 @@ impl<'a> Interface<'a> {
             let bufpos = self.buf_pos();
             let modified = match ev {
                 Key(nomod!(Left)) if bufpos > 0 => {
-                    let n = self.buf.move_pos_left(1);
-                    if n > 0 {
-                        execute!(self.stdout, MoveLeft(n as u16))?;
+                    let col = position()?.0;
+                    if col > 0 {
+                        let n = self.buf.move_pos_left(1);
+                        if n > 0 {
+                            execute!(self.stdout, MoveLeft(n as u16))?;
+                        }
                     }
                     false
                 }

@@ -40,14 +40,37 @@ a
     assert_eq!(repl.input_buffer_line(), input);
     assert_eq!(repl.input_buffer(), input);
 
-    match repl.read() {
+    repl = match repl.read() {
         ReadResult::Read(_) => panic!("should be at Eval state!"),
         ReadResult::Eval(repl) => {
             let repl::EvalResult { repl, signal } = repl.eval(&mut ());
             assert_eq!(signal, Signal::None);
-            let result_kserd = repl.print().1;
+            let (repl, result_kserd) = repl.print();
             let expected_kserd = Kserd::new_str("Hello\nMultiline\nInput\n");
             assert_eq!(result_kserd, Some((0, expected_kserd)));
+            repl
         }
-    }
+    };
+
+    let input = r#"let a = "Hello
+World!";
+a
+"#;
+    repl.line_input(input);
+
+    // this is the same as input as we haven't .read() and got a More yet.
+    assert_eq!(repl.input_buffer_line(), input);
+    assert_eq!(repl.input_buffer(), input);
+
+    repl = match repl.read() {
+        ReadResult::Read(_) => panic!("should be at Eval state!"),
+        ReadResult::Eval(repl) => {
+            let repl::EvalResult { repl, signal } = repl.eval(&mut ());
+            assert_eq!(signal, Signal::None);
+            let (repl, result_kserd) = repl.print();
+            let expected_kserd = Kserd::new_str("Hello\nWorld!");
+            assert_eq!(result_kserd, Some((1, expected_kserd)));
+            repl
+        }
+    };
 }
