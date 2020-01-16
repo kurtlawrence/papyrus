@@ -13,26 +13,26 @@ jobs:
       matrix:
         name: [default-features, no-features, all-features, format, racer-completion, runnable]
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: [nightly, stable, 1.36.0]
+        rust: [nightly, stable, 1.39.0]
         include:
           - name: default-features
             rust: nightly
             rust-components: rustfmt
-            cmd: cargo test
+            cmd: cargo test -- --test-threads=1
           - name: no-features
-            cmd: cargo test --no-default-features
+            cmd: cargo test --no-default-features -- --test-threads=1
           - name: all-features
             rust: nightly
             rust-components: rustfmt
-            cmd: cargo test --all-features
+            cmd: cargo test --all-features -- --test-threads=1
           - name: format
             rust-components: rustfmt
-            cmd: cargo test --no-default-features --features="format"
+            cmd: cargo test --no-default-features --features="format" -- --test-threads=1
           - name: racer-completion
             rust: nightly
-            cmd: cargo test --no-default-features --features="racer-completion"
+            cmd: cargo test --no-default-features --features="racer-completion" -- --test-threads=1
           - name: runnable
-            cmd: cargo test --no-default-features --features="runnable"
+            cmd: cargo test --no-default-features --features="runnable" -- --test-threads=1
         exclude:
           - name: default-features
             rust: stable
