@@ -10,6 +10,9 @@
 - **Breaking Change:** Renaming of `to_*` to `into_*` in various places.
 - **Breaking Change:** Removed `SourceCode::new` in-lieu of `Default` impl.
 - **Breaking Change:** `format()` no _does not replace new lines with spaces_.
+- Rework of interface. Increased testability and robustness.
+- **Breaking Change:** Increase MSRV to `1.39`
+
 
 ## 0.13.0
 - Restructure of repository
