@@ -37,15 +37,15 @@ jobs:
           - name: default-features
             rust: stable
           - name: default-features
-            rust: 1.36.0
+            rust: 1.39.0
           - name: all-features
             rust: stable
           - name: all-features
-            rust: 1.36.0
+            rust: 1.39.0
           - name: racer-completion
             rust: stable
           - name: racer-completion
-            rust: 1.36.0
+            rust: 1.39.0
                
     name: ${{ matrix.name }} with ${{ matrix.rust }} on ${{ matrix.os }}
     

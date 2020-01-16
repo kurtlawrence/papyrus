@@ -25,8 +25,8 @@ jobs:
       - name: Cache .cargo
         uses: actions/cache@v1
         with:
-          path: ~/.cargo
-          key: ${{ runner.os }}-coverage-cargo
+          path: ~/.cargo/bin
+          key: coverage-cargo-bin
      
       - name: Build external crate test dependency
         run: |
