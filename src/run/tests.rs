@@ -325,7 +325,7 @@ fn col() -> u16 {
 }
 
 fn slp() {
-    std::thread::sleep(std::time::Duration::from_millis(200));
+    std::thread::sleep(std::time::Duration::from_millis(400));
 }
 
 fn colour_off() {

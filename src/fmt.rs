@@ -26,6 +26,7 @@ pub fn format(code_snippet: &str) -> Result<String, FormatError> {
 
     let (success, outputbuf) = {
         let mut child = Command::new("rustfmt")
+            .args(&["--config", "newline_style=Unix"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
