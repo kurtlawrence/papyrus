@@ -49,6 +49,8 @@ format = []
 racer-completion = [ "racer" ]
 # allows to just run the repl
 runnable = [ "crossterm" ]
+# extra interface tests that won't work with CI
+test-runnable = []
 
 [[bin]]
 name = "papyrus"
