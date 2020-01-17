@@ -79,6 +79,7 @@ fn verbatim_mode_tab_input() {
 
     assert_eq!(col(), 24, "tab size 8");
     tx.ctrl('d').enter();
+    slp();
 
     let result = finish_repl(jh, tx);
     println!("{}", result);
