@@ -24,6 +24,7 @@ fn chg_compile_dir<T, U>(mut repl: Repl<T, U>) -> Repl<T, U> {
 }
 
 #[test]
+#[cfg(feature = "test-runnable")]
 fn multiline_literal_inputs() {
     let mut repl = chg_compile_dir(repl!());
 
