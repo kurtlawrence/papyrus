@@ -1,6 +1,6 @@
 # Changelog
 
-## VERSION
+## 0.14.0
 - Fix completion overwriting lines before bug #59
 - Add `persistent_module_code` on the `LinkingConfiguration`, this is used to solve bug #57
 - **Breaking Change:** `AppDataAction` now expects closure that has access to `&mut ReplData` - #60
@@ -12,7 +12,6 @@
 - **Breaking Change:** `format()` no _does not replace new lines with spaces_.
 - Rework of interface. Increased testability and robustness.
 - **Breaking Change:** Increase MSRV to `1.39`
-
 
 ## 0.13.0
 - Restructure of repository
