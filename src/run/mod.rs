@@ -2,6 +2,7 @@
 use crate::complete::code::{CodeCache, CodeCompleter};
 use crate::complete::{cmdr::TreeCompleter, modules::ModulesCompleter};
 use crate::prelude::*;
+use crossterm as xterm;
 use crossterm::{event::Event, ExecutableCommand};
 use kserd::{fmt::FormattingConfig, Kserd};
 use repl::{EvalResult, Evaluate, Print, Read, ReadResult};
@@ -9,8 +10,10 @@ use std::io::{self, prelude::*};
 use std::sync::{Arc, Mutex};
 
 mod interface;
+#[cfg(test)]
+mod tests;
 
-use interface::{CItem, InputBuffer, Screen};
+use interface::{CItem, InputBuffer, Interface, Screen};
 
 const CODE_COMPLETIONS: Option<usize> = Some(10);
 
@@ -127,14 +130,15 @@ impl<D> Repl<Read, D> {
         T: FnMut(&Repl<Print, D>) -> kserd::fmt::FormattingConfig,
         U: FnMut(usize, kserd::Kserd<'static>, &Repl<Read, D>),
     {
-        run(self, run_callbacks)
+        run(self, run_callbacks, Screen::new).map_err(|e| map_xterm_err(e, "running REPL failed"))
     }
 }
 
 fn run<D, FmtrFn, ResultFn>(
     mut read: Repl<Read, D>,
     mut runcb: RunCallbacks<D, FmtrFn, ResultFn>,
-) -> io::Result<String>
+    screen_fn: impl FnOnce() -> io::Result<Screen>,
+) -> xterm::Result<String>
 where
     FmtrFn: FnMut(&Repl<Print, D>) -> kserd::fmt::FormattingConfig,
     ResultFn: FnMut(usize, kserd::Kserd<'static>, &Repl<Read, D>),
@@ -160,8 +164,8 @@ where
         std::fs::write(filename, content).ok();
     }));
 
-    let mut screen = interface::Screen::new()?;
-
+    let mut screen = screen_fn()?;
+    let mut inputbuf = interface::InputBuffer::new();
     #[cfg(feature = "racer-completion")]
     let cache = {
         let cache = match CodeCache::new() {
@@ -175,25 +179,23 @@ where
     };
     #[cfg(not(feature = "racer-completion"))]
     let cache = CacheWrapper;
-
     let mut reevaluate: Option<String> = None;
 
     let output = loop {
-        io::stdout()
-            .execute(crossterm::style::Print(read.prompt(true)))
-            .ok();
-
-        let mut input_buf = interface::InputBuffer::new();
+        let mut interface = screen.begin_interface_input(&mut inputbuf)?;
+        interface.set_prompt(&read.prompt(true));
 
         if let Some(buf) = read.data.editing_src.take() {
             if reevaluate.is_none() {
-                input_buf.insert_str(&buf);
+                interface.write(&buf);
             }
         }
 
+        interface.flush_buffer()?;
+
         if let Some(val) = reevaluate.take() {
             read.line_input(&val);
-        } else if do_read(&mut read, &mut screen, input_buf, &cache)? {
+        } else if do_read(&mut read, &mut interface, &cache)? {
             break read.output().to_owned();
         }
 
@@ -263,10 +265,9 @@ fn construct_crash_report(
 /// Returns true if interrupt occurred.
 fn do_read<D>(
     repl: &mut Repl<Read, D>,
-    screen: &mut Screen,
-    buf: InputBuffer,
+    interface: &mut Interface,
     cache: &CacheWrapper,
-) -> io::Result<bool> {
+) -> xterm::Result<bool> {
     use crossterm::event::{Event::*, KeyCode::*, KeyEvent, KeyModifiers};
     const ENTER: Event = Key(KeyEvent {
         modifiers: KeyModifiers::empty(),
@@ -280,74 +281,120 @@ fn do_read<D>(
         modifiers: KeyModifiers::CONTROL,
         code: Char('c'),
     });
-    const STOPEVENTS: &[Event] = &[ENTER, TAB, BREAK];
-
-    crossterm::terminal::enable_raw_mode().map_err(|e| map_xterm_err(e, "enabling raw mode"))?;
-
-    let mut i = Some(buf);
-
-    let initial = crossterm::cursor::position().unwrap_or((0, 0));
+    const ENTER_VERBATIM_MODE: Event = Key(KeyEvent {
+        modifiers: KeyModifiers::CONTROL,
+        code: Char('o'),
+    });
+    const STOP_VERBATIM_MODE: Event = Key(KeyEvent {
+        modifiers: KeyModifiers::CONTROL,
+        code: Char('d'),
+    });
+    const STOPEVENTS: &[Event] = &[ENTER, TAB, BREAK, ENTER_VERBATIM_MODE, STOP_VERBATIM_MODE];
 
     let mut completion_writer = interface::CompletionWriter::new();
-
+    let mut verbatim_mode = false;
     let rdata = &repl.data;
     let treecmpltr = TreeCompleter::build(&rdata.cmdtree);
     let modscmpltr = ModulesCompleter::build(&rdata.cmdtree, rdata.mods_map());
     #[cfg(feature = "racer-completion")]
     let codecmpltr = CodeCompleter::build(rdata);
+    let prompt = repl.prompt(true);
+    let verbatim_prompt = format!("{}\u{1b}[44m ", &prompt[..prompt.len() - 1]);
 
-    loop {
-        let (mut input, ev) = interface::read_until(screen, initial, i.take().unwrap(), STOPEVENTS);
+    let result = loop {
+        if verbatim_mode {
+            interface.set_prompt(&verbatim_prompt);
+        } else {
+            interface.set_prompt(&prompt);
+        }
+        interface.flush_buffer()?;
 
-        if ev == ENTER {
-            repl.line_input(&input.buffer());
-            write!(&mut io::stdout(), "\n\r")?;
-            crossterm::terminal::disable_raw_mode()
-                .map_err(|e| map_xterm_err(e, "disabling raw mode"))?;
-            break Ok(false);
-        } else if ev == TAB {
-            let line = input.buffer();
-            if completion_writer.is_same_input(&line) {
-                completion_writer.next_completion();
-            } else {
-                let f = |start| input.ch_len().saturating_sub(line[start..].chars().count());
+        let ev = interface.read_until(STOPEVENTS)?;
 
-                let tree_chpos = f(TreeCompleter::word_break(&line));
-                let mods_chpos = f(ModulesCompleter::word_break(&line));
-                #[cfg(feature = "racer-completion")]
-                let code_chpos = f(CodeCompleter::word_break(&line));
-
-                let completions = if line.starts_with(crate::CMD_PREFIX) {
-                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = CItem>>
+        match (ev, verbatim_mode) {
+            (ENTER, false) | (STOP_VERBATIM_MODE, true) => {
+                repl.line_input(&interface.buffer());
+                interface.mv_bufpos_end();
+                interface.writeln("");
+                interface.flush_buffer()?;
+                break Ok(false);
+            }
+            (TAB, false) => {
+                let line = interface.buffer();
+                if completion_writer.is_same_input(&line) {
+                    completion_writer.next_completion();
                 } else {
-                    #[cfg(feature = "racer-completion")]
-                    let c = {
-                        let injection = format!("{}\n{}", repl.input_buffer(), line);
-                        complete_code(&codecmpltr, &cache.0, &injection, code_chpos)
+                    let f = |start| {
+                        interface
+                            .buf_ch_len()
+                            .saturating_sub(line[start..].chars().count())
                     };
 
-                    #[cfg(not(feature = "racer-completion"))]
-                    let c = std::iter::empty();
+                    let tree_chpos = f(TreeCompleter::word_break(&line));
+                    let mods_chpos = f(ModulesCompleter::word_break(&line));
+                    #[cfg(feature = "racer-completion")]
+                    let code_chpos = f(CodeCompleter::word_break(&line));
 
-                    Box::new(c) as Box<dyn Iterator<Item = CItem>>
-                };
+                    let completions = if line.starts_with(crate::CMD_PREFIX) {
+                        Box::new(std::iter::empty()) as Box<dyn Iterator<Item = CItem>>
+                    } else {
+                        #[cfg(feature = "racer-completion")]
+                        let c = {
+                            let injection = format!("{}\n{}", repl.input_buffer(), line);
+                            complete_code(&codecmpltr, &cache.0, &injection, code_chpos)
+                        };
 
-                let completions = completions
-                    .chain(complete_cmdtree(&treecmpltr, &line, tree_chpos))
-                    .chain(complete_mods(&modscmpltr, &line, mods_chpos));
+                        #[cfg(not(feature = "racer-completion"))]
+                        let c = std::iter::empty();
 
-                completion_writer.new_completions(completions);
+                        Box::new(c) as Box<dyn Iterator<Item = CItem>>
+                    };
+
+                    let completions = completions
+                        .chain(complete_cmdtree(&treecmpltr, &line, tree_chpos))
+                        .chain(complete_mods(&modscmpltr, &line, mods_chpos));
+
+                    completion_writer.new_completions(completions);
+                }
+
+                completion_writer.overwrite_completion(interface)?;
             }
-
-            completion_writer.overwrite_completion(initial, &mut input)?;
-        } else if ev == BREAK {
-            crossterm::terminal::disable_raw_mode()
-                .map_err(|e| map_xterm_err(e, "disabling raw mode"))?;
-            break Ok(true);
+            (BREAK, _) => break Ok(true),
+            (ENTER_VERBATIM_MODE, false) => verbatim_mode = true,
+            (ENTER, true) => {
+                interface.writeln("");
+                interface.flush_buffer()?;
+            }
+            (TAB, true) => {
+                interface.write("\t");
+                interface.flush_buffer()?;
+            }
+            _ => (), // do nothing otherwise
         }
+    };
 
-        i = Some(input); // prep for next loop
+    result
+}
+
+fn colour_term_on_verbatim(verbatim: bool) -> crossterm::Result<()> {
+    use crossterm::{cursor::*, style::*, QueueableCommand};
+    let bgcolor = if verbatim {
+        Color::DarkBlue
+    } else {
+        Color::Reset
+    };
+    let x = crossterm::cursor::position()?.0;
+    let width = crossterm::terminal::size()?.0;
+    let writelen = width.saturating_sub(x);
+    let mut stdout = io::stdout();
+    queue!(&mut stdout, SavePosition, SetBackgroundColor(bgcolor));
+    for _ in 0..writelen {
+        queue!(&mut stdout, Print(' '))?;
     }
+    stdout
+        .queue(RestorePosition)?
+        .flush()
+        .map_err(crossterm::ErrorKind::IoError)
 }
 
 fn complete_cmdtree<'a>(

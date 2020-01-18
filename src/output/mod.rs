@@ -345,11 +345,8 @@ impl<S> Output<S> {
                 // send line change signal of this line
                 self.send_line_chg();
                 self.send_newline();
-
                 self.lines_pos.push(self.buf.len());
-
                 self.buf.push('\n');
-
                 true
             }
             x => {

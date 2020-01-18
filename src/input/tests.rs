@@ -26,7 +26,14 @@ fn test_items() {
     assert_eq!(
         parse_program("#[derive(Debug)]\nstruct A {\n\tu: u32\n}"),
         InputResult::Program(Input {
-            items: vec![("#[derive(Debug)] struct A { u: u32, }".to_string(), false)],
+            items: vec![(
+                r##"#[derive(Debug)]
+struct A {
+    u: u32,
+}"##
+                .to_string(),
+                false
+            )],
             stmts: vec![],
             crates: vec![]
         })

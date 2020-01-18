@@ -3,6 +3,7 @@ use crate::output::OutputChange;
 use crossbeam_channel::{unbounded, Receiver};
 use crossterm as xterm;
 use std::{
+    cmp::Ordering,
     fmt,
     io::{self, stdout, Stdout, Write},
 };
@@ -14,14 +15,13 @@ use xterm::{
         KeyEvent, KeyModifiers,
     },
     style::Print,
-    terminal::{Clear, ClearType},
+    terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
+    Result as XResult,
 };
 
-/// Terminal screen interface.
-///
-/// It is as its own struct as there is specific configuration and key handling for moving around the
-/// interface.
-pub struct Screen(Receiver<Event>);
+const TAB_WIDTH: usize = 8;
+
+pub struct Screen(pub(super) Receiver<Event>);
 
 impl Screen {
     pub fn new() -> io::Result<Self> {
@@ -45,8 +45,177 @@ impl Screen {
             })?;
         Ok(Screen(rx))
     }
+
+    pub fn begin_interface_input<'a>(
+        &'a mut self,
+        preallocated_buf: &'a mut InputBuffer,
+    ) -> XResult<Interface<'a>> {
+        enable_raw_mode()?;
+        preallocated_buf.clear();
+        Ok(Interface {
+            screen: self,
+            stdout: io::stdout(),
+            buf: preallocated_buf,
+            prev_lines_covered: 0,
+            prompt_len: 0,
+        })
+    }
 }
 
+pub struct Interface<'a> {
+    screen: &'a mut Screen,
+    stdout: Stdout,
+    buf: &'a mut InputBuffer,
+    prompt_len: usize,
+    prev_lines_covered: u16,
+}
+
+impl<'a> Interface<'a> {
+    pub fn buffer(&self) -> String {
+        self.buf.buffer(self.prompt_len..)
+    }
+
+    pub fn buf_ch_len(&self) -> usize {
+        self.buf.len().saturating_sub(self.prompt_len)
+    }
+
+    /// This _does not_ include prompt length.
+    pub fn buf_pos(&self) -> usize {
+        self.buf.pos.saturating_sub(self.prompt_len)
+    }
+
+    /// Set the buffer character position to the end. **Does not alter terminal in anyway.**
+    pub fn mv_bufpos_end(&mut self) {
+        self.buf.move_end()
+    }
+
+    pub fn set_prompt(&mut self, prompt: &str) {
+        self.buf.move_start();
+        for _ in 0..self.prompt_len {
+            self.buf.delete();
+        }
+        self.prompt_len = prompt.chars().count();
+        self.buf.insert_str(prompt);
+        self.buf.move_end();
+    }
+
+    pub fn write(&mut self, text: &str) {
+        self.buf.insert_str(text);
+    }
+
+    pub fn writeln(&mut self, text: &str) {
+        self.write(text);
+        self.write("\n");
+    }
+
+    pub fn truncate(&mut self, ch_pos: usize) {
+        self.buf.truncate(ch_pos + self.prompt_len);
+    }
+
+    /// Flushing will draw on the screen, clearing previously written stuff.
+    /// Terminal cursor will end up at the _end_ of the output.
+    ///
+    /// If terminal cursor needs to be elsewhere it is best to save and restore position.
+    pub fn flush_buffer(&mut self) -> XResult<()> {
+        overwrite_text(0, self.prev_lines_covered, &self.buf)?;
+        self.prev_lines_covered =
+            self.buf.cursor_delta(self.buf.len(), term_width_nofail()).1 as u16;
+        Ok(())
+    }
+
+    pub fn read_until(&mut self, events: &[Event]) -> XResult<Event> {
+        const NOMOD: KeyModifiers = KeyModifiers::empty();
+        macro_rules! nomod {
+            ($code:ident) => {
+                KeyEvent {
+                    modifiers: NOMOD,
+                    code: $code,
+                }
+            };
+        }
+        let mut last = Event::Key(KeyEvent {
+            modifiers: KeyModifiers::CONTROL,
+            code: xterm::event::KeyCode::Char('c'),
+        });
+
+        let width = term_width_nofail();
+
+        while let Ok(ev) = self.screen.0.recv() {
+            last = ev;
+            if events.contains(&ev) {
+                break;
+            }
+
+            let bufpos = self.buf_pos();
+            let modified = match ev {
+                Key(nomod!(Left)) if bufpos > 0 => {
+                    let col = position()?.0;
+                    if col > 0 {
+                        let n = self.buf.move_pos_left(1);
+                        if n > 0 {
+                            execute!(self.stdout, MoveLeft(n as u16))?;
+                        }
+                    }
+                    false
+                }
+                Key(nomod!(Right)) => {
+                    let n = self.buf.move_pos_right(1);
+                    if n > 0 {
+                        execute!(self.stdout, MoveRight(n as u16))?;
+                    }
+                    false
+                }
+                Key(nomod!(Backspace)) if bufpos > 0 => {
+                    self.buf.backspace();
+                    true
+                }
+                Key(nomod!(Delete)) => {
+                    self.buf.delete();
+                    true
+                }
+                Key(KeyEvent {
+                    modifiers: NOMOD,
+                    code: Char(c),
+                })
+                | Key(KeyEvent {
+                    modifiers: KeyModifiers::SHIFT,
+                    code: Char(c),
+                }) => {
+                    self.buf.insert(c); // slightly more performant
+                    true
+                }
+                _ => false,
+            };
+
+            if modified {
+                // flushing will update prev lines changed and terminal cursor to end of buffer
+                // we get the cursor delta with the current buffer position to find out what needs
+                // to be moved!
+                self.flush_buffer()?;
+                let (col, rows) = self.buf.cursor_delta(self.buf.pos, term_width_nofail());
+                let uprows = self.prev_lines_covered;
+                queue!(self.stdout, MoveToColumn(col as u16 + 1))?;
+                if uprows > 0 {
+                    queue!(self.stdout, MoveUp(uprows))?;
+                }
+                if rows > 0 {
+                    queue!(self.stdout, MoveDown(rows as u16))?;
+                }
+                self.stdout.flush()?;
+            }
+        }
+
+        Ok(last)
+    }
+}
+
+impl<'a> Drop for Interface<'a> {
+    fn drop(&mut self) {
+        disable_raw_mode().ok();
+    }
+}
+
+#[derive(Clone)]
 pub struct InputBuffer {
     buf: Vec<char>,
     pos: usize,
@@ -60,12 +229,20 @@ impl InputBuffer {
         }
     }
 
-    pub fn buffer(&self) -> String {
-        self.buf.iter().collect()
+    pub fn clear(&mut self) {
+        self.buf.clear();
+        self.pos = 0;
+    }
+
+    pub fn buffer<T>(&self, range: T) -> String
+    where
+        T: std::slice::SliceIndex<[char], Output = [char]>,
+    {
+        self.buf[range].iter().collect()
     }
 
     /// Number of characters.
-    pub fn ch_len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.buf.len()
     }
 
@@ -95,6 +272,14 @@ impl InputBuffer {
         }
     }
 
+    pub fn move_start(&mut self) {
+        self.pos = 0;
+    }
+
+    pub fn move_end(&mut self) {
+        self.pos = self.buf.len();
+    }
+
     /// Return the number moved.
     pub fn move_pos_left(&mut self, n: usize) -> usize {
         let n = if self.pos < n { self.pos } else { n };
@@ -117,12 +302,47 @@ impl InputBuffer {
             self.pos = self.buf.len()
         }
     }
+
+    /// Starting for column 0, calculates the cursor movement given the current buffer to `ch_pos`.
+    /// Returns _(column, row)_.
+    /// Ignores escape sequences.
+    pub fn cursor_delta(&self, ch_pos: usize, width: usize) -> (usize, usize) {
+        let mut rows = 0;
+        let mut columns = 0;
+        let mut in_esc_seq = false;
+        for ch in self.buf[..ch_pos].iter().copied() {
+            match ch {
+                'm' if in_esc_seq => in_esc_seq = false,
+                '\u{1b}' if !in_esc_seq => in_esc_seq = true,
+                _ if in_esc_seq => (),
+                '\n' => {
+                    rows += 1;
+                    columns = 0
+                }
+                '\r' => columns = 0,
+                '\t' => {
+                    let r = columns % TAB_WIDTH;
+                    columns += TAB_WIDTH - r;
+                }
+                _ => columns += 1,
+            }
+
+            if columns >= width {
+                rows += 1;
+                columns = 0;
+            }
+        }
+        (columns, rows)
+    }
 }
 
 impl fmt::Display for InputBuffer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for ch in &self.buf {
+        for ch in self.buf.iter().copied() {
             write!(f, "{}", ch)?;
+            if ch == '\n' {
+                write!(f, "\r")?;
+            }
         }
         Ok(())
     }
@@ -167,11 +387,7 @@ impl CompletionWriter {
         self.completion_idx = 0;
     }
 
-    pub fn overwrite_completion(
-        &mut self,
-        initial: (u16, u16),
-        buf: &mut InputBuffer,
-    ) -> io::Result<()> {
+    pub fn overwrite_completion(&mut self, interface: &mut Interface) -> XResult<()> {
         let completion = self.completions.get(self.completion_idx);
 
         if let Some(CItem {
@@ -179,74 +395,21 @@ impl CompletionWriter {
             input_chpos,
         }) = completion
         {
-            let prev_lines_covered =
-                lines_covered(initial.0 as usize, term_width_nofail(), buf.ch_len());
-            buf.truncate(*input_chpos);
-            buf.insert_str(matchstr);
-            let buf = buf.buffer();
-            overwrite_text(
-                initial.0 + 1,
-                prev_lines_covered.saturating_sub(1) as u16,
-                &buf,
-            )
-            .ok();
-            self.input_line = buf;
+            interface.truncate(*input_chpos);
+            interface.write(matchstr);
+            interface.flush_buffer()?;
+            self.input_line = interface.buffer();
         }
 
         Ok(())
     }
 }
 
-fn apply_event_to_buf(mut buf: InputBuffer, event: Event) -> (InputBuffer, bool) {
-    const NOMOD: KeyModifiers = KeyModifiers::empty();
-    macro_rules! nomod {
-        ($code:ident) => {
-            KeyEvent {
-                modifiers: NOMOD,
-                code: $code,
-            }
-        };
-    }
-
-    let cmd = match event {
-        Key(nomod!(Left)) => {
-            buf.move_pos_left(1);
-            false
-        }
-        Key(nomod!(Right)) => {
-            buf.move_pos_right(1);
-            false
-        }
-        Key(nomod!(Backspace)) => {
-            buf.backspace();
-            true
-        }
-        Key(nomod!(Delete)) => {
-            buf.delete();
-            true
-        }
-        Key(KeyEvent {
-            modifiers: NOMOD,
-            code: Char(c),
-        })
-        | Key(KeyEvent {
-            modifiers: KeyModifiers::SHIFT,
-            code: Char(c),
-        }) => {
-            buf.insert(c);
-            true
-        }
-        _ => false,
-    };
-
-    (buf, cmd)
-}
-
 fn overwrite_text<T: fmt::Display + Clone>(
     initialx: u16,
     lines_covered: u16,
     text: T,
-) -> xterm::Result<()> {
+) -> XResult<()> {
     let mut stdout = stdout();
     // still moves up if lines covered is zero, unsure if crossterm bug and might be changed
     if lines_covered > 0 {
@@ -261,42 +424,8 @@ fn overwrite_text<T: fmt::Display + Clone>(
         Print(text)
     )?;
 
-    stdout.flush().map_err(xterm::ErrorKind::IoError)
-}
-
-pub fn read_until(
-    screen: &mut Screen,
-    initial: (u16, u16),
-    mut buf: InputBuffer,
-    events: &[Event],
-) -> (InputBuffer, Event) {
-    let reader = &mut screen.0;
-    let mut last = Event::Key(KeyEvent {
-        modifiers: KeyModifiers::CONTROL,
-        code: xterm::event::KeyCode::Char('c'),
-    });
-
-    while let Ok(ev) = reader.recv() {
-        last = ev;
-        if events.contains(&ev) {
-            break;
-        }
-
-        let prev_lines_covered =
-            lines_covered(initial.0 as usize, term_width_nofail(), buf.ch_len());
-        let (newbuf, chg) = apply_event_to_buf(buf, ev);
-        if chg {
-            overwrite_text(
-                initial.0 + 1,
-                prev_lines_covered.saturating_sub(1) as u16,
-                &newbuf,
-            )
-            .ok();
-        }
-        buf = newbuf
-    }
-
-    (buf, last)
+    stdout.flush()?;
+    Ok(())
 }
 
 /// Returns the number of lines the written text accounts for
@@ -356,13 +485,14 @@ fn term_width_nofail() -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use colored::*;
 
     #[test]
     fn test_input_movement() {
         let mut input = InputBuffer::new();
 
         "Hello, world!".chars().for_each(|c| input.insert(c));
-        assert_eq!(&input.buffer(), "Hello, world!");
+        assert_eq!(&input.buffer(..), "Hello, world!");
         assert_eq!(input.pos, 13);
 
         // can't go past end of buffer
@@ -373,7 +503,7 @@ mod tests {
         assert_eq!(input.pos, 12);
 
         input.insert('?');
-        assert_eq!(&input.buffer(), "Hello, world?!");
+        assert_eq!(&input.buffer(..), "Hello, world?!");
         assert_eq!(input.pos, 13);
 
         // can't go past start of buffer
@@ -388,20 +518,20 @@ mod tests {
         "Hello, world!".chars().for_each(|c| input.insert(c));
 
         input.delete();
-        assert_eq!(&input.buffer(), "Hello, world!");
+        assert_eq!(&input.buffer(..), "Hello, world!");
         assert_eq!(input.pos, 13);
 
         input.backspace();
-        assert_eq!(&input.buffer(), "Hello, world");
+        assert_eq!(&input.buffer(..), "Hello, world");
         assert_eq!(input.pos, 12);
 
         input.move_pos_left(14);
         input.backspace();
-        assert_eq!(&input.buffer(), "Hello, world");
+        assert_eq!(&input.buffer(..), "Hello, world");
         assert_eq!(input.pos, 0);
 
         input.delete();
-        assert_eq!(&input.buffer(), "ello, world");
+        assert_eq!(&input.buffer(..), "ello, world");
         assert_eq!(input.pos, 0);
     }
 
@@ -416,5 +546,90 @@ mod tests {
         assert_eq!(lines_covered(2, 3, "hell".chars().count()), 2);
         assert_eq!(lines_covered(2, 3, "hello".chars().count()), 3);
         assert_eq!(lines_covered(0, 3, "HelloHelloHello".chars().count()), 5);
+
+        let mut inputbuf = InputBuffer::new();
+
+        inputbuf.insert('\n');
+        assert_eq!(inputbuf.cursor_delta(0, 1), (0, 0));
+        assert_eq!(inputbuf.cursor_delta(1, 1), (0, 1));
+
+        inputbuf.clear();
+        inputbuf.insert_str(&"red".bright_red().on_bright_blue().to_string());
+        assert_eq!(inputbuf.cursor_delta(inputbuf.len(), 1), (0, 3));
+        assert_eq!(inputbuf.cursor_delta(inputbuf.pos, 2), (1, 1));
+        assert_eq!(inputbuf.cursor_delta(inputbuf.len(), 3), (0, 1));
+        assert_eq!(inputbuf.cursor_delta(inputbuf.pos, 4), (3, 0));
+    }
+
+    #[test]
+    #[cfg(feature = "test-runnable")]
+    fn verify_terminal_output() {
+        verify_terminal_output_inner().expect("should all pass!");
+    }
+
+    fn verify_terminal_output_inner() -> XResult<()> {
+        use crate::repl::Repl;
+        use crossterm::{terminal::*, *};
+
+        let pos = || cursor::position().unwrap();
+
+        // setup terminal
+        let (origcols, origrows) = size()?;
+        let mut screen = Screen::new()?;
+        let mut inputbuf = InputBuffer::new();
+        let mut input = screen.begin_interface_input(&mut inputbuf)?;
+
+        let repl: Repl<_, ()> = Repl::default();
+        let prompt = repl.prompt(true);
+        let stdout = &mut io::stdout();
+
+        input.writeln("---");
+        input.writeln("This tests assumptions about cursor movement and clearing of lines. If these assumptions hold true then robust TUI can be created.");
+        input.flush_buffer()?;
+
+        let position = pos();
+        dbg!(&position);
+        assert_eq!(position.0, 0, "Cursor should be sitting at column zero");
+
+        let pos1 = pos();
+        for _ in 0..=origcols {
+            input.write("a");
+        }
+        input.flush_buffer()?;
+        let pos2 = pos();
+        dbg!(pos1, pos2);
+        assert_eq!(
+            pos2.0, 1,
+            "expecting remainder cursor position will be at column 1"
+        );
+
+        // reset to new line -- test that colouring doesn't screw things up
+        input.writeln("");
+        for _ in 0..=origcols {
+            input.write(&"a".bright_red().to_string());
+        }
+        input.flush_buffer();
+        dbg!(input.buf.to_string());
+        assert_eq!(
+            pos().0,
+            1,
+            "cusor should be at column 1, all red a's above it"
+        );
+        // retry with another colour
+        for _ in 0..origcols {
+            input.write(&"b".bright_blue().to_string());
+        }
+        input.flush_buffer();
+        dbg!(input.buf.to_string());
+        assert_eq!(
+            pos().0,
+            1,
+            "cusor should be at column 1, all red a's above it"
+        );
+
+        // Ensure to reset terminal state
+        disable_raw_mode()?;
+
+        Ok(())
     }
 }
