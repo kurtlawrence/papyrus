@@ -25,6 +25,7 @@ macro_rules! assert_eq {
 
 // REPL INTEGRATION TESTS -----------------------------------------------------
 #[test]
+#[cfg(feature = "test-runnable")]
 fn entry_and_exit() {
     colour_off();
     let (tx, rx) = unbounded();
@@ -44,6 +45,7 @@ fn entry_and_exit() {
 }
 
 #[test]
+#[cfg(feature = "test-runnable")]
 fn cusor_positions() {
     let (tx, rx) = unbounded();
     let tx = Tx(tx);
@@ -68,6 +70,7 @@ fn cusor_positions() {
 }
 
 #[test]
+#[cfg(feature = "test-runnable")]
 fn verbatim_mode_tab_input() {
     colour_off();
     let (tx, rx) = unbounded();
@@ -91,6 +94,7 @@ fn verbatim_mode_tab_input() {
 }
 
 #[test]
+#[cfg(feature = "test-runnable")]
 fn backspace_past_start() {
     colour_off();
     let (tx, rx) = unbounded();
@@ -108,6 +112,7 @@ fn backspace_past_start() {
 }
 
 #[test]
+#[cfg(feature = "test-runnable")]
 fn test_cursor_moving() {
     colour_off();
     let (tx, rx) = unbounded();
@@ -147,6 +152,7 @@ fn test_cursor_moving() {
 }
 
 #[test]
+#[cfg(feature = "test-runnable")]
 fn test_input_inside_line() {
     colour_off();
     let (tx, rx) = unbounded();
@@ -187,6 +193,7 @@ fn test_input_inside_line() {
 
 // INTERFACE INTEGRATION TESTS ------------------------------------------------
 #[test]
+#[cfg(feature = "test-runnable")]
 fn interface_integration() {
     let (tx, rx) = unbounded();
     let tx = Tx(tx);

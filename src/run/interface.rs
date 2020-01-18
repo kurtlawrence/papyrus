@@ -562,6 +562,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "test-runnable")]
     fn verify_terminal_output() {
         verify_terminal_output_inner().expect("should all pass!");
     }
