@@ -20,7 +20,7 @@ cmdtree =	    { version = "0.10",	default-features = false }
 kserd =		    { version = "0.3",	default-features = false,   optional = false,	features = [ "format" ] }
 
 # crates.io
-backtrace =	    { version = "0.3",	default-features = false }
+backtrace =	    { version = "0.3",	default-features = false,   optional = false,	features = [ "std" ] }
 colored =	    { version = "1",	default-features = false }
 crossbeam-channel = { version = "0.4",	default-features = false }
 crossterm =	    { version = "0.14",	default-features = false,   optional = true }
