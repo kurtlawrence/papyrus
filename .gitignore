@@ -2,5 +2,4 @@
 **/*.rs.bk
 PUSHING_PROCEDURE.md
 Cargo.lock
-test-script.sh
 codecov-*.sh
