@@ -597,7 +597,7 @@ dependencies = [
 
 [[package]]
 name = "papyrus"
-version = "0.14.0"
+version = "0.14.1"
 dependencies = [
  "backtrace 0.3.42 (registry+https://github.com/rust-lang/crates.io-index)",
  "cmdtree 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",

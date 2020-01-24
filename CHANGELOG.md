@@ -13,6 +13,9 @@
 - Rework of interface. Increased testability and robustness.
 - **Breaking Change:** Increase MSRV to `1.39`
 
+### 0.14.1
+- Fix compilation issue with `backtrace` dependency
+
 ## 0.13.0
 - Restructure of repository
 - Fix unintended indenting on unix when using `println!` macro
