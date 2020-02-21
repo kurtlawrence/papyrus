@@ -30,3 +30,5 @@ cargo doc
 # To build docs, need clean target directory
 # mdbook build docs
 # mdbook test -L target/debug,target/debug/deps docs
+
+echo "ALL TESTS PASSED"

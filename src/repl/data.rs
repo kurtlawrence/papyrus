@@ -1,5 +1,7 @@
 use super::*;
-use crate::code::{ModsMap, SourceCode};
+use crate::code::{
+    parse_crates_in_file, validate_static_file_path, AddingStaticFileError, ModsMap, SourceCode,
+};
 
 impl<Data> Default for ReplData<Data> {
     fn default() -> Self {
@@ -19,6 +21,7 @@ impl<Data> Default for ReplData<Data> {
             linking: LinkingConfiguration::default(),
             editing: None,
             editing_src: None,
+            static_files: HashSet::new(),
             loadedlibs: VecDeque::new(),
             loaded_libs_size_limit: 0,
         };
@@ -86,6 +89,42 @@ impl<Data> ReplData<Data> {
     /// Dependency duplication is discussed in the [_linking_ module](crate::linking).
     pub fn persistent_module_code(&mut self) -> &mut String {
         &mut self.linking.persistent_module_code
+    }
+
+    pub fn add_static_file(
+        &mut self,
+        path: PathBuf,
+        code: &str,
+    ) -> Result<bool, AddingStaticFileError> {
+        use blake2::Digest;
+        validate_static_file_path(&path).map_err(AddingStaticFileError::InvalidPath)?;
+
+        let hash = {
+            let mut hasher = blake2::Blake2b::new();
+            hasher.input(code.as_bytes());
+            hasher.result()
+        };
+
+        let change = {
+            self.static_files
+                .get(path.as_path())
+                .map(|sf| sf.codehash[..] != hash[..])
+                .unwrap_or(true)
+        };
+
+        if change {
+            // parse for crates
+            let (code, crates) = parse_crates_in_file(code);
+            // write remaining code to disk
+
+            let file_name = self
+                .compilation_dir
+                .join("src")
+                .join(&path)
+                .with_extension("rs");
+        }
+
+        Ok(change)
     }
 
     /// Clears the cached loaded libraries.

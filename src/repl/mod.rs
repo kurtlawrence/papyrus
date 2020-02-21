@@ -9,7 +9,7 @@ mod read;
 
 use crate::{
     cmds::CommandResult,
-    code::ModsMap,
+    code::{ModsMap, StaticFile},
     input::InputResult,
     linking::{self, LinkingConfiguration},
     output::{self, Output},
@@ -20,7 +20,7 @@ use crossbeam_channel::Receiver;
 use kserd::Kserd;
 use std::{
     borrow::Cow,
-    collections::VecDeque,
+    collections::{HashSet, VecDeque},
     fmt, fs, io,
     marker::PhantomData,
     path::{Path, PathBuf},
@@ -81,6 +81,9 @@ pub struct ReplData<Data> {
     /// show the old source code. It is recommended to `.take()` the value
     /// to avoid repeating the contents.
     pub editing_src: Option<String>,
+
+    /// Store of static files written to disk and to be included in REPL cycle.
+    static_files: HashSet<StaticFile>,
 
     /// Stored loaded libraries of the papyrus mem code.
     loadedlibs: VecDeque<libloading::Library>,
