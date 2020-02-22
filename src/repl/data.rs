@@ -116,15 +116,32 @@ impl<Data> ReplData<Data> {
             // parse for crates
             let (code, crates) = parse_crates_in_file(code);
             // write remaining code to disk
-
-            let file_name = self
-                .compilation_dir
-                .join("src")
-                .join(&path)
-                .with_extension("rs");
+            let file_name = self.static_file_name(&path);
+            let parent = file_name.parent().expect("should exist");
+            fs::create_dir_all(parent).map_err(AddingStaticFileError::Io)?;
+            fs::write(file_name, code).map_err(AddingStaticFileError::Io)?;
+            // add/overwrite in set
+            self.static_files.insert(StaticFile {
+                path,
+                codehash: hash.to_vec(),
+                crates,
+            });
         }
 
         Ok(change)
+    }
+
+    pub fn remove_static_file<P: AsRef<Path>>(&mut self, path: P) -> bool {
+        let path = path.as_ref();
+        let removed = self.static_files.remove(path);
+        if removed {
+            fs::remove_file(self.static_file_name(path)).ok(); // swallow error
+        }
+        removed
+    }
+
+    fn static_file_name(&self, path: &Path) -> PathBuf {
+        self.compilation_dir.join("src").join(path)
     }
 
     /// Clears the cached loaded libraries.
@@ -147,5 +164,34 @@ impl<Data> ReplData<Data> {
     pub unsafe fn set_data_type(mut self, data_type: &str) -> Self {
         self.linking = self.linking.with_data(data_type);
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn static_files_test() {
+        let mut data: ReplData<()> = ReplData::default();
+        data.with_compilation_dir("./target/static-files-test")
+            .unwrap();
+        let r = data
+            .add_static_file("name.rs".into(), "let a = 1;")
+            .unwrap();
+        assert_eq!(r, true);
+        let r = data
+            .add_static_file("name.rs".into(), "let a = 1;")
+            .unwrap();
+        assert_eq!(r, false); // unchanged
+        let r = data
+            .add_static_file("name.rs".into(), "let b = 1;")
+            .unwrap();
+        assert_eq!(r, true); // changed
+        let r = data.remove_static_file("name.rs");
+        assert_eq!(r, true);
+        // can build paths
+        data.add_static_file("path/to/something.rs".into(), "")
+            .unwrap();
     }
 }

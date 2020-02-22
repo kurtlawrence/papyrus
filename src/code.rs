@@ -49,7 +49,9 @@ use std::{
     borrow::Borrow,
     cmp::Ordering,
     collections::{BTreeMap, HashMap},
+    error, fmt,
     hash::{Hash, Hasher},
+    io::{self, Write},
     path::{Path, PathBuf},
 };
 
@@ -537,8 +539,23 @@ impl Borrow<Path> for StaticFile {
     }
 }
 
+#[derive(Debug)]
 pub enum AddingStaticFileError {
     InvalidPath(&'static str),
+    Io(io::Error),
+}
+
+impl error::Error for AddingStaticFileError {}
+
+impl fmt::Display for AddingStaticFileError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            AddingStaticFileError::InvalidPath(p) => {
+                write!(f, "path is not valid for static file: {}", p)
+            }
+            AddingStaticFileError::Io(e) => write!(f, "an io error occurred: {}", e),
+        }
+    }
 }
 
 /// Validate a path such that it can be written to a file adjacent to `./src/lib.rs`.
