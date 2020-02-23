@@ -301,7 +301,7 @@ fn do_read<D>(
     let prompt = repl.prompt(true);
     let verbatim_prompt = format!("{}\u{1b}[44m ", &prompt[..prompt.len() - 1]);
 
-    let result = loop {
+    loop {
         if verbatim_mode {
             interface.set_prompt(&verbatim_prompt);
         } else {
@@ -371,9 +371,7 @@ fn do_read<D>(
             }
             _ => (), // do nothing otherwise
         }
-    };
-
-    result
+    }
 }
 
 fn complete_cmdtree<'a>(
