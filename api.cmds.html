@@ -163,7 +163,33 @@ class.</p>
 <tr><td><code>exit</code></td><td>quit the REPL</td></tr>
 </tbody></table>
 <p>Other commands are context based off the command tree, they can be invoked with something similar
-to <code>a nested command action</code> syntax.</p>
+to <code>a nested command action</code> syntax. There is also a 'verbatim' mode.</p>
+<h2><a class="header" href="#verbatim-mode" id="verbatim-mode">Verbatim Mode</a></h2>
+<p>'verbatim' mode can be used to read stdin directly without processing of tabs, newlines, and other
+keys which usually are interpreted to mean other things, such as completion or the end of an input.
+To enter verbatim mode, use <code>Ctrl+o</code>. Verbatim mode will read stdin until the break command is
+reached, which is <code>Ctrl+d</code>. Verbatim mode is especially useful for inputing multi-line strings and
+if injecting code into the REPL from another program using stdin.</p>
+<h2><a class="header" href="#mutable-mode" id="mutable-mode">Mutable Mode</a></h2>
+<p>The <code>mut</code> command will place the REPL into mutable mode, which makes access to <code>app_data</code> a <code>&amp;mut</code>
+pointer. Mutable mode avoids having state change on each REPL cycle, rather, when in mutable mode,
+the expression will <em>not be saved</em> such that it will only be run once. Developers can use this mode
+to control how changes to <code>app_data</code> need to occur, especially by ensuring mutable access is
+harding to achieve.</p>
+<h2><a class="header" href="#modules" id="modules">Modules</a></h2>
+<p>The <code>mod</code> command allows more than just the <code>lib</code> module to exist in the REPL. Use <code>mod</code> to have
+different REPL sessions all sharing the same compilation cycle. This can be useful to switch
+contexts if need be.</p>
+<h2><a class="header" href="#static-files" id="static-files">Static Files</a></h2>
+<p>The <code>static-files</code> command allows the importing of file-system based rust documents into the REPL
+compilation. Rust files must be relative to the REPL working directory, and will be imported using
+a module path based off the relative file name. For example, <code>:static-files add foo.rs</code> will copy
+the contents of <code>foo.rs</code> into a file that is <em>adjacent</em> to the root library file, so can be access
+in the REPL through <code>foo::*</code>. The file <code>foo/mod.rs</code> would similarly be accessible through <code>foo::*</code>.
+If the file <code>foo/bar.rs</code> was imported, it would <em>not</em> be accessible unless there was also a <code>foo</code>
+static file, and the contents of that file would have to contain a <code>pub mod bar;</code>.</p>
+<p>Static files can also reference crates. If a static file contains <code>extern crate name;</code> <strong>at the
+beginning</strong> of the file, these crates are added to the compilation and can be referenced.</p>
 <h1><a class="header" href="#extending-commands" id="extending-commands">Extending Commands</a></h1>
 <h2><a class="header" href="#setup" id="setup">Setup</a></h2>
 <p>This tutorial works through the example at
