@@ -5,7 +5,7 @@ use colored::Colorize;
 
 use criterion::Criterion;
 
-use papyrus::code::{Input, SourceCode, Statement, StmtGrp};
+use papyrus::code::{Input, SourceCode, Statement, StaticFiles, StmtGrp};
 use papyrus::prelude::*;
 
 fn pfh_compile_construct(c: &mut Criterion) {
@@ -22,7 +22,7 @@ fn pfh_compile_construct(c: &mut Criterion) {
     .collect();
 
     c.bench_function("construct_source_code", move |b| {
-        b.iter(|| construct_source_code(&map, &linking))
+        b.iter(|| construct_source_code(&map, &linking, &StaticFiles::new()))
     });
 }
 

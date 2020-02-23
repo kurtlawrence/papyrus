@@ -301,7 +301,12 @@ impl<D> ReplData<D> {
         };
 
         // build directory
-        let res = compile::build_compile_dir(&self.compilation_dir, &self.mods_map, &self.linking);
+        let res = compile::build_compile_dir(
+            &self.compilation_dir,
+            &self.mods_map,
+            &self.linking,
+            &self.static_files,
+        );
         if let Err(e) = res {
             maybe_pop_input(self); // failed so don't save
             return EvalOutput::Print(Cow::Owned(format!(

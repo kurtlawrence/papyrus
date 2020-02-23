@@ -46,8 +46,11 @@
 use super::*;
 use crate::linking::LinkingConfiguration;
 use std::{
+    borrow::Borrow,
     cmp::Ordering,
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, BTreeSet, HashMap},
+    error, fmt,
+    io::{self},
     path::{Path, PathBuf},
 };
 
@@ -56,6 +59,8 @@ type ReturnRangeMap<'a> = fxhash::FxHashMap<&'a Path, ReturnRange>;
 
 /// Mapping of modules to source code.
 pub type ModsMap = BTreeMap<PathBuf, SourceCode>;
+/// Set of statics files.
+pub type StaticFiles = BTreeSet<StaticFile>;
 
 /// An input collection
 #[derive(Debug, PartialEq, Clone)]
@@ -169,10 +174,11 @@ impl StmtGrp {
 pub fn construct_source_code<'a>(
     mods_map: &'a ModsMap,
     linking_config: &LinkingConfiguration,
+    static_files: &StaticFiles,
 ) -> (String, ReturnRangeMap<'a>) {
     // assumed to be sorted, FileMap is BTreeMap
 
-    let (cap, map) = calc_capacity(mods_map, linking_config);
+    let (cap, map) = calc_capacity(mods_map, linking_config, static_files);
 
     let mut contents = String::with_capacity(cap);
 
@@ -183,10 +189,23 @@ pub fn construct_source_code<'a>(
 
     // do the lib first
     if let Some(lib) = mods_map.get(Path::new("lib")) {
-        code::append_buffer(
+        // add static file links
+        for n in static_files
+            .iter()
+            .map(|x| x.path.as_path())
+            .filter_map(static_file_mod_name)
+        {
+            contents += "mod ";
+            contents += n;
+            contents += ";\n";
+        }
+
+        // append source code
+        append_buffer(
             lib,
             &into_mod_path_vec(Path::new("lib")),
             linking_config,
+            &StaticFiles::new(), // don't pass through as handled as mods above
             &mut contents,
         );
     }
@@ -212,10 +231,11 @@ pub fn construct_source_code<'a>(
                 .expect("should convert fine"),
         );
         contents.push_str(" {\n");
-        code::append_buffer(
+        append_buffer(
             src_code,
             &into_mod_path_vec(file),
             linking_config,
+            static_files,
             &mut contents,
         );
     }
@@ -279,6 +299,7 @@ fn mods_map_with_lvls(
 fn calc_capacity<'a>(
     mods_map: &'a ModsMap,
     linking_config: &LinkingConfiguration,
+    static_files: &StaticFiles,
 ) -> (usize, ReturnRangeMap<'a>) {
     fn mv_rng(mut rng: ReturnRange, by: usize) -> ReturnRange {
         rng.start += by;
@@ -297,8 +318,20 @@ fn calc_capacity<'a>(
 
     // do the lib first
     if let Some(lib) = mods_map.get(Path::new("lib")) {
-        let (src_code_len, src_code_return) =
-            append_buffer_length(lib, &into_mod_path_vec(Path::new("lib")), linking_config);
+        let static_files_len: usize = static_files
+            .iter()
+            .map(|x| x.path.as_path())
+            .filter_map(static_file_mod_name)
+            .map(|x| x.len() + 6)
+            .sum();
+        cap += static_files_len;
+
+        let (src_code_len, src_code_return) = append_buffer_length(
+            lib,
+            &into_mod_path_vec(Path::new("lib")),
+            linking_config,
+            &StaticFiles::new(),
+        );
 
         map.insert(Path::new("lib"), mv_rng(src_code_return, cap));
 
@@ -322,8 +355,12 @@ fn calc_capacity<'a>(
             .unwrap_or(0);
         cap += 3; // }\n
 
-        let (src_code_len, src_code_return) =
-            append_buffer_length(src_code, &into_mod_path_vec(file), linking_config);
+        let (src_code_len, src_code_return) = append_buffer_length(
+            src_code,
+            &into_mod_path_vec(file),
+            linking_config,
+            static_files,
+        );
 
         map.insert(file, mv_rng(src_code_return, cap));
 
@@ -345,6 +382,7 @@ fn append_buffer<S: AsRef<str>>(
     src_code: &SourceCode,
     mod_path: &[S],
     linking_config: &linking::LinkingConfiguration,
+    static_files: &StaticFiles,
     buf: &mut String,
 ) {
     // do up top items first.
@@ -357,6 +395,17 @@ fn append_buffer<S: AsRef<str>>(
     if !linking_config.persistent_module_code.is_empty() {
         buf.push_str(&linking_config.persistent_module_code);
         buf.push('\n');
+    }
+
+    // inject static files links
+    for f in static_files
+        .iter()
+        .map(|x| x.path.as_path())
+        .filter_map(static_file_mod_name)
+    {
+        buf.push_str("use crate::");
+        buf.push_str(f);
+        buf.push_str(";\n");
     }
 
     // wrap stmts
@@ -393,8 +442,9 @@ fn append_buffer_length<S: AsRef<str>>(
     src_code: &SourceCode,
     mod_path: &[S],
     linking_config: &linking::LinkingConfiguration,
+    static_files: &StaticFiles,
 ) -> (usize, ReturnRange) {
-    let mut cap = src_code
+    let mut cap: usize = src_code
         .items
         .iter()
         .filter(|x| x.1)
@@ -405,6 +455,14 @@ fn append_buffer_length<S: AsRef<str>>(
     if !linking_config.persistent_module_code.is_empty() {
         cap += linking_config.persistent_module_code.len() + 1;
     }
+
+    // static files -- use crate::#;\n
+    cap += static_files
+        .iter()
+        .map(|x| x.path.as_path())
+        .filter_map(static_file_mod_name)
+        .map(|x| x.len() + 13)
+        .sum::<usize>();
 
     // wrap stmts
     cap += 31 + eval_fn_name_length(mod_path) + 1 + linking_config.construct_fn_args_length() + 29;
@@ -508,9 +566,195 @@ impl CrateType {
     }
 }
 
+// ###### STATIC FILES ###################################################################
+pub struct StaticFile {
+    pub path: PathBuf,
+    pub codehash: Vec<u8>,
+    pub crates: Vec<CrateType>,
+}
+
+impl PartialEq for StaticFile {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path
+    }
+}
+
+impl Eq for StaticFile {}
+
+impl Ord for StaticFile {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.path.cmp(&other.path)
+    }
+}
+
+impl PartialOrd for StaticFile {
+    fn partial_cmp(&self, other: &StaticFile) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Borrow<Path> for StaticFile {
+    fn borrow(&self) -> &Path {
+        &self.path
+    }
+}
+
+#[derive(Debug)]
+pub enum AddingStaticFileError {
+    InvalidPath(&'static str),
+    Io(io::Error),
+}
+
+impl error::Error for AddingStaticFileError {}
+
+impl fmt::Display for AddingStaticFileError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            AddingStaticFileError::InvalidPath(p) => {
+                write!(f, "path is not valid for static file: {}", p)
+            }
+            AddingStaticFileError::Io(e) => write!(f, "an io error occurred: {}", e),
+        }
+    }
+}
+
+/// Validate a path such that it can be written to a file adjacent to `./src/lib.rs`.
+///
+/// Module path names must follow the valid
+/// [`IDENTIFIER`](https://doc.rust-lang.org/reference/identifiers.html)
+/// syntax. The rules are as follows:
+/// ```text
+/// An identifier is any nonempty ASCII string of the following form:
+/// Either
+///     The first character is a letter.
+///     The remaining characters are alphanumeric or _.
+/// Or
+///     The first character is _.
+///     The identifier is more than one character. _ alone is not an identifier.
+///     The remaining characters are alphanumeric or _.
+/// ```
+///
+/// Paths should be a _module_ path rather than file path, and as such are used to write out the
+/// module structure.
+///
+/// # Example
+/// ```rust
+/// # use papyrus::code::*;
+/// # use std::path::Path;
+/// assert_eq!(validate_static_file_path(
+///     Path::new("valid.rs")), Ok(())
+/// );
+/// assert_eq!(validate_static_file_path(
+///     Path::new("also/a/valid/path.rs")), Ok(())
+/// );
+/// assert_eq!(validate_static_file_path(
+///     Path::new("/invalid.rs")),
+///     Err("can only contain a-z,A-Z,0-9, or _ characters")
+/// );
+/// assert_eq!(validate_static_file_path(
+///     Path::new("./also_invalid.rs")),
+///     Err("can only contain a-z,A-Z,0-9, or _ characters")
+/// );
+/// assert_eq!(validate_static_file_path(
+///     Path::new("relative/../paths/invalid.rs")),
+///     Err("can only contain a-z,A-Z,0-9, or _ characters")
+/// );
+/// ```
+pub fn validate_static_file_path(path: &Path) -> Result<(), &'static str> {
+    if path.extension().and_then(|x| x.to_str()) != Some("rs") {
+        return Err("file must be a .rs");
+    }
+    if let Some(name) = path.file_stem().and_then(|x| x.to_str()) {
+        valid_identifier(name)?;
+    }
+    if let Some(parent) = path.parent() {
+        for component in parent.iter() {
+            let s = component.to_str().ok_or("contains non-ascii characters")?;
+            valid_identifier(s)?;
+        }
+    }
+    Ok(())
+}
+
+fn valid_identifier(s: &str) -> Result<(), &'static str> {
+    let first = s.chars().next();
+    if s.is_empty() {
+        Err("must contain one or more characters")
+    } else if !s.is_ascii() {
+        Err("contains non-ascii characters")
+    } else if s.starts_with("_") && s.chars().count() <= 1 {
+        Err("must contain two or more characters")
+    } else if s.chars().any(|c| !c.is_ascii_alphanumeric() && c != '_') {
+        Err("can only contain a-z,A-Z,0-9, or _ characters")
+    } else if first != Some('_') && !first.unwrap().is_ascii_alphabetic() {
+        Err("must start with letter or _")
+    } else {
+        Ok(())
+    }
+}
+
+pub fn parse_crates_in_file(s: &str) -> (&str, Vec<CrateType>) {
+    let mut v = Vec::new();
+    let mut start = 0;
+    for (idx, ch) in s.char_indices() {
+        let end = idx + ch.len_utf8();
+        if ch == ';' {
+            // check if can parse as crate
+            match CrateType::parse_str(&s[start..end]) {
+                Ok(c) => {
+                    v.push(c);
+                    start = end;
+                }
+                Err(_) => {
+                    // stop search
+                    break;
+                }
+            }
+        }
+    }
+    (&s[start..], v)
+}
+
+/// Obtains the effective root module name of a path.
+///
+/// This is used for static files, and only will add in static files at the root level, so only
+/// `foo.rs` and `foo/mod.rs` would resolve to `foo`. `foo/bar.rs` would resolve to `None` as `bar`
+/// must be referenced through `foo`.
+/// There are no checks done on `path` so only valid paths should be supplied.
+///
+/// # Example
+/// ```rust
+/// # use papyrus::code::static_file_mod_name;
+/// assert_eq!(static_file_mod_name("foo.rs".as_ref()), Some("foo"));
+/// assert_eq!(static_file_mod_name("foo/mod.rs".as_ref()), Some("foo"));
+/// assert_eq!(static_file_mod_name("foo/bar.rs".as_ref()), None);
+/// // No checks are done on validity of path
+/// assert_eq!(static_file_mod_name("./mod.rs".as_ref()), Some("."));
+/// assert_eq!(static_file_mod_name("mod.rs".as_ref()), Some("mod"));
+/// assert_eq!(static_file_mod_name("mod/mod.rs".as_ref()), Some("mod"));
+/// assert_eq!(static_file_mod_name("mod/foo.rs".as_ref()), None);
+/// ```
+pub fn static_file_mod_name(path: &Path) -> Option<&str> {
+    let mut iter = path.iter();
+    let fst = iter.next();
+    let snd = iter.next();
+    match (fst, snd) {
+        (None, _) => None,
+        (Some(f), None) => Path::new(f).file_stem().and_then(|x| x.to_str()),
+        (Some(f), Some(snd)) => {
+            if snd == "mod.rs" {
+                f.to_str()
+            } else {
+                None
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::iter::empty;
 
     #[test]
     fn file_map_with_lvls_test() {
@@ -637,8 +881,15 @@ mod tests {
         let linking_config = LinkingConfiguration::default();
 
         let mut s = String::new();
-        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
+        append_buffer(
+            &src_code,
+            &mod_path,
+            &linking_config,
+            &StaticFiles::new(),
+            &mut s,
+        );
+        let (len, rng) =
+            append_buffer_length(&src_code, &mod_path, &linking_config, &StaticFiles::new());
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _intern_eval() -> kserd::Kserd<'static> {
@@ -654,8 +905,15 @@ kserd::Kserd::new_str("no statements")
         let mod_path = ["some".to_string(), "path".to_string()];
 
         let mut s = String::new();
-        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
+        append_buffer(
+            &src_code,
+            &mod_path,
+            &linking_config,
+            &StaticFiles::new(),
+            &mut s,
+        );
+        let (len, rng) =
+            append_buffer_length(&src_code, &mod_path, &linking_config, &StaticFiles::new());
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval() -> kserd::Kserd<'static> {
@@ -674,8 +932,15 @@ kserd::Kserd::new_str("no statements")
         };
 
         let mut s = String::new();
-        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
+        append_buffer(
+            &src_code,
+            &mod_path,
+            &linking_config,
+            &StaticFiles::new(),
+            &mut s,
+        );
+        let (len, rng) =
+            append_buffer_length(&src_code, &mod_path, &linking_config, &StaticFiles::new());
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> kserd::Kserd<'static> {
@@ -692,8 +957,15 @@ kserd::Kserd::new_str("no statements")
         src_code.items.push(("fn b() {}".to_string(), false));
 
         let mut s = String::new();
-        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
+        append_buffer(
+            &src_code,
+            &mod_path,
+            &linking_config,
+            &StaticFiles::new(),
+            &mut s,
+        );
+        let (len, rng) =
+            append_buffer_length(&src_code, &mod_path, &linking_config, &StaticFiles::new());
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> kserd::Kserd<'static> {
@@ -740,8 +1012,15 @@ fn b() {}
             .push_str("some-injected-persistent-code");
 
         let mut s = String::new();
-        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
+        append_buffer(
+            &src_code,
+            &mod_path,
+            &linking_config,
+            &StaticFiles::new(),
+            &mut s,
+        );
+        let (len, rng) =
+            append_buffer_length(&src_code, &mod_path, &linking_config, &StaticFiles::new());
 
         let ans = r##"#![feature(UP_TOP)]
 some-injected-persistent-code
@@ -782,7 +1061,7 @@ fn b() {}
         .into_iter()
         .collect();
 
-        let (s, map) = construct_source_code(&map, &linking);
+        let (s, map) = construct_source_code(&map, &linking, &StaticFiles::new());
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _lib_intern_eval() -> kserd::Kserd<'static> {
@@ -897,7 +1176,7 @@ kserd::Kserd::new_str("no statements")
         let linking = LinkingConfiguration::default();
         let map = vec![("lib".into(), v)].into_iter().collect();
 
-        let (s, map) = construct_source_code(&map, &linking);
+        let (s, map) = construct_source_code(&map, &linking, &StaticFiles::new());
 
         let ans = r##"Up Top
 #[no_mangle]
@@ -907,5 +1186,280 @@ kserd::Kserd::new_str("no statements")
 Test1
 "##;
         assert_eq!(&s, ans);
+    }
+
+    #[test]
+    fn valid_identifier_test() {
+        assert_eq!(valid_identifier("valid"), Ok(()));
+        assert_eq!(valid_identifier("_also_valid2"), Ok(()));
+        assert_eq!(
+            valid_identifier("_"),
+            Err("must contain two or more characters")
+        );
+        assert_eq!(
+            valid_identifier(""),
+            Err("must contain one or more characters")
+        );
+        assert_eq!(valid_identifier("-❤"), Err("contains non-ascii characters"));
+        assert_eq!(
+            valid_identifier("invalid-name"),
+            Err("can only contain a-z,A-Z,0-9, or _ characters")
+        );
+        assert_eq!(
+            valid_identifier("9name"),
+            Err("must start with letter or _")
+        );
+    }
+
+    #[test]
+    fn valid_path_test() {
+        let p = |s| Path::new(s);
+        assert_eq!(validate_static_file_path(p("valid.rs")), Ok(()));
+        assert_eq!(
+            validate_static_file_path(p("valid")),
+            Err("file must be a .rs")
+        );
+        assert_eq!(
+            validate_static_file_path(p("./invalid.rs")),
+            Err("can only contain a-z,A-Z,0-9, or _ characters")
+        );
+        assert_eq!(
+            validate_static_file_path(p("valid/../invalid.rs")),
+            Err("can only contain a-z,A-Z,0-9, or _ characters")
+        );
+        assert_eq!(
+            validate_static_file_path(p("/invalid.rs")),
+            Err("can only contain a-z,A-Z,0-9, or _ characters")
+        );
+        assert_eq!(validate_static_file_path(p("valid/also_valid.rs")), Ok(()));
+    }
+
+    #[test]
+    fn test_parsing_crates_in_file() {
+        assert_eq!(parse_crates_in_file(""), ("", vec![]));
+        assert_eq!(
+            parse_crates_in_file("let a = 1; let b = 2;"),
+            ("let a = 1; let b = 2;", vec![])
+        );
+        assert_eq!(
+            parse_crates_in_file("extern crate rand; let a = 1;"),
+            (
+                " let a = 1;",
+                vec![CrateType::parse_str("extern crate rand;").unwrap()]
+            )
+        );
+    }
+
+    #[test]
+    fn test_static_file_mod_name() {
+        assert_eq!(static_file_mod_name("name.rs".as_ref()), Some("name"));
+        assert_eq!(static_file_mod_name("foo".as_ref()), Some("foo"));
+        assert_eq!(static_file_mod_name("foo/mod.rs".as_ref()), Some("foo"));
+        assert_eq!(static_file_mod_name("foo/bar.rs".as_ref()), None);
+        assert_eq!(static_file_mod_name("mod.rs".as_ref()), Some("mod"));
+        assert_eq!(static_file_mod_name("mod/mod.rs".as_ref()), Some("mod"));
+        assert_eq!(static_file_mod_name("mod/foo.rs".as_ref()), None);
+        assert_eq!(static_file_mod_name("./mod.rs".as_ref()), Some("."));
+    }
+
+    #[test]
+    fn test_static_file_adding_to_lib() {
+        let v = SourceCode::default();
+
+        let linking = LinkingConfiguration::default();
+        let map = vec![
+            ("lib".into(), v.clone()),
+            ("test".into(), v.clone()),
+            ("foo/bar".into(), v.clone()),
+            ("test/inner".into(), v.clone()),
+            ("foo".into(), v.clone()),
+            ("test/inner2".into(), v.clone()),
+        ]
+        .into_iter()
+        .collect();
+
+        let static_files = vec![
+            StaticFile {
+                path: "foo2/bar.rs".into(),
+                codehash: vec![],
+                crates: vec![],
+            },
+            StaticFile {
+                path: "foo2/mod.rs".into(),
+                codehash: vec![],
+                crates: vec![],
+            },
+            StaticFile {
+                path: "bar2.rs".into(),
+                codehash: vec![],
+                crates: vec![],
+            },
+        ]
+        .into_iter()
+        .collect();
+
+        let (s, map) = construct_source_code(&map, &linking, &static_files);
+
+        let ans = r##"mod bar2;
+mod foo2;
+#[no_mangle]
+pub extern "C" fn _lib_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+mod foo {
+use crate::bar2;
+use crate::foo2;
+#[no_mangle]
+pub extern "C" fn _foo_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+mod bar {
+use crate::bar2;
+use crate::foo2;
+#[no_mangle]
+pub extern "C" fn _foo_bar_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+}}
+mod test {
+use crate::bar2;
+use crate::foo2;
+#[no_mangle]
+pub extern "C" fn _test_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+mod inner {
+use crate::bar2;
+use crate::foo2;
+#[no_mangle]
+pub extern "C" fn _test_inner_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+}
+mod inner2 {
+use crate::bar2;
+use crate::foo2;
+#[no_mangle]
+pub extern "C" fn _test_inner2_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+}}"##;
+
+        let return_stmt = r#"kserd::Kserd::new_str("no statements")"#;
+        println!("{}", s);
+        assert_eq!(&s, ans);
+        assert_eq!(
+            &ans[map.get(Path::new("lib")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("foo")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("foo/bar")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("test")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("test/inner")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("test/inner2")).unwrap().clone()],
+            return_stmt
+        );
+    }
+
+    #[test]
+    fn test_stmtgrp_src_line() {
+        let grp = StmtGrp(vec![
+            Statement {
+                expr: "a".into(),
+                semi: false,
+            },
+            Statement {
+                expr: "b".into(),
+                semi: true,
+            },
+        ]);
+        let s = grp.src_line();
+        println!("{}", s);
+        assert_eq!(&s, "a b;");
+    }
+
+    #[test]
+    fn test_static_file_ord() {
+        let sf1 = StaticFile {
+            path: "foo.rs".into(),
+            codehash: vec![4, 3, 2, 1],
+            crates: vec![],
+        };
+        let sf2 = StaticFile {
+            path: "foo.rs".into(),
+            codehash: vec![1, 2, 3, 4],
+            crates: vec![],
+        };
+        assert_eq!(sf1.partial_cmp(&sf2), Some(Ordering::Equal));
+    }
+
+    #[test]
+    fn test_err_display() {
+        let err = AddingStaticFileError::Io(io::Error::new(io::ErrorKind::NotFound, "what"));
+        assert_eq!(&err.to_string(), "an io error occurred: what");
+        let err = AddingStaticFileError::InvalidPath("foo.txt".into());
+        assert_eq!(
+            &err.to_string(),
+            "path is not valid for static file: foo.txt"
+        );
+    }
+
+    #[test]
+    fn test_static_file_adding_to_lib_with_crate() {
+        let v = SourceCode::default();
+
+        let linking = LinkingConfiguration::default();
+        let map = vec![("lib".into(), v.clone())].into_iter().collect();
+
+        let static_files = vec![
+            StaticFile {
+                path: "foo2/bar.rs".into(),
+                codehash: vec![],
+                crates: vec![CrateType::parse_str("extern crate rand;").unwrap()],
+            },
+            StaticFile {
+                path: "foo2/mod.rs".into(),
+                codehash: vec![],
+                crates: vec![],
+            },
+            StaticFile {
+                path: "bar2.rs".into(),
+                codehash: vec![],
+                crates: vec![],
+            },
+        ]
+        .into_iter()
+        .collect();
+
+        let (s, map) = construct_source_code(&map, &linking, &static_files);
+
+        let ans = r##"mod bar2;
+mod foo2;
+#[no_mangle]
+pub extern "C" fn _lib_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+"##;
+
+        let return_stmt = r#"kserd::Kserd::new_str("no statements")"#;
+        println!("{}", s);
+        assert_eq!(&s, ans);
+        assert_eq!(
+            &ans[map.get(Path::new("lib")).unwrap().clone()],
+            return_stmt
+        );
     }
 }

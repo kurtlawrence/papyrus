@@ -17,7 +17,38 @@
 //! | `exit`   | quit the REPL                                   |
 //!
 //! Other commands are context based off the command tree, they can be invoked with something similar
-//! to `a nested command action` syntax.
+//! to `a nested command action` syntax. There is also a 'verbatim' mode.
+//!
+//! ## Verbatim Mode
+//! 'verbatim' mode can be used to read stdin directly without processing of tabs, newlines, and other
+//! keys which usually are interpreted to mean other things, such as completion or the end of an input.
+//! To enter verbatim mode, use `Ctrl+o`. Verbatim mode will read stdin until the break command is
+//! reached, which is `Ctrl+d`. Verbatim mode is especially useful for inputing multi-line strings and
+//! if injecting code into the REPL from another program using stdin.
+//!
+//! ## Mutable Mode
+//! The `mut` command will place the REPL into mutable mode, which makes access to `app_data` a `&mut`
+//! pointer. Mutable mode avoids having state change on each REPL cycle, rather, when in mutable mode,
+//! the expression will _not be saved_ such that it will only be run once. Developers can use this mode
+//! to control how changes to `app_data` need to occur, especially by ensuring mutable access is
+//! harding to achieve.
+//!
+//! ## Modules
+//! The `mod` command allows more than just the `lib` module to exist in the REPL. Use `mod` to have
+//! different REPL sessions all sharing the same compilation cycle. This can be useful to switch
+//! contexts if need be.
+//!
+//! ## Static Files
+//! The `static-files` command allows the importing of file-system based rust documents into the REPL
+//! compilation. Rust files must be relative to the REPL working directory, and will be imported using
+//! a module path based off the relative file name. For example, `:static-files add foo.rs` will copy
+//! the contents of `foo.rs` into a file that is _adjacent_ to the root library file, so can be access
+//! in the REPL through `foo::*`. The file `foo/mod.rs` would similarly be accessible through `foo::*`.
+//! If the file `foo/bar.rs` was imported, it would _not_ be accessible unless there was also a `foo`
+//! static file, and the contents of that file would have to contain a `pub mod bar;`.
+//!
+//! Static files can also reference crates. If a static file contains `extern crate name;` **at the
+//! beginning** of the file, these crates are added to the compilation and can be referenced.
 //!
 //! # Extending Commands
 //! ## Setup
@@ -169,8 +200,11 @@
 use super::*;
 use crate::repl::{Editing, EditingIndex, ReplData};
 use cmdtree::{BuildError, Builder, BuilderChain, Commander};
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 pub use cmdtree::Builder as CommandBuilder;
 
@@ -268,6 +302,17 @@ fn papyrus_cmdr<D>(
             "Switch to a module, creating one if necessary. switch path/to/module",
             |wtr, args| switch_module_priv(args, wtr),
         )
+        .end_class()
+        .begin_class("static-files", "Handle static files")
+        .add_action(
+            "add",
+            "Import a static file. args: file-path",
+            |wtr, args| add_static_file(wtr, args),
+        )
+        .add_action("rm", "Remove a static file", |wtr, args| {
+            rm_static_file(wtr, args)
+        })
+        .add_action("ls", "List imported static files", |_, _| ls_static_files())
         .end_class()
         .into_commander()
 }
@@ -379,34 +424,136 @@ pub(crate) fn switch_module<D>(data: &mut ReplData<D>, path: &Path) -> &'static 
     ""
 }
 
-#[test]
-fn make_path_test() {
-    assert_eq!(make_path("   "), None);
-
-    assert_eq!(make_path("lib"), Some(PathBuf::from("lib")));
-    assert_eq!(make_path("lib.rs"), Some(PathBuf::from("lib")));
-
-    assert_eq!(make_path("test"), Some(PathBuf::from("test")));
-    assert_eq!(make_path("test/inner"), Some(PathBuf::from("test/inner")));
-    assert_eq!(make_path("inner/test"), Some(PathBuf::from("inner/test")));
-
-    assert_eq!(make_path("//"), None);
-
-    assert_eq!(make_path("\\hello\\"), Some(PathBuf::from("hello")));
+fn add_static_file<D>(wtr: &mut dyn Write, args: &[&str]) -> CommandResult<D> {
+    if let Some(&path) = args.get(0) {
+        let pathbuf = PathBuf::from(path);
+        match fs::read_to_string(path) {
+            Ok(s) => CommandResult::repl_data_fn(move |data, _| {
+                data.add_static_file(pathbuf.clone(), &s)
+                    .map(|_| "imported/overwrote static file".into())
+                    .unwrap_or_else(|e| format!("failed to add {}: {}", pathbuf.display(), e))
+            }),
+            Err(e) => {
+                writeln!(wtr, "failed to read {}: {}", path, e).ok();
+                CommandResult::Empty
+            }
+        }
+    } else {
+        writeln!(wtr, "add expects a file path").ok();
+        CommandResult::Empty
+    }
 }
 
-#[test]
-fn make_all_parents_test() {
-    // only handle parents
-    assert_eq!(make_all_parents(Path::new("")), Vec::<PathBuf>::new());
-    assert_eq!(make_all_parents(Path::new("test")), Vec::<PathBuf>::new());
+fn rm_static_file<D>(wtr: &mut dyn Write, args: &[&str]) -> CommandResult<D> {
+    if let Some(&path) = args.get(0) {
+        let path = PathBuf::from(path);
+        CommandResult::repl_data_fn(move |data, _| {
+            data.remove_static_file(&path);
+            String::from("removed static file")
+        })
+    } else {
+        writeln!(wtr, "rm expects a file path").ok();
+        CommandResult::Empty
+    }
+}
 
-    assert_eq!(
-        make_all_parents(Path::new("test/inner")),
-        vec![PathBuf::from("test")]
-    );
-    assert_eq!(
-        make_all_parents(Path::new("test/inner/deep")),
-        vec![PathBuf::from("test"), PathBuf::from("test/inner")]
-    );
+fn ls_static_files<D>() -> CommandResult<D> {
+    CommandResult::repl_data_fn(|data, wtr| {
+        let sfs = data.static_files();
+        if sfs.is_empty() {
+            writeln!(wtr, "no static files imported").ok();
+        } else {
+            for sf in data.static_files() {
+                write!(wtr, "{}", sf.path.display()).ok();
+                if let Some(name) = crate::code::static_file_mod_name(&sf.path) {
+                    write!(wtr, " -> {}", name).ok();
+                }
+                writeln!(wtr).ok();
+            }
+        }
+        String::new()
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn make_path_test() {
+        assert_eq!(make_path("   "), None);
+
+        assert_eq!(make_path("lib"), Some(PathBuf::from("lib")));
+        assert_eq!(make_path("lib.rs"), Some(PathBuf::from("lib")));
+
+        assert_eq!(make_path("test"), Some(PathBuf::from("test")));
+        assert_eq!(make_path("test/inner"), Some(PathBuf::from("test/inner")));
+        assert_eq!(make_path("inner/test"), Some(PathBuf::from("inner/test")));
+
+        assert_eq!(make_path("//"), None);
+
+        assert_eq!(make_path("\\hello\\"), Some(PathBuf::from("hello")));
+    }
+
+    #[test]
+    fn make_all_parents_test() {
+        // only handle parents
+        assert_eq!(make_all_parents(Path::new("")), Vec::<PathBuf>::new());
+        assert_eq!(make_all_parents(Path::new("test")), Vec::<PathBuf>::new());
+
+        assert_eq!(
+            make_all_parents(Path::new("test/inner")),
+            vec![PathBuf::from("test")]
+        );
+        assert_eq!(
+            make_all_parents(Path::new("test/inner/deep")),
+            vec![PathBuf::from("test"), PathBuf::from("test/inner")]
+        );
+    }
+
+    #[test]
+    fn test_switch_module_priv() {
+        let mut buf = Vec::new();
+        switch_module_priv::<(), _>(&[], &mut buf);
+        assert_eq!(
+            buf.as_slice(),
+            &b"switch expects a path to module argument\n"[..]
+        );
+
+        buf.clear();
+        switch_module_priv::<(), _>(&["foo"], &mut buf);
+        assert_eq!(buf.as_slice(), &b""[..]);
+
+        buf.clear();
+        switch_module_priv::<(), _>(&[""], &mut buf);
+        println!("{:?}", std::str::from_utf8(&buf));
+        assert_eq!(
+            buf.as_slice(),
+            &b"failed to parse  into a valid module path\n"[..]
+        );
+    }
+
+    #[test]
+    fn test_static_file_interface() {
+        let mut buf = Vec::new();
+        add_static_file::<()>(&mut buf, &[]);
+        println!("{:?}", std::str::from_utf8(&buf));
+        assert_eq!(buf.as_slice(), &b"add expects a file path\n"[..]);
+
+        buf.clear();
+        add_static_file::<()>(&mut buf, &["none.rs"]);
+        println!("{:?}", std::str::from_utf8(&buf));
+        assert_eq!(
+            buf.as_slice(),
+            &b"failed to read none.rs: No such file or directory (os error 2)\n"[..]
+        );
+
+        buf.clear();
+        rm_static_file::<()>(&mut buf, &[]);
+        println!("{:?}", std::str::from_utf8(&buf));
+        assert_eq!(buf.as_slice(), &b"rm expects a file path\n"[..]);
+
+        buf.clear();
+        rm_static_file::<()>(&mut buf, &["what"]);
+    }
 }
