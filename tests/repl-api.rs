@@ -63,7 +63,7 @@ a
     assert_eq!(repl.input_buffer_line(), input);
     assert_eq!(repl.input_buffer(), input);
 
-    repl = match repl.read() {
+    match repl.read() {
         ReadResult::Read(_) => panic!("should be at Eval state!"),
         ReadResult::Eval(repl) => {
             let repl::EvalResult { repl, signal } = repl.eval(&mut ());

@@ -189,15 +189,6 @@ mod tests {
         ("lib".into(), code)
     }
 
-    fn fail_eval_file() -> (PathBuf, SourceCode) {
-        let mut code = SourceCode::default();
-        code.stmts.push(StmtGrp(vec![Statement {
-            expr: "panic!(\"eval panic\")".to_string(),
-            semi: false,
-        }]));
-        ("lib".into(), code)
-    }
-
     #[test]
     fn output_externally_linked_type_as_kserd() {
         let compile_dir = "target/testing/output_externally_linked_type_as_kserd";

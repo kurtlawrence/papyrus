@@ -778,7 +778,6 @@ pub fn static_file_mod_name(path: &Path) -> Option<&str> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::iter::empty;
 
     #[test]
     fn file_map_with_lvls_test() {
@@ -1200,7 +1199,7 @@ kserd::Kserd::new_str("no statements")
         let linking = LinkingConfiguration::default();
         let map = vec![("lib".into(), v)].into_iter().collect();
 
-        let (s, map) = construct_source_code(&map, &linking, &StaticFiles::new());
+        let (s, _map) = construct_source_code(&map, &linking, &StaticFiles::new());
 
         let ans = r##"Up Top
 #[no_mangle]

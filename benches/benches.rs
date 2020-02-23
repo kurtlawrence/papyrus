@@ -1,12 +1,9 @@
 #[macro_use]
 extern crate criterion;
 
-use colored::Colorize;
-
 use criterion::Criterion;
 
-use papyrus::code::{Input, SourceCode, Statement, StaticFiles, StmtGrp};
-use papyrus::prelude::*;
+use papyrus::code::{SourceCode, Statement, StaticFiles, StmtGrp};
 
 fn pfh_compile_construct(c: &mut Criterion) {
     use papyrus::code::construct_source_code;
@@ -35,23 +32,6 @@ fn rustfmt(c: &mut Criterion) {
 
 criterion_group!(benches, pfh_compile_construct, rustfmt);
 criterion_main!(benches);
-
-fn cstr() -> String {
-    format!(
-        "{}{}{}{}{}{}{}{}{}{}{}",
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.".red(),
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit.".blue(),
-        "Donec vel metus nec nisl ultrices cursus.".green(),
-        "In in enim eget felis elementum consectetur et nec nisi.".purple(),
-        "Morbi vel sapien consectetur, tristique sem id, facilisis purus.".yellow(),
-        "Vivamus bibendum nisi ac lacus euismod hendrerit vel ac lacus.".red(),
-        " Nulla scelerisque ipsum eu lacus dignissim, a tempus arcu egestas.".white(),
-        "Nulla scelerisque ipsum eu lacus dignissim, a tempus arcu egestas.".bright_red(),
-        "Praesent lobortis quam sed erat egestas, et tincidunt erat rutrum.".bright_white(),
-        "Nullam maximus mauris a ultricies blandit.".bright_green(),
-        "Morbi eget neque eget neque viverra mollis in id lacus.".bright_purple(),
-    )
-}
 
 fn src_code() -> SourceCode {
     SourceCode {

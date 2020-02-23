@@ -465,12 +465,11 @@ mod tests {
 
     #[test]
     fn get_rlib_path_test() {
-        use std::error::Error;
         let r = get_rlib_path("some_crate");
         assert!(r.is_err());
         let e = r.unwrap_err();
         assert_eq!(e.kind(), io::ErrorKind::NotFound);
-        assert_eq!(e.description(), "did not find file: 'libsome_crate.rlib'");
+        assert_eq!(e.to_string(), "did not find file: 'libsome_crate.rlib'");
     }
 
     #[test]

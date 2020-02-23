@@ -571,14 +571,14 @@ mod tests {
         let pos = || cursor::position().unwrap();
 
         // setup terminal
-        let (origcols, origrows) = size()?;
+        let (origcols, _origrows) = size()?;
         let mut screen = Screen::new()?;
         let mut inputbuf = InputBuffer::new();
         let mut input = screen.begin_interface_input(&mut inputbuf)?;
 
         let repl: Repl<_, ()> = Repl::default();
-        let prompt = repl.prompt(true);
-        let stdout = &mut io::stdout();
+        let _prompt = repl.prompt(true);
+        let _stdout = &mut io::stdout();
 
         input.writeln("---");
         input.writeln("This tests assumptions about cursor movement and clearing of lines. If these assumptions hold true then robust TUI can be created.");
@@ -605,7 +605,7 @@ mod tests {
         for _ in 0..=origcols {
             input.write(&"a".bright_red().to_string());
         }
-        input.flush_buffer();
+        input.flush_buffer().ok();
         dbg!(input.buf.to_string());
         assert_eq!(
             pos().0,
@@ -616,7 +616,7 @@ mod tests {
         for _ in 0..origcols {
             input.write(&"b".bright_blue().to_string());
         }
-        input.flush_buffer();
+        input.flush_buffer().ok();
         dbg!(input.buf.to_string());
         assert_eq!(
             pos().0,

@@ -1,4 +1,4 @@
-use super::{run, Screen};
+use super::{interface::InputBuffer, run, Screen};
 use crate::run::RunCallbacks;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use crossterm as xterm;
@@ -49,7 +49,7 @@ fn entry_and_exit() {
 fn cusor_positions() {
     let (tx, rx) = unbounded();
     let tx = Tx(tx);
-    let jh = fire_off_run(rx);
+    let _jh = fire_off_run(rx);
 
     slp();
     assert_eq!(
@@ -210,19 +210,19 @@ fn interface_integration() {
     ))];
 
     tx.text("Hello").ctrl('+');
-    interface.read_until(end);
+    interface.read_until(end).unwrap();
     slp();
     assert_eq!(col(), 5);
     assert_eq!(interface.buf_pos(), 5);
 
     tx.text("\n").ctrl('+');
-    interface.read_until(end);
+    interface.read_until(end).unwrap();
     slp();
     assert_eq!(col(), 0);
     assert_eq!(interface.buf_pos(), 6);
 
     tx.text("Hello\nWorld!").ctrl('+');
-    interface.read_until(end);
+    interface.read_until(end).unwrap();
     slp();
     assert_eq!(col(), 6, "end of 'World!'");
     assert_eq!(interface.buf_pos(), 18);
@@ -233,7 +233,7 @@ fn interface_integration() {
     // World!
     //       ^
     tx.left(100).ctrl('+');
-    interface.read_until(end);
+    interface.read_until(end).unwrap();
     slp();
     assert_eq!(col(), 0, "will be at first column");
     assert_eq!(
