@@ -444,34 +444,85 @@ fn ls_static_files<D>() -> CommandResult<D> {
     })
 }
 
-#[test]
-fn make_path_test() {
-    assert_eq!(make_path("   "), None);
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    assert_eq!(make_path("lib"), Some(PathBuf::from("lib")));
-    assert_eq!(make_path("lib.rs"), Some(PathBuf::from("lib")));
+    #[test]
+    fn make_path_test() {
+        assert_eq!(make_path("   "), None);
 
-    assert_eq!(make_path("test"), Some(PathBuf::from("test")));
-    assert_eq!(make_path("test/inner"), Some(PathBuf::from("test/inner")));
-    assert_eq!(make_path("inner/test"), Some(PathBuf::from("inner/test")));
+        assert_eq!(make_path("lib"), Some(PathBuf::from("lib")));
+        assert_eq!(make_path("lib.rs"), Some(PathBuf::from("lib")));
 
-    assert_eq!(make_path("//"), None);
+        assert_eq!(make_path("test"), Some(PathBuf::from("test")));
+        assert_eq!(make_path("test/inner"), Some(PathBuf::from("test/inner")));
+        assert_eq!(make_path("inner/test"), Some(PathBuf::from("inner/test")));
 
-    assert_eq!(make_path("\\hello\\"), Some(PathBuf::from("hello")));
-}
+        assert_eq!(make_path("//"), None);
 
-#[test]
-fn make_all_parents_test() {
-    // only handle parents
-    assert_eq!(make_all_parents(Path::new("")), Vec::<PathBuf>::new());
-    assert_eq!(make_all_parents(Path::new("test")), Vec::<PathBuf>::new());
+        assert_eq!(make_path("\\hello\\"), Some(PathBuf::from("hello")));
+    }
 
-    assert_eq!(
-        make_all_parents(Path::new("test/inner")),
-        vec![PathBuf::from("test")]
-    );
-    assert_eq!(
-        make_all_parents(Path::new("test/inner/deep")),
-        vec![PathBuf::from("test"), PathBuf::from("test/inner")]
-    );
+    #[test]
+    fn make_all_parents_test() {
+        // only handle parents
+        assert_eq!(make_all_parents(Path::new("")), Vec::<PathBuf>::new());
+        assert_eq!(make_all_parents(Path::new("test")), Vec::<PathBuf>::new());
+
+        assert_eq!(
+            make_all_parents(Path::new("test/inner")),
+            vec![PathBuf::from("test")]
+        );
+        assert_eq!(
+            make_all_parents(Path::new("test/inner/deep")),
+            vec![PathBuf::from("test"), PathBuf::from("test/inner")]
+        );
+    }
+
+    #[test]
+    fn test_switch_module_priv() {
+        let mut buf = Vec::new();
+        switch_module_priv::<(), _>(&[], &mut buf);
+        assert_eq!(
+            buf.as_slice(),
+            &b"switch expects a path to module argument\n"[..]
+        );
+
+        buf.clear();
+        switch_module_priv::<(), _>(&["foo"], &mut buf);
+        assert_eq!(buf.as_slice(), &b""[..]);
+
+        buf.clear();
+        switch_module_priv::<(), _>(&[""], &mut buf);
+        println!("{:?}", std::str::from_utf8(&buf));
+        assert_eq!(
+            buf.as_slice(),
+            &b"failed to parse  into a valid module path\n"[..]
+        );
+    }
+
+    #[test]
+    fn test_static_file_interface() {
+        let mut buf = Vec::new();
+        add_static_file::<()>(&mut buf, &[]);
+        println!("{:?}", std::str::from_utf8(&buf));
+        assert_eq!(buf.as_slice(), &b"add expects a file path\n"[..]);
+
+        buf.clear();
+        add_static_file::<()>(&mut buf, &["none.rs"]);
+        println!("{:?}", std::str::from_utf8(&buf));
+        assert_eq!(
+            buf.as_slice(),
+            &b"failed to read none.rs: No such file or directory (os error 2)\n"[..]
+        );
+
+        buf.clear();
+        rm_static_file::<()>(&mut buf, &[]);
+        println!("{:?}", std::str::from_utf8(&buf));
+        assert_eq!(buf.as_slice(), &b"rm expects a file path\n"[..]);
+
+        buf.clear();
+        rm_static_file::<()>(&mut buf, &["what"]);
+    }
 }

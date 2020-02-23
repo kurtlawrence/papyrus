@@ -1373,4 +1373,93 @@ kserd::Kserd::new_str("no statements")
             return_stmt
         );
     }
+
+    #[test]
+    fn test_stmtgrp_src_line() {
+        let grp = StmtGrp(vec![
+            Statement {
+                expr: "a".into(),
+                semi: false,
+            },
+            Statement {
+                expr: "b".into(),
+                semi: true,
+            },
+        ]);
+        let s = grp.src_line();
+        println!("{}", s);
+        assert_eq!(&s, "a b;");
+    }
+
+    #[test]
+    fn test_static_file_ord() {
+        let sf1 = StaticFile {
+            path: "foo.rs".into(),
+            codehash: vec![4, 3, 2, 1],
+            crates: vec![],
+        };
+        let sf2 = StaticFile {
+            path: "foo.rs".into(),
+            codehash: vec![1, 2, 3, 4],
+            crates: vec![],
+        };
+        assert_eq!(sf1.partial_cmp(&sf2), Some(Ordering::Equal));
+    }
+
+    #[test]
+    fn test_err_display() {
+        let err = AddingStaticFileError::Io(io::Error::new(io::ErrorKind::NotFound, "what"));
+        assert_eq!(&err.to_string(), "an io error occurred: what");
+        let err = AddingStaticFileError::InvalidPath("foo.txt".into());
+        assert_eq!(
+            &err.to_string(),
+            "path is not valid for static file: foo.txt"
+        );
+    }
+
+    #[test]
+    fn test_static_file_adding_to_lib_with_crate() {
+        let v = SourceCode::default();
+
+        let linking = LinkingConfiguration::default();
+        let map = vec![("lib".into(), v.clone())].into_iter().collect();
+
+        let static_files = vec![
+            StaticFile {
+                path: "foo2/bar.rs".into(),
+                codehash: vec![],
+                crates: vec![CrateType::parse_str("extern crate rand;").unwrap()],
+            },
+            StaticFile {
+                path: "foo2/mod.rs".into(),
+                codehash: vec![],
+                crates: vec![],
+            },
+            StaticFile {
+                path: "bar2.rs".into(),
+                codehash: vec![],
+                crates: vec![],
+            },
+        ]
+        .into_iter()
+        .collect();
+
+        let (s, map) = construct_source_code(&map, &linking, &static_files);
+
+        let ans = r##"mod bar2;
+mod foo2;
+#[no_mangle]
+pub extern "C" fn _lib_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+"##;
+
+        let return_stmt = r#"kserd::Kserd::new_str("no statements")"#;
+        println!("{}", s);
+        assert_eq!(&s, ans);
+        assert_eq!(
+            &ans[map.get(Path::new("lib")).unwrap().clone()],
+            return_stmt
+        );
+    }
 }
