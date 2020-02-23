@@ -169,8 +169,11 @@
 use super::*;
 use crate::repl::{Editing, EditingIndex, ReplData};
 use cmdtree::{BuildError, Builder, BuilderChain, Commander};
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 pub use cmdtree::Builder as CommandBuilder;
 
@@ -268,6 +271,17 @@ fn papyrus_cmdr<D>(
             "Switch to a module, creating one if necessary. switch path/to/module",
             |wtr, args| switch_module_priv(args, wtr),
         )
+        .end_class()
+        .begin_class("static-files", "Handle static files")
+        .add_action(
+            "add",
+            "Import a static file. args: file-path",
+            |wtr, args| add_static_file(wtr, args),
+        )
+        .add_action("rm", "Remove a static file", |wtr, args| {
+            rm_static_file(wtr, args)
+        })
+        .add_action("ls", "List imported static files", |_, _| ls_static_files())
         .end_class()
         .into_commander()
 }
@@ -377,6 +391,57 @@ pub(crate) fn switch_module<D>(data: &mut ReplData<D>, path: &Path) -> &'static 
     data.current_mod = path.to_path_buf();
 
     ""
+}
+
+fn add_static_file<D>(wtr: &mut dyn Write, args: &[&str]) -> CommandResult<D> {
+    if let Some(&path) = args.get(0) {
+        let pathbuf = PathBuf::from(path);
+        match fs::read_to_string(path) {
+            Ok(s) => CommandResult::repl_data_fn(move |data, _| {
+                data.add_static_file(pathbuf.clone(), &s)
+                    .map(|_| "imported/overwrote static file".into())
+                    .unwrap_or_else(|e| format!("failed to add {}: {}", pathbuf.display(), e))
+            }),
+            Err(e) => {
+                writeln!(wtr, "failed to read {}: {}", path, e).ok();
+                CommandResult::Empty
+            }
+        }
+    } else {
+        writeln!(wtr, "add expects a file path").ok();
+        CommandResult::Empty
+    }
+}
+
+fn rm_static_file<D>(wtr: &mut dyn Write, args: &[&str]) -> CommandResult<D> {
+    if let Some(&path) = args.get(0) {
+        let path = PathBuf::from(path);
+        CommandResult::repl_data_fn(move |data, _| {
+            data.remove_static_file(&path);
+            String::from("removed static file")
+        })
+    } else {
+        writeln!(wtr, "rm expects a file path").ok();
+        CommandResult::Empty
+    }
+}
+
+fn ls_static_files<D>() -> CommandResult<D> {
+    CommandResult::repl_data_fn(|data, wtr| {
+        let sfs = data.static_files();
+        if sfs.is_empty() {
+            writeln!(wtr, "no static files imported").ok();
+        } else {
+            for sf in data.static_files() {
+                write!(wtr, "{}", sf.path.display()).ok();
+                if let Some(name) = crate::code::static_file_mod_name(&sf.path) {
+                    write!(wtr, " -> {}", name).ok();
+                }
+                writeln!(wtr).ok();
+            }
+        }
+        String::new()
+    })
 }
 
 #[test]
