@@ -84,7 +84,7 @@ impl CodeCompleter {
         let (last_code, map) = crate::code::construct_source_code(
             repl_data.mods_map(),
             repl_data.linking(),
-            repl_data.static_files().iter(),
+            repl_data.static_files(),
         );
 
         let split = map.get(repl_data.current_mod()).cloned().unwrap_or(0..0); // return an empty range if this fails

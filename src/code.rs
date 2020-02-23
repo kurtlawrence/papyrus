@@ -48,9 +48,9 @@ use crate::linking::LinkingConfiguration;
 use std::{
     borrow::Borrow,
     cmp::Ordering,
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, BTreeSet, HashMap},
     error, fmt,
-    io::{self, Write},
+    io::{self},
     path::{Path, PathBuf},
 };
 
@@ -59,6 +59,8 @@ type ReturnRangeMap<'a> = fxhash::FxHashMap<&'a Path, ReturnRange>;
 
 /// Mapping of modules to source code.
 pub type ModsMap = BTreeMap<PathBuf, SourceCode>;
+/// Set of statics files.
+pub type StaticFiles = BTreeSet<StaticFile>;
 
 /// An input collection
 #[derive(Debug, PartialEq, Clone)]
@@ -169,17 +171,14 @@ impl StmtGrp {
 }
 
 /// Construct a single string containing all the source code in `mods_map`.
-pub fn construct_source_code<'a, 'b, SF>(
+pub fn construct_source_code<'a>(
     mods_map: &'a ModsMap,
     linking_config: &LinkingConfiguration,
-    static_files: SF,
-) -> (String, ReturnRangeMap<'a>)
-where
-    SF: Iterator<Item = &'b StaticFile>,
-{
+    static_files: &StaticFiles,
+) -> (String, ReturnRangeMap<'a>) {
     // assumed to be sorted, FileMap is BTreeMap
 
-    let (cap, map) = calc_capacity(mods_map, linking_config);
+    let (cap, map) = calc_capacity(mods_map, linking_config, static_files);
 
     let mut contents = String::with_capacity(cap);
 
@@ -192,6 +191,7 @@ where
     if let Some(lib) = mods_map.get(Path::new("lib")) {
         // add static file links
         for n in static_files
+            .iter()
             .map(|x| x.path.as_path())
             .filter_map(static_file_mod_name)
         {
@@ -205,6 +205,7 @@ where
             lib,
             &into_mod_path_vec(Path::new("lib")),
             linking_config,
+            &StaticFiles::new(), // don't pass through as handled as mods above
             &mut contents,
         );
     }
@@ -234,6 +235,7 @@ where
             src_code,
             &into_mod_path_vec(file),
             linking_config,
+            static_files,
             &mut contents,
         );
     }
@@ -297,6 +299,7 @@ fn mods_map_with_lvls(
 fn calc_capacity<'a>(
     mods_map: &'a ModsMap,
     linking_config: &LinkingConfiguration,
+    static_files: &StaticFiles,
 ) -> (usize, ReturnRangeMap<'a>) {
     fn mv_rng(mut rng: ReturnRange, by: usize) -> ReturnRange {
         rng.start += by;
@@ -315,8 +318,20 @@ fn calc_capacity<'a>(
 
     // do the lib first
     if let Some(lib) = mods_map.get(Path::new("lib")) {
-        let (src_code_len, src_code_return) =
-            append_buffer_length(lib, &into_mod_path_vec(Path::new("lib")), linking_config);
+        let static_files_len: usize = static_files
+            .iter()
+            .map(|x| x.path.as_path())
+            .filter_map(static_file_mod_name)
+            .map(|x| x.len() + 6)
+            .sum();
+        cap += static_files_len;
+
+        let (src_code_len, src_code_return) = append_buffer_length(
+            lib,
+            &into_mod_path_vec(Path::new("lib")),
+            linking_config,
+            &StaticFiles::new(),
+        );
 
         map.insert(Path::new("lib"), mv_rng(src_code_return, cap));
 
@@ -340,8 +355,12 @@ fn calc_capacity<'a>(
             .unwrap_or(0);
         cap += 3; // }\n
 
-        let (src_code_len, src_code_return) =
-            append_buffer_length(src_code, &into_mod_path_vec(file), linking_config);
+        let (src_code_len, src_code_return) = append_buffer_length(
+            src_code,
+            &into_mod_path_vec(file),
+            linking_config,
+            static_files,
+        );
 
         map.insert(file, mv_rng(src_code_return, cap));
 
@@ -363,6 +382,7 @@ fn append_buffer<S: AsRef<str>>(
     src_code: &SourceCode,
     mod_path: &[S],
     linking_config: &linking::LinkingConfiguration,
+    static_files: &StaticFiles,
     buf: &mut String,
 ) {
     // do up top items first.
@@ -375,6 +395,17 @@ fn append_buffer<S: AsRef<str>>(
     if !linking_config.persistent_module_code.is_empty() {
         buf.push_str(&linking_config.persistent_module_code);
         buf.push('\n');
+    }
+
+    // inject static files links
+    for f in static_files
+        .iter()
+        .map(|x| x.path.as_path())
+        .filter_map(static_file_mod_name)
+    {
+        buf.push_str("use crate::");
+        buf.push_str(f);
+        buf.push_str(";\n");
     }
 
     // wrap stmts
@@ -411,8 +442,9 @@ fn append_buffer_length<S: AsRef<str>>(
     src_code: &SourceCode,
     mod_path: &[S],
     linking_config: &linking::LinkingConfiguration,
+    static_files: &StaticFiles,
 ) -> (usize, ReturnRange) {
-    let mut cap = src_code
+    let mut cap: usize = src_code
         .items
         .iter()
         .filter(|x| x.1)
@@ -423,6 +455,14 @@ fn append_buffer_length<S: AsRef<str>>(
     if !linking_config.persistent_module_code.is_empty() {
         cap += linking_config.persistent_module_code.len() + 1;
     }
+
+    // static files -- use crate::#;\n
+    cap += static_files
+        .iter()
+        .map(|x| x.path.as_path())
+        .filter_map(static_file_mod_name)
+        .map(|x| x.len() + 13)
+        .sum::<usize>();
 
     // wrap stmts
     cap += 31 + eval_fn_name_length(mod_path) + 1 + linking_config.construct_fn_args_length() + 29;
@@ -841,8 +881,15 @@ mod tests {
         let linking_config = LinkingConfiguration::default();
 
         let mut s = String::new();
-        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
+        append_buffer(
+            &src_code,
+            &mod_path,
+            &linking_config,
+            &StaticFiles::new(),
+            &mut s,
+        );
+        let (len, rng) =
+            append_buffer_length(&src_code, &mod_path, &linking_config, &StaticFiles::new());
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _intern_eval() -> kserd::Kserd<'static> {
@@ -858,8 +905,15 @@ kserd::Kserd::new_str("no statements")
         let mod_path = ["some".to_string(), "path".to_string()];
 
         let mut s = String::new();
-        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
+        append_buffer(
+            &src_code,
+            &mod_path,
+            &linking_config,
+            &StaticFiles::new(),
+            &mut s,
+        );
+        let (len, rng) =
+            append_buffer_length(&src_code, &mod_path, &linking_config, &StaticFiles::new());
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval() -> kserd::Kserd<'static> {
@@ -878,8 +932,15 @@ kserd::Kserd::new_str("no statements")
         };
 
         let mut s = String::new();
-        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
+        append_buffer(
+            &src_code,
+            &mod_path,
+            &linking_config,
+            &StaticFiles::new(),
+            &mut s,
+        );
+        let (len, rng) =
+            append_buffer_length(&src_code, &mod_path, &linking_config, &StaticFiles::new());
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> kserd::Kserd<'static> {
@@ -896,8 +957,15 @@ kserd::Kserd::new_str("no statements")
         src_code.items.push(("fn b() {}".to_string(), false));
 
         let mut s = String::new();
-        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
+        append_buffer(
+            &src_code,
+            &mod_path,
+            &linking_config,
+            &StaticFiles::new(),
+            &mut s,
+        );
+        let (len, rng) =
+            append_buffer_length(&src_code, &mod_path, &linking_config, &StaticFiles::new());
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _some_path_intern_eval(app_data: &String) -> kserd::Kserd<'static> {
@@ -944,8 +1012,15 @@ fn b() {}
             .push_str("some-injected-persistent-code");
 
         let mut s = String::new();
-        append_buffer(&src_code, &mod_path, &linking_config, &mut s);
-        let (len, rng) = append_buffer_length(&src_code, &mod_path, &linking_config);
+        append_buffer(
+            &src_code,
+            &mod_path,
+            &linking_config,
+            &StaticFiles::new(),
+            &mut s,
+        );
+        let (len, rng) =
+            append_buffer_length(&src_code, &mod_path, &linking_config, &StaticFiles::new());
 
         let ans = r##"#![feature(UP_TOP)]
 some-injected-persistent-code
@@ -986,7 +1061,7 @@ fn b() {}
         .into_iter()
         .collect();
 
-        let (s, map) = construct_source_code(&map, &linking, empty());
+        let (s, map) = construct_source_code(&map, &linking, &StaticFiles::new());
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _lib_intern_eval() -> kserd::Kserd<'static> {
@@ -1101,7 +1176,7 @@ kserd::Kserd::new_str("no statements")
         let linking = LinkingConfiguration::default();
         let map = vec![("lib".into(), v)].into_iter().collect();
 
-        let (s, map) = construct_source_code(&map, &linking, empty());
+        let (s, map) = construct_source_code(&map, &linking, &StaticFiles::new());
 
         let ans = r##"Up Top
 #[no_mangle]
@@ -1185,5 +1260,117 @@ Test1
         assert_eq!(static_file_mod_name("mod/mod.rs".as_ref()), Some("mod"));
         assert_eq!(static_file_mod_name("mod/foo.rs".as_ref()), None);
         assert_eq!(static_file_mod_name("./mod.rs".as_ref()), Some("."));
+    }
+
+    #[test]
+    fn test_static_file_adding_to_lib() {
+        let v = SourceCode::default();
+
+        let linking = LinkingConfiguration::default();
+        let map = vec![
+            ("lib".into(), v.clone()),
+            ("test".into(), v.clone()),
+            ("foo/bar".into(), v.clone()),
+            ("test/inner".into(), v.clone()),
+            ("foo".into(), v.clone()),
+            ("test/inner2".into(), v.clone()),
+        ]
+        .into_iter()
+        .collect();
+
+        let static_files = vec![
+            StaticFile {
+                path: "foo2/bar.rs".into(),
+                codehash: vec![],
+                crates: vec![],
+            },
+            StaticFile {
+                path: "foo2/mod.rs".into(),
+                codehash: vec![],
+                crates: vec![],
+            },
+            StaticFile {
+                path: "bar2.rs".into(),
+                codehash: vec![],
+                crates: vec![],
+            },
+        ]
+        .into_iter()
+        .collect();
+
+        let (s, map) = construct_source_code(&map, &linking, &static_files);
+
+        let ans = r##"mod bar2;
+mod foo2;
+#[no_mangle]
+pub extern "C" fn _lib_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+mod foo {
+use crate::bar2;
+use crate::foo2;
+#[no_mangle]
+pub extern "C" fn _foo_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+mod bar {
+use crate::bar2;
+use crate::foo2;
+#[no_mangle]
+pub extern "C" fn _foo_bar_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+}}
+mod test {
+use crate::bar2;
+use crate::foo2;
+#[no_mangle]
+pub extern "C" fn _test_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+mod inner {
+use crate::bar2;
+use crate::foo2;
+#[no_mangle]
+pub extern "C" fn _test_inner_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+}
+mod inner2 {
+use crate::bar2;
+use crate::foo2;
+#[no_mangle]
+pub extern "C" fn _test_inner2_intern_eval() -> kserd::Kserd<'static> {
+kserd::Kserd::new_str("no statements")
+}
+}}"##;
+
+        let return_stmt = r#"kserd::Kserd::new_str("no statements")"#;
+        println!("{}", s);
+        assert_eq!(&s, ans);
+        assert_eq!(
+            &ans[map.get(Path::new("lib")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("foo")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("foo/bar")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("test")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("test/inner")).unwrap().clone()],
+            return_stmt
+        );
+        assert_eq!(
+            &ans[map.get(Path::new("test/inner2")).unwrap().clone()],
+            return_stmt
+        );
     }
 }

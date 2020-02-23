@@ -21,7 +21,7 @@ impl<Data> Default for ReplData<Data> {
             linking: LinkingConfiguration::default(),
             editing: None,
             editing_src: None,
-            static_files: BTreeSet::new(),
+            static_files: StaticFiles::new(),
             loadedlibs: VecDeque::new(),
             loaded_libs_size_limit: 0,
         };
@@ -91,7 +91,7 @@ impl<Data> ReplData<Data> {
         &mut self.linking.persistent_module_code
     }
 
-    pub fn static_files(&self) -> &BTreeSet<StaticFile> {
+    pub fn static_files(&self) -> &StaticFiles {
         &self.static_files
     }
 

@@ -305,7 +305,7 @@ impl<D> ReplData<D> {
             &self.compilation_dir,
             &self.mods_map,
             &self.linking,
-            self.static_files.iter(),
+            &self.static_files,
         );
         if let Err(e) = res {
             maybe_pop_input(self); // failed so don't save

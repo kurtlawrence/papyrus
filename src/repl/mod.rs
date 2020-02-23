@@ -9,7 +9,7 @@ mod read;
 
 use crate::{
     cmds::CommandResult,
-    code::{ModsMap, StaticFile},
+    code::{ModsMap, StaticFile, StaticFiles},
     input::InputResult,
     linking::{self, LinkingConfiguration},
     output::{self, Output},
@@ -83,7 +83,7 @@ pub struct ReplData<Data> {
     pub editing_src: Option<String>,
 
     /// Store of static files written to disk and to be included in REPL cycle.
-    static_files: BTreeSet<StaticFile>,
+    static_files: StaticFiles,
 
     /// Stored loaded libraries of the papyrus mem code.
     loadedlibs: VecDeque<libloading::Library>,

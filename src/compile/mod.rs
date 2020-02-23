@@ -17,7 +17,7 @@ mod tests {
     use crate::code::*;
     use crate::linking::{Extern, LinkingConfiguration};
     use ::kserd::Kserd;
-    use std::{fs, iter::empty, path::PathBuf};
+    use std::{fs, path::PathBuf};
 
     #[test]
     fn nodata_build_fmt_compile_eval_test() {
@@ -26,7 +26,7 @@ mod tests {
         let linking_config = LinkingConfiguration::default();
 
         // build
-        build_compile_dir(&compile_dir, &files, &linking_config, empty()).unwrap();
+        build_compile_dir(&compile_dir, &files, &linking_config, &StaticFiles::new()).unwrap();
         assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
             .unwrap()
             .contains("\nlet out0 = 2+2;"));
@@ -51,7 +51,7 @@ mod tests {
         );
 
         // build
-        build_compile_dir(&compile_dir, &files, &linking_config, empty()).unwrap();
+        build_compile_dir(&compile_dir, &files, &linking_config, &StaticFiles::new()).unwrap();
         assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
             .unwrap()
             .contains("\nlet out0 = 2+2;"));
@@ -76,7 +76,7 @@ mod tests {
         );
 
         // build
-        build_compile_dir(&compile_dir, &files, &linking_config, empty()).unwrap();
+        build_compile_dir(&compile_dir, &files, &linking_config, &StaticFiles::new()).unwrap();
         assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
             .unwrap()
             .contains("\nlet out0 = 2+2;"));
@@ -107,7 +107,7 @@ mod tests {
         );
 
         // build
-        build_compile_dir(&compile_dir, &files, &linking_config, empty()).unwrap();
+        build_compile_dir(&compile_dir, &files, &linking_config, &StaticFiles::new()).unwrap();
         assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
             .unwrap()
             .contains("\nlet out0 = 2+2;"));
@@ -134,7 +134,7 @@ mod tests {
         let linking_config = LinkingConfiguration::default();
 
         // build
-        build_compile_dir(&compile_dir, &files, &linking_config, empty()).unwrap();
+        build_compile_dir(&compile_dir, &files, &linking_config, &StaticFiles::new()).unwrap();
         assert!(fs::read_to_string(&format!("{}/src/lib.rs", compile_dir))
             .unwrap()
             .contains("\nlet out0 = 2+;"));
@@ -227,7 +227,7 @@ mod tests {
             .push_str("use external_kserd::{kserd, rand};");
 
         // build
-        build_compile_dir(&compile_dir, &files, &linking_config, empty()).unwrap();
+        build_compile_dir(&compile_dir, &files, &linking_config, &StaticFiles::new()).unwrap();
         let filestr = fs::read_to_string(&format!("{}/src/lib.rs", compile_dir)).unwrap();
         assert!(filestr.contains("\nlet out0 = rand::random::<u8>();"));
         assert!(filestr.contains("\nlet out1 = 2+2;"));

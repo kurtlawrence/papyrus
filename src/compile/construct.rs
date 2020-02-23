@@ -1,6 +1,6 @@
 use super::LIBRARY_NAME;
 use crate::{
-    code::{self, CrateType, ModsMap, StaticFile},
+    code::{self, CrateType, ModsMap, StaticFiles},
     linking,
 };
 use std::{
@@ -12,15 +12,14 @@ use std::{
 /// Constructs the compile directory.
 /// Takes a list of source files and writes the contents to file.
 /// Builds `Cargo.toml` using crates found in `SourceFile`.
-pub fn build_compile_dir<'a, P, SF>(
+pub fn build_compile_dir<P>(
     compile_dir: P,
     mods_map: &ModsMap,
     linking_config: &linking::LinkingConfiguration,
-    static_files: SF,
+    static_files: &StaticFiles,
 ) -> io::Result<()>
 where
     P: AsRef<Path>,
-    SF: Iterator<Item = &'a StaticFile>,
 {
     let compile_dir = compile_dir.as_ref();
 
