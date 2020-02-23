@@ -17,7 +17,38 @@
 //! | `exit`   | quit the REPL                                   |
 //!
 //! Other commands are context based off the command tree, they can be invoked with something similar
-//! to `a nested command action` syntax.
+//! to `a nested command action` syntax. There is also a 'verbatim' mode.
+//!
+//! ## Verbatim Mode
+//! 'verbatim' mode can be used to read stdin directly without processing of tabs, newlines, and other
+//! keys which usually are interpreted to mean other things, such as completion or the end of an input.
+//! To enter verbatim mode, use `Ctrl+o`. Verbatim mode will read stdin until the break command is
+//! reached, which is `Ctrl+d`. Verbatim mode is especially useful for inputing multi-line strings and
+//! if injecting code into the REPL from another program using stdin.
+//!
+//! ## Mutable Mode
+//! The `mut` command will place the REPL into mutable mode, which makes access to `app_data` a `&mut`
+//! pointer. Mutable mode avoids having state change on each REPL cycle, rather, when in mutable mode,
+//! the expression will _not be saved_ such that it will only be run once. Developers can use this mode
+//! to control how changes to `app_data` need to occur, especially by ensuring mutable access is
+//! harding to achieve.
+//!
+//! ## Modules
+//! The `mod` command allows more than just the `lib` module to exist in the REPL. Use `mod` to have
+//! different REPL sessions all sharing the same compilation cycle. This can be useful to switch
+//! contexts if need be.
+//!
+//! ## Static Files
+//! The `static-files` command allows the importing of file-system based rust documents into the REPL
+//! compilation. Rust files must be relative to the REPL working directory, and will be imported using
+//! a module path based off the relative file name. For example, `:static-files add foo.rs` will copy
+//! the contents of `foo.rs` into a file that is _adjacent_ to the root library file, so can be access
+//! in the REPL through `foo::*`. The file `foo/mod.rs` would similarly be accessible through `foo::*`.
+//! If the file `foo/bar.rs` was imported, it would _not_ be accessible unless there was also a `foo`
+//! static file, and the contents of that file would have to contain a `pub mod bar;`.
+//!
+//! Static files can also reference crates. If a static file contains `extern crate name;` **at the
+//! beginning** of the file, these crates are added to the compilation and can be referenced.
 //!
 //! # Extending Commands
 //! ## Setup
