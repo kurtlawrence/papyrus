@@ -50,7 +50,6 @@ use std::{
     cmp::Ordering,
     collections::{BTreeMap, HashMap},
     error, fmt,
-    hash::{Hash, Hasher},
     io::{self, Write},
     path::{Path, PathBuf},
 };
@@ -170,10 +169,14 @@ impl StmtGrp {
 }
 
 /// Construct a single string containing all the source code in `mods_map`.
-pub fn construct_source_code<'a>(
+pub fn construct_source_code<'a, 'b, SF>(
     mods_map: &'a ModsMap,
     linking_config: &LinkingConfiguration,
-) -> (String, ReturnRangeMap<'a>) {
+    static_files: SF,
+) -> (String, ReturnRangeMap<'a>)
+where
+    SF: Iterator<Item = &'b StaticFile>,
+{
     // assumed to be sorted, FileMap is BTreeMap
 
     let (cap, map) = calc_capacity(mods_map, linking_config);
@@ -187,7 +190,18 @@ pub fn construct_source_code<'a>(
 
     // do the lib first
     if let Some(lib) = mods_map.get(Path::new("lib")) {
-        code::append_buffer(
+        // add static file links
+        for n in static_files
+            .map(|x| x.path.as_path())
+            .filter_map(static_file_mod_name)
+        {
+            contents += "mod ";
+            contents += n;
+            contents += ";\n";
+        }
+
+        // append source code
+        append_buffer(
             lib,
             &into_mod_path_vec(Path::new("lib")),
             linking_config,
@@ -216,7 +230,7 @@ pub fn construct_source_code<'a>(
                 .expect("should convert fine"),
         );
         contents.push_str(" {\n");
-        code::append_buffer(
+        append_buffer(
             src_code,
             &into_mod_path_vec(file),
             linking_config,
@@ -527,9 +541,15 @@ impl PartialEq for StaticFile {
 
 impl Eq for StaticFile {}
 
-impl Hash for StaticFile {
-    fn hash<H: Hasher>(&self, hasher: &mut H) {
-        self.path.hash(hasher)
+impl Ord for StaticFile {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.path.cmp(&other.path)
+    }
+}
+
+impl PartialOrd for StaticFile {
+    fn partial_cmp(&self, other: &StaticFile) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -694,6 +714,7 @@ pub fn static_file_mod_name(path: &Path) -> Option<&str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::iter::empty;
 
     #[test]
     fn file_map_with_lvls_test() {
@@ -965,7 +986,7 @@ fn b() {}
         .into_iter()
         .collect();
 
-        let (s, map) = construct_source_code(&map, &linking);
+        let (s, map) = construct_source_code(&map, &linking, empty());
 
         let ans = r##"#[no_mangle]
 pub extern "C" fn _lib_intern_eval() -> kserd::Kserd<'static> {
@@ -1080,7 +1101,7 @@ kserd::Kserd::new_str("no statements")
         let linking = LinkingConfiguration::default();
         let map = vec![("lib".into(), v)].into_iter().collect();
 
-        let (s, map) = construct_source_code(&map, &linking);
+        let (s, map) = construct_source_code(&map, &linking, empty());
 
         let ans = r##"Up Top
 #[no_mangle]

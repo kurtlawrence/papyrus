@@ -81,8 +81,11 @@ pub struct CodeCompleter {
 impl CodeCompleter {
     /// Build the code completion state. Uses the current repl state.
     pub fn build<T>(repl_data: &crate::repl::ReplData<T>) -> Self {
-        let (last_code, map) =
-            crate::code::construct_source_code(repl_data.mods_map(), repl_data.linking());
+        let (last_code, map) = crate::code::construct_source_code(
+            repl_data.mods_map(),
+            repl_data.linking(),
+            repl_data.static_files().iter(),
+        );
 
         let split = map.get(repl_data.current_mod()).cloned().unwrap_or(0..0); // return an empty range if this fails
 

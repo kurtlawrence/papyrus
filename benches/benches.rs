@@ -22,7 +22,7 @@ fn pfh_compile_construct(c: &mut Criterion) {
     .collect();
 
     c.bench_function("construct_source_code", move |b| {
-        b.iter(|| construct_source_code(&map, &linking))
+        b.iter(|| construct_source_code(&map, &linking, std::iter::empty()))
     });
 }
 

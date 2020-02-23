@@ -20,7 +20,7 @@ use crossbeam_channel::Receiver;
 use kserd::Kserd;
 use std::{
     borrow::Cow,
-    collections::{HashSet, VecDeque},
+    collections::{BTreeSet, VecDeque},
     fmt, fs, io,
     marker::PhantomData,
     path::{Path, PathBuf},
@@ -83,7 +83,7 @@ pub struct ReplData<Data> {
     pub editing_src: Option<String>,
 
     /// Store of static files written to disk and to be included in REPL cycle.
-    static_files: HashSet<StaticFile>,
+    static_files: BTreeSet<StaticFile>,
 
     /// Stored loaded libraries of the papyrus mem code.
     loadedlibs: VecDeque<libloading::Library>,

@@ -1,18 +1,27 @@
 use super::LIBRARY_NAME;
-use crate::code::{self, CrateType, ModsMap};
-use crate::linking;
-use std::fs;
-use std::io::{self, Write};
-use std::path::Path;
+use crate::{
+    code::{self, CrateType, ModsMap, StaticFile},
+    linking,
+};
+use std::{
+    fs,
+    io::{self, Write},
+    path::Path,
+};
 
 /// Constructs the compile directory.
 /// Takes a list of source files and writes the contents to file.
 /// Builds `Cargo.toml` using crates found in `SourceFile`.
-pub fn build_compile_dir<P: AsRef<Path>>(
+pub fn build_compile_dir<'a, P, SF>(
     compile_dir: P,
     mods_map: &ModsMap,
     linking_config: &linking::LinkingConfiguration,
-) -> io::Result<()> {
+    static_files: SF,
+) -> io::Result<()>
+where
+    P: AsRef<Path>,
+    SF: Iterator<Item = &'a StaticFile>,
+{
     let compile_dir = compile_dir.as_ref();
 
     let crates = mods_map.iter().flat_map(|kvp| kvp.1.crates.iter());
@@ -21,7 +30,7 @@ pub fn build_compile_dir<P: AsRef<Path>>(
     create_file_and_dir(compile_dir.join("Cargo.toml"))?
         .write_all(cargotoml_contents(LIBRARY_NAME, crates).as_bytes())?;
 
-    let (src_code, _map) = code::construct_source_code(mods_map, linking_config);
+    let (src_code, _map) = code::construct_source_code(mods_map, linking_config, static_files);
 
     create_file_and_dir(compile_dir.join("src/lib.rs"))?.write_all(src_code.as_bytes())?;
 

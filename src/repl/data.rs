@@ -21,7 +21,7 @@ impl<Data> Default for ReplData<Data> {
             linking: LinkingConfiguration::default(),
             editing: None,
             editing_src: None,
-            static_files: HashSet::new(),
+            static_files: BTreeSet::new(),
             loadedlibs: VecDeque::new(),
             loaded_libs_size_limit: 0,
         };
@@ -89,6 +89,10 @@ impl<Data> ReplData<Data> {
     /// Dependency duplication is discussed in the [_linking_ module](crate::linking).
     pub fn persistent_module_code(&mut self) -> &mut String {
         &mut self.linking.persistent_module_code
+    }
+
+    pub fn static_files(&self) -> &BTreeSet<StaticFile> {
+        &self.static_files
     }
 
     pub fn add_static_file(
