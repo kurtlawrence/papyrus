@@ -567,9 +567,15 @@ impl CrateType {
 }
 
 // ###### STATIC FILES ###################################################################
+/// A static file pointer.
 pub struct StaticFile {
+    /// The path, which is also the key.
+    ///
+    /// The path must be a valid module path, so each component must be a valid identifier.
     pub path: PathBuf,
+    /// A hash of the static file code contents.
     pub codehash: Vec<u8>,
+    /// Any referenced crates at the beginning of the code file.
     pub crates: Vec<CrateType>,
 }
 
@@ -599,9 +605,12 @@ impl Borrow<Path> for StaticFile {
     }
 }
 
+/// Errors around adding a static file.
 #[derive(Debug)]
 pub enum AddingStaticFileError {
+    /// The path is invalid as a module path.
     InvalidPath(&'static str),
+    /// An io error occurred.
     Io(io::Error),
 }
 
@@ -693,6 +702,21 @@ fn valid_identifier(s: &str) -> Result<(), &'static str> {
     }
 }
 
+/// Parse a code string for any crate references.
+///
+/// Returns the code slice _without_ the crate references.
+///
+/// # Example
+/// ```rust
+/// # use papyrus::code::*;
+/// let (slice, crates) = parse_crates_in_file(
+/// "extern crate rand;
+/// let a = 1;");
+/// assert_eq!(crates, vec![
+///     CrateType::parse_str("extern crate rand;").unwrap()
+/// ]);
+/// assert_eq!(slice, "\nlet a = 1;");
+/// ```
 pub fn parse_crates_in_file(s: &str) -> (&str, Vec<CrateType>) {
     let mut v = Vec::new();
     let mut start = 0;

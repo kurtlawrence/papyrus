@@ -3,7 +3,7 @@ use crate::complete::code::{CodeCache, CodeCompleter};
 use crate::complete::{cmdr::TreeCompleter, modules::ModulesCompleter};
 use crate::prelude::*;
 use crossterm as xterm;
-use crossterm::{event::Event, ExecutableCommand};
+use crossterm::event::Event;
 use kserd::{fmt::FormattingConfig, Kserd};
 use repl::{EvalResult, Evaluate, Print, Read, ReadResult};
 use std::io::{self, prelude::*};
@@ -13,7 +13,7 @@ mod interface;
 #[cfg(test)]
 mod tests;
 
-use interface::{CItem, InputBuffer, Interface, Screen};
+use interface::{CItem, Interface, Screen};
 
 const CODE_COMPLETIONS: Option<usize> = Some(10);
 
@@ -374,27 +374,6 @@ fn do_read<D>(
     };
 
     result
-}
-
-fn colour_term_on_verbatim(verbatim: bool) -> crossterm::Result<()> {
-    use crossterm::{cursor::*, style::*, QueueableCommand};
-    let bgcolor = if verbatim {
-        Color::DarkBlue
-    } else {
-        Color::Reset
-    };
-    let x = crossterm::cursor::position()?.0;
-    let width = crossterm::terminal::size()?.0;
-    let writelen = width.saturating_sub(x);
-    let mut stdout = io::stdout();
-    queue!(&mut stdout, SavePosition, SetBackgroundColor(bgcolor));
-    for _ in 0..writelen {
-        queue!(&mut stdout, Print(' '))?;
-    }
-    stdout
-        .queue(RestorePosition)?
-        .flush()
-        .map_err(crossterm::ErrorKind::IoError)
 }
 
 fn complete_cmdtree<'a>(

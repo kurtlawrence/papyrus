@@ -1,4 +1,4 @@
-use super::{run, InputBuffer, Screen};
+use super::{run, Screen};
 use crate::run::RunCallbacks;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use crossterm as xterm;

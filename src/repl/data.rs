@@ -91,10 +91,15 @@ impl<Data> ReplData<Data> {
         &mut self.linking.persistent_module_code
     }
 
+    /// The current static files.
     pub fn static_files(&self) -> &StaticFiles {
         &self.static_files
     }
 
+    /// Add a static file.
+    ///
+    /// The code will be written to disk. The path must be valid, and as they are used for module
+    /// paths, must be valid identifiers. See [`StaticFile`](crate::code::StaticFile).
     pub fn add_static_file(
         &mut self,
         path: PathBuf,
@@ -135,6 +140,9 @@ impl<Data> ReplData<Data> {
         Ok(change)
     }
 
+    /// Remove a static file.
+    ///
+    /// Returns true if the path existed. Any io errors are swallowed.
     pub fn remove_static_file<P: AsRef<Path>>(&mut self, path: P) -> bool {
         let path = path.as_ref();
         let removed = self.static_files.remove(path);

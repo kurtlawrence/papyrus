@@ -20,7 +20,7 @@ use crossbeam_channel::Receiver;
 use kserd::Kserd;
 use std::{
     borrow::Cow,
-    collections::{BTreeSet, VecDeque},
+    collections::VecDeque,
     fmt, fs, io,
     marker::PhantomData,
     path::{Path, PathBuf},

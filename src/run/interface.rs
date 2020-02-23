@@ -3,7 +3,6 @@ use crate::output::OutputChange;
 use crossbeam_channel::{unbounded, Receiver};
 use crossterm as xterm;
 use std::{
-    cmp::Ordering,
     fmt,
     io::{self, stdout, Stdout, Write},
 };
@@ -137,8 +136,6 @@ impl<'a> Interface<'a> {
             modifiers: KeyModifiers::CONTROL,
             code: xterm::event::KeyCode::Char('c'),
         });
-
-        let width = term_width_nofail();
 
         while let Ok(ev) = self.screen.0.recv() {
             last = ev;
