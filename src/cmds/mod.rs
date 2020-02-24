@@ -543,10 +543,17 @@ mod tests {
         buf.clear();
         add_static_file::<()>(&mut buf, &["none.rs"]);
         println!("{:?}", std::str::from_utf8(&buf));
-        assert_eq!(
+        if cfg!(windows) {
+            assert_eq!(
             buf.as_slice(),
-            &b"failed to read none.rs: No such file or directory (os error 2)\n"[..]
+            &b"failed to read none.rs: The system cannot find the file specified. (os error 2)\n"[..]
         );
+        } else {
+            assert_eq!(
+                buf.as_slice(),
+                &b"failed to read none.rs: No such file or directory (os error 2)\n"[..]
+            );
+        }
 
         buf.clear();
         rm_static_file::<()>(&mut buf, &[]);
