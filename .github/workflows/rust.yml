@@ -13,7 +13,7 @@ jobs:
       matrix:
         name: [default-features, no-features, format, racer-completion, runnable]
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: [nightly, stable, 1.39.0]
+        rust: [nightly, stable, 1.42.0]
         include:
           - name: default-features
             rust: nightly
@@ -33,11 +33,11 @@ jobs:
           - name: default-features
             rust: stable
           - name: default-features
-            rust: 1.39.0
+            rust: 1.42.0
           - name: racer-completion
             rust: stable
           - name: racer-completion
-            rust: 1.39.0
+            rust: 1.42.0
                
     name: ${{ matrix.name }} with ${{ matrix.rust }} on ${{ matrix.os }}
     

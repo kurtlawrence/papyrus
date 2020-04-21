@@ -1,10 +1,12 @@
 # Changelog
 
+## 0.16.0
+- Increase `libloading` dependency to `0.6`.
+- Increase `kserd` dependency to `0.4`.
+- Move MSRV to `1.42` to support `libloading`.
+
 ## 0.15.0
 - Added ability to have static files, through API and REPL interface.
-
-### 0.15.1
-- Bump dependencies.
 
 ## 0.14.0
 - Fix completion overwriting lines before bug #59
