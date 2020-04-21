@@ -1,6 +1,6 @@
 [package]
 name = "papyrus"
-version = "0.15.0"
+version = "0.15.1"
 authors = ["kurt <kurtlawrence92@gmail.com>"]
 description = "A rust repl and script runner"
 license = "MIT"
@@ -17,17 +17,17 @@ codecov =   { repository = "kurtlawrence/papyrus" }
 [dependencies]
 # My crates
 cmdtree =	    { version = "0.10",	default-features = false }
-kserd =		    { version = "0.3",	default-features = false,   optional = false,	features = [ "format" ] }
+kserd =		    { version = "0.4",	default-features = false,   optional = false,	features = [ "format" ] }
 
 # crates.io
 backtrace =	    { version = "0.3",	default-features = false,   optional = false,	features = [ "std" ] }
 blake2 =	    { version = "0.8",	default-features = false }
 colored =	    { version = "1",	default-features = false }
 crossbeam-channel = { version = "0.4",	default-features = false }
-crossterm =	    { version = "0.16",	default-features = false,   optional = true }
+crossterm =	    { version = "0.17",	default-features = false,   optional = true }
 dirs =		    { version = "2",	default-features = false }
 fxhash =	    { version = "0.2",	default-features = false }
-libloading =	    { version = "0.5",	default-features = false }
+libloading =	    { version = "0.6",	default-features = false }
 log =		    { version = "0.4",	default-features = false }
 racer =		    { version = "2.1",	default-features = false,   optional = true,	features = [ "metadata" ] }
 syn =		    { version = "1",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }

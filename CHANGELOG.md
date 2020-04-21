@@ -3,6 +3,9 @@
 ## 0.15.0
 - Added ability to have static files, through API and REPL interface.
 
+### 0.15.1
+- Bump dependencies.
+
 ## 0.14.0
 - Fix completion overwriting lines before bug #59
 - Add `persistent_module_code` on the `LinkingConfiguration`, this is used to solve bug #57
