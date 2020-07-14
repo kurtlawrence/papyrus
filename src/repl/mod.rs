@@ -86,7 +86,7 @@ pub struct ReplData<Data> {
     static_files: StaticFiles,
 
     /// Stored loaded libraries of the papyrus mem code.
-    loadedlibs: VecDeque<libloading::Library>,
+    loadedlibs: VecDeque<Box<libloading::Library>>,
     /// Limit the number of loaded libraries that are kept in memory and not dropped.
     ///
     /// There exists a use pattern which can create segmentation faults if code defined in the

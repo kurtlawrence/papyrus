@@ -355,7 +355,11 @@ impl<D> ReplData<D> {
             match exec_res {
                 Ok((kserd, lib)) => {
                     // store vec, maybe
-                    add_to_limit_vec(&mut self.loadedlibs, lib, self.loaded_libs_size_limit);
+                    add_to_limit_vec(
+                        &mut self.loadedlibs,
+                        Box::new(lib),
+                        self.loaded_libs_size_limit,
+                    );
 
                     if self.linking.mutable {
                         maybe_pop_input(self); // don't save mutating inputs
