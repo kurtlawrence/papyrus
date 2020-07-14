@@ -1304,17 +1304,17 @@ Test1
         let static_files = vec![
             StaticFile {
                 path: "foo2/bar.rs".into(),
-                codehash: vec![],
+                codehash: Box::new([0; 32]),
                 crates: vec![],
             },
             StaticFile {
                 path: "foo2/mod.rs".into(),
-                codehash: vec![],
+                codehash: Box::new([0; 32]),
                 crates: vec![],
             },
             StaticFile {
                 path: "bar2.rs".into(),
-                codehash: vec![],
+                codehash: Box::new([0; 32]),
                 crates: vec![],
             },
         ]
@@ -1418,12 +1418,12 @@ kserd::Kserd::new_str("no statements")
     fn test_static_file_ord() {
         let sf1 = StaticFile {
             path: "foo.rs".into(),
-            codehash: vec![4, 3, 2, 1],
+            codehash: Box::new([0; 32]),
             crates: vec![],
         };
         let sf2 = StaticFile {
             path: "foo.rs".into(),
-            codehash: vec![1, 2, 3, 4],
+            codehash: Box::new([0; 32]),
             crates: vec![],
         };
         assert_eq!(sf1.partial_cmp(&sf2), Some(Ordering::Equal));
@@ -1450,17 +1450,17 @@ kserd::Kserd::new_str("no statements")
         let static_files = vec![
             StaticFile {
                 path: "foo2/bar.rs".into(),
-                codehash: vec![],
+                codehash: Box::new([0; 32]),
                 crates: vec![CrateType::parse_str("extern crate rand;").unwrap()],
             },
             StaticFile {
                 path: "foo2/mod.rs".into(),
-                codehash: vec![],
+                codehash: Box::new([0; 32]),
                 crates: vec![],
             },
             StaticFile {
                 path: "bar2.rs".into(),
-                codehash: vec![],
+                codehash: Box::new([0; 32]),
                 crates: vec![],
             },
         ]
