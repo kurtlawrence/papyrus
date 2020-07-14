@@ -574,7 +574,7 @@ pub struct StaticFile {
     /// The path must be a valid module path, so each component must be a valid identifier.
     pub path: PathBuf,
     /// A hash of the static file code contents.
-    pub codehash: Vec<u8>,
+    pub codehash: Box<[u8; 32]>,
     /// Any referenced crates at the beginning of the code file.
     pub crates: Vec<CrateType>,
 }

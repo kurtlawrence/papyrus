@@ -21,7 +21,7 @@ kserd =		    { version = "0.4",	default-features = false,   optional = false,	fe
 
 # crates.io
 backtrace =	    { version = "0.3",	default-features = false,   optional = false,	features = [ "std" ] }
-blake2 =	    { version = "0.8",	default-features = false }
+blake3 =	    { version = "0.3",	default-features = true }
 colored =	    { version = "1",	default-features = false }
 crossbeam-channel = { version = "0.4",	default-features = false }
 crossterm =	    { version = "0.17",	default-features = false,   optional = true }
