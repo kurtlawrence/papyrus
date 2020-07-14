@@ -105,19 +105,14 @@ impl<Data> ReplData<Data> {
         path: PathBuf,
         code: &str,
     ) -> Result<bool, AddingStaticFileError> {
-        use blake2::Digest;
         validate_static_file_path(&path).map_err(AddingStaticFileError::InvalidPath)?;
 
-        let hash = {
-            let mut hasher = blake2::Blake2b::new();
-            hasher.input(code.as_bytes());
-            hasher.result()
-        };
+        let hash: [u8; 32] = blake3::hash(code.as_bytes()).into();
 
         let change = {
             self.static_files
                 .get(path.as_path())
-                .map(|sf| sf.codehash[..] != hash[..])
+                .map(|sf| sf.codehash.as_ref() != &hash)
                 .unwrap_or(true)
         };
 
@@ -132,7 +127,7 @@ impl<Data> ReplData<Data> {
             // add/overwrite in set
             self.static_files.insert(StaticFile {
                 path,
-                codehash: hash.to_vec(),
+                codehash: Box::new(hash),
                 crates,
             });
         }

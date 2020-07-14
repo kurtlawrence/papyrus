@@ -544,11 +544,11 @@ impl CrateType {
     /// Parses a string to return the `CrateType`.
     pub fn parse_str(string: &str) -> Result<Self, &'static str> {
         let line = string
-            .replace(";", "")
-            .replace("_", "-")
+            .replace(';', "")
+            .replace('_', "-")
             .trim()
             .split('\n')
-            .nth(0)
+            .next()
             .expect("string should have one line")
             .to_string();
         if line.contains("extern crate ") {
@@ -574,7 +574,7 @@ pub struct StaticFile {
     /// The path must be a valid module path, so each component must be a valid identifier.
     pub path: PathBuf,
     /// A hash of the static file code contents.
-    pub codehash: Vec<u8>,
+    pub codehash: Box<[u8; 32]>,
     /// Any referenced crates at the beginning of the code file.
     pub crates: Vec<CrateType>,
 }
@@ -691,7 +691,7 @@ fn valid_identifier(s: &str) -> Result<(), &'static str> {
         Err("must contain one or more characters")
     } else if !s.is_ascii() {
         Err("contains non-ascii characters")
-    } else if s.starts_with("_") && s.chars().count() <= 1 {
+    } else if s.starts_with('_') && s.chars().count() <= 1 {
         Err("must contain two or more characters")
     } else if s.chars().any(|c| !c.is_ascii_alphanumeric() && c != '_') {
         Err("can only contain a-z,A-Z,0-9, or _ characters")
@@ -1304,17 +1304,17 @@ Test1
         let static_files = vec![
             StaticFile {
                 path: "foo2/bar.rs".into(),
-                codehash: vec![],
+                codehash: Box::new([0; 32]),
                 crates: vec![],
             },
             StaticFile {
                 path: "foo2/mod.rs".into(),
-                codehash: vec![],
+                codehash: Box::new([0; 32]),
                 crates: vec![],
             },
             StaticFile {
                 path: "bar2.rs".into(),
-                codehash: vec![],
+                codehash: Box::new([0; 32]),
                 crates: vec![],
             },
         ]
@@ -1418,12 +1418,12 @@ kserd::Kserd::new_str("no statements")
     fn test_static_file_ord() {
         let sf1 = StaticFile {
             path: "foo.rs".into(),
-            codehash: vec![4, 3, 2, 1],
+            codehash: Box::new([0; 32]),
             crates: vec![],
         };
         let sf2 = StaticFile {
             path: "foo.rs".into(),
-            codehash: vec![1, 2, 3, 4],
+            codehash: Box::new([0; 32]),
             crates: vec![],
         };
         assert_eq!(sf1.partial_cmp(&sf2), Some(Ordering::Equal));
@@ -1450,17 +1450,17 @@ kserd::Kserd::new_str("no statements")
         let static_files = vec![
             StaticFile {
                 path: "foo2/bar.rs".into(),
-                codehash: vec![],
+                codehash: Box::new([0; 32]),
                 crates: vec![CrateType::parse_str("extern crate rand;").unwrap()],
             },
             StaticFile {
                 path: "foo2/mod.rs".into(),
-                codehash: vec![],
+                codehash: Box::new([0; 32]),
                 crates: vec![],
             },
             StaticFile {
                 path: "bar2.rs".into(),
-                codehash: vec![],
+                codehash: Box::new([0; 32]),
                 crates: vec![],
             },
         ]
