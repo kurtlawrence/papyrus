@@ -70,7 +70,7 @@ crate-type = [ "cdylib" ]
 path = "src/lib.rs"
 
 [dependencies]
-kserd = {{ version = "0.3", default-features = false }}
+kserd = {{ version = "0.3", default-features = false, features = [ "format" ] }}
 {crates}
 "#,
         lib_name = lib_name,
