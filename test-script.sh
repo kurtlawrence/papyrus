@@ -19,7 +19,7 @@ cargo +stable fmt
 cargo +stable fmt -- --check
 
 # Check clippy
-# cargo clippy --all-features -- -D warnings 
+cargo clippy --all-features -- -D warnings 
 
 # Run tests; includes interface testing
 cargo test --all-features -- --test-threads=1

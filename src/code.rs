@@ -544,11 +544,11 @@ impl CrateType {
     /// Parses a string to return the `CrateType`.
     pub fn parse_str(string: &str) -> Result<Self, &'static str> {
         let line = string
-            .replace(";", "")
-            .replace("_", "-")
+            .replace(';', "")
+            .replace('_', "-")
             .trim()
             .split('\n')
-            .nth(0)
+            .next()
             .expect("string should have one line")
             .to_string();
         if line.contains("extern crate ") {
@@ -691,7 +691,7 @@ fn valid_identifier(s: &str) -> Result<(), &'static str> {
         Err("must contain one or more characters")
     } else if !s.is_ascii() {
         Err("contains non-ascii characters")
-    } else if s.starts_with("_") && s.chars().count() <= 1 {
+    } else if s.starts_with('_') && s.chars().count() <= 1 {
         Err("must contain two or more characters")
     } else if s.chars().any(|c| !c.is_ascii_alphanumeric() && c != '_') {
         Err("can only contain a-z,A-Z,0-9, or _ characters")

@@ -8,8 +8,7 @@ on:
     - cron: '00 07 * * 0'
 
 jobs:
-  cargo-doc-check:             
-    name: Cargo doc
+  job:         
     runs-on: [ubuntu-latest]
     
     steps:
@@ -22,25 +21,13 @@ jobs:
         profile: minimal
         toolchain: nightly
         override: true
-        components: rustfmt
+        components: rustfmt, clippy
         
     - name: Cargo Doc
       run: cargo doc -p papyrus
-      
-  format-check:
-    name: format-check
-    runs-on: [ubuntu-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v1      
-      
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: rustfmt
 
-      - name: Check formatting
-        run: cargo fmt -- --check
+    - name: Check Formatting
+      run: cargo fmt -- --check
+
+    - name: Check Clippy
+      run: cargo clippy --all-features -- -D warnings
