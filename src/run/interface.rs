@@ -3,6 +3,7 @@ use crate::output::OutputChange;
 use crossbeam_channel::{unbounded, Receiver};
 use crossterm as xterm;
 use std::{
+    collections::VecDeque,
     fmt,
     io::{self, stdout, Stdout, Write},
 };
@@ -48,15 +49,19 @@ impl Screen {
     pub fn begin_interface_input<'a>(
         &'a mut self,
         preallocated_buf: &'a mut InputBuffer,
+        history: &'a mut VecDeque<String>,
     ) -> XResult<Interface<'a>> {
         enable_raw_mode()?;
         preallocated_buf.clear();
+        let history_pos = history.len();
         Ok(Interface {
             screen: self,
             stdout: io::stdout(),
             buf: preallocated_buf,
             prev_lines_covered: 0,
             prompt_len: 0,
+            history,
+            history_pos,
         })
     }
 }
@@ -67,6 +72,10 @@ pub struct Interface<'a> {
     buf: &'a mut InputBuffer,
     prompt_len: usize,
     prev_lines_covered: u16,
+    history: &'a mut VecDeque<String>,
+    /// history.len() is starting position. Counting backwards for so history.len() - 1 is 1st
+    /// entry. Once hits zero, loop back to history.len().
+    history_pos: usize,
 }
 
 impl<'a> Interface<'a> {
@@ -170,6 +179,26 @@ impl<'a> Interface<'a> {
                     self.buf.delete();
                     true
                 }
+                Key(nomod!(Up)) => {
+                    // update history position, if on last, loop back to start
+                    if self.history_pos == 0 {
+                        self.history_pos = self.history.len();
+                    } else {
+                        self.history_pos -= 1;
+                    }
+                    self.apply_history_line();
+                    true
+                }
+                Key(nomod!(Down)) => {
+                    // update history position, if on len, loop back to 0
+                    if self.history_pos == self.history.len() {
+                        self.history_pos = 0;
+                    } else {
+                        self.history_pos += 1;
+                    }
+                    self.apply_history_line();
+                    true
+                }
                 Key(KeyEvent {
                     modifiers: NOMOD,
                     code: Char(c),
@@ -203,6 +232,25 @@ impl<'a> Interface<'a> {
         }
 
         Ok(last)
+    }
+
+    /// Push the line onto the history stack.
+    /// Pops off oldest history to keep history len constant.
+    pub fn add_history(&mut self, line: String) {
+        // must keep self.history.len() constant.
+        self.history.pop_front();
+        self.history.push_back(line);
+    }
+
+    fn apply_history_line(&mut self) {
+        // get line
+        let line = self
+            .history
+            .get(self.history_pos)
+            .map(|x| x.as_str())
+            .unwrap_or("");
+        self.buf.truncate(self.prompt_len);
+        self.buf.insert_str(line);
     }
 }
 

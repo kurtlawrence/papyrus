@@ -5,6 +5,7 @@
 - REPL `kserd` has `format` feature enabled
 - Libraries are `Box`ed to avoid possible segmentation faults
 - Added an on exit function to `RunCallbacks`.
+- Terminal interface now has history that can be retrieved using Up and Down arrows
 
 ## 0.16.0
 - Increase `libloading` dependency to `0.6`.

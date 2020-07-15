@@ -237,8 +237,11 @@ where
     let cache = CacheWrapper;
     let mut reevaluate: Option<String> = None;
 
+    // must seed the history size, this is maintained as constant.
+    let mut history = std::collections::VecDeque::from(vec![String::default(); 3]); // 100 history
+
     let output = loop {
-        let mut interface = screen.begin_interface_input(&mut inputbuf)?;
+        let mut interface = screen.begin_interface_input(&mut inputbuf, &mut history)?;
         interface.set_prompt(&read.prompt(true));
 
         if let Some(buf) = read.data.editing_src.take() {
@@ -379,7 +382,9 @@ fn do_read<D>(
 
         match (ev, verbatim_mode) {
             (ENTER, false) | (STOP_VERBATIM_MODE, true) => {
-                repl.line_input(&interface.buffer());
+                let line = interface.buffer();
+                repl.line_input(&line);
+                interface.add_history(line);
                 interface.mv_bufpos_end();
                 interface.writeln("");
                 interface.flush_buffer()?;
