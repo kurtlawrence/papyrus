@@ -53,6 +53,7 @@ pub fn fmt_based_on_terminal_width<D>(repl: &Repl<Print, D>) -> FormattingConfig
 /// an associated evaluation function is used. The closure is stored so that the run functions
 /// don't require D: Send + 'static, instead this bound is only required on the creation of a
 /// RunCallbacks which is using the _async_ variant.
+#[allow(clippy::type_complexity)]
 enum Data<'a, D> {
     Sync(
         &'a mut D,
