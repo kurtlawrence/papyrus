@@ -95,6 +95,15 @@ impl Default for SourceCode {
     }
 }
 
+impl SourceCode {
+    /// Clear _all_ items, statements, and crates in this `SourceCode`.
+    pub fn clear(&mut self) {
+        self.items.clear();
+        self.stmts.clear();
+        self.crates.clear();
+    }
+}
+
 /// Group of statements that result in an expression to evaulate.
 ///
 /// # Example

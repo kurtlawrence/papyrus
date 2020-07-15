@@ -307,6 +307,11 @@ fn papyrus_cmdr<D>(
             "Switch to a module, creating one if necessary. switch path/to/module",
             |wtr, args| switch_module_priv(args, wtr),
         )
+        .add_action(
+            "clear",
+            "Clear previous input. args: mod-path or glob pattern",
+            |wtr, args| clear_modules(args, wtr),
+        )
         .end_class()
         .begin_class("static-files", "Handle static files")
         .add_action(
@@ -324,6 +329,7 @@ fn papyrus_cmdr<D>(
         .into_commander()
 }
 
+// ------ MODULES --------------------------------------------------------------
 fn switch_module_priv<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
     if let Some(path) = args.get(0) {
         if let Some(path) = make_path(path) {
@@ -429,6 +435,26 @@ pub(crate) fn switch_module<D>(data: &mut ReplData<D>, path: &Path) -> &'static 
     data.current_mod = path.to_path_buf();
 
     ""
+}
+
+fn clear_modules<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
+    let pattern = args.get(0).unwrap_or(&"**/*"); // empty input means clear _all_
+    match glob::Pattern::new(pattern) {
+        Ok(pattern) => CommandResult::repl_data_fn(move |data, wtr| {
+            for (path, src_code) in &mut data.mods_map {
+                if pattern.matches_path(&path) {
+                    src_code.clear();
+                    writeln!(wtr, "clear inputs in `{}`", path.display()).ok();
+                }
+            }
+
+            String::from("cleared all previous inputs")
+        }),
+        Err(e) => {
+            writeln!(wtr, "unrecognisable pattern: {}", e).ok();
+            CommandResult::Empty
+        }
+    }
 }
 
 // ------ STATIC FILES ---------------------------------------------------------
