@@ -306,10 +306,10 @@ fn papyrus_cmdr<D>(
         .begin_class("static-files", "Handle static files")
         .add_action(
             "add",
-            "Import a static file. args: file-path",
+            "Import a static file. args: file-path or glob pattern",
             |wtr, args| add_static_file(wtr, args),
         )
-        .add_action("rm", "Remove a static file", |wtr, args| {
+        .add_action("rm", "Remove a static file. args: file-path or glob pattern", |wtr, args| {
             rm_static_file(wtr, args)
         })
         .add_action("ls", "List imported static files", |_, _| ls_static_files())
@@ -424,22 +424,28 @@ pub(crate) fn switch_module<D>(data: &mut ReplData<D>, path: &Path) -> &'static 
     ""
 }
 
+// ------ STATIC FILES ---------------------------------------------------------
 fn add_static_file<D>(wtr: &mut dyn Write, args: &[&str]) -> CommandResult<D> {
     if let Some(&path) = args.get(0) {
-        let pathbuf = PathBuf::from(path);
-        match fs::read_to_string(path) {
-            Ok(s) => CommandResult::repl_data_fn(move |data, _| {
-                data.add_static_file(pathbuf.clone(), &s)
-                    .map(|_| "imported/overwrote static file".into())
-                    .unwrap_or_else(|e| format!("failed to add {}: {}", pathbuf.display(), e))
-            }),
-            Err(e) => {
-                writeln!(wtr, "failed to read {}: {}", path, e).ok();
-                CommandResult::Empty
-            }
-        }
+        let glob = path.to_string();
+        CommandResult::repl_data_fn(move |data, wtr| {
+            foreach_glob_path(&glob, wtr, |path, wtr| {
+                match fs::read_to_string(&path) {
+                    Ok(s) => match data.add_static_file(path.clone(), &s) {
+                        Ok(_) => {
+                            writeln!(wtr, "imported/overwrote static file: `{}`", path.display())
+                        }
+                        Err(e) => writeln!(wtr, "failed to add `{}`: {}", path.display(), e),
+                    },
+                    Err(e) => {
+                        writeln!(wtr, "failed to read `{}`: {}", path.display(), e)
+                    }
+                }.ok();
+            });
+            String::new()
+        })
     } else {
-        writeln!(wtr, "add expects a file path").ok();
+        writeln!(wtr, "add expects a file path or glob pattern").ok();
         CommandResult::Empty
     }
 }
@@ -452,7 +458,7 @@ fn rm_static_file<D>(wtr: &mut dyn Write, args: &[&str]) -> CommandResult<D> {
             String::from("removed static file")
         })
     } else {
-        writeln!(wtr, "rm expects a file path").ok();
+        writeln!(wtr, "rm expects a file path or glob pattern").ok();
         CommandResult::Empty
     }
 }
@@ -473,6 +479,27 @@ fn ls_static_files<D>() -> CommandResult<D> {
         }
         String::new()
     })
+}
+
+fn foreach_glob_path<F>(glob: &str, wtr: &mut dyn Write, mut f: F)
+where
+    F: FnMut(PathBuf, &mut dyn Write),
+{
+    match glob::glob(glob) {
+        Ok(iter) => {
+            for entry in iter {
+                match entry {
+                    Ok(path) => f(path, wtr),
+                    Err(e) => {
+                        writeln!(wtr, "path result failed: {}", e).ok();
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            writeln!(wtr, "reading `{}` failed: {}", glob, e).ok();
+        }
+    }
 }
 
 #[cfg(test)]
