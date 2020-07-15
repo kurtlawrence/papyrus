@@ -38,6 +38,10 @@ The `mod` command allows more than just the `lib` module to exist in the REPL. U
 different REPL sessions all sharing the same compilation cycle. This can be useful to switch
 contexts if need be.
 
+There is also a `clear` command which can be used to clear the previous REPL inputs. It supports
+glob patterns matching module paths, for example `:mod clear test/**` will clear all inputs under
+the module path `test/`. _`:mod clear` clears all previous REPL input in the **current module**._
+
 ## Static Files
 The `static-files` command allows the importing of file-system based rust documents into the REPL
 compilation. Rust files must be relative to the REPL working directory, and will be imported using

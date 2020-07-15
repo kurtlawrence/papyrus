@@ -7,6 +7,7 @@
 - Added an on exit function to `RunCallbacks`.
 - Terminal interface now has history that can be retrieved using Up and Down arrows
 - `:static-files` supports glob patterns.
+- Added `:mod clear` that clears previous REPL inputs
 
 ## 0.16.0
 - Increase `libloading` dependency to `0.6`.

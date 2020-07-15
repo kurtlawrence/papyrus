@@ -38,6 +38,10 @@
 //! different REPL sessions all sharing the same compilation cycle. This can be useful to switch
 //! contexts if need be.
 //!
+//! There is also a `clear` command which can be used to clear the previous REPL inputs. It supports
+//! glob patterns matching module paths, for example `:mod clear test/**` will clear all inputs under
+//! the module path `test/`. _`:mod clear` clears all previous REPL input in the **current module**._
+//!
 //! ## Static Files
 //! The `static-files` command allows the importing of file-system based rust documents into the REPL
 //! compilation. Rust files must be relative to the REPL working directory, and will be imported using
@@ -307,6 +311,11 @@ fn papyrus_cmdr<D>(
             "Switch to a module, creating one if necessary. switch path/to/module",
             |wtr, args| switch_module_priv(args, wtr),
         )
+        .add_action(
+            "clear",
+            "Clear previous input. args: mod-path or glob pattern",
+            |wtr, args| clear_modules(args, wtr),
+        )
         .end_class()
         .begin_class("static-files", "Handle static files")
         .add_action(
@@ -324,6 +333,7 @@ fn papyrus_cmdr<D>(
         .into_commander()
 }
 
+// ------ MODULES --------------------------------------------------------------
 fn switch_module_priv<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
     if let Some(path) = args.get(0) {
         if let Some(path) = make_path(path) {
@@ -429,6 +439,35 @@ pub(crate) fn switch_module<D>(data: &mut ReplData<D>, path: &Path) -> &'static 
     data.current_mod = path.to_path_buf();
 
     ""
+}
+
+fn clear_modules<D, W: Write>(args: &[&str], mut wtr: W) -> CommandResult<D> {
+    if let Some(pat) = args.get(0) {
+        match glob::Pattern::new(pat) {
+            Ok(pattern) => CommandResult::repl_data_fn(move |data, wtr| {
+                for (path, src_code) in &mut data.mods_map {
+                    if pattern.matches_path(&path) {
+                        src_code.clear();
+                        writeln!(wtr, "cleared inputs in `{}`", path.display()).ok();
+                    }
+                }
+
+                String::from("cleared all previous inputs")
+            }),
+            Err(e) => {
+                writeln!(wtr, "unrecognisable pattern: {}", e).ok();
+                CommandResult::Empty
+            }
+        }
+    } else {
+        CommandResult::repl_data_fn(move |data, _| {
+            let p = data.current_mod().to_owned();
+            if let Some(src) = data.mods_map.get_mut(&p) {
+                src.clear()
+            }
+            format!("cleared previous input in `{}`", p.display())
+        })
+    }
 }
 
 // ------ STATIC FILES ---------------------------------------------------------
