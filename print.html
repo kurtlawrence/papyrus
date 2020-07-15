@@ -307,6 +307,10 @@ If the file <code>foo/bar.rs</code> was imported, it would <em>not</em> be acces
 static file, and the contents of that file would have to contain a <code>pub mod bar;</code>.</p>
 <p>Static files can also reference crates. If a static file contains <code>extern crate name;</code> <strong>at the
 beginning</strong> of the file, these crates are added to the compilation and can be referenced.</p>
+<p>To add static files, it is possible to use glob patterns to add multiple files in one go. For
+example to add <em>all</em> files in the working directory the command <code>:static-files add *.rs</code> can be
+used. To recursively add files <code>**/*.rs</code> can be used. This applies to removing static files using
+the <code>rm</code> command.</p>
 <h1><a class="header" href="#extending-commands" id="extending-commands">Extending Commands</a></h1>
 <h2><a class="header" href="#setup" id="setup">Setup</a></h2>
 <p>This tutorial works through the example at
