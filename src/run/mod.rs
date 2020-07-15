@@ -49,14 +49,30 @@ pub fn fmt_based_on_terminal_width<D>(repl: &Repl<Print, D>) -> FormattingConfig
         .unwrap_or_default()
 }
 
+/// Used to capture the `D` reference within the RunCallbacks. Both variants of `D` are stored, and
+/// an associated evaluation function is used. The closure is stored so that the run functions
+/// don't require D: Send + 'static, instead this bound is only required on the creation of a
+/// RunCallbacks which is using the _async_ variant.
+enum Data<'a, D> {
+    Sync(
+        &'a mut D,
+        Box<dyn FnMut(Repl<Evaluate, D>, &mut D) -> EvalResult<D>>,
+    ),
+    Async(
+        Arc<Mutex<D>>,
+        Box<dyn FnMut(Repl<Evaluate, D>, &Arc<Mutex<D>>) -> EvalResult<D>>,
+    ),
+}
+
 /// A container for callbacks when running the REPL.
 ///
 /// These callbacks are mostly around setting up formatting and feeding evaluation results to the
 /// caller.
-pub struct RunCallbacks<'a, D, T, U> {
-    evalfn: Box<dyn FnMut(Repl<Evaluate, D>) -> EvalResult<D> + 'a>,
+pub struct RunCallbacks<'a, D, T, U, V> {
+    data: Data<'a, D>,
     fmtrfn: Option<T>,
     resultfn: Option<U>,
+    exitfn: Option<V>,
 }
 
 impl<'a, D>
@@ -65,14 +81,16 @@ impl<'a, D>
         D,
         fn(&Repl<Print, D>) -> FormattingConfig,
         fn(usize, Kserd<'static>, &Repl<Read, D>),
+        fn(&mut ReplData<D>, &mut D),
     >
 {
     /// New callback using a synchronous model of data ownership. (eg `eval`).
     pub fn new(app_data: &'a mut D) -> Self {
         Self {
-            evalfn: Box::new(move |repl| repl.eval(app_data)),
+            data: Data::Sync(app_data, Box::new(|repl, data| repl.eval(data))),
             fmtrfn: None,
             resultfn: None,
+            exitfn: None,
         }
     }
 
@@ -82,26 +100,34 @@ impl<'a, D>
         D: Send + 'static,
     {
         Self {
-            evalfn: Box::new(move |repl| repl.eval_async(&app_data).wait()),
+            data: Data::Async(
+                app_data,
+                Box::new(|repl, data| repl.eval_async(data).wait()),
+            ),
             fmtrfn: None,
             resultfn: None,
+            exitfn: None,
         }
     }
 }
 
-impl<'a, D, T, U> RunCallbacks<'a, D, T, U> {
+impl<'a, D, T, U, V> RunCallbacks<'a, D, T, U, V> {
     /// Specify code to be run which dictates the formatting configuration to use.
-    pub fn with_fmtrfn<F>(self, f: F) -> RunCallbacks<'a, D, F, U>
+    pub fn with_fmtrfn<F>(self, f: F) -> RunCallbacks<'a, D, F, U, V>
     where
         F: FnMut(&Repl<Print, D>) -> FormattingConfig,
     {
         let RunCallbacks {
-            evalfn, resultfn, ..
+            data,
+            resultfn,
+            exitfn,
+            ..
         } = self;
         RunCallbacks {
-            evalfn,
+            data,
             fmtrfn: Some(f),
             resultfn,
+            exitfn,
         }
     }
 
@@ -109,15 +135,43 @@ impl<'a, D, T, U> RunCallbacks<'a, D, T, U> {
     ///
     /// The closure supplies the statement index `usize` and the result `Kserd`, along with the
     /// `Repl`.
-    pub fn with_resultfn<F>(self, f: F) -> RunCallbacks<'a, D, T, F>
+    pub fn with_resultfn<F>(self, f: F) -> RunCallbacks<'a, D, T, F, V>
     where
         F: FnMut(usize, Kserd<'static>, &Repl<Read, D>),
     {
-        let RunCallbacks { evalfn, fmtrfn, .. } = self;
+        let RunCallbacks {
+            data,
+            fmtrfn,
+            exitfn,
+            ..
+        } = self;
         RunCallbacks {
-            evalfn,
+            data,
             fmtrfn,
             resultfn: Some(f),
+            exitfn,
+        }
+    }
+
+    /// Specify code to be run after evaluation has succeeded and a `Kserd` result is returned.
+    ///
+    /// The closure supplies the statement index `usize` and the result `Kserd`, along with the
+    /// `Repl`.
+    pub fn with_exitfn<F>(self, f: F) -> RunCallbacks<'a, D, T, U, F>
+    where
+        F: Fn(&ReplData<D>, &mut D),
+    {
+        let RunCallbacks {
+            data,
+            fmtrfn,
+            resultfn,
+            ..
+        } = self;
+        RunCallbacks {
+            data,
+            fmtrfn,
+            resultfn,
+            exitfn: Some(f),
         }
     }
 }
@@ -125,23 +179,25 @@ impl<'a, D, T, U> RunCallbacks<'a, D, T, U> {
 /// Available with the `runnable` feature and when the REPL is in the `Read` state.
 impl<D> Repl<Read, D> {
     /// Run the repl inside the terminal, consuming the repl. Returns the output of the REPL.
-    pub fn run<T, U>(self, run_callbacks: RunCallbacks<D, T, U>) -> io::Result<String>
+    pub fn run<T, U, V>(self, run_callbacks: RunCallbacks<D, T, U, V>) -> io::Result<String>
     where
         T: FnMut(&Repl<Print, D>) -> kserd::fmt::FormattingConfig,
         U: FnMut(usize, kserd::Kserd<'static>, &Repl<Read, D>),
+        V: FnOnce(&mut ReplData<D>, &mut D),
     {
         run(self, run_callbacks, Screen::new).map_err(|e| map_xterm_err(e, "running REPL failed"))
     }
 }
 
-fn run<D, FmtrFn, ResultFn>(
+fn run<D, FmtrFn, ResultFn, ExitFn>(
     mut read: Repl<Read, D>,
-    mut runcb: RunCallbacks<D, FmtrFn, ResultFn>,
+    mut runcb: RunCallbacks<D, FmtrFn, ResultFn, ExitFn>,
     screen_fn: impl FnOnce() -> io::Result<Screen>,
 ) -> xterm::Result<String>
 where
     FmtrFn: FnMut(&Repl<Print, D>) -> kserd::fmt::FormattingConfig,
     ResultFn: FnMut(usize, kserd::Kserd<'static>, &Repl<Read, D>),
+    ExitFn: FnOnce(&mut ReplData<D>, &mut D),
 {
     // set a custom panic handler to dump to a file
     // must be done as the screen captures the io streams and will
@@ -203,7 +259,17 @@ where
             ReadResult::Read(repl) => read = repl,
             ReadResult::Eval(repl) => {
                 match do_eval(repl, &mut runcb) {
-                    (repl, Signal::Exit) => break repl.output().to_owned(),
+                    (mut repl, Signal::Exit) => {
+                        // run exit function
+                        if let Some(exitfn) = runcb.exitfn {
+                            match runcb.data {
+                                Data::Sync(d, _) => exitfn(&mut repl.data, d),
+                                Data::Async(d, _) => exitfn(&mut repl.data, &mut d.lock().unwrap()),
+                            }
+                        }
+
+                        break repl.output().to_owned();
+                    }
                     (repl, signal) => {
                         let mut reeval = None;
                         if let Signal::ReEvaluate(s) = signal {
@@ -411,9 +477,9 @@ fn complete_code(
         })
 }
 
-fn do_eval<D, FmtrFn, ResultFn>(
+fn do_eval<D, FmtrFn, ResultFn, ExitFn>(
     mut repl: Repl<Evaluate, D>,
-    runcb: &mut RunCallbacks<D, FmtrFn, ResultFn>,
+    runcb: &mut RunCallbacks<D, FmtrFn, ResultFn, ExitFn>,
 ) -> (Repl<Read, D>, Signal)
 where
     FmtrFn: FnMut(&Repl<Print, D>) -> kserd::fmt::FormattingConfig,
@@ -428,7 +494,10 @@ where
         }
     });
 
-    let r = (runcb.evalfn)(repl);
+    let r = match &mut runcb.data {
+        Data::Sync(d, evalfn) => evalfn(repl, d),
+        Data::Async(d, evalfn) => evalfn(repl, &d),
+    };
 
     // prepare the formatter for output
     let fmt = runcb
