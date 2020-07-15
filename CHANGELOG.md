@@ -1,6 +1,6 @@
 # Changelog
 
-## Version
+## 0.17.0
 - Path to examples in README fixed
 - REPL `kserd` has `format` feature enabled
 - Libraries are `Box`ed to avoid possible segmentation faults
