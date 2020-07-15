@@ -201,7 +201,10 @@ fn interface_integration() {
     let mut screen = Screen(rx);
     writeln!(io::stdout()).unwrap();
     slp();
-    let mut interface = screen.begin_interface_input(&mut inputbuf).unwrap();
+    let mut history = std::collections::VecDeque::from(vec![String::default(); 2]);
+    let mut interface = screen
+        .begin_interface_input(&mut inputbuf, &mut history)
+        .unwrap();
 
     // Use <C-+> to send the end signal
     let end: &[Event] = &[Event::Key(KeyEvent::new(
@@ -247,6 +250,13 @@ fn interface_integration() {
     // Hello
     // World!
     // ^
+
+    // history
+    tx.up(1).ctrl('+'); // this will clear everything!
+    interface.read_until(end).unwrap();
+    slp();
+    assert_eq!(col(), 0, "will be at first column");
+    assert_eq!(interface.buf_pos(), 0);
 }
 
 struct Tx(Sender<Event>);
@@ -314,6 +324,16 @@ impl Tx {
         for _ in 0..n {
             self.send(Event::Key(KeyEvent::new(
                 KeyCode::Right,
+                KeyModifiers::empty(),
+            )));
+        }
+        self
+    }
+
+    fn up(&self, n: usize) -> &Self {
+        for _ in 0..n {
+            self.send(Event::Key(KeyEvent::new(
+                KeyCode::Up,
                 KeyModifiers::empty(),
             )));
         }
