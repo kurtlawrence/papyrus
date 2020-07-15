@@ -50,6 +50,11 @@
 //! Static files can also reference crates. If a static file contains `extern crate name;` **at the
 //! beginning** of the file, these crates are added to the compilation and can be referenced.
 //!
+//! To add static files, it is possible to use glob patterns to add multiple files in one go. For
+//! example to add _all_ files in the working directory the command `:static-files add *.rs` can be
+//! used. To recursively add files `**/*.rs` can be used. This applies to removing static files using
+//! the `rm` command.
+//!
 //! # Extending Commands
 //! ## Setup
 //!
@@ -565,27 +570,18 @@ mod tests {
         let mut buf = Vec::new();
         add_static_file::<()>(&mut buf, &[]);
         println!("{:?}", std::str::from_utf8(&buf));
-        assert_eq!(buf.as_slice(), &b"add expects a file path\n"[..]);
-
-        buf.clear();
-        add_static_file::<()>(&mut buf, &["none.rs"]);
-        println!("{:?}", std::str::from_utf8(&buf));
-        if cfg!(windows) {
-            assert_eq!(
+        assert_eq!(
             buf.as_slice(),
-            &b"failed to read none.rs: The system cannot find the file specified. (os error 2)\n"[..]
+            &b"add expects a file path or glob pattern\n"[..]
         );
-        } else {
-            assert_eq!(
-                buf.as_slice(),
-                &b"failed to read none.rs: No such file or directory (os error 2)\n"[..]
-            );
-        }
 
         buf.clear();
         rm_static_file::<()>(&mut buf, &[]);
         println!("{:?}", std::str::from_utf8(&buf));
-        assert_eq!(buf.as_slice(), &b"rm expects a file path\n"[..]);
+        assert_eq!(
+            buf.as_slice(),
+            &b"rm expects a file path or glob pattern\n"[..]
+        );
 
         buf.clear();
         rm_static_file::<()>(&mut buf, &["what"]);
