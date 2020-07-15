@@ -622,7 +622,8 @@ mod tests {
         let (origcols, _origrows) = size()?;
         let mut screen = Screen::new()?;
         let mut inputbuf = InputBuffer::new();
-        let mut input = screen.begin_interface_input(&mut inputbuf)?;
+        let mut history = VecDeque::from(vec!["Hello".to_string(), "World".to_string()]);
+        let mut input = screen.begin_interface_input(&mut inputbuf, &mut history)?;
 
         let repl: Repl<_, ()> = Repl::default();
         let _prompt = repl.prompt(true);
@@ -670,6 +671,14 @@ mod tests {
             pos().0,
             1,
             "cusor should be at column 1, all red a's above it"
+        );
+
+        // test adding history items
+        input.add_history("Item 1".to_string());
+        drop(input);
+        assert_eq!(
+            history.into_iter().collect::<Vec<_>>().as_slice(),
+            &["World".to_string(), "Item 1".to_string()]
         );
 
         // Ensure to reset terminal state

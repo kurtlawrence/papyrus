@@ -238,7 +238,7 @@ where
     let mut reevaluate: Option<String> = None;
 
     // must seed the history size, this is maintained as constant.
-    let mut history = std::collections::VecDeque::from(vec![String::default(); 3]); // 100 history
+    let mut history = std::collections::VecDeque::from(vec![String::default(); 100]); // 100 history
 
     let output = loop {
         let mut interface = screen.begin_interface_input(&mut inputbuf, &mut history)?;
