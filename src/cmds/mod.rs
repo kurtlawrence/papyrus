@@ -50,6 +50,11 @@
 //! Static files can also reference crates. If a static file contains `extern crate name;` **at the
 //! beginning** of the file, these crates are added to the compilation and can be referenced.
 //!
+//! To add static files, it is possible to use glob patterns to add multiple files in one go. For
+//! example to add _all_ files in the working directory the command `:static-files add *.rs` can be
+//! used. To recursively add files `**/*.rs` can be used. This applies to removing static files using
+//! the `rm` command.
+//!
 //! # Extending Commands
 //! ## Setup
 //!
@@ -306,12 +311,14 @@ fn papyrus_cmdr<D>(
         .begin_class("static-files", "Handle static files")
         .add_action(
             "add",
-            "Import a static file. args: file-path",
+            "Import a static file. args: file-path or glob pattern",
             |wtr, args| add_static_file(wtr, args),
         )
-        .add_action("rm", "Remove a static file", |wtr, args| {
-            rm_static_file(wtr, args)
-        })
+        .add_action(
+            "rm",
+            "Remove a static file. args: file-path or glob pattern",
+            |wtr, args| rm_static_file(wtr, args),
+        )
         .add_action("ls", "List imported static files", |_, _| ls_static_files())
         .end_class()
         .into_commander()
@@ -424,35 +431,44 @@ pub(crate) fn switch_module<D>(data: &mut ReplData<D>, path: &Path) -> &'static 
     ""
 }
 
+// ------ STATIC FILES ---------------------------------------------------------
 fn add_static_file<D>(wtr: &mut dyn Write, args: &[&str]) -> CommandResult<D> {
     if let Some(&path) = args.get(0) {
-        let pathbuf = PathBuf::from(path);
-        match fs::read_to_string(path) {
-            Ok(s) => CommandResult::repl_data_fn(move |data, _| {
-                data.add_static_file(pathbuf.clone(), &s)
-                    .map(|_| "imported/overwrote static file".into())
-                    .unwrap_or_else(|e| format!("failed to add {}: {}", pathbuf.display(), e))
-            }),
-            Err(e) => {
-                writeln!(wtr, "failed to read {}: {}", path, e).ok();
-                CommandResult::Empty
-            }
-        }
+        let glob = path.to_string();
+        CommandResult::repl_data_fn(move |data, wtr| {
+            foreach_glob_path(&glob, wtr, |path, wtr| {
+                match fs::read_to_string(&path) {
+                    Ok(s) => match data.add_static_file(path.clone(), &s) {
+                        Ok(_) => {
+                            writeln!(wtr, "imported/overwrote static file: `{}`", path.display())
+                        }
+                        Err(e) => writeln!(wtr, "failed to add `{}`: {}", path.display(), e),
+                    },
+                    Err(e) => writeln!(wtr, "failed to read `{}`: {}", path.display(), e),
+                }
+                .ok();
+            });
+            String::new()
+        })
     } else {
-        writeln!(wtr, "add expects a file path").ok();
+        writeln!(wtr, "add expects a file path or glob pattern").ok();
         CommandResult::Empty
     }
 }
 
 fn rm_static_file<D>(wtr: &mut dyn Write, args: &[&str]) -> CommandResult<D> {
     if let Some(&path) = args.get(0) {
-        let path = PathBuf::from(path);
-        CommandResult::repl_data_fn(move |data, _| {
-            data.remove_static_file(&path);
-            String::from("removed static file")
+        let glob = path.to_string();
+        CommandResult::repl_data_fn(move |data, wtr| {
+            foreach_glob_path(&glob, wtr, |path, wtr| {
+                if data.remove_static_file(&path) {
+                    writeln!(wtr, "removed static file `{}`", path.display()).ok();
+                }
+            });
+            String::from("removed static files")
         })
     } else {
-        writeln!(wtr, "rm expects a file path").ok();
+        writeln!(wtr, "rm expects a file path or glob pattern").ok();
         CommandResult::Empty
     }
 }
@@ -473,6 +489,22 @@ fn ls_static_files<D>() -> CommandResult<D> {
         }
         String::new()
     })
+}
+
+fn foreach_glob_path<F>(glob: &str, wtr: &mut dyn Write, mut f: F)
+where
+    F: FnMut(PathBuf, &mut dyn Write),
+{
+    match glob::glob(glob) {
+        Ok(iter) => {
+            for path in iter.filter_map(Result::ok) {
+                f(path, wtr)
+            }
+        }
+        Err(e) => {
+            writeln!(wtr, "reading `{}` failed: {}", glob, e).ok();
+        }
+    }
 }
 
 #[cfg(test)]
@@ -538,27 +570,18 @@ mod tests {
         let mut buf = Vec::new();
         add_static_file::<()>(&mut buf, &[]);
         println!("{:?}", std::str::from_utf8(&buf));
-        assert_eq!(buf.as_slice(), &b"add expects a file path\n"[..]);
-
-        buf.clear();
-        add_static_file::<()>(&mut buf, &["none.rs"]);
-        println!("{:?}", std::str::from_utf8(&buf));
-        if cfg!(windows) {
-            assert_eq!(
+        assert_eq!(
             buf.as_slice(),
-            &b"failed to read none.rs: The system cannot find the file specified. (os error 2)\n"[..]
+            &b"add expects a file path or glob pattern\n"[..]
         );
-        } else {
-            assert_eq!(
-                buf.as_slice(),
-                &b"failed to read none.rs: No such file or directory (os error 2)\n"[..]
-            );
-        }
 
         buf.clear();
         rm_static_file::<()>(&mut buf, &[]);
         println!("{:?}", std::str::from_utf8(&buf));
-        assert_eq!(buf.as_slice(), &b"rm expects a file path\n"[..]);
+        assert_eq!(
+            buf.as_slice(),
+            &b"rm expects a file path or glob pattern\n"[..]
+        );
 
         buf.clear();
         rm_static_file::<()>(&mut buf, &["what"]);

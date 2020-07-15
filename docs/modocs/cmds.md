@@ -50,6 +50,11 @@ static file, and the contents of that file would have to contain a `pub mod bar;
 Static files can also reference crates. If a static file contains `extern crate name;` **at the
 beginning** of the file, these crates are added to the compilation and can be referenced.
 
+To add static files, it is possible to use glob patterns to add multiple files in one go. For
+example to add _all_ files in the working directory the command `:static-files add *.rs` can be
+used. To recursively add files `**/*.rs` can be used. This applies to removing static files using
+the `rm` command.
+
 # Extending Commands
 ## Setup
 
