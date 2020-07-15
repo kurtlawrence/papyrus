@@ -154,13 +154,12 @@ impl<'a, D, T, U, V> RunCallbacks<'a, D, T, U, V> {
         }
     }
 
-    /// Specify code to be run after evaluation has succeeded and a `Kserd` result is returned.
+    /// Specify code to be run after the exit signal is received.
     ///
-    /// The closure supplies the statement index `usize` and the result `Kserd`, along with the
-    /// `Repl`.
+    /// This can be used to clean up resources within [`ReplData`] or `D`.
     pub fn with_exitfn<F>(self, f: F) -> RunCallbacks<'a, D, T, U, F>
     where
-        F: Fn(&ReplData<D>, &mut D),
+        F: FnOnce(&ReplData<D>, &mut D),
     {
         let RunCallbacks {
             data,

@@ -1,5 +1,11 @@
 # Changelog
 
+## Version
+- Path to examples in README fixed
+- REPL `kserd` has `format` feature enabled
+- Libraries are `Box`ed to avoid possible segmentation faults
+- Added an on exit function to `RunCallbacks`.
+
 ## 0.16.0
 - Increase `libloading` dependency to `0.6`.
 - Increase `kserd` dependency to `0.4`.
