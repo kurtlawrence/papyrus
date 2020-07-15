@@ -309,9 +309,11 @@ fn papyrus_cmdr<D>(
             "Import a static file. args: file-path or glob pattern",
             |wtr, args| add_static_file(wtr, args),
         )
-        .add_action("rm", "Remove a static file. args: file-path or glob pattern", |wtr, args| {
-            rm_static_file(wtr, args)
-        })
+        .add_action(
+            "rm",
+            "Remove a static file. args: file-path or glob pattern",
+            |wtr, args| rm_static_file(wtr, args),
+        )
         .add_action("ls", "List imported static files", |_, _| ls_static_files())
         .end_class()
         .into_commander()
@@ -437,10 +439,9 @@ fn add_static_file<D>(wtr: &mut dyn Write, args: &[&str]) -> CommandResult<D> {
                         }
                         Err(e) => writeln!(wtr, "failed to add `{}`: {}", path.display(), e),
                     },
-                    Err(e) => {
-                        writeln!(wtr, "failed to read `{}`: {}", path.display(), e)
-                    }
-                }.ok();
+                    Err(e) => writeln!(wtr, "failed to read `{}`: {}", path.display(), e),
+                }
+                .ok();
             });
             String::new()
         })
@@ -452,10 +453,14 @@ fn add_static_file<D>(wtr: &mut dyn Write, args: &[&str]) -> CommandResult<D> {
 
 fn rm_static_file<D>(wtr: &mut dyn Write, args: &[&str]) -> CommandResult<D> {
     if let Some(&path) = args.get(0) {
-        let path = PathBuf::from(path);
-        CommandResult::repl_data_fn(move |data, _| {
-            data.remove_static_file(&path);
-            String::from("removed static file")
+        let glob = path.to_string();
+        CommandResult::repl_data_fn(move |data, wtr| {
+            foreach_glob_path(&glob, wtr, |path, wtr| {
+                if data.remove_static_file(&path) {
+                    writeln!(wtr, "removed static file `{}`", path.display()).ok();
+                }
+            });
+            String::from("removed static files")
         })
     } else {
         writeln!(wtr, "rm expects a file path or glob pattern").ok();
@@ -487,13 +492,8 @@ where
 {
     match glob::glob(glob) {
         Ok(iter) => {
-            for entry in iter {
-                match entry {
-                    Ok(path) => f(path, wtr),
-                    Err(e) => {
-                        writeln!(wtr, "path result failed: {}", e).ok();
-                    }
-                }
+            for path in iter.filter_map(Result::ok) {
+                f(path, wtr)
             }
         }
         Err(e) => {
