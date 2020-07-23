@@ -340,7 +340,7 @@ fn do_read<D>(
 ) -> xterm::Result<bool> {
     #[cfg(not(feature = "racer-completion"))]
     let _ = cache;
-    
+
     use crossterm::event::{Event::*, KeyCode::*, KeyEvent, KeyModifiers};
     const ENTER: Event = Key(KeyEvent {
         modifiers: KeyModifiers::empty(),
