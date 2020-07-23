@@ -9,6 +9,9 @@
 - `:static-files` supports glob patterns.
 - Added `:mod clear` that clears previous REPL inputs
 
+## 0.17.1
+- Fix compiling bug with latest `crossbeam_channel` release
+
 ## 0.16.0
 - Increase `libloading` dependency to `0.6`.
 - Increase `kserd` dependency to `0.4`.
