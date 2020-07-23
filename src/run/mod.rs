@@ -15,6 +15,7 @@ mod tests;
 
 use interface::{CItem, Interface, Screen};
 
+#[cfg(feature = "racer-completion")]
 const CODE_COMPLETIONS: Option<usize> = Some(10);
 
 #[cfg(feature = "racer-completion")]
@@ -337,6 +338,9 @@ fn do_read<D>(
     interface: &mut Interface,
     cache: &CacheWrapper,
 ) -> xterm::Result<bool> {
+    #[cfg(not(feature = "racer-completion"))]
+    let _ = cache;
+    
     use crossterm::event::{Event::*, KeyCode::*, KeyEvent, KeyModifiers};
     const ENTER: Event = Key(KeyEvent {
         modifiers: KeyModifiers::empty(),
