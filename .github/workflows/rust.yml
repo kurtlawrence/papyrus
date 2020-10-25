@@ -4,8 +4,6 @@ on:
   push:
     branches: [ master ]
   pull_request:
-  schedule:
-    - cron: '00 07 * * 0'
 
 jobs:
   run-tests:
