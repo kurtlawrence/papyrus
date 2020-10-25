@@ -6,6 +6,8 @@
 
 ## _Papyrus_ - A rust REPL and script running tool.
 
+> This project is no longer maintained.
+
 See the [rs docs](https://docs.rs/papyrus/) and the
 [guide](https://kurtlawrence.github.io/papyrus/).
 Look at progress and contribute on [github.](https://github.com/kurtlawrence/papyrus)
