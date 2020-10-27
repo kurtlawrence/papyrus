@@ -17,8 +17,6 @@ papyrus=> 2+2
 papyrus [out0]: 4
 ```
 
-Papyrus is in active development, see [changelog](https://github.com/kurtlawrence/papyrus) for updates.
-
 ## Overview
 Papyrus creates a Rust REPL in your terminal. Code can be typed in, line by line with feedback on
 the evaluation, or code can be injected via stdin handles. 
