@@ -12,6 +12,9 @@
 ## 0.17.1
 - Fix compiling bug with latest `crossbeam_channel` release
 
+## 0.17.2
+- Fix compiling bug with latest `syn` release
+
 ## 0.16.0
 - Increase `libloading` dependency to `0.6`.
 - Increase `kserd` dependency to `0.4`.
