@@ -31,7 +31,7 @@ glob =		    { version = "0.3",	default-features = false }
 libloading =	    { version = "0.6",	default-features = false }
 log =		    { version = "0.4",	default-features = false }
 racer =		    { version = "2.1",	default-features = false,   optional = true,	features = [ "metadata" ] }
-syn =		    { version = "1",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }
+syn =		    { version = "=1.0.57",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }
 uuid =		    { version = "0.8",	default-features = false,   optional = false,	features = [ "v4" ] }
 
 [dev-dependencies]
