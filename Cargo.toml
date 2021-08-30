@@ -32,7 +32,7 @@ libloading =	    { version = "0.7",	default-features = false }
 log =		    { version = "0.4",	default-features = false }
 quote = { version = "1.0",	default-features = false }
 racer =		    { version = "2.1.48",	default-features = false,   optional = true,	features = [ "metadata" ] }
-syn =		    { version = "=1.0.61",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }
+syn =		    { version = "1.0.75",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }
 uuid =		    { version = "0.8",	default-features = false,   optional = false,	features = [ "v4" ] }
 
 [dev-dependencies]
