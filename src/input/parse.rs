@@ -1,6 +1,6 @@
 use super::*;
 use crate::code::{self, Statement};
-use syn::export::ToTokens;
+use quote::ToTokens;
 use syn::{self, Block, File, Item, Stmt};
 
 /// Parses a line of input as a command.

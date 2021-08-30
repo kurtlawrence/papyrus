@@ -66,7 +66,7 @@ fn reduce_indent(s: &str) -> String {
         Literal,
         Str,
         None,
-    };
+    }
     use LitType::*;
     const LITERALS: [(&str, &str); 6] = [
         (r##"r#""##, r##""#"##),

@@ -39,10 +39,12 @@ fn get_lib<P: AsRef<Path>>(path: P) -> Result<Library, &'static str> {
     // 	libloading::os::unix::Library::open(Some(library_file.as_ref()), 0x2 | 0x1000)
     // 		.unwrap()
     // 		.into();
-    Library::new(path.as_ref()).map_err(|e| {
-        error!("failed to load library file: {}", e);
-        "failed to load library file"
-    })
+    unsafe { 
+        Library::new(path.as_ref()).map_err(|e| {
+            error!("failed to load library file: {}", e);
+            "failed to load library file"
+        })
+    }
 }
 
 fn get_func<'l, Data>(
