@@ -47,6 +47,9 @@ pub fn format(code_snippet: &str) -> Result<String, FormatError> {
     if success && !outputbuf.is_empty() {
         let s = std::str::from_utf8(&outputbuf).map_err(|_| FormatError::StrConvertFailed)?;
 
+        //Protect against a .rustfmt.toml with "hard_tabs = true" in it. 
+        let s = s.replace("\t", "    ");
+        
         let trimmed = s.trim();
         let end = trimmed.len().saturating_sub(2); // \n}
 
