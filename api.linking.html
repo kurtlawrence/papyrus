@@ -4,47 +4,27 @@
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>Linking - papyrus book</title>
-        
-        
-
-
         <!-- Custom HTML head -->
-        
-
-
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
-        
         <link rel="icon" href="favicon.svg">
-        
-        
         <link rel="shortcut icon" href="favicon.png">
-        
         <link rel="stylesheet" href="css/variables.css">
         <link rel="stylesheet" href="css/general.css">
         <link rel="stylesheet" href="css/chrome.css">
-        
         <link rel="stylesheet" href="css/print.css" media="print">
-        
-
         <!-- Fonts -->
         <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        
         <link rel="stylesheet" href="fonts/fonts.css">
-        
-
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="highlight.css">
         <link rel="stylesheet" href="tomorrow-night.css">
         <link rel="stylesheet" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        
-
-        
     </head>
     <body>
         <!-- Provide site root to javascript -->
@@ -103,7 +83,6 @@
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                
                 <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky bordered">
                     <div class="left-buttons">
@@ -120,29 +99,23 @@
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
                         </ul>
-                        
                         <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
                             <i class="fa fa-search"></i>
                         </button>
-                        
                     </div>
 
                     <h1 class="menu-title">papyrus book</h1>
 
                     <div class="right-buttons">
-                        
                         <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
-                        
-                        
                     </div>
                 </div>
 
-                
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -150,8 +123,6 @@
                         </ul>
                     </div>
                 </div>
-                
-
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
                 <script type="text/javascript">
                     document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
@@ -163,7 +134,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#linking" id="linking">Linking</a></h1>
+                        <h1 id="linking"><a class="header" href="#linking">Linking</a></h1>
 <p>Linking an external crate and sharing data.</p>
 <p>When running a REPL you might want to link an external crate.
 The specific use case is a developer wants to link the crate they are working on
@@ -171,14 +142,14 @@ into the REPL for the user to be able to use.
 A developer might also want to make data available to the REPL.
 Papyrus has this functionality but makes some assumptions that the developer will
 need to be aware of, detailed below.</p>
-<h2><a class="header" href="#worked-example" id="worked-example">Worked Example</a></h2>
+<h2 id="worked-example"><a class="header" href="#worked-example">Worked Example</a></h2>
 <p>A REPL instance should always be created by invoking the macro <code>repl!()</code>.
 In the examples below this will be elided for as the documentation won't compile with the macros.
 The macro accepts a type ascription (such as <code>u32</code>, <code>String</code>, <code>MyStruct</code>, etc.) which defines the generic data constraint of the REPL.
 When an evaluation call is made, a mutable reference of the same type will be required to be passed through.
 Papyrus uses this data to pass it (across an FFI boundary) for the REPL to access.</p>
 <p>To show the functionality of linking, let's work on a crate called <code>some-lib</code>.</p>
-<h3><a class="header" href="#file-setup" id="file-setup">File Setup</a></h3>
+<h3 id="file-setup"><a class="header" href="#file-setup">File Setup</a></h3>
 <p><em><strong>main.rs</strong></em>:</p>
 <pre><pre class="playground"><code class="language-rust no_run">#[macro_use]
 extern crate papyrus;
@@ -239,13 +210,13 @@ Papyrus uses this to link when compiling.
 The <code>papyrus</code> dependency also requires a <code>crate-type</code> specification.
 If not specified, references to <code>papyrus</code> in the <em>library</em> will cause compilation errors when
 running the REPL.</p>
-<h3><a class="header" href="#repl" id="repl">REPL</a></h3>
+<h3 id="repl"><a class="header" href="#repl">REPL</a></h3>
 <p>Run this project (<code>cargo run</code>). It should spool up fine and prompt you with <code>papyrus=&gt;</code>.
 Now you can try to use the linked crate.</p>
 <pre><code class="language-sh">papyrus=&gt; some_lib::MyStruct::new(20, 30).add_contents()
 papyrus [out0]: 50
 </code></pre>
-<h2><a class="header" href="#behind-the-scenes" id="behind-the-scenes">Behind the scenes</a></h2>
+<h2 id="behind-the-scenes"><a class="header" href="#behind-the-scenes">Behind the scenes</a></h2>
 <ul>
 <li>Papyrus takes the crate name you specify and will add this as <code>extern crate CRATE_NAME;</code> to the source file.</li>
 <li>When setting the external crate name, the <code>rlib</code> library is found and copied into the compilation directory.
@@ -256,7 +227,7 @@ papyrus [out0]: 50
 </li>
 <li>When compiling the REPL code, a rustc flag is set, linking the <code>rlib</code> such that <code>extern crate CRATE_NAME;</code> works.</li>
 </ul>
-<h2><a class="header" href="#passing-mystruct-data-through" id="passing-mystruct-data-through">Passing <code>MyStruct</code> data through</a></h2>
+<h2 id="passing-mystruct-data-through"><a class="header" href="#passing-mystruct-data-through">Passing <code>MyStruct</code> data through</a></h2>
 <p>Keep the example before, but alter the <code>main.rs</code> file.</p>
 <p><em><strong>main.rs</strong></em>:</p>
 <pre><code class="language-rust ignore">#[macro_use]
@@ -290,8 +261,8 @@ REPL state.</p>
 <pre><code class="language-sh">papyrus=&gt; app_data.add_contents()
 papyrus [out0]: 50
 </code></pre>
-<h2><a class="header" href="#notes" id="notes">Notes</a></h2>
-<h3><a class="header" href="#panics" id="panics">Panics</a></h3>
+<h2 id="notes"><a class="header" href="#notes">Notes</a></h2>
+<h3 id="panics"><a class="header" href="#panics">Panics</a></h3>
 <p>To avoid crashing the application on a panic, <code>catch_unwind</code> is employed.
 This function requires data that crosses the boundary be <code>UnwindSafe</code>, making <code>&amp;</code> and <code>&amp;mut</code> not valid data types.
 Papyrus uses <code>AssertUnwindSafe</code> wrappers to make this work, however it makes <code>app_data</code> vulnerable to breaking
@@ -302,7 +273,7 @@ Some guidelines:</p>
 <li>Keep the app_data that is being transfered simple.</li>
 <li>Develop wrappers that only pass through a <em>clone</em> of the data.</li>
 </ol>
-<h2><a class="header" href="#dependency-duplication" id="dependency-duplication">Dependency Duplication</a></h2>
+<h2 id="dependency-duplication"><a class="header" href="#dependency-duplication">Dependency Duplication</a></h2>
 <p>When linking an external library, the <code>deps</code> folder is linked to ensure that the dependencies that
 the library is built with link properly. There are specific use cases where the rust compiler will
 be unable to determine what dependencies to use. This happens when:</p>
@@ -344,59 +315,32 @@ changes in the temporary REPL session.</p>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                        
                             <a rel="prev" href="api.output.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
-                        
-
-                        
-
                         <div style="clear: both"></div>
                     </nav>
                 </div>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                
                     <a rel="prev" href="api.output.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
-                
-
-                
             </nav>
 
         </div>
 
-        
-
-        
-
-        
-
-        
         <script type="text/javascript">
             window.playground_copyable = true;
         </script>
-        
-
-        
-
-        
         <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
-        
-
         <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
         <script src="book.js" type="text/javascript" charset="utf-8"></script>
 
         <!-- Custom JS scripts -->
-        
-
-        
-
     </body>
 </html>
