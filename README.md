@@ -7,6 +7,8 @@
 ## _Papyrus_ - A rust REPL and script running tool.
 
 > This project is no longer maintained.
+> 
+> For a similar REPL tool with a refreshing way to interact with data, checkout the [`ogma` Project](https://github.com/kdr-aus/ogma)
 
 See the [rs docs](https://docs.rs/papyrus/) and the
 [guide](https://kurtlawrence.github.io/papyrus/).
