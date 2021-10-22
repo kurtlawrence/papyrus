@@ -6,8 +6,10 @@ use crossterm as xterm;
 use crossterm::event::Event;
 use kserd::{fmt::FormattingConfig, Kserd};
 use repl::{EvalResult, Evaluate, Print, Read, ReadResult};
+use std::convert::TryInto;
 use std::io::{self, prelude::*};
 use std::sync::{Arc, Mutex};
+use std::cmp::PartialEq;
 
 mod interface;
 #[cfg(test)]
@@ -44,7 +46,7 @@ pub fn fmt_based_on_terminal_width<D>(repl: &Repl<Print, D>) -> FormattingConfig
                 std::cmp::max((width * 4) / 5, 120)
             }
             .saturating_sub(repl.prompt(false).chars().count());
-            fmt.width_limit = Some(width);
+            fmt.width_limit = Some(width.try_into().unwrap());
             fmt
         })
         .unwrap_or_default()
@@ -384,67 +386,68 @@ fn do_read<D>(
 
         let ev = interface.read_until(STOPEVENTS)?;
 
-        match (ev, verbatim_mode) {
-            (ENTER, false) | (STOP_VERBATIM_MODE, true) => {
-                let line = interface.buffer();
-                repl.line_input(&line);
-                interface.add_history(line);
-                interface.mv_bufpos_end();
-                interface.writeln("");
-                interface.flush_buffer()?;
-                break Ok(false);
-            }
-            (TAB, false) => {
-                let line = interface.buffer();
-                if completion_writer.is_same_input(&line) {
-                    completion_writer.next_completion();
+        if ev.eq(&ENTER) && !verbatim_mode {
+            let line = interface.buffer();
+            repl.line_input(&line);
+            interface.add_history(line);
+            interface.mv_bufpos_end();
+            interface.writeln("");
+            interface.flush_buffer()?;
+            break Ok(false);
+        }
+        else if ev.eq(&TAB) && !verbatim_mode {
+            let line = interface.buffer();
+            if completion_writer.is_same_input(&line) {
+                completion_writer.next_completion();
+            } else {
+                let f = |start| {
+                    interface
+                        .buf_ch_len()
+                        .saturating_sub(line[start..].chars().count())
+                };
+
+                let tree_chpos = f(TreeCompleter::word_break(&line));
+                let mods_chpos = f(ModulesCompleter::word_break(&line));
+                #[cfg(feature = "racer-completion")]
+                let code_chpos = f(CodeCompleter::word_break(&line));
+
+                let completions = if line.starts_with(crate::CMD_PREFIX) {
+                    Box::new(std::iter::empty()) as Box<dyn Iterator<Item = CItem>>
                 } else {
-                    let f = |start| {
-                        interface
-                            .buf_ch_len()
-                            .saturating_sub(line[start..].chars().count())
-                    };
-
-                    let tree_chpos = f(TreeCompleter::word_break(&line));
-                    let mods_chpos = f(ModulesCompleter::word_break(&line));
                     #[cfg(feature = "racer-completion")]
-                    let code_chpos = f(CodeCompleter::word_break(&line));
-
-                    let completions = if line.starts_with(crate::CMD_PREFIX) {
-                        Box::new(std::iter::empty()) as Box<dyn Iterator<Item = CItem>>
-                    } else {
-                        #[cfg(feature = "racer-completion")]
-                        let c = {
-                            let injection = format!("{}\n{}", repl.input_buffer(), line);
-                            complete_code(&codecmpltr, &cache.0, &injection, code_chpos)
-                        };
-
-                        #[cfg(not(feature = "racer-completion"))]
-                        let c = std::iter::empty();
-
-                        Box::new(c) as Box<dyn Iterator<Item = CItem>>
+                    let c = {
+                        let injection = format!("{}\n{}", repl.input_buffer(), line);
+                        complete_code(&codecmpltr, &cache.0, &injection, code_chpos)
                     };
 
-                    let completions = completions
-                        .chain(complete_cmdtree(&treecmpltr, &line, tree_chpos))
-                        .chain(complete_mods(&modscmpltr, &line, mods_chpos));
+                    #[cfg(not(feature = "racer-completion"))]
+                    let c = std::iter::empty();
 
-                    completion_writer.new_completions(completions);
-                }
+                    Box::new(c) as Box<dyn Iterator<Item = CItem>>
+                };
 
-                completion_writer.overwrite_completion(interface)?;
+                let completions = completions
+                    .chain(complete_cmdtree(&treecmpltr, &line, tree_chpos))
+                    .chain(complete_mods(&modscmpltr, &line, mods_chpos));
+
+                completion_writer.new_completions(completions);
             }
-            (BREAK, _) => break Ok(true),
-            (ENTER_VERBATIM_MODE, false) => verbatim_mode = true,
-            (ENTER, true) => {
-                interface.writeln("");
-                interface.flush_buffer()?;
-            }
-            (TAB, true) => {
-                interface.write("\t");
-                interface.flush_buffer()?;
-            }
-            _ => (), // do nothing otherwise
+
+            completion_writer.overwrite_completion(interface)?;
+        }
+        else if ev.eq(&BREAK) { 
+            break Ok(true)
+        }
+        else if ev.eq(&ENTER_VERBATIM_MODE) && !verbatim_mode {
+            verbatim_mode = true;
+        }
+        else if ev.eq(&ENTER) && verbatim_mode {
+            interface.writeln("");
+            interface.flush_buffer()?;
+        }
+        else if ev.eq(&TAB) && verbatim_mode {
+            interface.write("\t");
+            interface.flush_buffer()?;
         }
     }
 }
@@ -532,9 +535,10 @@ where
     (read, signal)
 }
 
-fn map_xterm_err(xtermerr: crossterm::ErrorKind, msg: &str) -> io::Error {
-    match xtermerr {
-        crossterm::ErrorKind::IoError(e) => e,
-        _ => io::Error::new(io::ErrorKind::Other, msg),
-    }
+fn map_xterm_err(xtermerr: crossterm::ErrorKind, _msg: &str) -> io::Error {
+    xtermerr
+    //match xtermerr {
+    //    crossterm::ErrorKind::(e) => e,
+    //    _ => io::Error::new(io::ErrorKind::Other, msg),
+    //}
 }

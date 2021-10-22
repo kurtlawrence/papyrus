@@ -76,7 +76,7 @@
 //! future but for now, any user wanting to use Papyrus will need an installation of Rust.
 
 #![warn(missing_docs)]
-#![deny(intra_doc_link_resolution_failure)]
+#![deny(rustdoc::broken_intra_doc_links)]
 
 #[macro_use]
 extern crate log;

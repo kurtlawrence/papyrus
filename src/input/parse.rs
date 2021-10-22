@@ -1,6 +1,6 @@
 use super::*;
 use crate::code::{self, Statement};
-use syn::export::ToTokens;
+use quote::ToTokens;
 use syn::{self, Block, File, Item, Stmt};
 
 /// Parses a line of input as a command.
@@ -22,7 +22,7 @@ pub fn parse_program(code: &str) -> InputResult {
 
     let reterr = |e: syn::Error| {
         let e = e.to_string();
-        if &e == "LexError" {
+        if (&e == "LexError") || (&e == "lex error") {
             InputResult::More
         } else {
             InputResult::InputError(e)

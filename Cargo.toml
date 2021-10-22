@@ -1,6 +1,6 @@
 [package]
 name = "papyrus"
-version = "0.17.2"
+version = "0.17.3"
 authors = ["kurt <kurtlawrence92@gmail.com>"]
 description = "A rust repl and script runner"
 license = "MIT"
@@ -17,21 +17,22 @@ codecov =   { repository = "kurtlawrence/papyrus" }
 [dependencies]
 # My crates
 cmdtree =	    { version = "0.10",	default-features = false }
-kserd =		    { version = "0.4",	default-features = false,   optional = false,	features = [ "format" ] }
+kserd =		    { version = "0.5",	default-features = false,   optional = false,	features = [ "format" ] }
 
 # crates.io
 backtrace =	    { version = "0.3",	default-features = false,   optional = false,	features = [ "std" ] }
-blake3 =	    { version = "0.3",	default-features = true }
+blake3 =	    { version = "1.0",	default-features = true }
 colored =	    { version = "2",	default-features = false }
-crossbeam-channel = { version = "0.4",	default-features = true } # enable 'std' featureset
-crossterm =	    { version = "0.17",	default-features = false,   optional = true }
+crossbeam-channel = { version = "0.5",	default-features = true } # enable 'std' featureset
+crossterm =	    { version = "0.21",	default-features = false,   optional = true }
 dirs =		    { version = "3",	default-features = false }
 fxhash =	    { version = "0.2",	default-features = false }
 glob =		    { version = "0.3",	default-features = false }
-libloading =	    { version = "0.6",	default-features = false }
+libloading =	    { version = "0.7",	default-features = false }
 log =		    { version = "0.4",	default-features = false }
-racer =		    { version = "2.1",	default-features = false,   optional = true,	features = [ "metadata" ] }
-syn =		    { version = "=1.0.57",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }
+quote = { version = "1.0",	default-features = false }
+racer =		    { version = "2.1.48",	default-features = false,   optional = true,	features = [ "metadata" ] }
+syn =		    { version = "1.0.73",	default-features = false,   optional = false,	features = [ "full", "printing", "parsing" ] }
 uuid =		    { version = "0.8",	default-features = false,   optional = false,	features = [ "v4" ] }
 
 [dev-dependencies]
